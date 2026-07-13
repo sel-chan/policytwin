@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M0 — Preflight and baseline`
+- Current milestone: `M1 — Domain core and seeded fixture (offline work while M0 external checks remain)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 08:45:44 +09:00`
-- Latest checkpoint commit: `c175d1c9e667dc98f258e36de11522479bc49ec0`
+- Last updated: `2026-07-14 08:58:16 +09:00`
+- Latest checkpoint commit: `665bf7cf4300e36bf18e45d6d442beacbb2c7d97`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -80,7 +80,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
-| M1 Domain core and seeded fixture | NOT_STARTED |  |  |  |
+| M1 Domain core and seeded fixture | IN_PROGRESS | strict validation and 4 unit tests pass; 5 integration tests prove fixture isolation, fixed-reference agreement, deterministic reset, and exactly 3 seeded drifts; checkpoint commit remains |  | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | NOT_STARTED |  |  |  |
 | M3 Decision Queue and versioning | NOT_STARTED |  |  |  |
 | M4 Compiler and OPA | NOT_STARTED |  |  |  |
@@ -95,42 +95,42 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Create the remaining offline M0 repository scaffold with working root build and test commands, while preserving the separate network-approved dependency and official-document checks.
+Implement the M1 refund domain and deterministic seeded fixture so reset reproduces the three required behavioral defects without mutating the canonical baseline.
 
 ### Failing or missing condition
 
-No `package.json`, workspace file, source tree, tests, or build scripts exist. The local pnpm cache is empty, OPA is not installed, the Docker daemon is unavailable, and current official rules and SDK/API details remain unverified because no external-network scope has been approved.
+The scaffold exposes only the decision union. Refund input validation, golden cases, buggy and expected-fixed applications, fixture copy/reset utilities, drift witnesses, and regression evidence do not exist. `pnpm demo:reset` is still a fail-closed placeholder.
 
 ### Planned actions
 
-- [x] Read the goal objective and all required repository contracts.
-- [x] Inspect Git, tool versions, authentication presence, Docker health, and offline package availability.
-- [x] Add the minimal pnpm workspace, strict TypeScript configuration, source/test scaffold, and required root script names.
-- [x] Run offline install consistency, lint, typecheck, unit test, integration test, eval, build, and offline verification commands that are valid at M0.
-- [x] Review the diff, update documentation and evidence, and commit the M0 checkpoint on `main`.
+- [x] Re-read the M1 gate and inspect the current source, tests, and script surface.
+- [x] Implement strict refund input validation with integer and closed-enum invariants.
+- [x] Add authoritative golden and boundary drift cases.
+- [x] Add canonical buggy and expected-fixed TypeScript refund applications.
+- [x] Implement safe fresh-copy and deterministic `demo:reset` utilities.
+- [x] Add tests proving all three seeded drifts and canonical fixture immutability.
+- [ ] Run narrow tests, broader offline regressions, diff review, evidence updates, and a checkpoint commit.
 
 ### Completion evidence
 
 - Commands:
-  - `pnpm install --offline`
-  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm build`
-  - `pnpm verify`; `pnpm verify:live`; `pnpm dev`; `pnpm demo:reset`; `pnpm demo:run`
-  - `git diff --check`; credential-shaped value scan with `rg`
+  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`
+  - `pnpm demo:reset`; `pnpm demo:run`; `pnpm eval`; `pnpm build`; `pnpm verify`
+  - fixture-local `npm test` in both canonical baseline and the fresh reset copy
+  - `git diff --check`; seeded-bug source search; credential-shaped value scan
 - Exit codes:
-  - install, lint, typecheck, unit, integration, eval, and build: `0`
-  - first unit-test attempt: `1` (`spawnSync tsc.cmd EINVAL`); Windows command-shim handling fixed
-  - second unit-test attempt: `1` (`C:\Program` path split); shell use narrowed to `.cmd` shims only
-  - final unit, integration, eval, and build retries: `0`
-  - `verify`: `1` as required because browser and submission gates are not implemented
-  - live, dev, and demo commands: `1` with explicit fail-closed reasons
-  - initial diff check: `1` for an extra final blank line in `pnpm-workspace.yaml`; corrected retry: `0`
-  - secret-pattern search: `1` for no matches (expected `rg` result)
+  - lint, typecheck, unit (4/4), integration (5/5), demo reset, demo run, eval, and build: `0`
+  - canonical and reset-copy fixture-local regression tests: `4/4` passed in each location
+  - `demo:run` actual result: exactly 3 drifts (`D01`, `D02`, `D03`)
+  - `verify`: `1` only for the still-missing browser and submission gates; all implemented offline steps passed
+  - diff check and seeded-source search: `0`; secret-pattern search: `1` for no matches (expected `rg` result)
+  - staged review found canonical `dist/` could enter a reset copy; transient-directory hash/copy filters added and integration/demo retries passed
 - Artifacts:
-  - `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, strict TypeScript configs, `src/`, `scripts/`, `tests/`, `evals/`, `.env.example`, `README.md`
+  - `src/domain/`, `fixtures/refund-demo/`, `scripts/fixture.mjs`, reset/replay scripts, fixture build config, unit and integration tests
 - Screenshots:
   - not applicable; no UI implementation exists
 - Commit:
-  - `c175d1c9e667dc98f258e36de11522479bc49ec0`
+  - pending current checkpoint
 
 ## Quality gates
 
@@ -140,14 +140,14 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/goal/milestone validator | `PACK_MANIFEST.md` | 2026-07-14 08:20 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
-| Lint | PASS | `pnpm lint` | M0 static checks | 2026-07-14 08:40 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript scaffold | 2026-07-14 08:40 +09:00 |
-| Unit tests | PASS | `pnpm test` | 1/1 passed after Windows launcher fix | 2026-07-14 08:41 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 1/1 passed | 2026-07-14 08:41 +09:00 |
+| Lint | PASS | `pnpm lint` | repository static checks | 2026-07-14 08:48 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | domain and both fixture variants pass strict TypeScript | 2026-07-14 08:48 +09:00 |
+| Unit tests | PASS | `pnpm test` | 4/4 passed | 2026-07-14 08:49 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 5/5 passed; exactly 3 reset-copy drifts | 2026-07-14 08:49 +09:00 |
 | Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 08:42 +09:00 |
 | Prompt/eval suite | PASS | `pnpm eval` | M0 contract eval 1/1 passed; prompt eval corpus not implemented | 2026-07-14 08:41 +09:00 |
-| Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 08:42 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | expected M0 failures: browser and submission gates | 2026-07-14 08:42 +09:00 |
+| Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 08:50 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented steps pass; expected remaining failures are browser and submission gates | 2026-07-14 08:52 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -166,7 +166,7 @@ Never fill from estimates.
 | Explicit seeded semantics mislabeled as ambiguity | 0 | UNSET |  |
 | Golden cases passed | 100% | UNSET |  |
 | Accepted corpus size | ≥30 | UNSET |  |
-| Seeded app bugs detected | 3/3 | UNSET |  |
+| Seeded app bugs detected | 3/3 | 3/3 | `pnpm demo:run`; `tests/integration/refund-fixture.integration.test.mjs` |
 | Post-repair drift | 0 | UNSET |  |
 | Mutation kill rate | ≥90% | UNSET |  |
 | Rule-to-clause traceability | 100% | UNSET |  |
@@ -228,7 +228,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement the dependency-free M0 pnpm/TypeScript scaffold, run its offline gates, then prepare one scoped network-approval request for official documentation and pinned dependency installation.`
+`Finish the M1 diff/evidence checkpoint, then implement the offline M2 schema, clause segmentation, prompt contracts, and recorded interpreter fixture while external documentation and dependency installation remain approval-gated.`
 
 ## Pause handoff
 

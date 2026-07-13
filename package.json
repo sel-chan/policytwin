@@ -20,8 +20,8 @@
     "build": "node scripts/build.mjs",
     "verify": "node scripts/verify.mjs",
     "verify:live": "node scripts/live-gate.mjs",
-    "demo:reset": "node scripts/gate.mjs demo:reset",
-    "demo:run": "node scripts/gate.mjs demo:run",
+    "demo:reset": "node scripts/demo-reset.mjs",
+    "demo:run": "node scripts/demo-run.mjs",
     "submission:check": "node scripts/gate.mjs submission:check"
   }
 }

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "D01",
+    "title": "Exactly day 14 remains eligible",
+    "input": { "daysSincePurchase": 14, "usageBasisPoints": 500, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "MONTHLY" },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": ["refund-eligible"],
+    "relatedClauseIds": ["clause-refund-window"],
+    "rationale": "The policy explicitly includes exactly day 14."
+  },
+  {
+    "id": "D02",
+    "title": "Exactly 20 percent usage remains eligible",
+    "input": { "daysSincePurchase": 3, "usageBasisPoints": 2000, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "ANNUAL" },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": ["refund-eligible"],
+    "relatedClauseIds": ["clause-refund-window"],
+    "rationale": "The policy explicitly includes exactly 20 percent usage."
+  },
+  {
+    "id": "D03",
+    "title": "Final sale overrides approved promotion",
+    "input": { "daysSincePurchase": 2, "usageBasisPoints": 500, "promotionalPurchase": true, "finalSale": true, "managerApproved": true, "planType": "ENTERPRISE" },
+    "expectedDecision": "DENY",
+    "source": "CONFLICT",
+    "relatedRuleIds": ["final-sale-deny", "promotion-approved"],
+    "relatedClauseIds": ["clause-final-sale", "clause-promotion"],
+    "rationale": "Final sale has explicit highest-priority denial."
+  }
+]

@@ -6,6 +6,8 @@ const steps = [
   "test",
   "test:integration",
   "eval",
+  "demo:reset",
+  "demo:run",
   "test:e2e",
   "build",
   "submission:check",
@@ -22,7 +24,7 @@ for (const step of steps) {
 
 if (failures.length > 0) {
   console.error(
-    `\nOffline verification failed as required for the incomplete M0 scaffold: ${failures
+    `\nOffline verification failed as required for the incomplete repository: ${failures
       .map(({ step, status }) => `${step} (${status})`)
       .join(", ")}`,
   );

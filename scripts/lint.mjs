@@ -17,7 +17,7 @@ const requiredScripts = [
   "demo:run",
   "submission:check",
 ];
-const ignoredDirectories = new Set([".git", "dist", "node_modules"]);
+const ignoredDirectories = new Set([".git", ".tmp", "dist", "node_modules"]);
 const checkedExtensions = new Set([".json", ".mjs", ".ts", ".yaml", ".yml"]);
 const failures = [];
 
@@ -72,4 +72,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("M0 static checks passed.");
+console.log("Repository static checks passed.");

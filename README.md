@@ -6,7 +6,7 @@ PolicyTwin is an evidence-first policy engineering product for the OpenAI Build 
 
 ## Current implementation status
 
-The repository is in milestone **M0 — Preflight and baseline**. The dependency-free scaffold provides real lint, strict TypeScript, unit, integration, eval, and build commands. Product UI, OPA, live GPT-5.6 interpretation, Codex repair, demo, and submission gates are intentionally not reported as complete.
+The offline **M1 — Domain core and seeded fixture** slice is implemented. The repository contains strict refund-input validation, six golden cases, three exact drift witnesses, a canonical buggy TypeScript fixture, an evaluation-only fixed fixture, and deterministic fresh-copy reset/replay tooling. Product UI, OPA, live GPT-5.6 interpretation, and Codex repair are not yet implemented.
 
 ## Local baseline
 
@@ -24,9 +24,11 @@ pnpm test
 pnpm test:integration
 pnpm eval
 pnpm build
+pnpm demo:reset
+pnpm demo:run
 ```
 
-`pnpm verify`, `pnpm verify:live`, `pnpm test:e2e`, the demo commands, and `pnpm submission:check` remain fail-closed until their required product capabilities exist. See `PROGRESS.md` for exact evidence and current blockers.
+`pnpm demo:run` must report exactly three baseline drifts. `pnpm verify`, `pnpm verify:live`, `pnpm test:e2e`, and `pnpm submission:check` remain fail-closed until their required product capabilities exist. See `PROGRESS.md` for exact evidence and current blockers.
 
 ## Product contract
 

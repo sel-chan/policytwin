@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "noEmit": false,
+    "outDir": ".tmp/fixture-build",
+    "rootDir": "fixtures/refund-demo",
+    "sourceMap": true
+  },
+  "include": [
+    "fixtures/refund-demo/baseline/src/**/*.ts",
+    "fixtures/refund-demo/expected-fixed/src/**/*.ts"
+  ]
+}
