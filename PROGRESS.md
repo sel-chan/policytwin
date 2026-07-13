@@ -8,8 +8,8 @@
 - Current milestone: `M0 — Preflight and baseline`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 08:23:46 +09:00`
-- Latest checkpoint commit: `38f8060cdb87c410f12e91d26b2d689ab1e07582`
+- Last updated: `2026-07-14 08:43:32 +09:00`
+- Latest checkpoint commit: `9870f290fc3bf81ed35322bdce3e70cfabb429a2`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -37,12 +37,12 @@ Fill with actual evidence.
 | Git | 2.49.0.windows.1; initialized on `main` | `git --version`; `git status --short --branch` | `F:/oaibuild` registered as a safe directory because the drive does not report ownership |
 | Node.js | v22.22.2 | `node --version` | Supported LTS/newer baseline |
 | pnpm | 11.7.0 | `pnpm --version` | Available globally |
-| Docker | 29.1.5 | `docker --version` | Daemon health not checked yet |
+| Docker | 29.1.5 CLI; daemon unavailable | `docker --version`; `docker info --format '{{.ServerVersion}}'` | Docker Desktop Linux engine pipe is absent |
 | OPA | NOT_INSTALLED | `opa version` | Command not found; address during M0 implementation |
 | Codex client | codex-cli 0.144.0 | `codex --version` |  |
 | Goal mode | stable/enabled | `codex features list` | `goals stable true` |
-| OpenAI API auth | UNSET | redacted check only | Never record secrets |
-| Codex SDK feasibility | UNSET |  |  |
+| OpenAI API auth | UNSET | redacted environment-name check only | `OPENAI_API_KEY` and `CODEX_API_KEY` are not configured; never record secrets |
+| Codex SDK feasibility | PARTIAL | `codex --version`; `npm list --global --depth=0` | Codex CLI 0.144.0 is present; project SDK dependency is not installed |
 | Browser/Playwright | UNSET |  |  |
 | GitHub auth | UNSET | redacted status only |  |
 | Deployment auth | UNSET | redacted status only |  |
@@ -79,7 +79,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
-| M0 Preflight and baseline | IN_PROGRESS | document-contract validation and initial Git baseline complete; product scaffold and official rules check remain | `38f8060` | OPA/package scaffold/live facts not yet verified |
+| M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `9870f29` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | NOT_STARTED |  |  |  |
 | M2 PolicyIR and interpretation | NOT_STARTED |  |  |  |
 | M3 Decision Queue and versioning | NOT_STARTED |  |  |  |
@@ -95,41 +95,41 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Resolve the five preflight document-contract defects, validate the document pack, and create the owner-authorized initial Git commit.
+Create the remaining offline M0 repository scaffold with working root build and test commands, while preserving the separate network-approved dependency and official-document checks.
 
 ### Failing or missing condition
 
-The policy text contradicts some ambiguity cards; offline and live verification are conflated; Git/network rules conflict with the active environment contract; `PolicyPatch` is undefined; mutation acceptance wording is inconsistent.
+No `package.json`, workspace file, source tree, tests, or build scripts exist. The local pnpm cache is empty, OPA is not installed, the Docker daemon is unavailable, and current official rules and SDK/API details remain unverified because no external-network scope has been approved.
 
 ### Planned actions
 
-- [x] Inspect relevant files.
-- [x] Reproduce the current condition.
-- [x] Implement the smallest coherent change.
-- [x] Run narrow tests.
-- [x] Run broader gates.
-- [x] Inspect generated artifacts/UI (document pack and manifest only; no product UI exists yet).
-- [x] Update documentation and evidence.
-- [x] Commit checkpoint.
-- [x] Update this ledger.
+- [x] Read the goal objective and all required repository contracts.
+- [x] Inspect Git, tool versions, authentication presence, Docker health, and offline package availability.
+- [x] Add the minimal pnpm workspace, strict TypeScript configuration, source/test scaffold, and required root script names.
+- [x] Run offline install consistency, lint, typecheck, unit test, integration test, eval, build, and offline verification commands that are valid at M0.
+- [ ] Review the diff, update documentation and evidence, and commit the M0 checkpoint on `main`.
 
 ### Completion evidence
 
 - Commands:
-  - targeted `rg -n -g "*.md"` contract searches
-  - PowerShell manifest/hash/line/fence/milestone/goal-length validator
-  - `git diff --cached --check`
-  - credential-shaped value scan with `rg`
+  - `pnpm install --offline`
+  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm build`
+  - `pnpm verify`; `pnpm verify:live`; `pnpm dev`; `pnpm demo:reset`; `pnpm demo:run`
+  - `git diff --check`; credential-shaped value scan with `rg`
 - Exit codes:
-  - corrected contract searches and validators: `0`
-  - initial Windows glob search: `1` because PowerShell did not expand `*.md`; corrected with `-g "*.md"`
-  - initial secret-scan command: `1` due PowerShell quote parsing; simplified pattern retry: `0`
+  - install, lint, typecheck, unit, integration, eval, and build: `0`
+  - first unit-test attempt: `1` (`spawnSync tsc.cmd EINVAL`); Windows command-shim handling fixed
+  - second unit-test attempt: `1` (`C:\Program` path split); shell use narrowed to `.cmd` shims only
+  - final unit, integration, eval, and build retries: `0`
+  - `verify`: `1` as required because browser and submission gates are not implemented
+  - live, dev, and demo commands: `1` with explicit fail-closed reasons
+  - diff check: `0`; secret-pattern search: `1` for no matches (expected `rg` result)
 - Artifacts:
-  - `AGENTS.md`, `PLAN.md`, `DECISIONS.md`, `GOAL_PROMPT.md`, `SUBMISSION.md`, setup guides, `.gitignore`, `.gitattributes`, `PACK_MANIFEST.md`
+  - `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, strict TypeScript configs, `src/`, `scripts/`, `tests/`, `evals/`, `.env.example`, `README.md`
 - Screenshots:
   - not applicable; no UI implementation exists
 - Commit:
-  - `38f8060cdb87c410f12e91d26b2d689ab1e07582`
+  - pending current checkpoint
 
 ## Quality gates
 
@@ -138,21 +138,21 @@ Record latest actual result.
 | Gate | Status | Command | Evidence/artifact | Last run |
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/goal/milestone validator | `PACK_MANIFEST.md` | 2026-07-14 08:20 +09:00 |
-| Install/lockfile | NOT_RUN |  |  |  |
-| Lint | NOT_RUN | `pnpm lint` |  |  |
-| Typecheck | NOT_RUN | `pnpm typecheck` |  |  |
-| Unit tests | NOT_RUN | `pnpm test` |  |  |
-| Integration tests | NOT_RUN | `pnpm test:integration` |  |  |
-| Browser tests | NOT_RUN | `pnpm test:e2e` |  |  |
-| Prompt/eval suite | NOT_RUN | `pnpm eval` |  |  |
-| Production build | NOT_RUN | `pnpm build` |  |  |
-| Offline full verification | NOT_RUN | `pnpm verify` |  |  |
-| Fresh live integration | NOT_RUN | `pnpm verify:live` |  |  |
+| Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
+| Lint | PASS | `pnpm lint` | M0 static checks | 2026-07-14 08:40 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript scaffold | 2026-07-14 08:40 +09:00 |
+| Unit tests | PASS | `pnpm test` | 1/1 passed after Windows launcher fix | 2026-07-14 08:41 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 1/1 passed | 2026-07-14 08:41 +09:00 |
+| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 08:42 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | M0 contract eval 1/1 passed; prompt eval corpus not implemented | 2026-07-14 08:41 +09:00 |
+| Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 08:42 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | expected M0 failures: browser and submission gates | 2026-07-14 08:42 +09:00 |
+| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
 | Dependency/license review | NOT_RUN |  |  |  |
 | Security review | NOT_RUN |  |  |  |
-| Submission consistency | NOT_RUN | `pnpm submission:check` |  |  |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | fail-closed: artifacts and URLs absent | 2026-07-14 08:42 +09:00 |
 
 ## Product proof metrics
 
@@ -204,6 +204,8 @@ A blocker is valid only when the task cannot continue safely without external in
 | Live model/API outage | Medium | Medium | Keep recorded verified evidence clearly labeled | Codex / open |
 | Hosted worker restrictions | Medium | High | Use container/VM host or split worker | Codex / open |
 | Codex SDK interface changes | Medium | High | Check current official docs and adapt | Codex / open |
+| Empty local package cache | High | Medium | Keep M0 dependency-free; request one scoped approval before installing pinned project dependencies | Codex / open |
+| Docker daemon unavailable | High | Medium | Continue non-container gates; start Docker Desktop before the container gate | Owner/Codex / open |
 | Demo recording/account blocker | Medium | Medium | Prepare script, captions, screenshots, and exact owner action | Codex / open |
 
 ## Decisions pending
@@ -214,7 +216,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Begin the remaining M0 scaffold on main; keep offline work separate from network-approved official checks and live integration.`
+`Implement the dependency-free M0 pnpm/TypeScript scaffold, run its offline gates, then prepare one scoped network-approval request for official documentation and pinned dependency installation.`
 
 ## Pause handoff
 

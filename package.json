@@ -1,0 +1,27 @@
+{
+  "name": "policytwin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Evidence-first AI policy engineering for SaaS refund behavior.",
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=11.7.0"
+  },
+  "scripts": {
+    "dev": "node scripts/gate.mjs dev",
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node scripts/run-tests.mjs unit",
+    "test:integration": "node scripts/run-tests.mjs integration",
+    "test:e2e": "node scripts/gate.mjs test:e2e",
+    "eval": "node scripts/run-tests.mjs eval",
+    "build": "node scripts/build.mjs",
+    "verify": "node scripts/verify.mjs",
+    "verify:live": "node scripts/live-gate.mjs",
+    "demo:reset": "node scripts/gate.mjs demo:reset",
+    "demo:run": "node scripts/gate.mjs demo:run",
+    "submission:check": "node scripts/gate.mjs submission:check"
+  }
+}
