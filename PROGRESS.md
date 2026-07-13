@@ -8,8 +8,8 @@
 - Current milestone: `M0 — Preflight and baseline`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 08:43:32 +09:00`
-- Latest checkpoint commit: `9870f290fc3bf81ed35322bdce3e70cfabb429a2`
+- Last updated: `2026-07-14 08:45:44 +09:00`
+- Latest checkpoint commit: `c175d1c9e667dc98f258e36de11522479bc49ec0`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -79,7 +79,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
-| M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `9870f29` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
+| M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | NOT_STARTED |  |  |  |
 | M2 PolicyIR and interpretation | NOT_STARTED |  |  |  |
 | M3 Decision Queue and versioning | NOT_STARTED |  |  |  |
@@ -107,7 +107,7 @@ No `package.json`, workspace file, source tree, tests, or build scripts exist. T
 - [x] Inspect Git, tool versions, authentication presence, Docker health, and offline package availability.
 - [x] Add the minimal pnpm workspace, strict TypeScript configuration, source/test scaffold, and required root script names.
 - [x] Run offline install consistency, lint, typecheck, unit test, integration test, eval, build, and offline verification commands that are valid at M0.
-- [ ] Review the diff, update documentation and evidence, and commit the M0 checkpoint on `main`.
+- [x] Review the diff, update documentation and evidence, and commit the M0 checkpoint on `main`.
 
 ### Completion evidence
 
@@ -123,13 +123,14 @@ No `package.json`, workspace file, source tree, tests, or build scripts exist. T
   - final unit, integration, eval, and build retries: `0`
   - `verify`: `1` as required because browser and submission gates are not implemented
   - live, dev, and demo commands: `1` with explicit fail-closed reasons
-  - diff check: `0`; secret-pattern search: `1` for no matches (expected `rg` result)
+  - initial diff check: `1` for an extra final blank line in `pnpm-workspace.yaml`; corrected retry: `0`
+  - secret-pattern search: `1` for no matches (expected `rg` result)
 - Artifacts:
   - `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, strict TypeScript configs, `src/`, `scripts/`, `tests/`, `evals/`, `.env.example`, `README.md`
 - Screenshots:
   - not applicable; no UI implementation exists
 - Commit:
-  - pending current checkpoint
+  - `c175d1c9e667dc98f258e36de11522479bc49ec0`
 
 ## Quality gates
 
@@ -176,6 +177,17 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 08:45 +09:00 — Fail-closed M0 scaffold committed
+
+- Milestone: M0
+- Change: added a dependency-free pnpm workspace, strict TypeScript build, required root script surface, unit/integration/eval tests, README, and safe environment template
+- Verified: offline install, lint, typecheck, unit, integration, M0 eval, build, manifest hashes, staged diff, and secret-pattern scan
+- Commands: `pnpm install --offline`; `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm build`; fail-closed gate commands; `git diff --cached --check`
+- Commit: `c175d1c9e667dc98f258e36de11522479bc49ec0`
+- Expected failures: `pnpm verify` fails only browser/submission gates; `pnpm verify:live` fails credentials/live integration; dev/demo commands fail because their later milestones are absent
+- Risks: TypeScript is currently global rather than project-pinned; OPA and browser dependencies are absent; Docker daemon is stopped; official challenge and OpenAI/Codex facts remain unverified without approved network scope
+- Next: continue independent M1 domain/fixture work, then use one approved network scope for official documentation and pinned dependency installation
 
 ### 2026-07-14 08:23 +09:00 — Preflight document-contract cleanup completed
 
