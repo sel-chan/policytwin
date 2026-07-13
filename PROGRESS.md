@@ -8,8 +8,8 @@
 - Current milestone: `M0 — Preflight and baseline`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 08:20:58 +09:00`
-- Latest checkpoint commit: `UNSET`
+- Last updated: `2026-07-14 08:23:46 +09:00`
+- Latest checkpoint commit: `38f8060cdb87c410f12e91d26b2d689ab1e07582`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -65,12 +65,12 @@ Replace placeholders after checking current official sources.
 
 ## Baseline
 
-- Repository condition: documentation-only Git repository initialized on `main`; no commit yet
+- Repository condition: documentation-only Git repository initialized on `main` with an initial baseline commit
 - Existing implementation: none; nine planning/control Markdown files only
 - Existing tests: none; no `package.json`
 - Existing build result: not runnable; no `package.json`
 - Existing known failures: OPA command unavailable; product scaffold absent
-- Baseline commit/tag: `UNSET`
+- Baseline commit/tag: `38f8060cdb87c410f12e91d26b2d689ab1e07582`
 - Secrets scan result: PASS for credential-shaped values in the initial document pack
 
 ## Milestone board
@@ -79,7 +79,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
-| M0 Preflight and baseline | NOT_STARTED |  |  |  |
+| M0 Preflight and baseline | IN_PROGRESS | document-contract validation and initial Git baseline complete; product scaffold and official rules check remain | `38f8060` | OPA/package scaffold/live facts not yet verified |
 | M1 Domain core and seeded fixture | NOT_STARTED |  |  |  |
 | M2 PolicyIR and interpretation | NOT_STARTED |  |  |  |
 | M3 Decision Queue and versioning | NOT_STARTED |  |  |  |
@@ -110,8 +110,8 @@ The policy text contradicts some ambiguity cards; offline and live verification 
 - [x] Run broader gates.
 - [x] Inspect generated artifacts/UI (document pack and manifest only; no product UI exists yet).
 - [x] Update documentation and evidence.
-- [ ] Commit checkpoint.
-- [ ] Update this ledger.
+- [x] Commit checkpoint.
+- [x] Update this ledger.
 
 ### Completion evidence
 
@@ -129,7 +129,7 @@ The policy text contradicts some ambiguity cards; offline and live verification 
 - Screenshots:
   - not applicable; no UI implementation exists
 - Commit:
-  - pending initial baseline commit
+  - `38f8060cdb87c410f12e91d26b2d689ab1e07582`
 
 ## Quality gates
 
@@ -177,16 +177,16 @@ Never fill from estimates.
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
 
-### 2026-07-14 08:09 +09:00 — Preflight document-contract cleanup started
+### 2026-07-14 08:23 +09:00 — Preflight document-contract cleanup completed
 
 - Milestone: M0
 - Change: resolved all five document-contract defects; added Git safety/line-ending files; initialized `main`
 - Verified: required control files read; stale contradiction phrases absent; `PolicyPatch` closed union present; offline/live gates separated; mutation threshold strict; current-branch/network boundary aligned; manifest/fences/M0–M10/goal length pass; staged diff clean; no credential-shaped values found
 - Commands: environment/version commands; targeted `rg`; PowerShell manifest validator; `git diff --cached --check`; credential-shaped value scan
 - Artifacts: updated control documents, `.gitignore`, `.gitattributes`, `PACK_MANIFEST.md`
-- Commit: none
+- Commit: `38f8060cdb87c410f12e91d26b2d689ab1e07582`
 - Risks: OPA is not installed; no `package.json` exists, so product lint/test/build/verify commands are not yet runnable; official online facts remain unverified because this checkpoint performs no network access
-- Next: create the initial baseline commit, record its hash, and leave the working tree clean
+- Next: begin the remaining M0 product scaffold; request scoped network approval only when an install or official-document check is ready to run
 
 ## Active blockers
 
@@ -214,7 +214,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Complete the five document-contract fixes, validate all Markdown contracts, initialize Git, and create the baseline commit.`
+`Begin the remaining M0 scaffold on main; keep offline work separate from network-approved official checks and live integration.`
 
 ## Pause handoff
 
