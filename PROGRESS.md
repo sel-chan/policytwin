@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M1 — Domain core and seeded fixture (offline work while M0 external checks remain)`
+- Current milestone: `M2 — PolicyIR and interpretation (offline contracts while M0 external checks remain)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 08:58:16 +09:00`
-- Latest checkpoint commit: `665bf7cf4300e36bf18e45d6d442beacbb2c7d97`
+- Last updated: `2026-07-14 08:59:49 +09:00`
+- Latest checkpoint commit: `e509486d525c1f3a5825d39469298b70acb5025f`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -80,8 +80,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
-| M1 Domain core and seeded fixture | IN_PROGRESS | strict validation and 4 unit tests pass; 5 integration tests prove fixture isolation, fixed-reference agreement, deterministic reset, and exactly 3 seeded drifts; checkpoint commit remains |  | Evaluation-only fixed fixture must remain outside future Codex repair context |
-| M2 PolicyIR and interpretation | NOT_STARTED |  |  |  |
+| M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
+| M2 PolicyIR and interpretation | IN_PROGRESS | milestone contract reviewed; offline schema/segmentation/prompt work starting |  | Live GPT-5.6 call and current API facts require approved network scope |
 | M3 Decision Queue and versioning | NOT_STARTED |  |  |  |
 | M4 Compiler and OPA | NOT_STARTED |  |  |  |
 | M5 Case generation/conflict/mutation | NOT_STARTED |  |  |  |
@@ -95,42 +95,29 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Implement the M1 refund domain and deterministic seeded fixture so reset reproduces the three required behavioral defects without mutating the canonical baseline.
+Implement the offline M2 contracts: strict `PolicyIR` validation, stable clause segmentation, closed ambiguity patches, versioned interpreter prompts, and schema-valid recorded interpreter fixtures without claiming a live model run.
 
 ### Failing or missing condition
 
-The scaffold exposes only the decision union. Refund input validation, golden cases, buggy and expected-fixed applications, fixture copy/reset utilities, drift witnesses, and regression evidence do not exist. `pnpm demo:reset` is still a fail-closed placeholder.
+No `PolicyIR` runtime validator, JSON Schema, clause segmenter, ambiguity patch validator, interpreter prompt, prompt-eval corpus, or recorded structured-output fixture exists. Live GPT-5.6 integration is approval-gated and credentials are absent.
 
 ### Planned actions
 
-- [x] Re-read the M1 gate and inspect the current source, tests, and script surface.
-- [x] Implement strict refund input validation with integer and closed-enum invariants.
-- [x] Add authoritative golden and boundary drift cases.
-- [x] Add canonical buggy and expected-fixed TypeScript refund applications.
-- [x] Implement safe fresh-copy and deterministic `demo:reset` utilities.
-- [x] Add tests proving all three seeded drifts and canonical fixture immutability.
-- [ ] Run narrow tests, broader offline regressions, diff review, evidence updates, and a checkpoint commit.
+- [x] Re-read the M2 gate and inspect the M1 types, cases, test runner, and eval surface.
+- [ ] Define exhaustive `PolicyIR`, predicate, clause, ambiguity, and closed `PolicyPatch` types.
+- [ ] Implement strict runtime validation and a matching versioned JSON Schema without external dependencies.
+- [ ] Implement stable UTF-16 source offsets and deterministic clause IDs.
+- [ ] Add the seeded interpreter prompt and a clearly labeled recorded structured-output fixture.
+- [ ] Add schema, traceability, ambiguity-label, explicit-semantics, adversarial-input, and clause-offset tests.
+- [ ] Run eval and broader regressions, update evidence/docs, review the diff, and commit the M2 checkpoint.
 
 ### Completion evidence
 
-- Commands:
-  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`
-  - `pnpm demo:reset`; `pnpm demo:run`; `pnpm eval`; `pnpm build`; `pnpm verify`
-  - fixture-local `npm test` in both canonical baseline and the fresh reset copy
-  - `git diff --check`; seeded-bug source search; credential-shaped value scan
-- Exit codes:
-  - lint, typecheck, unit (4/4), integration (5/5), demo reset, demo run, eval, and build: `0`
-  - canonical and reset-copy fixture-local regression tests: `4/4` passed in each location
-  - `demo:run` actual result: exactly 3 drifts (`D01`, `D02`, `D03`)
-  - `verify`: `1` only for the still-missing browser and submission gates; all implemented offline steps passed
-  - diff check and seeded-source search: `0`; secret-pattern search: `1` for no matches (expected `rg` result)
-  - staged review found canonical `dist/` could enter a reset copy; transient-directory hash/copy filters added and integration/demo retries passed
-- Artifacts:
-  - `src/domain/`, `fixtures/refund-demo/`, `scripts/fixture.mjs`, reset/replay scripts, fixture build config, unit and integration tests
-- Screenshots:
-  - not applicable; no UI implementation exists
-- Commit:
-  - pending current checkpoint
+- Commands: pending M2 implementation
+- Exit codes: pending M2 implementation
+- Artifacts: pending M2 implementation
+- Screenshots: not applicable; no UI implementation exists
+- Commit: pending current checkpoint
 
 ## Quality gates
 
@@ -177,6 +164,17 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 08:59 +09:00 — M1 domain and deterministic seeded fixture passed
+
+- Milestone: M1
+- Change: added strict refund input validation, six golden cases, three drift witnesses, canonical buggy and evaluation-only fixed TypeScript fixtures, safe reset/copy hashing, fixture-local tests, and demo replay
+- Verified: root unit 4/4; integration 5/5; fixture-local 4/4 in canonical and reset copies; typecheck, lint, eval, and build pass; `demo:run` reports exactly D01/D02/D03 drift; canonical baseline remains unchanged
+- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; fixture-local `npm test`; `pnpm demo:reset`; `pnpm demo:run`; `pnpm eval`; `pnpm build`; `pnpm verify`; manifest/diff/secret checks
+- Commit: `e509486d525c1f3a5825d39469298b70acb5025f`
+- Expected failure: offline full verification still fails only browser and submission gates
+- Risk: future Codex repair context must include only a fresh baseline copy and never the `expected-fixed` directory
+- Next: M2 offline PolicyIR/schema/segmentation/prompt contracts; live interpretation remains network-approval gated
 
 ### 2026-07-14 08:45 +09:00 — Fail-closed M0 scaffold committed
 
@@ -228,7 +226,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Finish the M1 diff/evidence checkpoint, then implement the offline M2 schema, clause segmentation, prompt contracts, and recorded interpreter fixture while external documentation and dependency installation remain approval-gated.`
+`Implement the offline M2 PolicyIR/schema/segmentation/prompt contracts and recorded eval fixture; do not claim live interpretation until approved network scope and credentials are available.`
 
 ## Pause handoff
 
