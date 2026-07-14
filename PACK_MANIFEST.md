@@ -12,10 +12,10 @@ Generated validation summary for the PolicyTwin Codex Goal Pack.
 | `.gitattributes` | 213 | 13 | `bddf5b2a99abda24a5675597d84f5c431812f067d61857c1cdde5765e59ddcd2` |
 | `.gitignore` | 421 | 35 | `dee557cb28896a21b807cc673a4bba1e411f49de9ebca7dec9e9ddd848661fc3` |
 | `AGENTS.md` | 16244 | 382 | `21bdfe2045d85897c0431f1c5511beaf06ecb825bb26f2482573b44e8c6abae9` |
-| `DECISIONS.md` | 17977 | 259 | `13fc6ac951324017a0996fc06a3e253ebb1b44b98eed2ef7e5dbcbec3c75fdbe` |
+| `DECISIONS.md` | 19876 | 276 | `ed8f674399fdea393ccad2f5fe21d6307c63665ead3add1cecab9e86570c0061` |
 | `GOAL_PROMPT.md` | 6548 | 82 | `6a8ac93abf3232d2853d732577f63401fd9a9383bff4578a6cdb5713663632a3` |
 | `PLAN.md` | 49274 | 1712 | `51116d4f11ccc83258ac65d773b24e9ec3c6d7c87febbad5f9f9cbbbb82cc926` |
-| `PROGRESS.md` | 28485 | 347 | `3254c22b047664bb71ca96b6bacf04b1029cca5143bb88fda6cf17f2aeaff756` |
+| `PROGRESS.md` | 30034 | 358 | `70eadb27f8be40ec618d74c6ade1e96614616b1145777d4388e0840d74cae1d4` |
 | `START_HERE.md` | 5099 | 120 | `2671af37c7e07a6f07920747713210ac23e68f761e4a90e1001e31d59c983399` |
 | `START_HERE_KO.md` | 3713 | 81 | `663c7ba86be6b43f638012e6ac1fb1e029deff72bb7bdafede4d28fabd41983d` |
 | `SUBMISSION.md` | 18852 | 516 | `09ad25cf7e65cf31889f3afa248d2650eae7a24c994ff741810daf7ae08e80b7` |

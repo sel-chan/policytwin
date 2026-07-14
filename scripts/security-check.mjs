@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { extname, join, relative, resolve } from "node:path";
 import { ROOT } from "./process.mjs";
 
@@ -99,6 +99,10 @@ for (const file of files) {
   const absolute = resolve(ROOT, file);
   if (relative(ROOT, absolute).startsWith("..")) {
     findings.push(`${file}: escapes repository root`);
+    continue;
+  }
+  if (!existsSync(absolute)) {
+    findings.push(`${file}: tracked file is missing`);
     continue;
   }
   const text = readFileSync(absolute, "utf8");

@@ -256,3 +256,20 @@ Add new entries below this line with the template above.
 - Risks: The generated copy must be refreshed after live evidence changes, and final rule/form fields still require current official sources.
 - Reversal or migration path: Replace draft markers and null fields only with verified live values, regenerate the package, and require the same checker to pass before owner submission action.
 - Related files/commits: `artifacts/submission/`, `artifacts/demo/`, `SUBMISSION.md`, `PROGRESS.md`.
+
+### D-015 — Use built-in SQLite behind a replaceable offline repository boundary
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M3
+- Context: M3 requires real restart persistence, the local package cache has no SQLite dependency, external installation is not approved, and Node.js 22.22.2 exposes the experimental built-in `node:sqlite` `DatabaseSync` API.
+- Options considered:
+  1. postpone all persistence until package installation is approved;
+  2. use JSON files as a temporary store;
+  3. implement the required SQLite semantics through a narrow built-in adapter and keep production readiness explicit.
+- Decision: Use `node:sqlite` only behind `SQLitePolicyRepository` for the offline M3 contract. Persist immutable policy versions, golden cases, validated IR, lifecycle state, and reproducible decision records transactionally. Do not claim production storage readiness until current official documentation, the selected Node/container runtime, and persistent-volume behavior are verified.
+- Evidence: local `DatabaseSync` create/insert/read probe; `src/persistence/sqlite.ts`; unit corruption/stale-write tests; process-style close/reopen integration test.
+- Consequences: Real SQLite restart evidence is available without a network install, while the eventual web layer depends on a small repository boundary rather than SQLite calls spread through application code.
+- Risks: The built-in API is experimental and may differ from the final supported deployment contract.
+- Reversal or migration path: Preserve the repository behavior and replace only the adapter with a current supported Node SQLite binding or stable built-in implementation after approved official-document and dependency review.
+- Related files/commits: `src/persistence/sqlite.ts`, `src/node-sqlite.d.ts`, `tests/unit/policy-persistence.test.mjs`, `tests/integration/policy-persistence.integration.test.mjs`.

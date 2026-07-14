@@ -41,4 +41,4 @@ The hosted MVP will accept policy text and structured refund cases. It will exec
 
 ## Residual risk
 
-This is not a completed release security review. OPA, the web server, SQLite, the live SDK adapter, container runtime, hosting, rate limits, browser bundle, dependency graph, and deployment secrets remain untested. `artifacts/evidence/security-review.md` therefore stays `NOT_RUN`, and the partial proof package remains `FAIL`.
+This is not a completed release security review. The offline SQLite adapter has strict input, stale-write, corruption, and restart tests, but production storage permissions, backup/restore, volume behavior, and denial-of-service limits remain untested. OPA, the web server, live SDK adapter, container runtime, hosting, rate limits, browser bundle, dependency graph, and deployment secrets also remain untested. `artifacts/evidence/security-review.md` therefore stays `NOT_RUN`, and the partial proof package remains `FAIL`.

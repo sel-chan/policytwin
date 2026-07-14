@@ -8,6 +8,7 @@ const suites = {
     "tests/unit/policy-ir-validation.test.mjs",
     "tests/unit/policy-resolution.test.mjs",
     "tests/unit/policy-state.test.mjs",
+    "tests/unit/policy-persistence.test.mjs",
     "tests/unit/rego-compiler.test.mjs",
     "tests/unit/case-generation.test.mjs",
     "tests/unit/mutation-engine.test.mjs",
@@ -21,6 +22,7 @@ const suites = {
     "tests/integration/differential-runner.integration.test.mjs",
     "tests/integration/repair-workspace.integration.test.mjs",
     "tests/integration/evidence-package.integration.test.mjs",
+    "tests/integration/policy-persistence.integration.test.mjs",
   ],
   eval: [
     "evals/scaffold.eval.test.mjs",

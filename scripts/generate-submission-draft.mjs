@@ -62,7 +62,7 @@ write(
 write(
   submissionDirectory,
   "how-we-built-it.md",
-  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, dependency-free runtime validation, deterministic clause segmentation and Rego generation, reference case/differential/mutation execution, trusted fixture isolation, closed repair command IDs, impact/traceability reports, SHA-256 evidence manifests, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: OpenAI Responses API with GPT-5.6 Structured Outputs, real OPA, server-side Codex SDK, Next.js/SQLite/Playwright, a pinned Docker image, and live deployment.`,
+  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, dependency-free runtime validation, deterministic clause segmentation and Rego generation, reference case/differential/mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, impact/traceability reports, SHA-256 evidence manifests, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: OpenAI Responses API with GPT-5.6 Structured Outputs, real OPA, server-side Codex SDK, Next.js/Playwright integration, production SQLite volume behavior, a pinned Docker image, and live deployment.`,
 );
 write(
   submissionDirectory,
@@ -82,12 +82,12 @@ write(
 write(
   submissionDirectory,
   "whats-next.md",
-  `# What's next\n\n${draft}\n\nComplete the live GPT-5.6 and OPA path, integrate the current server-side Codex SDK, build the five-screen web workspace and persistence, verify browser accessibility, finish the container/deployment, select a project license, record the demo, verify official rules, and submit. Post-challenge expansion remains outside the MVP.`,
+  `# What's next\n\n${draft}\n\nComplete the live GPT-5.6 and OPA path, integrate the current server-side Codex SDK, connect the verified SQLite repository to the five-screen web workspace, verify browser accessibility, finish the container/deployment, select a project license, record the demo, verify official rules, and submit. Post-challenge expansion remains outside the MVP.`,
 );
 write(
   submissionDirectory,
   "technologies.txt",
-  `${draft}\nImplemented offline: TypeScript, Node.js, pnpm, Rego source generation, Git.\nPlanned/unverified: GPT-5.6 Responses API, OpenAI Structured Outputs, OPA, Codex SDK, Next.js, SQLite, Playwright, Docker.`,
+  `${draft}\nImplemented offline: TypeScript, Node.js, pnpm, Node.js built-in SQLite persistence, Rego source generation, Git.\nPlanned/unverified: GPT-5.6 Responses API, OpenAI Structured Outputs, OPA, Codex SDK, Next.js, production SQLite volume behavior, Playwright, Docker.`,
 );
 write(
   submissionDirectory,
@@ -143,6 +143,18 @@ write(
     cleanCopyStatus: clean.status,
     rulesStatus: "NOT_RUN",
     confirmation: null,
+  }),
+);
+write(
+  submissionDirectory,
+  "submission-check-report.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    checkedSubmissionFiles: 20,
+    checkedDemoDraftFiles: 4,
+    requiredScreenshots: 8,
+    failures: ["Submission checker has not run after draft generation."],
   }),
 );
 

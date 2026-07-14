@@ -8,7 +8,7 @@ PolicyTwin is an evidence-first policy engineering product for the OpenAI Build 
 
 The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2–M10** have offline checkpoints covering strict `PolicyIR`, deterministic clauses, immutable ambiguity resolution, state transitions, a byte-stable Rego compiler, 41 traceable cases, conflict/minimal-contrast analysis, 47 executed mutants with a 93.62% reference-evaluator kill rate, deterministic before/after differential reports, a guarded repair-worker contract, 14→30-day impact analysis, complete offline traceability diagnostics, a hashed evidence package, reproducibility/security checks, and fail-closed submission drafts.
 
-The worker foundation creates isolated trusted-fixture copies, exposes only two fixed verification commands, strips model credentials from child environments, bounds repair attempts to two, and blocks proof on high-severity review findings. The evidence package is deliberately `FAIL`/`PARTIAL_OFFLINE`, and the submission package is deliberately `DRAFT_NOT_READY`: OPA, live GPT-5.6, live Codex, browser, container, deployment, official rules, media, URLs, license, and confirmation remain unverified. Persistence, product UI, OPA execution, live interpretation, and live Codex repair are not yet implemented.
+The worker foundation creates isolated trusted-fixture copies, exposes only two fixed verification commands, strips model credentials from child environments, bounds repair attempts to two, and blocks proof on high-severity review findings. An offline SQLite repository now persists policy text, golden cases, immutable IR versions, lifecycle state, and decision records across a process-style reopen with strict corruption and stale-write checks. The evidence package is deliberately `FAIL`/`PARTIAL_OFFLINE`, and the submission package is deliberately `DRAFT_NOT_READY`: OPA, live GPT-5.6, live Codex, browser, container, deployment, official rules, media, URLs, license, and confirmation remain unverified. Product UI integration, OPA execution, live interpretation, and live Codex repair are not yet implemented.
 
 ## Local baseline
 
@@ -17,6 +17,8 @@ Requirements currently verified in this workspace:
 - Node.js 22 or newer;
 - pnpm 11.7 or newer;
 - TypeScript 5.8 available on `PATH` until the project-local dependency is installed under an approved network scope.
+
+The current persistence adapter uses Node.js 22's built-in experimental `node:sqlite` API behind a narrow repository boundary. It is verified offline but must be checked against current official documentation and the selected production runtime before release.
 
 ```powershell
 pnpm install --offline

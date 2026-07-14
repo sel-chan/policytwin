@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M10 — Submission package (truthful offline drafts)`
+- Current milestone: `M3 — SQLite persistence and restart recovery`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 11:54:53 +09:00`
-- Latest checkpoint commit: `130c3553abdd1ad668d8c367c0f819d242962029`
+- Last updated: `2026-07-14 12:30:00 +09:00`
+- Latest checkpoint commit: `2ab9d1edb9c56934224f9f81160da80808e12d03`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -82,7 +82,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
-| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts committed; 20 unit tests pass for all operations and guards | `506a818` | SQLite persistence and Decision Queue UI require the pinned application stack |
+| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts plus SQLite project/version/decision persistence; process-style restart, corruption, stale-write, and decision-replay checks pass | pending | Decision Queue UI and web/API wiring require the pinned application stack |
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
@@ -95,29 +95,28 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Generate a complete but unmistakably `NOT_READY` English submission/demonstration draft from current evidence, and replace the placeholder submission gate with a deterministic checker that lists every missing official, engineering, URL, media, license, and confirmation requirement.
+Implement the missing M3 persistence boundary with SQLite so policy text, golden cases, immutable versions, accepted `PolicyIR`, lifecycle state, and ambiguity decision records survive a process restart without requiring network packages.
 
 ### Failing or missing condition
 
-The starting repository had no submission artifact directory or demo production files. Its checker was only a generic failure message and could not detect stale rules, missing URLs, unsupported claims, absent screenshots/video, failing proof, missing license, or submission confirmation.
+The repository has pure version and decision functions but no persistence module. `rg` finds no SQLite repository, so policy text and golden cases cannot survive a server restart and accepted decision records exist only in memory. Local Node.js 22.22.2 exposes `node:sqlite` (`DatabaseSync`) without an external install, although the API is currently marked experimental.
 
 ### Planned actions
 
-- [x] Re-read the M10 gate, `SUBMISSION.md`, and current partial proof status.
-- [x] Generate every required English submission text file from actual evidence with a draft marker.
-- [x] Generate links, rules, screenshot, judging-map, and quantitative claim-audit files.
-- [x] Generate demo script, shot list, caption draft, and deterministic demo data.
-- [x] Implement strict `submission:check` that rejects draft markers, stale/unverified rules, missing URLs/media/license, failing proof, and absent confirmation.
-- [x] Test missing/false-ready/tampered submission states without contacting external services.
-- [x] Run broader regressions, inspect drafts, review, and commit the M10 offline checkpoint.
+- [x] Re-read the M3 requirements and confirm the persistence gap and local SQLite capability.
+- [x] Define strict persisted project/version/decision contracts and a bounded schema.
+- [x] Implement transactional create, append-version, read, and decision-record operations.
+- [x] Reject stale parents, invalid timestamps, invalid IR/cases, duplicate IDs, and corrupted stored payloads.
+- [x] Prove immutable history and restart recovery with unit and integration tests.
+- [ ] Run full offline regressions, review the diff, update evidence/docs, and commit the checkpoint.
 
 ### Completion evidence
 
-- Commands: `pnpm submission:draft`; `pnpm submission:check`; `pnpm test`; `pnpm eval`; `pnpm verify`
-- Exit codes: `0`; `1` (expected fail-closed, 37 unmet requirements); `0` (43/43); `0` (21/21); `1` (expected aggregate failures: license, container, browser, submission only)
-- Artifacts: `artifacts/submission/` (21 files including the check report); `artifacts/demo/` (4 files)
-- Screenshots: not applicable; no UI implementation exists
-- Commit: `130c3553abdd1ad668d8c367c0f819d242962029`
+- Commands: `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm verify`
+- Exit codes: `0`; `0` (46/46); `0` (15/15); `1` (expected aggregate failures: license, container, browser, submission only)
+- Artifacts: `src/persistence/sqlite.ts`; `tests/unit/policy-persistence.test.mjs`; `tests/integration/policy-persistence.integration.test.mjs`
+- Screenshots: not applicable to this persistence slice
+- Commit: pending current checkpoint
 
 ## Quality gates
 
@@ -127,21 +126,21 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 11:48 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain through submission validation and both fixture variants pass strict TypeScript | 2026-07-14 11:48 +09:00 |
-| Unit tests | PASS | `pnpm test` via `pnpm verify` | 43/43 passed, including false-ready and tampered submission-state rejection | 2026-07-14 11:48 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 14/14 passed; evidence regeneration/tamper gates plus prior fixture/worker checks pass | 2026-07-14 11:48 +09:00 |
-| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 11:48 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass, including draft generation and submission audit; live model/Codex/OPA eval remains unverified | 2026-07-14 11:48 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 11:48 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | every implemented gate passes; exact expected remaining failures are license, container, browser, and submission | 2026-07-14 11:48 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 12:29 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain through SQLite persistence and submission validation pass strict TypeScript | 2026-07-14 12:29 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 46/46 passed, including strict persistence, stale write, decision replay, and corrupted JSON rejection | 2026-07-14 12:29 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 15/15 passed; four immutable versions and three decisions survive close/reopen with lifecycle state | 2026-07-14 12:29 +09:00 |
+| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 12:29 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass, including draft generation and submission audit; live model/Codex/OPA eval remains unverified | 2026-07-14 12:29 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 12:29 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | every implemented gate passes; exact expected remaining failures are license, container, browser, and submission | 2026-07-14 12:29 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 188 files copied; offline frozen install and 10 implemented command groups pass; no source `node_modules` or credential variables | 2026-07-14 11:48 +09:00 |
-| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA/container contract not ready; Dockerfile and health route absent; Docker daemon unavailable | 2026-07-14 11:48 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 193 files copied; offline frozen install and 10 implemented command groups pass; no source `node_modules` or credential variables | 2026-07-14 12:29 +09:00 |
+| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA/container contract not ready; Dockerfile and health route absent; Docker daemon unavailable | 2026-07-14 12:29 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check` via `pnpm verify` | zero production dependencies and NOTICE present; owner-selected project LICENSE absent | 2026-07-14 11:48 +09:00 |
-| Security review | PASS | `pnpm security:check` via `pnpm verify` | offline static scope only: 188 files, 186 text files, full Git history, zero findings; release review remains NOT_RUN | 2026-07-14 11:48 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | expected fail-closed result with 37 explicit unmet requirements; draft artifacts exist but live proof, official rules, license, media, URLs, and confirmation do not | 2026-07-14 11:48 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check` via `pnpm verify` | zero production dependencies and NOTICE present; owner-selected project LICENSE absent | 2026-07-14 12:29 +09:00 |
+| Security review | PASS | `pnpm security:check` via `pnpm verify` | offline static scope only: 193 files, 191 text files, full Git history, zero findings; release review remains NOT_RUN | 2026-07-14 12:29 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | expected fail-closed result with 37 explicit unmet requirements; draft artifacts exist but live proof, official rules, license, media, URLs, and confirmation do not | 2026-07-14 12:29 +09:00 |
 
 ## Product proof metrics
 
@@ -165,6 +164,18 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 12:14 +09:00 — M3 offline SQLite persistence foundation verified
+
+- Milestone: M3 (offline persistence subset; milestone remains in progress)
+- Change: added strict golden-case parsing and a transactional SQLite repository for projects, immutable versions, validated IR, lifecycle state, and ambiguity decision records
+- Verified: unit 46/46 and integration 15/15; four versions, three reproducible decisions, policy text, golden cases, and `COMPILED` state survive a close/reopen; stale parents, silent resolutions, unrelated decision edits, invalid clause/source links, and corrupted JSON fail closed
+- Recovered failures: first Windows test cleanup attempted to delete an open SQLite file and was fixed by closing before recursive cleanup; a later full run found `submission:draft` removed its tracked checker report before security scanning, so draft generation now writes an accurate `NOT_RUN` report and the scanner reports missing tracked files instead of crashing
+- Truth boundary: local Node 22 `node:sqlite` is experimental; production runtime/volume behavior and web/API integration remain unverified
+- Commands: local `node:sqlite` probe; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm submission:draft`; `pnpm security:check`; `pnpm submission:check`; `pnpm verify`
+- Artifacts: `src/persistence/sqlite.ts`, `src/domain/case-validation.ts`, persistence unit/integration tests
+- Commit: pending current checkpoint
+- Next: run the complete offline gate, review and commit this checkpoint, then continue approved external integration work
 
 ### 2026-07-14 11:48 +09:00 — M10 offline submission foundation verified
 
@@ -316,7 +327,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Run the complete offline verification gate, inspect the M10 draft package, commit the checkpoint, then request one scoped network approval for official documentation and dependency work.`
+`Implement and verify SQLite-backed immutable policy/version/decision persistence with process-restart recovery, then resume the highest-priority external integration gate after scoped network approval.`
 
 ## Pause handoff
 
