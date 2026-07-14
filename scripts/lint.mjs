@@ -17,8 +17,8 @@ const requiredScripts = [
   "demo:run",
   "submission:check",
 ];
-const ignoredDirectories = new Set([".git", ".tmp", "dist", "node_modules"]);
-const checkedExtensions = new Set([".json", ".mjs", ".ts", ".yaml", ".yml"]);
+const ignoredDirectories = new Set([".git", ".next", ".tmp", "dist", "node_modules"]);
+const checkedExtensions = new Set([".css", ".json", ".mjs", ".ts", ".tsx", ".yaml", ".yml"]);
 const failures = [];
 
 function visit(directory) {

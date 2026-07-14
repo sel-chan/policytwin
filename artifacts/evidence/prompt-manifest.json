@@ -3,7 +3,7 @@
   "prompts": [
     {
       "file": "prompts/interpreter.v1.md",
-      "sha256": "c77254f82998969af8ca821e2e3fa1e15a0426093a877784625c0548f1354aaa"
+      "sha256": "045e1f0d3af7589ceea291a32372502d57ae2aaffdadd0208ac212ed2d2290ff"
     },
     {
       "file": "prompts/cartographer.v1.md",

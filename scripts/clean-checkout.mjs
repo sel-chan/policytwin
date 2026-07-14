@@ -94,6 +94,7 @@ const commands = [
   [pnpm, ["test:integration"]],
   [pnpm, ["eval"]],
   [pnpm, ["build"]],
+  [pnpm, ["test:e2e"]],
   [pnpm, ["demo:reset"]],
   [pnpm, ["demo:run"]],
   [pnpm, ["evidence:offline"]],

@@ -13,7 +13,7 @@ The hosted MVP will accept policy text and structured refund cases. It will exec
 3. Server to OPA: only deterministically compiled Rego and strictly validated integer/boolean input may cross.
 4. Server to repair worker: only a fresh trusted fixture copy, accepted evidence, relative paths, and closed command IDs may cross.
 5. Worker to child process: model credentials are removed; output is bounded and redacted.
-6. Evidence to UI/submission: every claim must map to a hashed artifact with explicit provenance.
+6. Evidence to UI/submission: every claim must map to a hash-covered artifact with explicit provenance; `LIVE_VERIFIED` additionally requires a trusted Ed25519 attestation bound to the evidence hash, run ID, and timestamp.
 
 ## Threats and controls
 
@@ -24,10 +24,11 @@ The hosted MVP will accept policy text and structured refund cases. It will exec
 | Path traversal or canonical fixture modification | Relative paths reject absolute/`.`/`..`/control characters; repair copies live under one checked `.tmp` root; canonical hash checked | Exercise through live SDK adapter |
 | Arbitrary command execution | Two fixed command IDs map to fixed executable/arguments/timeouts; no user shell strings | Add OS/container resource limits |
 | Credential leakage into fixture | Child environment allowlist excludes API/Codex keys; output redacts credential assignments, bearer tokens, and home paths | Validate server and browser bundles after app exists |
-| Test weakening or evidence edits | Repair write set must match cartography; prompts forbid weakening; review can block; evidence hashes reject tampering | Live independent review and Git diff capture |
+| Test weakening or evidence edits | Repair write set must match cartography; prompts forbid weakening; review can block; every payload contributes to the aggregate hash | Live independent review and Git diff capture |
+| Attacker rewrites all evidence and recomputes hashes | Validator derives Rego, OPA agreement, differential counts, mutation score, and traceability from source artifacts; `LIVE_VERIFIED` requires a trusted detached Ed25519 signature | Provision and rotate the live signing key outside Git/hosting logs |
 | Recorded evidence shown as fresh | Mandatory execution modes; `PARTIAL_OFFLINE` package is `FAIL`; post-repair drift remains null | UI labels and freshness checks |
 | Denial of service | Per-command 30-second timeout and 2 MiB process buffer; at most two repair attempts | Request rate limits, CPU/memory limits, job cancellation |
-| Supply-chain compromise | No project runtime dependencies yet; lockfile is empty | Pin application dependencies, audit, licenses, and container digests after approved install |
+| Supply-chain compromise | Exact dependency lock, production audit, reviewed install scripts, and checksum-pinned OPA binary | Re-run release-platform license/audit checks and pin the container base digest |
 | Secret in Git history | Current/history scanner reports only file/commit context and uses test sentinels | Run again before publication and after live artifacts |
 
 ## Security invariants
@@ -37,8 +38,9 @@ The hosted MVP will accept policy text and structured refund cases. It will exec
 - The canonical buggy fixture remains reproducible.
 - `ALLOW`, `DENY`, and `REVIEW` are the only decisions.
 - A missing external gate cannot be converted to `PASS` by documentation.
+- A self-generated SHA-256 manifest cannot authenticate a live run; the private attestation key remains outside the repository.
 - Logs, screenshots, and proof packages must not contain credentials or personal absolute paths.
 
 ## Residual risk
 
-This is not a completed release security review. The offline SQLite adapter has strict input, stale-write, corruption, and restart tests, but production storage permissions, backup/restore, volume behavior, and denial-of-service limits remain untested. OPA, the web server, live SDK adapter, container runtime, hosting, rate limits, browser bundle, dependency graph, and deployment secrets also remain untested. `artifacts/evidence/security-review.md` therefore stays `NOT_RUN`, and the partial proof package remains `FAIL`.
+This is not a completed release security review. SQLite restart behavior, checksum-pinned local OPA, the production Next build, local Chrome E2E, dependency audit, and static secret/history scans are tested. Production storage permissions, backup/restore, distributed rate limits, live SDK behavior, attestation-key custody, container runtime, hosting, and deployment secrets remain untested. `artifacts/evidence/security-review.md` therefore stays `NOT_RUN`, and the partial proof package remains `FAIL`.

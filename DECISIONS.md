@@ -306,3 +306,54 @@ Add new entries below this line with the template above.
 - Risks: A fresh machine still needs the approved installer or an explicit `OPA_PATH`; Linux container acquisition must verify its separate recorded checksum; the shared pnpm store may remain marked mutated after interrupted installation attempts.
 - Reversal or migration path: Move to pnpm's isolated linker on a symlink-capable filesystem, or provide OPA through a digest-pinned container while preserving the runner contract and evidence fields.
 - Related files/commits: `package.json`, `pnpm-workspace.yaml`, `container-contract.json`, `src/opa/`, `PROGRESS.md`.
+
+### D-018 — Separate the NodeNext core build from the Next.js web typecheck
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M2–M8
+- Context: The existing policy core is authored as NodeNext ESM, while Next.js 16 expects a Bundler-mode application typecheck. Webpack also failed on the exFAT workspace with `EISDIR` during symlink/readlink handling, while Turbopack completed the same build.
+- Options considered:
+  1. convert the entire core to Next.js module semantics;
+  2. move the repository to a different filesystem or add a second workspace package immediately;
+  3. compile the core through a dedicated NodeNext config, typecheck the web app through the Next config, and use the default Turbopack build.
+- Decision: Keep `tsconfig.build.json` as the deterministic NodeNext core compiler, make the root `tsconfig.json` the strict Next.js/Bundler typecheck, and have `typecheck`, tests, development, and production build invoke the narrow core build first. Import only required prebuilt core submodules from server components and routes.
+- Evidence: `scripts/build-core.mjs`, `scripts/typecheck.mjs`, `scripts/build.mjs`, `app/lib/demo-data.ts`, and repeated `pnpm typecheck`/`pnpm build` passes.
+- Consequences: The core remains framework-independent while the five-view web application builds on the current drive.
+- Risks: The prebuilt boundary is a repository-layout coupling and must remain covered by clean-copy and standalone-output checks.
+- Reversal or migration path: Move the core into an explicit workspace package on a symlink-capable filesystem while preserving its public contracts and tests.
+- Related files/commits: `tsconfig.json`, `tsconfig.build.json`, `next.config.ts`, `PROGRESS.md`.
+
+### D-019 — Gate live interpretation behind server-owned identity, evidence, and cost controls
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M2/M9
+- Context: A public model route could incur unbounded cost and accept schema-valid but incomplete or contradictory policy meaning. Model-supplied provenance, policy identity, source clauses, and golden-case agreement are not trustworthy evidence by themselves.
+- Options considered:
+  1. expose an unauthenticated demo endpoint and rely on provider quotas;
+  2. disable all HTTP integration until deployment;
+  3. implement the server adapter now with an explicit run token, byte and concurrency limits, cancellation, server provenance, exact clause comparison, request identity checks, and golden-case contradiction blocking.
+- Decision: `POST /api/interpret` is disabled unless `POLICYTWIN_RUN_TOKEN` is configured and presented. It accepts at most 128 KB, one active run per process, a 60-second cancellation boundary, and generic external errors. The adapter uses strict Responses `text.format`, a bounded output budget and two application attempts with SDK retries disabled. Server-owned metadata and the closed input schema replace model values; policy identity, the complete deterministic clause list, and authoritative golden cases are revalidated before success.
+- Evidence: `src/openai/interpreter.ts`, `app/api/interpret/route.ts`, `.env.example`, and `tests/unit/openai-interpreter.test.mjs`.
+- Consequences: Recorded fixtures cannot impersonate live evidence, and a malformed or contradictory response fails closed before persistence or compilation.
+- Risks: The strict provider schema still requires a fresh credentialed Responses call, and a distributed deployment needs shared rate limiting beyond the per-process concurrency guard.
+- Reversal or migration path: Replace the static run token with authenticated sessions and a shared quota service while preserving every server-side semantic check.
+- Related files/commits: `prompts/interpreter.v1.md`, `schemas/policy-ir.v1.schema.json`, `PROGRESS.md`.
+
+### D-020 — Authenticate live evidence and recompute claims from source artifacts
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M8/M9
+- Context: An adversarial review proved that an author could rewrite every evidence file, recompute the SHA-256 manifest, set external gates to `PASS`, and obtain `LIVE_VERIFIED` with a fake OPA version, zero post-repair cases, a mutation rate above 100%, and empty traceability. The aggregate hash detected unapproved byte changes but could not authenticate the package author or prove external execution.
+- Options considered:
+  1. keep the self-hashed manifest and add only numeric range checks;
+  2. add structured proof files and semantic cross-checks but continue treating a self-generated hash as live provenance;
+  3. recompute all material claims and require a detached signature from a trusted live runner.
+- Decision: Every payload remains included in the deterministic SHA-256 aggregate, but `LIVE_VERIFIED` additionally requires an Ed25519 attestation over the evidence hash, run ID, and timestamp within a fail-closed 24-hour default freshness window. Trusted public keys are injected by the verifier; private keys must remain outside the repository. The validator regenerates Rego from PolicyIR, pins accepted OPA version/checksums, checks every case/result/input hash, derives differential counts and seeded witnesses, recomputes the deterministic mutation corpus and traceability metrics, validates complete Codex contracts and commands, and requires structured GPT/browser/Linux-container/deployment/security receipts. Empty-set completeness and self-reported top-level `PASS` strings cannot satisfy the gate.
+- Evidence: `src/evidence/validate.ts`; new structured summaries in `artifacts/evidence/`; adversarial, semantic-forgery, and Ed25519 integration tests in `tests/integration/evidence-package.integration.test.mjs`.
+- Consequences: The current offline package remains reproducible with `liveAttestation: null`, while a future live package cannot pass without both internally consistent evidence and a signature trusted by the verifier.
+- Risks: The live signer, external key custody/rotation, structured receipt production, and successful live fixture are not implemented yet. A compromised trusted signer can still attest false work, so the live runner must execute gates directly and protect its key.
+- Reversal or migration path: Replace the local Ed25519 trust list with CI OIDC/Sigstore or another verifiable build attestation while preserving the signed evidence hash, run identity, semantic checks, and fail-closed default.
+- Related files/commits: `README.md`, `docs/threat-model.md`, `schemas/verification-summary.v1.schema.json`, `PROGRESS.md`.

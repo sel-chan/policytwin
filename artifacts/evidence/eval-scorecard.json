@@ -2,6 +2,7 @@
   "schemaVersion": "1",
   "status": "FAIL",
   "evidenceMode": "PARTIAL_OFFLINE",
+  "runId": null,
   "metrics": {
     "structuredOutputSchemaPass": {
       "value": null,

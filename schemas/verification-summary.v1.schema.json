@@ -24,7 +24,7 @@
         "total": { "type": "integer", "minimum": 0 },
         "excludedEquivalent": { "type": "integer", "minimum": 0 },
         "killRate": { "type": "number", "minimum": 0, "maximum": 1 },
-        "executionMode": { "const": "REFERENCE_EVALUATOR_NOT_OPA" }
+        "executionMode": { "enum": ["OPA_CLI", "REFERENCE_EVALUATOR_NOT_OPA"] }
       }
     },
     "regression": {
@@ -43,9 +43,9 @@
       "required": ["clausesCovered", "clausesTotal", "rulesCovered", "rulesTotal", "unlinkedCodeLocations"],
       "properties": {
         "clausesCovered": { "type": "integer", "minimum": 0 },
-        "clausesTotal": { "type": "integer", "minimum": 0 },
+        "clausesTotal": { "type": "integer", "minimum": 1 },
         "rulesCovered": { "type": "integer", "minimum": 0 },
-        "rulesTotal": { "type": "integer", "minimum": 0 },
+        "rulesTotal": { "type": "integer", "minimum": 1 },
         "unlinkedCodeLocations": { "type": "integer", "minimum": 0 }
       }
     },
@@ -83,9 +83,25 @@
       "required": ["passed", "total", "executionMode"],
       "properties": {
         "passed": { "type": "integer", "minimum": 0 },
-        "total": { "type": "integer", "minimum": 0 },
-        "executionMode": { "const": "REFERENCE_EVALUATOR_NOT_OPA" }
+        "total": { "type": "integer", "minimum": 1 },
+        "executionMode": { "const": "OPA_CLI" }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "PASS" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "evidenceMode": { "const": "LIVE_VERIFIED" },
+          "mutation": {
+            "properties": { "executionMode": { "const": "OPA_CLI" } }
+          }
+        }
+      }
+    }
+  ]
 }

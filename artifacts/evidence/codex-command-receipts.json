@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN_LIVE",
+  "executionMode": "OFFLINE_TEST_DOUBLE",
+  "runId": null,
+  "fixtureTreeSha256": null,
+  "commands": []
+}

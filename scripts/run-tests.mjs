@@ -16,6 +16,7 @@ const suites = {
     "tests/unit/codex-worker-contract.test.mjs",
     "tests/unit/impact-traceability.test.mjs",
     "tests/unit/submission-validation.test.mjs",
+    "tests/unit/openai-interpreter.test.mjs",
   ],
   integration: [
     "tests/integration/scaffold.integration.test.mjs",
@@ -46,7 +47,7 @@ if (!testFiles) {
   process.exit(2);
 }
 
-runOrExit(process.execPath, ["scripts/build.mjs"]);
+runOrExit(process.execPath, ["scripts/build-core.mjs"]);
 if (suite === "integration") {
   runOrExit(process.execPath, ["scripts/build-fixtures.mjs"]);
 }

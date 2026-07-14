@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN",
+  "scope": "NOT_RUN",
+  "runId": null,
+  "critical": null,
+  "high": null,
+  "findings": [],
+  "commands": []
+}

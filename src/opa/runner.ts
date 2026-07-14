@@ -44,7 +44,10 @@ function record(value: unknown): Record<string, unknown> | null {
 }
 
 function safeEnvironment(): NodeJS.ProcessEnv {
-  const environment: NodeJS.ProcessEnv = { NO_COLOR: "1" };
+  const environment: NodeJS.ProcessEnv = {
+    NODE_ENV: process.env.NODE_ENV ?? "production",
+    NO_COLOR: "1",
+  };
   for (const key of ["SYSTEMROOT", "TEMP", "TMP"]) {
     const value = process.env[key];
     if (value) {

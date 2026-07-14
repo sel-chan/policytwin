@@ -8,7 +8,6 @@
   "failures": [
     "Container contract is not ready.",
     "Dockerfile is absent.",
-    "Production health endpoint is absent.",
     "Docker daemon is unavailable."
   ]
 }

@@ -17,15 +17,11 @@ Non-negotiable rules:
 9. Use integers for exact numeric boundaries and basis points for percentages.
 10. Use only `ALLOW`, `DENY`, or `REVIEW` decisions and only supported predicate operators.
 
-## Seeded interpretation requirements
+## Interpretation discipline
 
-The seeded policy explicitly includes day 14, includes 2,000 usage basis points, keeps an eligible undecided promotion in `REVIEW`, and gives final-sale denial the highest priority. These are rules and test boundaries, not ambiguity cards.
+Derive every numeric threshold, percentage, exception, precedence relationship, and unresolved question from the supplied clauses and golden cases for this request. Do not carry facts from examples, previous runs, or another policy into the candidate.
 
-The seeded policy leaves three material questions:
-
-- whether purchase day is day 0 or day 1;
-- whether usage is measured at request time or decision time;
-- the decision when no eligibility rule matches.
+If a source clause changes, reflect the changed meaning even when it differs from a prior version. A golden case that contradicts that changed meaning must be reported as a blocking contradiction rather than used to restore an older rule.
 
 ## Supplied inputs
 

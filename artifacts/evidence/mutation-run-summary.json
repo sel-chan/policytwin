@@ -1,0 +1,201 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN_OPA",
+  "executionMode": "REFERENCE_EVALUATOR_NOT_OPA",
+  "runId": null,
+  "opaVersion": null,
+  "executableSha256": null,
+  "reportSha256": "bf84b66be59c86b8c8999212b5dd48d6776d774aa0d7e0cf0ad61e2d25db3466",
+  "total": 47,
+  "mutantPolicyHashes": [
+    {
+      "mutantId": "M001-BOOLEAN_INVERT",
+      "policySha256": "5f5d702224e59af7f65340f9fc046bdb4ac51efe8965c106f9b3072f38070b8a"
+    },
+    {
+      "mutantId": "M002-AND_TO_OR",
+      "policySha256": "462df89bdd1f8518c8af111197d85c8dfcd929c7d226d7fb9889b01a7a83270c"
+    },
+    {
+      "mutantId": "M003-PREDICATE_DELETE",
+      "policySha256": "78ef2d1a01520676f10982269fa21b2f39ca6026c915a97fd22d00a27447f905"
+    },
+    {
+      "mutantId": "M004-PREDICATE_DELETE",
+      "policySha256": "2e622ef7b6e7ad7be35ad335a0e8b8297f4b22a1e274e7837ea21091606cdef4"
+    },
+    {
+      "mutantId": "M005-PREDICATE_DELETE",
+      "policySha256": "19d30f0a80dc09c3bccdf5866cc1864d12f325aa39fdbd4541dfaa05b79c43ad"
+    },
+    {
+      "mutantId": "M006-PREDICATE_DELETE",
+      "policySha256": "5bec09a1d1a3e47c8cbcec3f3175ca2a1f35e3db27574e885602d254b43386df"
+    },
+    {
+      "mutantId": "M007-LTE_TO_LT",
+      "policySha256": "850a66919cc9cc6c5db74f3b0ba9dc5e0bf7f4b71d7797f7a35f5de1fe22f902"
+    },
+    {
+      "mutantId": "M008-THRESHOLD_MINUS_ONE",
+      "policySha256": "903c7844abaacb4c8532525e0626c5bc6e19d76f1256956c4b1e827a583c1060"
+    },
+    {
+      "mutantId": "M009-THRESHOLD_PLUS_ONE",
+      "policySha256": "3ef119330745dd08bf83f6345d51dacfcde9b7cf9e36c82f01dc78f680395e22"
+    },
+    {
+      "mutantId": "M010-LTE_TO_LT",
+      "policySha256": "6f1d36de476e06416550477d27e6dd6df5644772738a4f6546e86a6e622cbcda"
+    },
+    {
+      "mutantId": "M011-THRESHOLD_MINUS_ONE",
+      "policySha256": "232236d815fb99c48ed9067723b9434ee48906ebea60b49b1918f4faecbf6430"
+    },
+    {
+      "mutantId": "M012-THRESHOLD_PLUS_ONE",
+      "policySha256": "0eb974931083182e2fd3eed449f1326545408e69d2ea6dedab0c023adecdc6f9"
+    },
+    {
+      "mutantId": "M013-BOOLEAN_INVERT",
+      "policySha256": "2679c092ef055cc93044f0704bfc1b20e4ab5dbf1cacebbcfd48c21f890978e1"
+    },
+    {
+      "mutantId": "M014-BOOLEAN_INVERT",
+      "policySha256": "0a3e75922c23d8b94994767c5ecf46f9abc877cc5d88cdd09a8a162432d8c302"
+    },
+    {
+      "mutantId": "M015-AND_TO_OR",
+      "policySha256": "6a0aa179f2569e34fa18376322cca68d6113e5d54e6f269642080f6b2fc46bb9"
+    },
+    {
+      "mutantId": "M016-PREDICATE_DELETE",
+      "policySha256": "3d8b496675970633793ba2b06a64f596de49be022999c8c32343028f43327fb3"
+    },
+    {
+      "mutantId": "M017-PREDICATE_DELETE",
+      "policySha256": "9cd670e2fb19743eefd8f02eecb64c613a1c1460f649d617e9c537998911a2c4"
+    },
+    {
+      "mutantId": "M018-PREDICATE_DELETE",
+      "policySha256": "d86235477a1dcad44ab1290aad6237530a1e83d2013db4375bf9cca434259e32"
+    },
+    {
+      "mutantId": "M019-PREDICATE_DELETE",
+      "policySha256": "4724311fdcdfa1f970e8266d4ced241c48b9853b2a22d3a742e1044d7fd89950"
+    },
+    {
+      "mutantId": "M020-LTE_TO_LT",
+      "policySha256": "7d50ae2acea9b37d02e04a52da7e41c1d033db2dba902790ab8237fbb41e0870"
+    },
+    {
+      "mutantId": "M021-THRESHOLD_MINUS_ONE",
+      "policySha256": "d866f186c90358b72f13b4ca17569248616b58f88498f06d1f6565a858d4aeb1"
+    },
+    {
+      "mutantId": "M022-THRESHOLD_PLUS_ONE",
+      "policySha256": "3e55d9cf83d56072b64ac0034eaae415ac9b1171e3ccdd86efe5bbcd221dd765"
+    },
+    {
+      "mutantId": "M023-LTE_TO_LT",
+      "policySha256": "194f606c26b795699840fd2cae3e20e0d6421be38b4acb33b3767b996f0b0598"
+    },
+    {
+      "mutantId": "M024-THRESHOLD_MINUS_ONE",
+      "policySha256": "a06998b8267c873ede9504634e3cadd430162506a01310d03536bd27db7a893c"
+    },
+    {
+      "mutantId": "M025-THRESHOLD_PLUS_ONE",
+      "policySha256": "251f02e00b4e7a3b04e8da50be3360b1ea327bef237b6820d9f3561e837cb3af"
+    },
+    {
+      "mutantId": "M026-BOOLEAN_INVERT",
+      "policySha256": "dc8f8ccfd495c59ca604c2a6fc5b973b4b8e66175dc970c5fabf668d667c11b0"
+    },
+    {
+      "mutantId": "M027-BOOLEAN_INVERT",
+      "policySha256": "b98d28a853e7b4914727d19c74f73b0c727fd3be6e6e8ba674c1b2fe46cf1341"
+    },
+    {
+      "mutantId": "M028-AND_TO_OR",
+      "policySha256": "fcef02e93682046efaf3773d307e5b0f2d3a60ec6c6db778fdb75876996e8218"
+    },
+    {
+      "mutantId": "M029-PREDICATE_DELETE",
+      "policySha256": "515c5a20c3f92c51f9ceef77e5b4b2c269d59bbf2f7761e12285949f173b4701"
+    },
+    {
+      "mutantId": "M030-PREDICATE_DELETE",
+      "policySha256": "91cb271d1594a4fdecda88f7dbe437e26e92971ed620c9dea711e2674ca53f1a"
+    },
+    {
+      "mutantId": "M031-PREDICATE_DELETE",
+      "policySha256": "7e89a745d9e1b2cac24bf983c841f76e52ea1c8befa94fd4e5db5499a99d7ad5"
+    },
+    {
+      "mutantId": "M032-LTE_TO_LT",
+      "policySha256": "de4eb9283e20c4ec19a1363b89e2045d098458fd14adb34b52fda736ac2a72df"
+    },
+    {
+      "mutantId": "M033-THRESHOLD_MINUS_ONE",
+      "policySha256": "76be6722008392d5c655d1aab3255b4aaa84c5de24cefa71bb165800fb481734"
+    },
+    {
+      "mutantId": "M034-THRESHOLD_PLUS_ONE",
+      "policySha256": "3f302dab24bd9254573682e3a07d0fa272b1f532091f00ca918462d0b7d33c02"
+    },
+    {
+      "mutantId": "M035-LTE_TO_LT",
+      "policySha256": "757afec620ae039fae0c25c45f834e002c9a17e938e66a6e031627b879996fec"
+    },
+    {
+      "mutantId": "M036-THRESHOLD_MINUS_ONE",
+      "policySha256": "4c0a92568b1c4c8856cc7c05ec283b2733fc646f0485e37ca58420d16026b64d"
+    },
+    {
+      "mutantId": "M037-THRESHOLD_PLUS_ONE",
+      "policySha256": "1ccd0d4a2092aa29dbbf6a9cdb9308a8f2f04d6f8e30922ad57a65037d0b0a63"
+    },
+    {
+      "mutantId": "M038-BOOLEAN_INVERT",
+      "policySha256": "32801af6793b57423b82637616c02d8128a095a6768cda6bf7a2fae85730e725"
+    },
+    {
+      "mutantId": "M039-PRIORITY_SWAP",
+      "policySha256": "233e23b265e956adeee07f9dde5b702d8990bae5a53aaaea7c4b5c35cd077dec"
+    },
+    {
+      "mutantId": "M040-PRIORITY_SWAP",
+      "policySha256": "39701ef5503511f02d46879a8a62759385db6a18c99ae30626e534d3deb64f82"
+    },
+    {
+      "mutantId": "M041-PRIORITY_SWAP",
+      "policySha256": "5cca9bd96be1eb7f9b2bac2b6e38b429048344309769666afe1752f7b3a22354"
+    },
+    {
+      "mutantId": "M042-RULE_DELETE",
+      "policySha256": "1a05fbdafc519b6a0b2bf5c4a66bbae9e89ea37db92675207a70bfa042ab548f"
+    },
+    {
+      "mutantId": "M043-RULE_DELETE",
+      "policySha256": "daec8fba5a0f67c51e05c1509b125b23dbe5a3d14468a98ee73fde9e2281b66d"
+    },
+    {
+      "mutantId": "M044-RULE_DELETE",
+      "policySha256": "8d7823847ff65336410ece6445a3b69adbb9aa797ba3007f9dc9d1a72e6345c8"
+    },
+    {
+      "mutantId": "M045-RULE_DELETE",
+      "policySha256": "947ca70708c8e9c795a24297884cbc6d04e435afd41cff25f935373134f1e29b"
+    },
+    {
+      "mutantId": "M046-DEFAULT_CHANGE",
+      "policySha256": "3e220dd2a7b5eeec8229688566d2f156006e7b0f453e7ffdfe1598f92fc3bc0f"
+    },
+    {
+      "mutantId": "M047-DEFAULT_CHANGE",
+      "policySha256": "fabf79d0861293a3d0070437ec99e8ed09c579558bee1a3c4d98a04c88c7fc2b"
+    }
+  ],
+  "opaResultHashes": []
+}

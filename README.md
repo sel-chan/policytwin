@@ -2,30 +2,80 @@
 
 **Turn policy text into verified product behavior.**
 
-PolicyTwin is an evidence-first policy engineering product for the OpenAI Build Week challenge. It will turn a natural-language SaaS refund policy into a versioned executable contract, compare that contract with a real TypeScript application, use Codex to repair drift, and produce reviewable proof.
+PolicyTwin is an evidence-first policy engineering product for OpenAI Build Week. It turns a natural-language SaaS refund policy into a versioned executable contract, exposes ambiguity and application drift, and produces reviewable proof.
 
-## Current implementation status
+## Current status
 
-The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2–M10** have offline checkpoints covering strict `PolicyIR`, deterministic clauses, immutable ambiguity resolution, state transitions, a byte-stable Rego compiler, 41 traceable cases, conflict/minimal-contrast analysis, 47 executed mutants with a 93.62% reference-evaluator kill rate, deterministic before/after differential reports, a guarded repair-worker contract, 14→30-day impact analysis, complete offline traceability diagnostics, a hashed evidence package, reproducibility/security checks, and fail-closed submission drafts.
+The repository now includes:
 
-The worker foundation creates isolated trusted-fixture copies, exposes only two fixed verification commands, strips model credentials from child environments, bounds repair attempts to two, and blocks proof on high-severity review findings. An offline SQLite repository persists policy text, golden cases, immutable IR versions, lifecycle state, and decision records across a process-style reopen with strict corruption and stale-write checks. A framework-independent workspace service now composes those records with policy-text versioning and atomic, idempotent ambiguity resolution, leaving future web routes as thin adapters. The evidence package is deliberately `FAIL`/`PARTIAL_OFFLINE`, and the submission package is deliberately `DRAFT_NOT_READY`: OPA, live GPT-5.6, live Codex, browser, container, deployment, official rules, media, URLs, license, and confirmation remain unverified. Product UI integration, OPA execution, live interpretation, and live Codex repair are not yet implemented.
+- strict `PolicyIR`, clause traceability, immutable ambiguity decisions, and SQLite-backed versions;
+- a deterministic PolicyIR-to-Rego compiler and checksum-pinned OPA 1.18.2 execution over 41 accepted cases;
+- boundary, conflict, contrast, differential, and mutation checks that expose all three seeded TypeScript defects;
+- a server-only GPT-5.6 Responses adapter contract with strict structured output, full-source traceability, golden-case contradiction blocking, bounded retries, and a token-gated HTTP route;
+- Policy Studio, Decision Queue, Case Lab, Integration/Drift, and Proof views in Next.js;
+- Chrome E2E coverage for all five views, keyboard navigation, API failure behavior, evidence downloads, and a 390px mobile layout;
+- a complete, hash-covered `PARTIAL_OFFLINE` evidence package, adversarial semantic validation, and fail-closed submission drafts.
 
-## Local baseline
+The repository is **not submission-ready**. Fresh GPT-5.6 and Codex runs, actual Codex repair evidence, container health, deployment, video, repository/submission URLs, an owner-selected project license, and confirmation are still missing. The evidence package therefore remains `FAIL / PARTIAL_OFFLINE` by design.
 
-Requirements currently verified in this workspace:
+## Architecture
+
+```mermaid
+flowchart LR
+  A["Refund policy + golden cases"] --> B["GPT-5.6 interpretation"]
+  B --> C["Validated PolicyIR"]
+  C --> D["Versioned ambiguity decisions"]
+  D --> E["Deterministic Rego compiler"]
+  E --> F["OPA + generated cases"]
+  F --> G["TypeScript differential runner"]
+  G --> H["Codex repair in trusted copy"]
+  H --> I["Regression + mutation + review"]
+  I --> J["Hash-covered proof package"]
+  J --> K["Trusted live attestation"]
+```
+
+Model output never becomes the final executable policy. The validated IR is compiled deterministically, every rule traces to source clauses, and golden-case contradictions fail closed.
+
+## Local setup
+
+Requirements:
 
 - Node.js 22 or newer;
 - pnpm 11.7 or newer;
-- TypeScript 5.8 available on `PATH` until the project-local dependency is installed under an approved network scope.
-
-The current persistence adapter uses Node.js 22's built-in experimental `node:sqlite` API behind a narrow repository boundary. It is verified offline but must be checked against current official documentation and the selected production runtime before release.
+- Chrome for E2E tests;
+- OPA 1.18.2 at `.tools/opa/1.18.2/opa.exe` on Windows, or an explicit `OPA_PATH`.
 
 ```powershell
-pnpm install --offline
+pnpm install --frozen-lockfile
+pnpm opa:install
+pnpm evidence:offline
+pnpm dev
+```
+
+Open `http://localhost:3000`. Package installation and `pnpm opa:install` require network access on a new machine; the OPA installer downloads and verifies the official pinned binary. If the exact pnpm store is already populated, `pnpm install --offline --frozen-lockfile` is the deterministic offline alternative. If OPA is already installed, set `OPA_PATH` instead.
+
+Copy `.env.example` to a local ignored environment file only when exercising live integrations:
+
+| Variable | Purpose |
+|---|---|
+| `OPENAI_API_KEY` | Server-side Responses API access; never expose to the browser |
+| `OPENAI_MODEL` | Configurable model, default `gpt-5.6` |
+| `POLICYTWIN_RUN_TOKEN` | High-entropy token required by `POST /api/interpret` |
+| `POLICYTWIN_ATTESTATION_PUBLIC_KEYS_JSON` | Trusted Ed25519 public-key map used to verify live evidence downloads; never a private key |
+| `NEXT_PUBLIC_SITE_URL` | Absolute site URL used for metadata |
+| `OPA_PATH` | Optional verified OPA executable override |
+| `DATABASE_URL` | Future production persistence location |
+
+Without `POLICYTWIN_RUN_TOKEN`, the live interpretation route returns `LIVE_RUN_DISABLED`. No live model claim is made from recorded fixtures.
+
+## Verification
+
+```powershell
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:integration
+pnpm test:e2e
 pnpm eval
 pnpm build
 pnpm demo:reset
@@ -33,17 +83,26 @@ pnpm demo:run
 pnpm evidence:offline
 pnpm security:check
 pnpm clean:check
+pnpm verify
+pnpm verify:live
 pnpm container:check
-pnpm submission:draft
 pnpm submission:check
 ```
 
-`pnpm demo:run` must report exactly three baseline drifts. `pnpm security:check` scans current files and Git history without printing suspected values. `pnpm clean:check` reproduces implemented gates from an isolated copy without dependencies or model credentials. `pnpm submission:draft` regenerates evidence-derived, visibly non-final copy; `pnpm submission:check` rejects unsupported readiness claims. `pnpm verify` currently fails closed on the owner-required project license, incomplete container, browser E2E, and submission; `pnpm verify:live` also remains fail-closed. See `PROGRESS.md` for exact evidence and current blockers.
+`pnpm demo:run` must report exactly three seeded drifts. `pnpm verify` is the deterministic offline gate; it currently fails only on explicitly incomplete owner/external release gates. `pnpm verify:live` must capture fresh GPT-5.6 and Codex evidence before completion.
 
-The dependency-free runtime validator is an offline bootstrap, not a substitute for the required project-pinned Zod and strict Responses API integration. Those are added only after the repository's external network scope is approved and current official documentation is verified.
+Browser evidence is under `artifacts/screenshots/`. Machine-readable proof is under `artifacts/evidence/`; every unavailable live result is labeled `NOT_RUN` rather than simulated.
 
-## Product contract
+The SHA-256 manifest detects payload changes but is not an authenticity credential by itself. A future `LIVE_VERIFIED` package must also carry a fresh Ed25519 attestation over its evidence hash, run ID, and timestamp from a trusted `verify:live` key held outside the repository; the default verification window is 24 hours. The validator independently recomputes the compiler output, accepted-case OPA agreement, differential records, mutation score, traceability, Codex command evidence, and structured GPT/browser/container/deployment/security proofs.
 
-Read `AGENTS.md`, `PLAN.md`, `PROGRESS.md`, `DECISIONS.md`, and `SUBMISSION.md` before implementation. `PLAN.md` contains the complete milestones and acceptance criteria.
+`pnpm clean:check` validates a source-only copy against the current machine's existing pnpm store, verified OPA path, and Chrome installation. It is not a claim that a network-disconnected fresh machine already has those prerequisites.
+
+## Safety boundary
+
+Only the bundled trusted refund fixture may be executed or modified. Uploaded or arbitrary repositories are never executed by the hosted flow. Secrets, absolute personal paths, and live credentials are excluded from evidence and screenshots.
+
+Self-rehashing an edited evidence package cannot promote it to `LIVE_VERIFIED`: live status requires both semantic consistency and a trusted detached signature. No private attestation key belongs in this repository.
 
 PolicyTwin is a software verification aid, not legal advice. Real policy deployment requires human approval.
+
+Read `AGENTS.md`, `PLAN.md`, `PROGRESS.md`, `DECISIONS.md`, and `SUBMISSION.md` before changing the implementation.

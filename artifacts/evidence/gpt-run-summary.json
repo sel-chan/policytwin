@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN",
+  "executionMode": "RECORDED_FIXTURE",
+  "runId": null,
+  "model": null,
+  "responseId": null,
+  "policyIrSha256": "49f4e136564f2bce22ce3c095ff64dd51ae456524821a67fb52300be1c555fb4"
+}

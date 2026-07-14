@@ -1,4 +1,4 @@
-import { rmSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { ROOT, executable, runOrExit } from "./process.mjs";
 
@@ -17,3 +17,10 @@ runOrExit(executable("tsc"), [
   "--outDir",
   ".tmp/evidence-fixture-build",
 ]);
+
+for (const fixture of ["baseline", "expected-fixed"]) {
+  const output = resolve(outputDirectory, fixture, "src", "refund.js");
+  if (!existsSync(output)) {
+    throw new Error(`Fixture compiler did not emit ${relative(ROOT, output)}.`);
+  }
+}

@@ -3,7 +3,8 @@
   "algorithm": "SHA-256",
   "packageStatus": "FAIL",
   "evidenceMode": "PARTIAL_OFFLINE",
-  "evidenceHash": "2dc9b83479eae24d6086dd76c46bd1d07b4ceb64d2e82b229b6b7fbd4692a111",
+  "evidenceHash": "99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9",
+  "liveAttestation": null,
   "entries": [
     {
       "file": "app-results-after.json",
@@ -18,9 +19,27 @@
       "includedInEvidenceHash": true
     },
     {
+      "file": "browser-run-details.json",
+      "bytes": 127,
+      "sha256": "017578c45c5f33cb0b12be682ec562cbb56b8358d20b53b9d608ead8845b1a7e",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "browser-run-summary.json",
+      "bytes": 243,
+      "sha256": "7372d9c05dcfb6060d62d4f1e4f782db7d6ae145214d374c2f02427127093b7f",
+      "includedInEvidenceHash": true
+    },
+    {
       "file": "codex-cartography.json",
       "bytes": 124,
       "sha256": "854d42797e6234435de724486020c9eea604912f87e4441383bf67cd468f7d6e",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "codex-command-receipts.json",
+      "bytes": 161,
+      "sha256": "2e2f3f730f5a99630440b486f2f0f931775957049deb590338e797d37d1c00c8",
       "includedInEvidenceHash": true
     },
     {
@@ -48,6 +67,30 @@
       "includedInEvidenceHash": true
     },
     {
+      "file": "container-run-details.json",
+      "bytes": 113,
+      "sha256": "20a3ff20c7c614bc8555a20078cda3c34fdf45db856a32286e1dd71b7b12eb37",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "container-run-summary.json",
+      "bytes": 326,
+      "sha256": "0325935e47be8c87e147b1fe1363270e8a3459edfbcd5a16678ba59ef7fc93a5",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "deployment-health-response.json",
+      "bytes": 187,
+      "sha256": "f0f6ad0de9f5ee4bbe3a40634e9de05866b35583d7862e85d9e4e1035608e5ea",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "deployment-run-summary.json",
+      "bytes": 202,
+      "sha256": "39f3e7dd2262b83ab69fdb337df40da53986989b6b06865ce2198246fdd12068",
+      "includedInEvidenceHash": true
+    },
+    {
       "file": "drift-report-after.json",
       "bytes": 213,
       "sha256": "3e8a4725ba9fb83fc8a9fe753532f5736796eb46b39a0a60b4d8c54cdf072b66",
@@ -55,14 +98,26 @@
     },
     {
       "file": "drift-report-before.json",
-      "bytes": 15116,
-      "sha256": "bc074371c22b54ba366d15095f48a1a4de33800ba4d3d2fd207aebe44fc9058d",
+      "bytes": 35369,
+      "sha256": "fa46f9a5a9f87ac99d2a28b9ccefc7a6f544baf294d26e4f55ad50d68669cec8",
       "includedInEvidenceHash": true
     },
     {
       "file": "eval-scorecard.json",
-      "bytes": 1204,
-      "sha256": "0c1c51236634d80c636c6dd930fc5887cd5d445d47a86521ffecf5473bc29f22",
+      "bytes": 1221,
+      "sha256": "d3beb43fc6d16d4847334870623cbf666f333e28586872c263eac972131f61eb",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "fixture-tree-after.json",
+      "bytes": 146,
+      "sha256": "f28808c1a779c824082bb3e37a7f8b593bdcc241ec95fdfebe752fe2e936d8a9",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "fixture-tree-before.json",
+      "bytes": 146,
+      "sha256": "f28808c1a779c824082bb3e37a7f8b593bdcc241ec95fdfebe752fe2e936d8a9",
       "includedInEvidenceHash": true
     },
     {
@@ -78,6 +133,12 @@
       "includedInEvidenceHash": true
     },
     {
+      "file": "gpt-run-summary.json",
+      "bytes": 233,
+      "sha256": "0a5dd21428ed41c61f140220d423c27e06860602cc8d39ebf319d25c0ee05046",
+      "includedInEvidenceHash": true
+    },
+    {
       "file": "impact-report.json",
       "bytes": 12659,
       "sha256": "d038d85b3046f944a2d87796d5406df99615060e1a2bc99996282a481700bf2d",
@@ -90,9 +151,21 @@
       "includedInEvidenceHash": true
     },
     {
+      "file": "mutation-opa-results.json",
+      "bytes": 138,
+      "sha256": "7a2713e9fde80cffa59cc7c93e158483f9799ceeccef178d93b6952f0d7da5d7",
+      "includedInEvidenceHash": true
+    },
+    {
       "file": "mutation-report.json",
       "bytes": 18792,
       "sha256": "bf84b66be59c86b8c8999212b5dd48d6776d774aa0d7e0cf0ad61e2d25db3466",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "mutation-run-summary.json",
+      "bytes": 7064,
+      "sha256": "ea62337fc9a8075d549b8a29e6f7e7c46639604d56ef7f211d105106c51a466e",
       "includedInEvidenceHash": true
     },
     {
@@ -110,13 +183,19 @@
     {
       "file": "prompt-manifest.json",
       "bytes": 595,
-      "sha256": "759e99ddfc7db56c1aa9a5bfb7272b4a05658dc4672045987a75b937ef378a31",
+      "sha256": "c8457bb926198eecfac4d360234df007b108cd7670f5ae80cf6f83d34c309c0c",
       "includedInEvidenceHash": true
     },
     {
       "file": "run-metadata.json",
-      "bytes": 192,
-      "sha256": "4b8afa87a565e04364a643cc6c2d5a8cc367da56f566a6e44cb4d5656b760a4c",
+      "bytes": 303,
+      "sha256": "711aed1e6b479b6e05c0423f692bbca9611eae8b78b0bd2a413224b34475551f",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "security-report.json",
+      "bytes": 161,
+      "sha256": "6a7a1e3823e9ed95d41474363f0340713c63cb5f2c4dd2aa1c0911aa8f0ca978",
       "includedInEvidenceHash": true
     },
     {
@@ -128,13 +207,13 @@
     {
       "file": "summary.md",
       "bytes": 817,
-      "sha256": "aecb4532399a52f91d595614f4ad1a039564f7923023ff9a09768fa79a1f7209",
-      "includedInEvidenceHash": false
+      "sha256": "9ea6313a82c9584977bbad5f910932da0f2a5d1ba8fad57b6226743107608652",
+      "includedInEvidenceHash": true
     },
     {
       "file": "test-command-log.json",
-      "bytes": 199,
-      "sha256": "d2bbaa3c55c3b50c69c9776c4573deb400d1210b67b49b990726e7fb8be93efe",
+      "bytes": 216,
+      "sha256": "cc8de634a7c865e1a904cbcbcf9c1fb0cf22af0d7261a022eb6874c1b4e5370b",
       "includedInEvidenceHash": true
     },
     {
@@ -146,8 +225,8 @@
     {
       "file": "verification-summary.json",
       "bytes": 1155,
-      "sha256": "2cba3c92e27d28da0c6553719ba079266c0c65369c144d035e9c0f1cc0049f5c",
-      "includedInEvidenceHash": false
+      "sha256": "2664cf2e1b70eca00e0cc6c4b045742472889cabb01a6c2e5d83175e24291c30",
+      "includedInEvidenceHash": true
     }
   ]
 }

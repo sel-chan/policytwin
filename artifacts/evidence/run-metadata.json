@@ -4,5 +4,9 @@
   "generatedAt": "2026-07-14T01:00:00.000Z",
   "policyVersion": 4,
   "recordedInterpreter": true,
-  "freshExternalWork": false
+  "freshExternalWork": false,
+  "runId": null,
+  "fixtureBeforeSha256": null,
+  "fixtureAfterSha256": null,
+  "integrationDiffSha256": null
 }

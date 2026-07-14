@@ -14,7 +14,7 @@ if (contract.opaVersion === "UNVERIFIED") {
 if (!existsSync(resolve(ROOT, "Dockerfile"))) {
   failures.push("Dockerfile is absent.");
 }
-if (!existsSync(resolve(ROOT, "apps", "web", "app", "api", "health", "route.ts"))) {
+if (!existsSync(resolve(ROOT, "app", "api", "health", "route.ts"))) {
   failures.push("Production health endpoint is absent.");
 }
 const docker = spawnSync("docker", ["info", "--format", "{{.ServerVersion}}"], {

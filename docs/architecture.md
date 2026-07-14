@@ -16,6 +16,8 @@ flowchart LR
   D --> F["Trusted fixture copy"]
   D --> X["Codex repair worker"]
   X --> F
+  E --> A["Evidence validator"]
+  A --> S["Live Ed25519 attestation"]
   O --> E["SQLite + evidence store"]
   P --> E
   C --> E
@@ -32,15 +34,18 @@ Implemented offline:
 - policy-derived cases, conflicts, contrasts, and mutation execution;
 - reference differential reports for canonical and evaluation-only fixtures;
 - guarded repair-worker contracts and isolated trusted copies;
-- change impact, traceability, and fail-closed evidence manifests.
-- SQLite-backed policy, version, lifecycle, golden-case, and decision persistence with restart recovery.
-- framework-independent workspace orchestration for current-state reads, immutable text versions, and atomic ambiguity resolution.
+- change impact, traceability, aggregate evidence hashes, semantic cross-checks, and a trusted live-attestation boundary;
+- SQLite-backed policy, version, lifecycle, golden-case, and decision persistence with restart recovery;
+- framework-independent workspace orchestration for current-state reads, immutable text versions, and atomic ambiguity resolution;
+- checksum-pinned OPA 1.18.2 compile/evaluation over all 41 accepted cases;
+- a five-view Next.js workspace, health/evidence/interpret routes, and local Chrome E2E coverage.
 
 Not yet authoritative:
 
-- GPT-5.6 and Codex nodes require current official API verification and fresh live evidence;
-- OPA source exists but no installed runtime has compiled or evaluated it;
-- the web workspace, persistence wiring into that workspace, health endpoint, container, and deployment do not exist.
+- GPT-5.6 and Codex nodes still require fresh credentialed runs and signed live evidence;
+- the Decision Queue UI is evidence-backed but not yet wired to persisted write APIs;
+- mutation execution remains reference-based rather than OPA-backed;
+- the application container, deployed health check, live browser run, and deployment do not exist.
 
 The offline persistence adapter uses Node.js 22's built-in experimental `node:sqlite` API behind `SQLitePolicyRepository`. Production readiness remains unclaimed until the current official API contract, selected container runtime, backup behavior, and deployment persistence volume are verified.
 

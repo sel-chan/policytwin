@@ -4,6 +4,12 @@
   "private": true,
   "description": "Evidence-first AI policy engineering for SaaS refund behavior.",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "packageManager": "pnpm@11.7.0",
   "engines": {
     "node": ">=22.0.0",
@@ -28,12 +34,12 @@
     "vitest": "4.1.10"
   },
   "scripts": {
-    "dev": "node scripts/gate.mjs dev",
+    "dev": "node scripts/dev.mjs",
     "lint": "node scripts/lint.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "node scripts/typecheck.mjs",
     "test": "node scripts/run-tests.mjs unit",
     "test:integration": "node scripts/run-tests.mjs integration",
-    "test:e2e": "node scripts/gate.mjs test:e2e",
+    "test:e2e": "playwright test",
     "eval": "node scripts/run-tests.mjs eval",
     "build": "node scripts/build.mjs",
     "verify": "node scripts/verify.mjs",

@@ -6,9 +6,9 @@
   "additionalProperties": false,
   "required": ["executionMode", "killed", "total", "excludedEquivalent", "killRate", "results", "survivors", "operatorCounts"],
   "properties": {
-    "executionMode": { "enum": ["REFERENCE_EVALUATOR_NOT_OPA", "OPA"] },
+    "executionMode": { "enum": ["REFERENCE_EVALUATOR_NOT_OPA", "OPA_CLI"] },
     "killed": { "type": "integer", "minimum": 0 },
-    "total": { "type": "integer", "minimum": 0 },
+    "total": { "type": "integer", "minimum": 1 },
     "excludedEquivalent": { "type": "integer", "minimum": 0 },
     "killRate": { "type": "number", "minimum": 0, "maximum": 1 },
     "results": { "type": "array", "items": { "$ref": "#/$defs/result" } },

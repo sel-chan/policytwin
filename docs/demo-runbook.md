@@ -16,8 +16,8 @@ Expected current behavior:
 
 - `demo:run` reports D01, D02, and D03 as drift;
 - `evidence:offline` regenerates a deterministic `PARTIAL_OFFLINE` package;
-- the package status is `FAIL` and external gates are `NOT_RUN`;
-- `verify` executes all implemented gates and then fails on browser E2E, license, and submission until those capabilities exist.
+- the package status is `FAIL`; OPA is `PASS`, while GPT-5.6, Codex, live browser, container, and deployment remain `NOT_RUN`;
+- `verify` executes local Chrome E2E and all other implemented gates, then fails only on the owner-selected license, real container health, and non-final submission package.
 
 ## Recovery
 
@@ -26,7 +26,8 @@ Expected current behavior:
 - Delete no path manually; use repository-owned reset/cleanup helpers.
 - If evidence validation fails, rerun `pnpm evidence:offline`, then inspect `artifacts/evidence/evidence-manifest.json`.
 - A recorded package must never be presented as a new live run.
+- Never store an Ed25519 live-attestation private key in the repository, `.env` examples, logs, screenshots, or evidence payloads.
 
 ## Future live flow
 
-After approved dependencies, credentials, OPA, and Docker are available, the runbook must add `pnpm verify:live`, the application URL, health check, browser happy path, Codex diff/review evidence, and rollback/redeploy commands. Those steps are not currently runnable.
+After credentials, an owner-selected license, Docker, deployment permission, and an external attestation key are available, the runbook must add the implemented `pnpm verify:live` workflow, application URL, deployed health check, live browser path, Codex diff/review evidence, signing step, and rollback/redeploy commands. Those steps are not currently runnable.

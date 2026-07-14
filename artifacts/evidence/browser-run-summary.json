@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN",
+  "executionMode": "NOT_RUN",
+  "runId": null,
+  "targetUrl": null,
+  "command": null,
+  "exitCode": null,
+  "passed": null,
+  "total": null,
+  "reportSha256": null,
+  "screenshotSha256s": []
+}

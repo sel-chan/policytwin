@@ -1,21 +1,25 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import {
+import { ROOT } from "./process.mjs";
+
+await import("./build-core.mjs");
+const {
   REQUIRED_EVIDENCE_FILES,
   SEEDED_REFUND_CODE_MAPPINGS,
   analyzePolicyImpact,
   buildTraceabilityReport,
   compilePolicyToRego,
+  computeEvidencePackageHash,
   createDaysThresholdVersion,
   generateAcceptedCaseCorpus,
+  generatePolicyMutants,
   resolvePolicyAmbiguity,
   runDifferentialCases,
   runOfflineMutationSuite,
   runOpaCases,
   validateEvidencePackage,
-} from "../dist/index.js";
-import { ROOT } from "./process.mjs";
+} = await import("../dist/index.js");
 
 await import("./build-evidence-fixtures.mjs");
 const baseline = await import("../.tmp/evidence-fixture-build/baseline/src/refund.js");
@@ -91,6 +95,7 @@ if (opaMismatches.length > 0) {
   throw new Error(`OPA disagrees with ${opaMismatches.length} accepted case(s).`);
 }
 const mutation = runOfflineMutationSuite(policy, cases);
+const mutantPolicies = generatePolicyMutants(policy, cases);
 const before = runDifferentialCases(policy, cases, "fixture-baseline", baseline.decideRefund);
 const fixedReference = runDifferentialCases(
   policy,
@@ -123,6 +128,18 @@ payload.set(
 payload.set("golden-cases.json", json(goldenCases));
 payload.set("generated-cases.json", json(generatedCases));
 payload.set(
+  "gpt-run-summary.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    executionMode: "RECORDED_FIXTURE",
+    runId: null,
+    model: null,
+    responseId: null,
+    policyIrSha256: hashText(json(policy)),
+  }),
+);
+payload.set(
   "opa-results.json",
   json({
     ...opa,
@@ -137,15 +154,7 @@ payload.set(
 payload.set("app-results-before.json", json(before));
 payload.set(
   "drift-report-before.json",
-  json({
-    schemaVersion: "1",
-    executionMode: before.executionMode,
-    adapterId: before.adapterId,
-    drifts: before.drifts,
-    errors: before.errors,
-    records: before.records.filter((record) => record.status !== "MATCH"),
-    defectClusters: before.defectClusters,
-  }),
+  json(before),
 );
 payload.set(
   "codex-run-summary.json",
@@ -159,9 +168,33 @@ payload.set(
   }),
 );
 payload.set(
+  "codex-command-receipts.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN_LIVE",
+    executionMode: "OFFLINE_TEST_DOUBLE",
+    runId: null,
+    fixtureTreeSha256: null,
+    commands: [],
+  }),
+);
+payload.set(
   "integration.diff",
   "# NOT_RUN_LIVE\n# No Codex repair diff exists in this partial offline evidence package.\n",
 );
+for (const file of ["fixture-tree-before.json", "fixture-tree-after.json"]) {
+  payload.set(
+    file,
+    json({
+      schemaVersion: "1",
+      status: "NOT_RUN_LIVE",
+      runId: null,
+      fixtureId: "seeded-refund-demo",
+      treeSha256: null,
+      files: [],
+    }),
+  );
+}
 payload.set(
   "app-results-after.json",
   json({
@@ -179,7 +212,36 @@ payload.set(
     evaluationOnlyFixedFixtureErrors: fixedReference.errors,
   }),
 );
-payload.set("mutation-report.json", json(mutation));
+const mutationReportContent = json(mutation);
+payload.set("mutation-report.json", mutationReportContent);
+payload.set(
+  "mutation-run-summary.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN_OPA",
+    executionMode: "REFERENCE_EVALUATOR_NOT_OPA",
+    runId: null,
+    opaVersion: null,
+    executableSha256: null,
+    reportSha256: hashText(mutationReportContent),
+    total: mutation.total,
+    mutantPolicyHashes: mutantPolicies.map((mutant) => ({
+      mutantId: mutant.id,
+      policySha256: hashText(JSON.stringify(mutant.policy)),
+    })),
+    opaResultHashes: [],
+  }),
+);
+payload.set(
+  "mutation-opa-results.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN_OPA",
+    executionMode: "REFERENCE_EVALUATOR_NOT_OPA",
+    runId: null,
+    results: [],
+  }),
+);
 payload.set("traceability.json", json(traceability));
 payload.set(
   "run-metadata.json",
@@ -190,6 +252,10 @@ payload.set(
     policyVersion: policy.version,
     recordedInterpreter: true,
     freshExternalWork: false,
+    runId: null,
+    fixtureBeforeSha256: null,
+    fixtureAfterSha256: null,
+    integrationDiffSha256: null,
   }),
 );
 payload.set(
@@ -226,8 +292,105 @@ payload.set(
   json({
     schemaVersion: "1",
     status: "NOT_RUN_IN_ARTIFACT_GENERATION",
+    runId: null,
     commands: [],
     reason: "Repository verification is recorded in PROGRESS.md; no fresh command claim is embedded here.",
+  }),
+);
+payload.set(
+  "browser-run-summary.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    executionMode: "NOT_RUN",
+    runId: null,
+    targetUrl: null,
+    command: null,
+    exitCode: null,
+    passed: null,
+    total: null,
+    reportSha256: null,
+    screenshotSha256s: [],
+  }),
+);
+payload.set(
+  "browser-run-details.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    runId: null,
+    targetUrl: null,
+    report: null,
+    screenshots: [],
+  }),
+);
+payload.set(
+  "container-run-summary.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    executionMode: "NOT_RUN",
+    runId: null,
+    imageDigest: null,
+    buildExitCode: null,
+    healthExitCode: null,
+    healthStatus: null,
+    platform: null,
+    opaVersion: null,
+    opaExecutableSha256: null,
+    buildLogSha256: null,
+    healthResponseSha256: null,
+  }),
+);
+payload.set(
+  "container-run-details.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    runId: null,
+    buildLog: null,
+    healthResponse: null,
+  }),
+);
+payload.set(
+  "deployment-run-summary.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    executionMode: "NOT_RUN",
+    runId: null,
+    url: null,
+    healthUrl: null,
+    checkedAt: null,
+    statusCode: null,
+    responseSha256: null,
+  }),
+);
+payload.set(
+  "deployment-health-response.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    runId: null,
+    url: null,
+    checkedAt: null,
+    statusCode: null,
+    anonymousAccess: null,
+    headers: null,
+    body: null,
+  }),
+);
+payload.set(
+  "security-report.json",
+  json({
+    schemaVersion: "1",
+    status: "NOT_RUN",
+    scope: "NOT_RUN",
+    runId: null,
+    critical: null,
+    high: null,
+    findings: [],
+    commands: [],
   }),
 );
 payload.set(
@@ -241,6 +404,7 @@ payload.set(
     schemaVersion: "1",
     status: "FAIL",
     evidenceMode: "PARTIAL_OFFLINE",
+    runId: null,
     metrics: {
       structuredOutputSchemaPass: { value: null, target: 1, status: "NOT_RUN_LIVE" },
       seededDriftBugsDetected: { value: 3, target: 3, status: "PASS_REFERENCE" },
@@ -256,12 +420,7 @@ payload.set(
   }),
 );
 
-const includedEntries = [...payload.entries()]
-  .map(([file, content]) => ({ file, sha256: hashText(content) }))
-  .sort((left, right) => left.file.localeCompare(right.file));
-const evidenceHash = hashText(
-  includedEntries.map((entry) => `${entry.file}\0${entry.sha256}\0`).join(""),
-);
+const evidenceHashPlaceholder = "0".repeat(64);
 const verificationSummary = {
   schemaVersion: "1",
   status: "FAIL",
@@ -296,14 +455,14 @@ const verificationSummary = {
     container: "NOT_RUN",
     deployment: "NOT_RUN",
   },
-  evidenceHash,
+  evidenceHash: evidenceHashPlaceholder,
   createdAt: GENERATED_AT,
 };
-const summary = `# PolicyTwin partial evidence summary
+const summaryTemplate = `# PolicyTwin partial evidence summary
 
 Status: FAIL
 Evidence mode: PARTIAL_OFFLINE
-Evidence hash: ${evidenceHash}
+Evidence hash: ${evidenceHashPlaceholder}
 
 This package proves deterministic offline contracts and real OPA v${opa.opaVersion} execution. It does not prove a GPT-5.6 call, Codex repair, post-repair drift, browser flow, security release review, container, deployment, or submission.
 
@@ -317,13 +476,21 @@ This package proves deterministic offline contracts and real OPA v${opa.opaVersi
 
 const allFiles = new Map(payload);
 allFiles.set("verification-summary.json", json(verificationSummary));
-allFiles.set("summary.md", summary);
+allFiles.set("summary.md", summaryTemplate);
+const hashEntries = [...allFiles.keys()].map((file) => ({
+  file,
+  includedInEvidenceHash: true,
+}));
+const evidenceHash = computeEvidencePackageHash(allFiles, hashEntries, hashText);
+verificationSummary.evidenceHash = evidenceHash;
+allFiles.set("verification-summary.json", json(verificationSummary));
+allFiles.set("summary.md", summaryTemplate.replace(evidenceHashPlaceholder, evidenceHash));
 const manifestEntries = [...allFiles.entries()]
   .map(([file, content]) => ({
     file,
     bytes: Buffer.byteLength(content, "utf8"),
     sha256: hashText(content),
-    includedInEvidenceHash: payload.has(file),
+    includedInEvidenceHash: true,
   }))
   .sort((left, right) => left.file.localeCompare(right.file));
 const manifest = {
@@ -332,6 +499,7 @@ const manifest = {
   packageStatus: "FAIL",
   evidenceMode: "PARTIAL_OFFLINE",
   evidenceHash,
+  liveAttestation: null,
   entries: manifestEntries,
 };
 allFiles.set("evidence-manifest.json", json(manifest));

@@ -5,6 +5,9 @@ import test from "node:test";
 const schema = JSON.parse(
   await readFile(new URL("../../schemas/verification-summary.v1.schema.json", import.meta.url)),
 );
+const mutationRunSchema = JSON.parse(
+  await readFile(new URL("../../schemas/mutation-run-summary.v1.schema.json", import.meta.url)),
+);
 const summary = JSON.parse(
   await readFile(new URL("../../artifacts/evidence/verification-summary.json", import.meta.url)),
 );
@@ -25,6 +28,13 @@ test("verification summary schema is closed and exposes every external gate", ()
     "browser",
     "container",
     "deployment",
+  ]);
+  assert.equal(mutationRunSchema.additionalProperties, false);
+  assert.equal(mutationRunSchema.$defs.policyHash.additionalProperties, false);
+  assert.equal(mutationRunSchema.$defs.resultHash.additionalProperties, false);
+  assert.deepEqual(mutationRunSchema.properties.executionMode.enum, [
+    "REFERENCE_EVALUATOR_NOT_OPA",
+    "OPA_CLI",
   ]);
 });
 

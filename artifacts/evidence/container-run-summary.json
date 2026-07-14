@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN",
+  "executionMode": "NOT_RUN",
+  "runId": null,
+  "imageDigest": null,
+  "buildExitCode": null,
+  "healthExitCode": null,
+  "healthStatus": null,
+  "platform": null,
+  "opaVersion": null,
+  "opaExecutableSha256": null,
+  "buildLogSha256": null,
+  "healthResponseSha256": null
+}

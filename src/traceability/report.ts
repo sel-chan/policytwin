@@ -80,7 +80,14 @@ export function buildTraceabilityReport(
   }));
   const uncoveredClauseIds = clauses.filter((item) => item.ruleIds.length === 0 || item.caseIds.length === 0).map((item) => item.clauseId);
   const uncoveredRuleIds = rules.filter((item) => item.caseIds.length === 0 || item.codeLocationIds.length === 0).map((item) => item.ruleId);
-  const invalidCaseLinks = caseRows.filter((item) => item.invalidClauseIds.length > 0 || item.invalidRuleIds.length > 0).map((item) => item.caseId);
+  const invalidCaseLinks = caseRows
+    .filter(
+      (item) =>
+        item.clauseIds.length === 0 ||
+        item.invalidClauseIds.length > 0 ||
+        item.invalidRuleIds.length > 0,
+    )
+    .map((item) => item.caseId);
   const unlinkedCodeLocationIds = codeLocations.filter((mapping) => mapping.ruleIds.length === 0).map((mapping) => mapping.id);
   return {
     schemaVersion: "1",

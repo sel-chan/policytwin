@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M2 — Live interpreter adapter and web/API integration`
+- Current milestone: `M2/M3/M8/M9 — live wiring, decision writes, authenticated proof, and release flow`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 15:55:00 +09:00`
+- Last updated: `2026-07-14 19:07:28 +09:00`
 - Latest checkpoint commit: `1d7261d0f41201e8501558d8b59368605d258db1`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -43,7 +43,7 @@ Fill with actual evidence.
 | Goal mode | stable/enabled | `codex features list` | `goals stable true` |
 | OpenAI API auth | UNSET | redacted environment-name check only | `OPENAI_API_KEY` and `CODEX_API_KEY` are not configured; never record secrets |
 | Codex SDK feasibility | PARTIAL | `codex --version`; `pnpm list --depth 0` | Codex CLI 0.144.0 and project-pinned `@openai/codex-sdk` 0.144.3 are installed; live adapter/credentials remain unverified |
-| Browser/Playwright | PARTIAL | `pnpm list --depth 0` | Playwright 1.61.1 is installed; web application, browser binary, and E2E suite remain unverified |
+| Browser/Playwright | PASS_LOCAL | `pnpm test:e2e` | Playwright 1.61.1 drives installed Chrome; 2/2 navigation, API, keyboard, and 390px responsive checks pass with six inspected screenshots |
 | GitHub auth | UNSET | redacted status only |  |
 | Deployment auth | UNSET | redacted status only |  |
 | Devpost access | PACKAGE_CACHED_NOT_CALLABLE | local plugin manifest; `codex plugin list`; current tool inventory | Devpost Hackathons 3.0.0 package and required app manifest exist in the curated remote cache, but it is absent from the CLI active-plugin list and exposes no callable Devpost tool in this task |
@@ -88,13 +88,13 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 |---|---|---|---|---|
 | M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | `1d7261d` | Docker daemon remains unavailable but is outside the M0 gate |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
-| M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; current Responses API/Structured Outputs contract verified; project-pinned Zod 4.4.3 and OpenAI 6.46.0 installed | `e535209` | shared Zod runtime schema, server adapter, credentials, and fresh GPT-5.6 evidence remain |
-| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts, SQLite persistence, and framework-independent workspace service; restart, immutable text versions, atomic/idempotent resolution, corruption, stale-write, and decision-replay checks pass | `85259ea` | Decision Queue UI and Next.js 16 route wiring remain |
-| M4 Compiler and OPA | IN_PROGRESS | engine gate passes: official OPA 1.18.2 strict compile/evaluation, 41/41 accepted cases, deterministic compiler, and invalid-input rejection | `1d7261d` | compilation UI status remains before the milestone is complete |
-| M5 Case generation/conflict/mutation | IN_PROGRESS | canonical corpus has 41 unique cases including D01–D03; real OPA agreement passes; 3 conflicts, 36 contrasts, and 44/47 reference-evaluated mutants (93.62%) | `66431fc` | mutation execution is still reference-based; Case Lab UI and final evidence remain |
-| M6 Differential runner and drift UX | IN_PROGRESS | OPA-backed expected results produce 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | web drift UX and actual post-Codex evidence remain |
+| M2 PolicyIR and interpretation | IN_PROGRESS | strict server-only Responses adapter, provider-compatible structured schema, exact request/source/golden validation, bounded cancellation/retry controls, and unit tests pass | pending | credentials and a fresh GPT-5.6 response/evidence remain; live provider acceptance is not claimed |
+| M3 Decision Queue and versioning | IN_PROGRESS | persistence/service gates plus the evidence-backed Decision Queue view pass in Next.js and Chrome | pending | displayed accepted decisions are read-only; HTTP write wiring and persisted UI resolution remain |
+| M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
+| M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
+| M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | offline safety contracts verified; current official SDK docs checked and `@openai/codex-sdk` 0.144.3 installed server-side | `0c6fb85` | SDK adapter, credentials/login, real patch/diff, zero post-repair drift, and live review evidence remain |
-| M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | `efff641` | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
+| M8 Proof, impact, and polish | IN_PROGRESS | Proof UI, expanded manifest-checked downloads, aggregate hash validation, semantic claim recomputation, trusted live-attestation boundary, responsive navigation, six inspected screenshots, and 2/2 Chrome E2E checks pass | pending | impact UI, live signer/receipts, complete reset-to-live-proof flow, and required Codex/change/architecture captures remain |
 | M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation plus checksum-pinned Windows/Linux OPA contract and exact dependency lock | `9602a6c` | owner license choice, dependency/license inventory refresh, app container, Docker daemon, provider selection, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
@@ -102,36 +102,36 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Close the M0 network-enabled preflight with verified challenge facts, an exact application/API/test stack, real OPA execution evidence, supply-chain checks, and clean-copy reproducibility.
+Checkpoint the server-only GPT-5.6 adapter boundary and five-view Next.js workspace with truthful offline evidence, local Chrome coverage, authenticated-live-proof controls, and clean-copy reproducibility.
 
-### Recovered conditions
+### Failing or missing condition
 
-Official challenge facts are verified and recorded. The Devpost package is cached but not exposed as a callable task capability. Exact project dependencies are locked and installed, and the official OPA 1.18.2 Windows binary is checksum-verified under the ignored `.tools` directory.
+The implementation and local browser subset now pass. The strict interpreter still lacks a credentialed GPT-5.6 request, Decision Queue cards are a read-only replay rather than an HTTP write flow, and the evidence package cannot contain actual Codex repair or post-repair proof. Docker Desktop's daemon is unavailable, the owner has not selected a project license, and deployment/submission remain outside the approved network scope.
 
-The first two approved `pnpm install` attempts resolved 473 packages and downloaded 372, then failed with `ERR_PNPM_EISDIR` while creating a Playwright symlink because the workspace is on an exFAT `F:` drive. The first recovery placed `node-linker=hoisted` in `.npmrc`, but pnpm 11 reads non-auth project settings only from `pnpm-workspace.yaml`, so the retry correctly reproduced the same failure. This was classified as an environment/filesystem configuration failure and recovered with `nodeLinker: hoisted` in `pnpm-workspace.yaml`.
+The first full verification attempt exposed a real clean-copy failure: TypeScript incremental metadata survived deletion of `.tmp/evidence-fixture-build`, so a later fixture compile returned success without emitting `refund.js`. Fixture compilation is now non-incremental and verifies both expected outputs.
 
-The hoisted retry passed the symlink stage but failed importing `semver.js` because the shared pnpm store contained mutated or incomplete package entries; `pnpm store status` confirmed broad `ERR_PNPM_MODIFIED_DEPENDENCY` findings. A bounded `pnpm install --force` refetched the exact lock graph. The first dependency audit found one moderate PostCSS advisory through Next.js; an exact 8.5.19 override removed it and the production audit now reports zero vulnerabilities. The shared-store mutation report remains an environment caveat; frozen offline installation passes.
-
-The first full clean-copy replay stalled while materializing a hoisted dependency tree on exFAT. Moving only the disposable clean checkout to the operating-system temporary directory preserved isolation and reduced the replay to about one minute. TypeScript 6 also required `--ignoreConfig` for the one-file fixture compilation path; all affected tests now pass.
+An independent adversarial review then reproduced a P0 proof bypass: rewriting every payload and recomputing the self-authored SHA-256 manifest could claim `PASS / LIVE_VERIFIED` with OPA `0.0.0`, zero post-repair cases, 200% mutation score, empty traceability, and no external execution. The validator now recomputes material claims from source artifacts and requires a trusted Ed25519 attestation for every `LIVE_VERIFIED` package. Structured GPT/browser/container/deployment/security receipts are mandatory for PASS; the offline package keeps `liveAttestation: null` and remains FAIL.
 
 ### Planned actions
 
-- [x] Re-read the goal and all required control documents.
-- [x] Confirm the clean Git baseline and inspect the Devpost plugin cache, manifest, CLI registration, and current tool exposure.
-- [x] Fetch and inspect the supplied official Build Week and Devpost pages, including exact deadline, eligibility, judging, repository, video, and submission fields.
-- [x] Cross-check current official OpenAI/Codex, OPA, and Next.js implementation facts needed by M0/M2/M4/M7.
-- [x] Update `SUBMISSION.md`, `PROGRESS.md`, generated rules-check artifacts, and durable decisions from verified sources.
-- [x] Select and install pinned application/API/test dependencies and acquire a checksum-verified official OPA binary.
-- [x] Run narrow checks followed by the complete offline regression gate and review the diff.
-- [x] Commit the checkpoint on the current branch and record its hash.
+- [x] Re-read the goal and all required control documents; inspect Git state and interrupted processes.
+- [x] Harden the Responses adapter against incomplete clauses, identity drift, golden contradictions, cost abuse, cancellation gaps, and error leakage.
+- [x] Correct the complete drift-report contract and enforce its record/count invariants in evidence validation.
+- [x] Build Policy Studio, Decision Queue, Case Lab, Integration/Drift, Proof, evidence/health/interpret routes, and explicit loading/error/empty boundaries.
+- [x] Add and inspect desktop/mobile Chrome E2E captures; correct mobile navigation and ambiguous result labels.
+- [x] Reproduce and fix the clean-copy fixture emission failure; refresh README, decisions, security evidence, and fail-closed submission drafts.
+- [x] Reproduce the self-rehashed live-proof bypass; add semantic-forgery tests, structured proof receipts, and trusted Ed25519 attestation verification.
+- [x] Re-run the complete local gate and confirm only the three explicit owner/external release checks fail.
+- [ ] Perform independent final diff review and commit the checkpoint on `main`.
 
 ### Completion evidence
 
-- Commands: `pnpm install --offline --frozen-lockfile`; `pnpm audit --prod --json`; `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm build`; `pnpm security:check`; `pnpm clean:check`; `pnpm verify`
-- Exit codes: all implemented/narrow gates pass; authoritative `pnpm verify` exits 1 only for `license:check`, `container:check`, `submission:check`, and `test:e2e`
-- Artifacts: `config/build-week-rules.v1.json`; `artifacts/evidence/opa-results.json`; `artifacts/evidence/verification-summary.json`; `artifacts/security/security-report.json`; `artifacts/security/clean-checkout-report.json`; `artifacts/submission/rules-check.md`
-- Screenshots: pending
-- Commit: `1d7261d0f41201e8501558d8b59368605d258db1`
+- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm test:e2e`; `pnpm build`; `pnpm clean:check`; `pnpm security:check`; `pnpm verify`
+- Results: 56/56 unit, 21/21 integration, 21/21 eval, 2/2 E2E, production build, 247-file/228-text-file security scan, and 247-file clean-copy reproduction pass
+- Expected full-gate failures only: `license:check`, `container:check`, and `submission:check`
+- Evidence hash: `99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9`
+- Screenshots: `artifacts/screenshots/01`, `02`, `03`, `04-integration`, `05`, and `07-mobile`; live Codex, change-impact, and architecture submission captures remain missing
+- Commit: pending final review
 
 ## Quality gates
 
@@ -141,21 +141,21 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 15:46 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 | 2026-07-14 15:46 +09:00 |
-| Unit tests | PASS | `pnpm test` via `pnpm verify` | 49/49 passed | 2026-07-14 15:46 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 17/17 passed, including OPA 1.18.2 over all 41 accepted cases | 2026-07-14 15:46 +09:00 |
-| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 15:46 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-14 15:46 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 15:46 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | exact expected failures: license, container, submission, and browser; all implemented gates pass | 2026-07-14 15:46 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | static checks include `.tsx` and CSS while excluding generated Next output | 2026-07-14 18:40 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-14 18:40 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 56/56 passed, including streaming body-limit and single-run reservation tests | 2026-07-14 19:07 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 21/21 passed, including real OPA 1.18.2, complete differential evidence, re-signed semantic-forgery rejection, and Ed25519 verification | 2026-07-14 18:40 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` via `pnpm verify` | 2/2 Chrome tests; five views, APIs, keyboard focus, and 390px layout; six screenshots inspected | 2026-07-14 18:40 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-14 18:40 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build and all dynamic routes pass | 2026-07-14 18:40 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | exact expected failures only: owner license, Docker/container, and non-final submission | 2026-07-14 18:40 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 200 files; frozen install and 10 command groups pass; no source `node_modules` or credentials | 2026-07-14 15:46 +09:00 |
-| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA 1.18.2 verified; contract, Dockerfile, health route, and daemon remain unavailable | 2026-07-14 15:46 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 247 source files; frozen offline install and 11 command groups including Chrome E2E pass | 2026-07-14 19:07 +09:00 |
+| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA and health route exist; Dockerfile and daemon remain unavailable | 2026-07-14 18:40 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
 | Dependency/license review | FAIL | `pnpm license:check`; `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-14 15:46 +09:00 |
-| Security review | PASS | `pnpm security:check` via `pnpm verify` | 200 files, 198 text files, full Git history, 7 reviewed process boundaries, zero findings | 2026-07-14 15:46 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 36 unmet requirements; official rules are no longer a failure, while live proof/license/media/URLs/confirmation remain | 2026-07-14 15:46 +09:00 |
+| Security review | PASS | `pnpm security:check` | 247 files/228 text files plus Git history; no static critical/high finding; live release review still required | 2026-07-14 19:07 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 31 unmet requirements; live proof, 3 required captures, license, media, URLs, and confirmation remain | 2026-07-14 18:40 +09:00 |
 
 ## Product proof metrics
 
@@ -163,8 +163,8 @@ Never fill from estimates.
 
 | Metric | Target | Current actual | Evidence |
 |---|---:|---:|---|
-| Structured-output schema pass | 100% | UNSET |  |
-| Required ambiguity labels found | 100% | UNSET |  |
+| Structured-output schema pass | 100% | 100% offline adapter contract; live provider result UNSET | `tests/unit/openai-interpreter.test.mjs` |
+| Required ambiguity labels found | 100% | 3/3 recorded candidate ambiguities | `fixtures/interpreter/recorded-policy-ir.v1.json` |
 | Explicit seeded semantics mislabeled as ambiguity | 0 | UNSET |  |
 | Golden cases passed | 100% | 6/6 (OPA CLI 1.18.2) | `artifacts/evidence/verification-summary.json` |
 | Accepted corpus size | ≥30 | 41 (offline reference corpus including D01–D03) | `tests/snapshots/offline-m5-summary.json` |
@@ -173,10 +173,22 @@ Never fill from estimates.
 | Mutation kill rate | ≥90% | 93.62% (reference mutation execution; accepted cases separately agree with OPA) | `tests/snapshots/offline-m5-summary.json` |
 | Rule-to-clause traceability | 100% | 4/4 rules and 4/4 clauses (offline) | `artifacts/evidence/traceability.json` |
 | Rule-to-case traceability | 100% | 41/41 accepted case links valid (offline) | `artifacts/evidence/traceability.json` |
-| Critical/high security findings | 0 | UNSET |  |
-| Browser happy path | 100% | UNSET |  |
+| Critical/high security findings | 0 | 0 static/offline; release review pending | `artifacts/security/security-report.json` |
+| Browser happy path | 100% | 2/2 local Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-14 18:40 +09:00 — Five-view workspace and authenticated evidence boundary verified
+
+- Milestones: M4, M5, and M6 gates pass; M2, M3, and M8 advance but remain incomplete pending live/write/impact flows
+- Change: added a strict GPT-5.6 Responses adapter contract and protected route; complete drift-report validation; five evidence-backed Next.js views and APIs; manifest-verified downloads; explicit error/loading/not-found states; Chrome E2E; six screenshots; responsive navigation; social preview; structured external proof receipts; semantic evidence recomputation; and a trusted Ed25519 live-attestation boundary
+- Security boundary: live interpretation requires a server token, 128 KB body limit, one active run, 60-second cancellation, no SDK retries, two bounded schema attempts, generic external errors, exact request/source identity, and golden-case agreement
+- Recovered failures: clean-copy replay found incremental fixture compilation could report success after deleting emitted JavaScript; fixture builds are now non-incremental and assert both outputs exist. Adversarial review then proved a self-rehashed package could forge live PASS; the exact attack and semantic variants are now regression tests and fail closed.
+- Verified: lint; strict typecheck; 56 unit; 21 integration; 21 eval; 2 Chrome E2E; production build; deterministic evidence generation; 247-file clean-copy replay; 247-file/228-text-file static security scan
+- Full gate: `pnpm verify` fails only `license:check`, `container:check`, and `submission:check`, each for an explicit owner/external/incomplete condition
+- Evidence hash: `99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9`
+- Commit: pending final diff review
+- Next: checkpoint the verified changes, then implement remaining independent M3/M8 write and impact surfaces before requesting owner-only live/license/deployment actions
 
 ### 2026-07-14 15:47 +09:00 — M0 official preflight and real OPA gate verified
 
@@ -340,7 +352,7 @@ A blocker is valid only when the task cannot continue safely without external in
 
 | ID | Type | Exact blocker | Work already completed | One owner action | Resume condition |
 |---|---|---|---|---|---|
-| — | — | No active blocker for the approved documentation/package/OPA scope | B-001 was cleared by the owner's 2026-07-14 approval | — | Continue the current checkpoint |
+| B-000 | None | No active blocker for the current offline checkpoint | All approved independent work continues | None | Continue the checkpoint |
 
 ## Risks
 
@@ -349,8 +361,8 @@ A blocker is valid only when the task cannot continue safely without external in
 | Deadline compression | Medium | High | Preserve P0 vertical slice; cut only P1 | Codex / open |
 | Live model/API outage | Medium | Medium | Keep recorded verified evidence clearly labeled | Codex / open |
 | Hosted worker restrictions | Medium | High | Use container/VM host or split worker | Codex / open |
-| Codex SDK interface changes | Medium | High | Check current official docs and adapt | Codex / open |
-| Empty local package cache | High | Medium | Keep M0 dependency-free; request one scoped approval before installing pinned project dependencies | Codex / open |
+| Codex SDK/live adapter mismatch | Medium | High | Current package/docs are pinned; validate the real adapter with fresh SDK evidence | Codex / open |
+| Live attestation key custody | Medium | High | Keep private key outside Git/logs/evidence; inject only trusted public keys into verification | Codex / open |
 | Docker daemon unavailable | High | Medium | Continue non-container gates; start Docker Desktop before the container gate | Owner/Codex / open |
 | Offline validator/Zod duplication | Medium | Medium | Cross-check both contracts and generate JSON Schema from the pinned runtime schema after network approval | Codex / open |
 | Demo recording/account blocker | Medium | Medium | Prepare script, captions, screenshots, and exact owner action | Codex / open |
@@ -363,18 +375,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Verify the supplied official challenge pages, record exact rules and dates, then install the pinned application/API/test stack and checksum-verified OPA before resuming the web and live-integration gates.`
+`Complete the final diff/adversarial review and checkpoint commit on main, then continue the independent M3 persisted write flow and M8 change-impact UI before owner-only live/license/deployment actions.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; B-001 approval received and work resumed`
-- Exact current state: `official-rule verification and approved dependency/OPA preflight are in progress`
-- Last successful command: `codex plugin list` and local Devpost manifest inspection
-- Current failing command: `none for this checkpoint yet`
-- Uncommitted files: `PROGRESS.md while this checkpoint is active`
-- Safe resume command/action: `continue official-page verification from the supplied URLs`
+- Why paused: `not paused; final review and checkpoint commit are in progress`
+- Exact current state: `five-view workspace, local OPA/browser/build gates, and hardened offline evidence pass; live work remains fail-closed`
+- Last successful command: `pnpm verify completed all local gates; only license:check, container:check, and submission:check failed as expected`
+- Current failing command: `pnpm verify, only for the three documented incomplete release gates`
+- Uncommitted files: `current workspace/UI/interpreter/evidence checkpoint changes`
+- Safe resume command/action: `review git diff/status, commit on main, then continue M3/M8`
 - One owner action, if any: `none`
 
 ## Final completion record
@@ -382,8 +394,8 @@ Fill before `/goal pause` or any handoff.
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `NOT_RUN`
-- `pnpm verify:live`: `NOT_RUN`
+- `pnpm verify`: `FAIL_EXPECTED — license, container, and submission only`
+- `pnpm verify:live`: `FAIL — fresh GPT/Codex integration and credentials absent`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`
 - Demo video: `NOT_VERIFIED`

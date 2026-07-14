@@ -9,6 +9,8 @@
 node_modules/
 .tools/
 .next/
+.data/
+*.tsbuildinfo
 dist/
 build/
 coverage/
