@@ -8,6 +8,7 @@ const suites = {
     "tests/unit/policy-ir-validation.test.mjs",
     "tests/unit/policy-resolution.test.mjs",
     "tests/unit/policy-state.test.mjs",
+    "tests/unit/rego-compiler.test.mjs",
   ],
   integration: [
     "tests/integration/scaffold.integration.test.mjs",

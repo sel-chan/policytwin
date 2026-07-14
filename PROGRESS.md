@@ -8,7 +8,7 @@
 - Current milestone: `M4 — Deterministic compiler and OPA (offline compiler work while OPA remains unavailable)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 09:26:44 +09:00`
+- Last updated: `2026-07-14 09:34:36 +09:00`
 - Latest checkpoint commit: `506a8187bf5fd419122d8d5fdde54c7d77ab728f`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -83,7 +83,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
 | M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts committed; 20 unit tests pass for all operations and guards | `506a818` | SQLite persistence and Decision Queue UI require the pinned application stack |
-| M4 Compiler and OPA | IN_PROGRESS | milestone contract reviewed; deterministic compiler implementation starting |  | OPA binary/version and real compile/evaluation evidence require approved installation scope |
+| M4 Compiler and OPA | IN_PROGRESS | 25 unit tests pass; byte-stable 3,008-byte Rego and manifest snapshots cover all predicate types, input validation, priority exclusions, fallback, and exact rule line mappings |  | OPA binary/version and real compile/evaluation evidence require approved installation scope |
 | M5 Case generation/conflict/mutation | NOT_STARTED |  |  |  |
 | M6 Differential runner and drift UX | NOT_STARTED |  |  |  |
 | M7 Codex repair and review | NOT_STARTED |  |  |  |
@@ -104,18 +104,23 @@ No Rego compiler, compiler manifest, rule/line mapping, snapshot, or compiler te
 ### Planned actions
 
 - [x] Re-read the M4 gate and inspect resolved-policy, state guard, predicate union, and result contracts.
-- [ ] Implement deterministic Rego helpers for compare, membership, and/or/not predicates.
-- [ ] Encode strict input validation and descending-priority first-match behavior with one default result.
-- [ ] Produce a compiler manifest with policy/query metadata and exact rule line ranges.
-- [ ] Add seeded Rego/manifest snapshots and every-predicate deterministic tests.
-- [ ] Confirm unresolved/invalid IR fails before source generation.
+- [x] Implement deterministic Rego helpers for compare, membership, and/or/not predicates.
+- [x] Encode strict input validation and descending-priority first-match behavior with one default result.
+- [x] Produce a compiler manifest with policy/query metadata and exact rule line ranges.
+- [x] Add seeded Rego/manifest snapshots and every-predicate deterministic tests.
+- [x] Confirm unresolved/invalid IR fails before source generation.
 - [ ] Run broader regressions, update evidence/docs, review the diff, and commit the offline M4 checkpoint.
 
 ### Completion evidence
 
-- Commands: pending M4 implementation
-- Exit codes: pending M4 implementation
-- Artifacts: pending M4 implementation
+- Commands:
+  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm build`; `pnpm verify`
+  - `node scripts/compile-seeded-policy.mjs`; `node scripts/compile-seeded-policy.mjs --manifest`
+- Exit codes:
+  - lint, typecheck, unit tests (25/25), build, integration (5/5), eval (7/7), and demo replay: `0`
+  - first post-hardening snapshot run: `1` because the compiler emitted two final LF characters; compiler normalized to one and retry passed
+  - final `pnpm verify`: `1` only for expected unimplemented browser and submission gates
+- Artifacts: `src/compiler/`, compile script, seeded Rego snapshot, compiler-manifest snapshot, compiler unit tests
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -129,12 +134,12 @@ Record latest actual result.
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
 | Lint | PASS | `pnpm lint` | repository static checks | 2026-07-14 08:48 +09:00 |
 | Typecheck | PASS | `pnpm typecheck` | domain, PolicyIR, and both fixture variants pass strict TypeScript | 2026-07-14 09:10 +09:00 |
-| Unit tests | PASS | `pnpm test` | 20/20 passed | 2026-07-14 09:24 +09:00 |
+| Unit tests | PASS | `pnpm test` | 25/25 passed | 2026-07-14 09:33 +09:00 |
 | Integration tests | PASS | `pnpm test:integration` | 5/5 passed; exactly 3 reset-copy drifts | 2026-07-14 08:49 +09:00 |
 | Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 08:42 +09:00 |
 | Prompt/eval suite | PASS | `pnpm eval` | 7/7 offline/recorded evals pass; live model eval remains unverified | 2026-07-14 09:10 +09:00 |
 | Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 09:11 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented M0–M3 steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:21 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented M0–M4 offline steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:34 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -247,7 +252,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement and snapshot-test the deterministic PolicyIR-to-Rego compiler; keep OPA compile/evaluation status unverified until the approved binary installation is available.`
+`Review and commit the offline M4 compiler checkpoint, then begin deterministic boundary/conflict/minimal-contrast generation and mutation operators without claiming OPA execution.`
 
 ## Pause handoff
 
