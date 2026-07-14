@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policytwin.local/schemas/policy-ir.v1.schema.json",
+  "title": "PolicyIR v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "policyId",
+    "version",
+    "schemaVersion",
+    "domain",
+    "clauses",
+    "rules",
+    "ambiguities",
+    "defaultDecision",
+    "normalization",
+    "inputSchema",
+    "metadata"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "policyId": { "type": "string", "minLength": 1 },
+    "version": { "type": "integer", "minimum": 1 },
+    "schemaVersion": { "const": "1" },
+    "domain": { "const": "saas_refund" },
+    "clauses": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/clause" }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/rule" }
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ambiguity" }
+    },
+    "defaultDecision": { "$ref": "#/$defs/decision" },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purchaseDayIndex", "usageMeasuredAt"],
+      "properties": {
+        "purchaseDayIndex": { "enum": [0, 1] },
+        "usageMeasuredAt": { "enum": ["REQUEST_TIME", "DECISION_TIME"] }
+      }
+    },
+    "inputSchema": { "type": "object" },
+    "metadata": { "$ref": "#/$defs/metadata" }
+  },
+  "$defs": {
+    "decision": { "enum": ["ALLOW", "DENY", "REVIEW"] },
+    "inputField": {
+      "enum": [
+        "daysSincePurchase",
+        "usageBasisPoints",
+        "promotionalPurchase",
+        "finalSale",
+        "managerApproved",
+        "planType"
+      ]
+    },
+    "scalar": {
+      "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
+    },
+    "clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text", "startOffset", "endOffset", "normalizedText"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "startOffset": { "type": "integer", "minimum": 0 },
+        "endOffset": { "type": "integer", "minimum": 1 },
+        "normalizedText": { "type": "string", "minLength": 1 }
+      }
+    },
+    "predicate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "field", "operator", "value"],
+          "properties": {
+            "type": { "const": "compare" },
+            "field": { "$ref": "#/$defs/inputField" },
+            "operator": { "enum": ["eq", "neq", "lt", "lte", "gt", "gte"] },
+            "value": { "$ref": "#/$defs/scalar" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "field", "values"],
+          "properties": {
+            "type": { "const": "in" },
+            "field": { "$ref": "#/$defs/inputField" },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/scalar" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "children"],
+          "properties": {
+            "type": { "enum": ["and", "or"] },
+            "children": {
+              "type": "array",
+              "minItems": 2,
+              "items": { "$ref": "#/$defs/predicate" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "child"],
+          "properties": {
+            "type": { "const": "not" },
+            "child": { "$ref": "#/$defs/predicate" }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sourceClauseIds",
+        "title",
+        "description",
+        "when",
+        "decision",
+        "priority",
+        "explanationTemplate"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "sourceClauseIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "when": { "$ref": "#/$defs/predicate" },
+        "decision": { "$ref": "#/$defs/decision" },
+        "priority": { "type": "integer", "minimum": 0 },
+        "explanationTemplate": { "type": "string", "minLength": 1 }
+      }
+    },
+    "refundInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "daysSincePurchase",
+        "usageBasisPoints",
+        "promotionalPurchase",
+        "finalSale",
+        "managerApproved",
+        "planType"
+      ],
+      "properties": {
+        "daysSincePurchase": { "type": "integer", "minimum": 0 },
+        "usageBasisPoints": { "type": "integer", "minimum": 0 },
+        "promotionalPurchase": { "type": "boolean" },
+        "finalSale": { "type": "boolean" },
+        "managerApproved": { "type": "boolean" },
+        "planType": { "enum": ["MONTHLY", "ANNUAL", "ENTERPRISE"] }
+      }
+    },
+    "exampleImpact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "result"],
+      "properties": {
+        "input": { "$ref": "#/$defs/refundInput" },
+        "result": { "$ref": "#/$defs/decision" }
+      }
+    },
+    "policyPatch": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "field", "value"],
+          "properties": {
+            "op": { "const": "SET_NORMALIZATION" },
+            "field": { "const": "purchaseDayIndex" },
+            "value": { "enum": [0, 1] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "field", "value"],
+          "properties": {
+            "op": { "const": "SET_NORMALIZATION" },
+            "field": { "const": "usageMeasuredAt" },
+            "value": { "enum": ["REQUEST_TIME", "DECISION_TIME"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "ruleId", "field", "value"],
+          "properties": {
+            "op": { "const": "SET_BOUNDARY_OPERATOR" },
+            "ruleId": { "type": "string", "minLength": 1 },
+            "field": { "enum": ["daysSincePurchase", "usageBasisPoints"] },
+            "value": { "enum": ["lt", "lte", "gt", "gte"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "ruleId", "value"],
+          "properties": {
+            "op": { "const": "SET_RULE_DECISION" },
+            "ruleId": { "type": "string", "minLength": 1 },
+            "value": { "$ref": "#/$defs/decision" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "higherRuleId", "lowerRuleId"],
+          "properties": {
+            "op": { "const": "SET_PRECEDENCE" },
+            "higherRuleId": { "type": "string", "minLength": 1 },
+            "lowerRuleId": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "value"],
+          "properties": {
+            "op": { "const": "SET_DEFAULT_DECISION" },
+            "value": { "$ref": "#/$defs/decision" }
+          }
+        }
+      ]
+    },
+    "ambiguityOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "description", "policyPatch", "exampleImpacts"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "policyPatch": { "$ref": "#/$defs/policyPatch" },
+        "exampleImpacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/exampleImpact" }
+        }
+      }
+    },
+    "ambiguity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sourceClauseIds",
+        "category",
+        "question",
+        "rationale",
+        "options",
+        "status"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "sourceClauseIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "category": {
+          "enum": ["BOUNDARY", "PRECEDENCE", "DEFAULT", "MEASUREMENT", "MISSING_OUTCOME", "OTHER"]
+        },
+        "question": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/ambiguityOption" }
+        },
+        "status": { "enum": ["OPEN", "RESOLVED"] },
+        "selectedOptionId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "promptVersion", "schemaVersion", "createdAt", "source"],
+      "properties": {
+        "model": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 },
+        "schemaVersion": { "const": "1" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "source": { "enum": ["LIVE_RESPONSE", "RECORDED_FIXTURE"] },
+        "requestId": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "LIVE_RESPONSE" } } },
+          "then": { "required": ["requestId"] }
+        }
+      ]
+    }
+  }
+}

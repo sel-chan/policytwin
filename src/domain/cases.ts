@@ -1,4 +1,4 @@
-import type { Decision } from "../index.js";
+import type { Decision } from "./decision.js";
 import type { RefundPolicyInput } from "./refund.js";
 
 export type CaseSource =

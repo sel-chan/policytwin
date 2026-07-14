@@ -171,3 +171,20 @@ Add new entries below this line with the template above.
 - Risks: The case corpus may need additional iteration.
 - Reversal or migration path: Change the numeric threshold only through an explicit product-contract decision supported by evidence.
 - Related files/commits: `AGENTS.md`, `PLAN.md`, `GOAL_PROMPT.md`.
+
+### D-010 — Keep recorded interpretation evidence distinct from live model evidence
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M2
+- Context: The project-local package cache is empty, no OpenAI credentials are configured, and external documentation lookup or dependency installation requires an owner-approved network scope.
+- Options considered:
+  1. block all M2 work until network access is approved;
+  2. build strict dependency-free contracts and clearly labeled recorded fixtures, then add pinned Zod and live Responses API integration after approval;
+  3. present a hand-authored fixture as if it were a current model response.
+- Decision: Implement the offline `PolicyIR` types, runtime semantic validator, JSON Schema, clause segmentation, prompt contract, and eval corpus now. Mark every hand-authored output `RECORDED_FIXTURE` with a non-model identifier. Do not pass M2 or `verify:live` until current official documentation is checked, project-local Zod/OpenAI dependencies are pinned, and a fresh GPT-5.6 request with request metadata passes the same contracts.
+- Evidence: empty pnpm store, absent API environment variables, fail-closed live gate, and `fixtures/interpreter/recorded-policy-ir.v1.json` metadata.
+- Consequences: Offline schema and security work remains testable without fabricating live evidence; M2 intentionally remains in progress.
+- Risks: The dependency-free validator duplicates some later Zod constraints and must be cross-checked when Zod is introduced.
+- Reversal or migration path: Make Zod/JSON Schema the shared authoritative runtime contract while retaining the deterministic semantic checks for cross-reference, priority, and patch-target invariants.
+- Related files/commits: `src/policy-ir/`, `schemas/policy-ir.v1.schema.json`, `prompts/interpreter.v1.md`, `PROGRESS.md`.

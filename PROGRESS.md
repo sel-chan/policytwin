@@ -8,7 +8,7 @@
 - Current milestone: `M2 — PolicyIR and interpretation (offline contracts while M0 external checks remain)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 08:59:49 +09:00`
+- Last updated: `2026-07-14 09:15:02 +09:00`
 - Latest checkpoint commit: `e509486d525c1f3a5825d39469298b70acb5025f`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -81,7 +81,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 |---|---|---|---|---|
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
-| M2 PolicyIR and interpretation | IN_PROGRESS | milestone contract reviewed; offline schema/segmentation/prompt work starting |  | Live GPT-5.6 call and current API facts require approved network scope |
+| M2 PolicyIR and interpretation | IN_PROGRESS | 11 unit and 7 eval tests pass for strict offline IR validation, stable clauses, closed input schema, prompt safety, recorded semantics, and 9-case reference agreement |  | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
 | M3 Decision Queue and versioning | NOT_STARTED |  |  |  |
 | M4 Compiler and OPA | NOT_STARTED |  |  |  |
 | M5 Case generation/conflict/mutation | NOT_STARTED |  |  |  |
@@ -104,18 +104,27 @@ No `PolicyIR` runtime validator, JSON Schema, clause segmenter, ambiguity patch 
 ### Planned actions
 
 - [x] Re-read the M2 gate and inspect the M1 types, cases, test runner, and eval surface.
-- [ ] Define exhaustive `PolicyIR`, predicate, clause, ambiguity, and closed `PolicyPatch` types.
-- [ ] Implement strict runtime validation and a matching versioned JSON Schema without external dependencies.
-- [ ] Implement stable UTF-16 source offsets and deterministic clause IDs.
-- [ ] Add the seeded interpreter prompt and a clearly labeled recorded structured-output fixture.
-- [ ] Add schema, traceability, ambiguity-label, explicit-semantics, adversarial-input, and clause-offset tests.
+- [x] Define exhaustive `PolicyIR`, predicate, clause, ambiguity, and closed `PolicyPatch` types.
+- [x] Implement strict runtime validation and a matching versioned JSON Schema without external dependencies.
+- [x] Implement stable UTF-16 source offsets and deterministic clause IDs.
+- [x] Add the seeded interpreter prompt and a clearly labeled recorded structured-output fixture.
+- [x] Add schema, traceability, ambiguity-label, explicit-semantics, adversarial-input, and clause-offset tests.
 - [ ] Run eval and broader regressions, update evidence/docs, review the diff, and commit the M2 checkpoint.
 
 ### Completion evidence
 
-- Commands: pending M2 implementation
-- Exit codes: pending M2 implementation
-- Artifacts: pending M2 implementation
+- Commands:
+  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm eval`; `pnpm test:integration`; `pnpm demo:run`; `pnpm build`
+  - `node scripts/segment-policy.mjs fixtures/interpreter/seeded-refund-policy.txt`
+- Exit codes:
+  - first inline segment inspection: `1` because PowerShell removed nested JavaScript quotes; replaced with a repository script
+  - first M2 typecheck: `2` for two `unknown` offset comparisons; narrowed local values and retry passed
+  - second M2 typecheck: `2` for a misplaced result-type import and predicate-union narrowing; corrected retry passed
+  - final lint, typecheck, unit (11/11), eval (7/7), integration (5/5), demo replay, and build: `0`
+  - final `pnpm verify`: `1` only for expected unimplemented browser and submission gates; every implemented M0–M2 offline step passed
+- Artifacts:
+  - `src/policy-ir/`, `src/domain/refund-schema.ts`, `schemas/policy-ir.v1.schema.json`, `prompts/interpreter.v1.md`
+  - `fixtures/interpreter/`, `evals/interpreter/`, clause/IR unit tests
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -128,13 +137,13 @@ Record latest actual result.
 | Document contract validation | PASS | PowerShell manifest/hash/fence/goal/milestone validator | `PACK_MANIFEST.md` | 2026-07-14 08:20 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
 | Lint | PASS | `pnpm lint` | repository static checks | 2026-07-14 08:48 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | domain and both fixture variants pass strict TypeScript | 2026-07-14 08:48 +09:00 |
-| Unit tests | PASS | `pnpm test` | 4/4 passed | 2026-07-14 08:49 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | domain, PolicyIR, and both fixture variants pass strict TypeScript | 2026-07-14 09:10 +09:00 |
+| Unit tests | PASS | `pnpm test` | 11/11 passed | 2026-07-14 09:10 +09:00 |
 | Integration tests | PASS | `pnpm test:integration` | 5/5 passed; exactly 3 reset-copy drifts | 2026-07-14 08:49 +09:00 |
 | Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 08:42 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | M0 contract eval 1/1 passed; prompt eval corpus not implemented | 2026-07-14 08:41 +09:00 |
-| Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 08:50 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented steps pass; expected remaining failures are browser and submission gates | 2026-07-14 08:52 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 7/7 offline/recorded evals pass; live model eval remains unverified | 2026-07-14 09:10 +09:00 |
+| Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 09:11 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented M0–M2 steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:14 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -216,6 +225,7 @@ A blocker is valid only when the task cannot continue safely without external in
 | Codex SDK interface changes | Medium | High | Check current official docs and adapt | Codex / open |
 | Empty local package cache | High | Medium | Keep M0 dependency-free; request one scoped approval before installing pinned project dependencies | Codex / open |
 | Docker daemon unavailable | High | Medium | Continue non-container gates; start Docker Desktop before the container gate | Owner/Codex / open |
+| Offline validator/Zod duplication | Medium | Medium | Cross-check both contracts and generate JSON Schema from the pinned runtime schema after network approval | Codex / open |
 | Demo recording/account blocker | Medium | Medium | Prepare script, captions, screenshots, and exact owner action | Codex / open |
 
 ## Decisions pending
@@ -226,7 +236,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement the offline M2 PolicyIR/schema/segmentation/prompt contracts and recorded eval fixture; do not claim live interpretation until approved network scope and credentials are available.`
+`Finish the offline M2 checkpoint and then obtain one scoped approval for official OpenAI/Build Week documentation lookup plus pinned project dependency installation; live GPT-5.6 still requires credentials.`
 
 ## Pause handoff
 

@@ -1,4 +1,4 @@
-import type { Decision } from "../index.js";
+import type { Decision } from "./decision.js";
 
 export const PLAN_TYPES = ["MONTHLY", "ANNUAL", "ENTERPRISE"] as const;
 

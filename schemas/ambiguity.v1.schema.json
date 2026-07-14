@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policytwin.local/schemas/ambiguity.v1.schema.json",
+  "title": "PolicyTwin ambiguity v1",
+  "$ref": "policy-ir.v1.schema.json#/$defs/ambiguity"
+}

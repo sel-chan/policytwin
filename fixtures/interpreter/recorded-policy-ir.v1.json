@@ -1,0 +1,236 @@
+{
+  "id": "ir-seeded-refund-v1-recorded",
+  "policyId": "policy-seeded-refund",
+  "version": 1,
+  "schemaVersion": "1",
+  "domain": "saas_refund",
+  "clauses": [
+    {
+      "id": "clause-2db0db31",
+      "text": "Customers are eligible for a full refund when the request is made no later than 14 calendar days after purchase, including exactly day 14, and usage is 20% or less.",
+      "startOffset": 0,
+      "endOffset": 164,
+      "normalizedText": "Customers are eligible for a full refund when the request is made no later than 14 calendar days after purchase, including exactly day 14, and usage is 20% or less."
+    },
+    {
+      "id": "clause-68b8918e",
+      "text": "Promotional purchases require manager approval before a refund can be granted.",
+      "startOffset": 166,
+      "endOffset": 244,
+      "normalizedText": "Promotional purchases require manager approval before a refund can be granted."
+    },
+    {
+      "id": "clause-83647cb3",
+      "text": "Until a manager decides, the request must be reviewed.",
+      "startOffset": 245,
+      "endOffset": 299,
+      "normalizedText": "Until a manager decides, the request must be reviewed."
+    },
+    {
+      "id": "clause-c74dd597",
+      "text": "Final-sale purchases are never refundable, even when another rule would otherwise allow a refund.",
+      "startOffset": 301,
+      "endOffset": 398,
+      "normalizedText": "Final-sale purchases are never refundable, even when another rule would otherwise allow a refund."
+    }
+  ],
+  "rules": [
+    {
+      "id": "final-sale-deny",
+      "sourceClauseIds": ["clause-c74dd597"],
+      "title": "Final sale always denies",
+      "description": "A final-sale purchase is not refundable even when another rule matches.",
+      "when": {
+        "type": "compare",
+        "field": "finalSale",
+        "operator": "eq",
+        "value": true
+      },
+      "decision": "DENY",
+      "priority": 400,
+      "explanationTemplate": "Final-sale purchases are not refundable."
+    },
+    {
+      "id": "promotion-approved",
+      "sourceClauseIds": ["clause-2db0db31", "clause-68b8918e"],
+      "title": "Eligible approved promotion",
+      "description": "An otherwise eligible promotional request is allowed after manager approval.",
+      "when": {
+        "type": "and",
+        "children": [
+          { "type": "compare", "field": "daysSincePurchase", "operator": "lte", "value": 14 },
+          { "type": "compare", "field": "usageBasisPoints", "operator": "lte", "value": 2000 },
+          { "type": "compare", "field": "promotionalPurchase", "operator": "eq", "value": true },
+          { "type": "compare", "field": "managerApproved", "operator": "eq", "value": true }
+        ]
+      },
+      "decision": "ALLOW",
+      "priority": 300,
+      "explanationTemplate": "The eligible promotional request has manager approval."
+    },
+    {
+      "id": "promotion-review",
+      "sourceClauseIds": ["clause-2db0db31", "clause-68b8918e", "clause-83647cb3"],
+      "title": "Eligible promotion awaits review",
+      "description": "An otherwise eligible promotion remains under review until a manager approves it.",
+      "when": {
+        "type": "and",
+        "children": [
+          { "type": "compare", "field": "daysSincePurchase", "operator": "lte", "value": 14 },
+          { "type": "compare", "field": "usageBasisPoints", "operator": "lte", "value": 2000 },
+          { "type": "compare", "field": "promotionalPurchase", "operator": "eq", "value": true },
+          { "type": "compare", "field": "managerApproved", "operator": "eq", "value": false }
+        ]
+      },
+      "decision": "REVIEW",
+      "priority": 200,
+      "explanationTemplate": "The eligible promotional request awaits a manager decision."
+    },
+    {
+      "id": "refund-eligible",
+      "sourceClauseIds": ["clause-2db0db31"],
+      "title": "Standard refund eligibility",
+      "description": "A non-promotional request within the inclusive day and usage limits is allowed.",
+      "when": {
+        "type": "and",
+        "children": [
+          { "type": "compare", "field": "daysSincePurchase", "operator": "lte", "value": 14 },
+          { "type": "compare", "field": "usageBasisPoints", "operator": "lte", "value": 2000 },
+          { "type": "compare", "field": "promotionalPurchase", "operator": "eq", "value": false }
+        ]
+      },
+      "decision": "ALLOW",
+      "priority": 100,
+      "explanationTemplate": "The request is within the inclusive refund thresholds."
+    }
+  ],
+  "ambiguities": [
+    {
+      "id": "ambiguity-purchase-day-index",
+      "sourceClauseIds": ["clause-2db0db31"],
+      "category": "MEASUREMENT",
+      "question": "Is the purchase day counted as day 0 or day 1?",
+      "rationale": "The policy gives a calendar-day limit but does not define the starting index.",
+      "options": [
+        {
+          "id": "purchase-day-zero",
+          "label": "Purchase day is day 0",
+          "description": "Elapsed calendar days start at zero on the purchase date.",
+          "policyPatch": { "op": "SET_NORMALIZATION", "field": "purchaseDayIndex", "value": 0 },
+          "exampleImpacts": [
+            {
+              "input": { "daysSincePurchase": 14, "usageBasisPoints": 0, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "MONTHLY" },
+              "result": "ALLOW"
+            }
+          ]
+        },
+        {
+          "id": "purchase-day-one",
+          "label": "Purchase day is day 1",
+          "description": "Ordinal calendar-day counting starts at one on the purchase date.",
+          "policyPatch": { "op": "SET_NORMALIZATION", "field": "purchaseDayIndex", "value": 1 },
+          "exampleImpacts": [
+            {
+              "input": { "daysSincePurchase": 15, "usageBasisPoints": 0, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "MONTHLY" },
+              "result": "DENY"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN"
+    },
+    {
+      "id": "ambiguity-usage-measurement-time",
+      "sourceClauseIds": ["clause-2db0db31"],
+      "category": "MEASUREMENT",
+      "question": "Is usage measured at request time or decision time?",
+      "rationale": "The policy specifies a usage threshold but not the observation time.",
+      "options": [
+        {
+          "id": "usage-at-request",
+          "label": "Measure at request time",
+          "description": "Freeze usage when the refund request is submitted.",
+          "policyPatch": { "op": "SET_NORMALIZATION", "field": "usageMeasuredAt", "value": "REQUEST_TIME" },
+          "exampleImpacts": [
+            {
+              "input": { "daysSincePurchase": 3, "usageBasisPoints": 2000, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "ANNUAL" },
+              "result": "ALLOW"
+            }
+          ]
+        },
+        {
+          "id": "usage-at-decision",
+          "label": "Measure at decision time",
+          "description": "Use the latest usage when the refund decision is made.",
+          "policyPatch": { "op": "SET_NORMALIZATION", "field": "usageMeasuredAt", "value": "DECISION_TIME" },
+          "exampleImpacts": [
+            {
+              "input": { "daysSincePurchase": 3, "usageBasisPoints": 2001, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "ANNUAL" },
+              "result": "DENY"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN"
+    },
+    {
+      "id": "ambiguity-default-decision",
+      "sourceClauseIds": ["clause-2db0db31"],
+      "category": "DEFAULT",
+      "question": "What is the result when no eligibility rule matches?",
+      "rationale": "The policy does not state the fallback outcome for an ineligible ordinary request.",
+      "options": [
+        {
+          "id": "default-deny",
+          "label": "Deny by default",
+          "description": "A request is denied when no explicit rule matches.",
+          "policyPatch": { "op": "SET_DEFAULT_DECISION", "value": "DENY" },
+          "exampleImpacts": [
+            {
+              "input": { "daysSincePurchase": 20, "usageBasisPoints": 0, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "ENTERPRISE" },
+              "result": "DENY"
+            }
+          ]
+        },
+        {
+          "id": "default-review",
+          "label": "Review by default",
+          "description": "A request requires review when no explicit rule matches.",
+          "policyPatch": { "op": "SET_DEFAULT_DECISION", "value": "REVIEW" },
+          "exampleImpacts": [
+            {
+              "input": { "daysSincePurchase": 20, "usageBasisPoints": 0, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "ENTERPRISE" },
+              "result": "REVIEW"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN"
+    }
+  ],
+  "defaultDecision": "DENY",
+  "normalization": {
+    "purchaseDayIndex": 0,
+    "usageMeasuredAt": "REQUEST_TIME"
+  },
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["daysSincePurchase", "usageBasisPoints", "promotionalPurchase", "finalSale", "managerApproved", "planType"],
+    "properties": {
+      "daysSincePurchase": { "type": "integer", "minimum": 0 },
+      "usageBasisPoints": { "type": "integer", "minimum": 0 },
+      "promotionalPurchase": { "type": "boolean" },
+      "finalSale": { "type": "boolean" },
+      "managerApproved": { "type": "boolean" },
+      "planType": { "enum": ["MONTHLY", "ANNUAL", "ENTERPRISE"] }
+    }
+  },
+  "metadata": {
+    "model": "recorded-fixture-no-live-model-call",
+    "promptVersion": "interpreter.v1",
+    "schemaVersion": "1",
+    "createdAt": "2026-07-14T00:00:00.000Z",
+    "source": "RECORDED_FIXTURE"
+  }
+}
