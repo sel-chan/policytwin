@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M2 — PolicyIR and interpretation (offline contracts while M0 external checks remain)`
+- Current milestone: `M3 — Decision Queue and versioning (offline domain work while external checks remain)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 09:15:02 +09:00`
-- Latest checkpoint commit: `e509486d525c1f3a5825d39469298b70acb5025f`
+- Last updated: `2026-07-14 09:17:07 +09:00`
+- Latest checkpoint commit: `e535209fb2f3f4bac00c0fe95bcfdd27c1296549`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -81,8 +81,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 |---|---|---|---|---|
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
-| M2 PolicyIR and interpretation | IN_PROGRESS | 11 unit and 7 eval tests pass for strict offline IR validation, stable clauses, closed input schema, prompt safety, recorded semantics, and 9-case reference agreement |  | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
-| M3 Decision Queue and versioning | NOT_STARTED |  |  |  |
+| M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
+| M3 Decision Queue and versioning | IN_PROGRESS | milestone contract reviewed; offline patch/version/state work starting |  | SQLite persistence and Decision Queue UI require the pinned application stack |
 | M4 Compiler and OPA | NOT_STARTED |  |  |  |
 | M5 Case generation/conflict/mutation | NOT_STARTED |  |  |  |
 | M6 Differential runner and drift UX | NOT_STARTED |  |  |  |
@@ -95,36 +95,27 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Implement the offline M2 contracts: strict `PolicyIR` validation, stable clause segmentation, closed ambiguity patches, versioned interpreter prompts, and schema-valid recorded interpreter fixtures without claiming a live model run.
+Implement the offline M3 decision domain: category-safe closed patch application, immutable policy versions, versioned decision records, golden-case contradiction blocking, idempotent resolution, and validated policy state transitions.
 
 ### Failing or missing condition
 
-No `PolicyIR` runtime validator, JSON Schema, clause segmenter, ambiguity patch validator, interpreter prompt, prompt-eval corpus, or recorded structured-output fixture exists. Live GPT-5.6 integration is approval-gated and credentials are absent.
+Ambiguity options validate structurally but cannot be applied. No version record, state machine, idempotency behavior, revisit behavior, golden contradiction guard, persistence adapter, or Decision Queue UI exists.
 
 ### Planned actions
 
-- [x] Re-read the M2 gate and inspect the M1 types, cases, test runner, and eval surface.
-- [x] Define exhaustive `PolicyIR`, predicate, clause, ambiguity, and closed `PolicyPatch` types.
-- [x] Implement strict runtime validation and a matching versioned JSON Schema without external dependencies.
-- [x] Implement stable UTF-16 source offsets and deterministic clause IDs.
-- [x] Add the seeded interpreter prompt and a clearly labeled recorded structured-output fixture.
-- [x] Add schema, traceability, ambiguity-label, explicit-semantics, adversarial-input, and clause-offset tests.
-- [ ] Run eval and broader regressions, update evidence/docs, review the diff, and commit the M2 checkpoint.
+- [x] Re-read the M3 gate and inspect the closed patches, recorded ambiguities, golden cases, and validator.
+- [ ] Implement immutable patch application for every `PolicyPatch` operation.
+- [ ] Add decision records, version increments, idempotent same-option behavior, and revisiting decisions.
+- [ ] Add a server-side policy-state transition table and unresolved-decision compile guard.
+- [ ] Reject any decision version that contradicts authoritative golden cases.
+- [ ] Add focused tests for all patch operations, invalid transitions, seeded decision flow, and contradiction blocking.
+- [ ] Run broader regressions, update evidence/docs, review the diff, and commit the M3 offline checkpoint.
 
 ### Completion evidence
 
-- Commands:
-  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm eval`; `pnpm test:integration`; `pnpm demo:run`; `pnpm build`
-  - `node scripts/segment-policy.mjs fixtures/interpreter/seeded-refund-policy.txt`
-- Exit codes:
-  - first inline segment inspection: `1` because PowerShell removed nested JavaScript quotes; replaced with a repository script
-  - first M2 typecheck: `2` for two `unknown` offset comparisons; narrowed local values and retry passed
-  - second M2 typecheck: `2` for a misplaced result-type import and predicate-union narrowing; corrected retry passed
-  - final lint, typecheck, unit (11/11), eval (7/7), integration (5/5), demo replay, and build: `0`
-  - final `pnpm verify`: `1` only for expected unimplemented browser and submission gates; every implemented M0–M2 offline step passed
-- Artifacts:
-  - `src/policy-ir/`, `src/domain/refund-schema.ts`, `schemas/policy-ir.v1.schema.json`, `prompts/interpreter.v1.md`
-  - `fixtures/interpreter/`, `evals/interpreter/`, clause/IR unit tests
+- Commands: pending M3 implementation
+- Exit codes: pending M3 implementation
+- Artifacts: pending M3 implementation
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -173,6 +164,16 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 09:17 +09:00 — M2 offline PolicyIR and interpretation contracts committed
+
+- Milestone: M2 (offline subset; milestone remains in progress)
+- Change: added exhaustive IR/patch types, strict semantic validation, fixed refund input schema, deterministic clause segmentation, diagnostic evaluator, strict JSON Schemas, interpreter prompt, recorded fixture, and eight-case eval corpus
+- Verified: unit 11/11; eval 7/7; integration 5/5; all nine golden/drift examples agree with the diagnostic reference; unknown fields, executable predicates, dangling clauses, duplicate priorities, patch mismatch, and unsupported input fields are rejected
+- Commands: lint, typecheck, unit, eval, integration, demo replay, build, fail-closed full verification, manifest/diff/secret checks
+- Commit: `e535209fb2f3f4bac00c0fe95bcfdd27c1296549`
+- Expected gap: no claim of live GPT-5.6 work; recorded metadata is explicit; Zod/OpenAI dependencies and official API verification remain approval-gated
+- Next: implement M3 patch/version/state logic offline
 
 ### 2026-07-14 08:59 +09:00 — M1 domain and deterministic seeded fixture passed
 
@@ -236,7 +237,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Finish the offline M2 checkpoint and then obtain one scoped approval for official OpenAI/Build Week documentation lookup plus pinned project dependency installation; live GPT-5.6 still requires credentials.`
+`Implement the offline M3 patch/version/state/contradiction domain, then continue toward the next independent deterministic gate while network-dependent M0/M2 work stays explicitly open.`
 
 ## Pause handoff
 
