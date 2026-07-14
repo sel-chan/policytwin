@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1",
+  "status": "FAIL",
+  "evidenceMode": "PARTIAL_OFFLINE",
+  "metrics": {
+    "structuredOutputSchemaPass": {
+      "value": null,
+      "target": 1,
+      "status": "NOT_RUN_LIVE"
+    },
+    "seededDriftBugsDetected": {
+      "value": 3,
+      "target": 3,
+      "status": "PASS_REFERENCE"
+    },
+    "acceptedCorpusSize": {
+      "value": 41,
+      "target": 30,
+      "status": "PASS_REFERENCE"
+    },
+    "postRepairDrift": {
+      "value": null,
+      "target": 0,
+      "status": "NOT_RUN_LIVE"
+    },
+    "evaluationOnlyFixedFixtureDrift": {
+      "value": 0,
+      "target": 0,
+      "status": "PASS_EVALUATION_ONLY"
+    },
+    "mutationKillRate": {
+      "value": 0.9361702127659575,
+      "target": 0.9,
+      "status": "PASS_REFERENCE_NOT_OPA"
+    },
+    "ruleClauseTraceability": {
+      "value": 1,
+      "target": 1,
+      "status": "PASS_OFFLINE"
+    },
+    "securityFindings": {
+      "value": null,
+      "target": 0,
+      "status": "NOT_RUN"
+    },
+    "browserHappyPath": {
+      "value": null,
+      "target": 1,
+      "status": "NOT_RUN"
+    }
+  }
+}

@@ -6,7 +6,7 @@ PolicyTwin is an evidence-first policy engineering product for the OpenAI Build 
 
 ## Current implementation status
 
-The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2–M7** have offline checkpoints covering strict `PolicyIR`, deterministic clauses, immutable ambiguity resolution, state transitions, a byte-stable Rego compiler, 41 traceable cases, conflict/minimal-contrast analysis, 47 executed mutants with a 93.62% reference-evaluator kill rate, deterministic before/after differential reports, and a guarded repair-worker contract. The worker foundation creates isolated trusted-fixture copies, exposes only two fixed verification commands, strips model credentials from child environments, bounds repair attempts to two, and blocks proof on high-severity review findings. The buggy fixture produces 16 classified drifts across the accepted corpus while the evaluation-only fixed fixture produces zero drift. The recorded fixtures and M7 backend are explicitly offline test doubles, not live GPT-5.6 or Codex evidence. Generated Rego has not been compiled by OPA. Persistence, product UI, OPA execution, live interpretation, and live Codex repair are not yet implemented.
+The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2–M8** have offline checkpoints covering strict `PolicyIR`, deterministic clauses, immutable ambiguity resolution, state transitions, a byte-stable Rego compiler, 41 traceable cases, conflict/minimal-contrast analysis, 47 executed mutants with a 93.62% reference-evaluator kill rate, deterministic before/after differential reports, a guarded repair-worker contract, 14→30-day impact analysis, complete offline traceability diagnostics, and a hashed evidence package. The worker foundation creates isolated trusted-fixture copies, exposes only two fixed verification commands, strips model credentials from child environments, bounds repair attempts to two, and blocks proof on high-severity review findings. The evidence package is deliberately `FAIL`/`PARTIAL_OFFLINE`: it records OPA, live GPT-5.6, live Codex, browser, container, and deployment as `NOT_RUN`, and keeps the evaluation-only zero-drift fixture separate from post-repair proof. Persistence, product UI, OPA execution, live interpretation, and live Codex repair are not yet implemented.
 
 ## Local baseline
 
@@ -26,6 +26,7 @@ pnpm eval
 pnpm build
 pnpm demo:reset
 pnpm demo:run
+pnpm evidence:offline
 ```
 
 `pnpm demo:run` must report exactly three baseline drifts. `pnpm verify`, `pnpm verify:live`, `pnpm test:e2e`, and `pnpm submission:check` remain fail-closed until their required product capabilities exist. See `PROGRESS.md` for exact evidence and current blockers.

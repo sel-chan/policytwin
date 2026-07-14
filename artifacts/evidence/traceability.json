@@ -1,0 +1,701 @@
+{
+  "schemaVersion": "1",
+  "policyVersion": 4,
+  "clauses": [
+    {
+      "clauseId": "clause-2db0db31",
+      "ruleIds": [
+        "promotion-approved",
+        "promotion-review",
+        "refund-eligible"
+      ],
+      "caseIds": [
+        "G01",
+        "G02",
+        "G04",
+        "G06",
+        "D01",
+        "D02",
+        "D03",
+        "C-BOUNDARY-abce7966",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-1894e746",
+        "C-BOUNDARY-f810e650",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-BOUNDARY-e1dd5ebb",
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-BOUNDARY-101ed55d",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-BOUNDARY-1089c17b",
+        "C-MINIMAL_CONTRAST-c9c2f540",
+        "C-MINIMAL_CONTRAST-24372e1b",
+        "C-BOUNDARY-dae2f310",
+        "C-MINIMAL_CONTRAST-dcc1890b",
+        "C-MINIMAL_CONTRAST-98443570",
+        "C-BOUNDARY-e3ae81f0",
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-BOUNDARY-b1f5224e",
+        "C-MINIMAL_CONTRAST-0f19e261",
+        "C-MINIMAL_CONTRAST-d24b1a0e",
+        "C-BOUNDARY-c2c18019",
+        "C-MINIMAL_CONTRAST-d9e1f506",
+        "C-MINIMAL_CONTRAST-cbd08539",
+        "C-GENERATED-fed86770"
+      ]
+    },
+    {
+      "clauseId": "clause-68b8918e",
+      "ruleIds": [
+        "promotion-approved",
+        "promotion-review"
+      ],
+      "caseIds": [
+        "G03",
+        "G04",
+        "G06",
+        "D03",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-1894e746",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-MINIMAL_CONTRAST-c9c2f540",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "clauseId": "clause-83647cb3",
+      "ruleIds": [
+        "promotion-review"
+      ],
+      "caseIds": [
+        "G03",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "clauseId": "clause-c74dd597",
+      "ruleIds": [
+        "final-sale-deny"
+      ],
+      "caseIds": [
+        "G05",
+        "G06",
+        "D03",
+        "C-CONFLICT-16766370",
+        "C-CONFLICT-5af3b70b",
+        "C-CONFLICT-506a318b",
+        "C-CONFLICT-0becddf0"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "ruleId": "final-sale-deny",
+      "clauseIds": [
+        "clause-c74dd597"
+      ],
+      "caseIds": [
+        "G05",
+        "G06",
+        "D03",
+        "C-CONFLICT-16766370",
+        "C-CONFLICT-5af3b70b",
+        "C-CONFLICT-506a318b",
+        "C-CONFLICT-0becddf0"
+      ],
+      "codeLocationIds": [
+        "code-final-sale"
+      ]
+    },
+    {
+      "ruleId": "promotion-approved",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "caseIds": [
+        "G04",
+        "G06",
+        "D03",
+        "C-MINIMAL_CONTRAST-1894e746",
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ],
+      "codeLocationIds": [
+        "code-day-window",
+        "code-usage-window",
+        "code-promotion-approved"
+      ]
+    },
+    {
+      "ruleId": "promotion-review",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "caseIds": [
+        "G03",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ],
+      "codeLocationIds": [
+        "code-day-window",
+        "code-usage-window",
+        "code-promotion-review"
+      ]
+    },
+    {
+      "ruleId": "refund-eligible",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "caseIds": [
+        "G01",
+        "D01",
+        "D02",
+        "C-BOUNDARY-abce7966",
+        "C-BOUNDARY-f810e650",
+        "C-BOUNDARY-101ed55d",
+        "C-BOUNDARY-1089c17b"
+      ],
+      "codeLocationIds": [
+        "code-day-window",
+        "code-usage-window",
+        "code-standard-allow"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "caseId": "G01",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [
+        "refund-eligible"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "G02",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "G03",
+      "clauseIds": [
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "ruleIds": [
+        "promotion-review"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "G04",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "ruleIds": [
+        "promotion-approved"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "G05",
+      "clauseIds": [
+        "clause-c74dd597"
+      ],
+      "ruleIds": [
+        "final-sale-deny"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "G06",
+      "clauseIds": [
+        "clause-c74dd597",
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "ruleIds": [
+        "final-sale-deny",
+        "promotion-approved"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "D01",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [
+        "refund-eligible"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "D02",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [
+        "refund-eligible"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "D03",
+      "clauseIds": [
+        "clause-c74dd597",
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "ruleIds": [
+        "final-sale-deny",
+        "promotion-approved"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-abce7966",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [
+        "refund-eligible"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-44e23079",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "ruleIds": [
+        "promotion-review"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-1894e746",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "ruleIds": [
+        "promotion-approved"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-f810e650",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [
+        "refund-eligible"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-100e174b",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "ruleIds": [
+        "promotion-review"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-5c4a82b0",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "ruleIds": [
+        "promotion-approved"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-e1dd5ebb",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-f026bb80",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-ac95135b",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-101ed55d",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [
+        "refund-eligible"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-9be5639a",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "ruleIds": [
+        "promotion-review"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-ea8e309d",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "ruleIds": [
+        "promotion-approved"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-1089c17b",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [
+        "refund-eligible"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-c9c2f540",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "ruleIds": [
+        "promotion-review"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-24372e1b",
+      "clauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "ruleIds": [
+        "promotion-approved"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-dae2f310",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-dcc1890b",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-98443570",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-e3ae81f0",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-15545d6b",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-4ee64850",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-b1f5224e",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-0f19e261",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-d24b1a0e",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-BOUNDARY-c2c18019",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-d9e1f506",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-cbd08539",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-CONFLICT-16766370",
+      "clauseIds": [
+        "clause-c74dd597"
+      ],
+      "ruleIds": [
+        "final-sale-deny"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-CONFLICT-5af3b70b",
+      "clauseIds": [
+        "clause-c74dd597"
+      ],
+      "ruleIds": [
+        "final-sale-deny"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-CONFLICT-506a318b",
+      "clauseIds": [
+        "clause-c74dd597"
+      ],
+      "ruleIds": [
+        "final-sale-deny"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-CONFLICT-0becddf0",
+      "clauseIds": [
+        "clause-c74dd597"
+      ],
+      "ruleIds": [
+        "final-sale-deny"
+      ],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    },
+    {
+      "caseId": "C-GENERATED-fed86770",
+      "clauseIds": [
+        "clause-2db0db31"
+      ],
+      "ruleIds": [],
+      "invalidClauseIds": [],
+      "invalidRuleIds": []
+    }
+  ],
+  "codeLocations": [
+    {
+      "id": "code-day-window",
+      "file": "src/refund.ts",
+      "lineStart": 13,
+      "lineEnd": 13,
+      "symbol": "withinWindow",
+      "ruleIds": [
+        "promotion-approved",
+        "promotion-review",
+        "refund-eligible"
+      ]
+    },
+    {
+      "id": "code-usage-window",
+      "file": "src/refund.ts",
+      "lineStart": 14,
+      "lineEnd": 14,
+      "symbol": "withinUsage",
+      "ruleIds": [
+        "promotion-approved",
+        "promotion-review",
+        "refund-eligible"
+      ]
+    },
+    {
+      "id": "code-promotion-approved",
+      "file": "src/refund.ts",
+      "lineStart": 16,
+      "lineEnd": 18,
+      "symbol": "decideRefund",
+      "ruleIds": [
+        "promotion-approved"
+      ]
+    },
+    {
+      "id": "code-final-sale",
+      "file": "src/refund.ts",
+      "lineStart": 20,
+      "lineEnd": 22,
+      "symbol": "decideRefund",
+      "ruleIds": [
+        "final-sale-deny"
+      ]
+    },
+    {
+      "id": "code-promotion-review",
+      "file": "src/refund.ts",
+      "lineStart": 28,
+      "lineEnd": 30,
+      "symbol": "decideRefund",
+      "ruleIds": [
+        "promotion-review"
+      ]
+    },
+    {
+      "id": "code-standard-allow",
+      "file": "src/refund.ts",
+      "lineStart": 32,
+      "lineEnd": 32,
+      "symbol": "decideRefund",
+      "ruleIds": [
+        "refund-eligible"
+      ]
+    }
+  ],
+  "metrics": {
+    "clausesCovered": 4,
+    "clausesTotal": 4,
+    "rulesCovered": 4,
+    "rulesTotal": 4,
+    "casesLinked": 41,
+    "casesTotal": 41,
+    "unlinkedCodeLocations": 0
+  },
+  "gaps": {
+    "uncoveredClauseIds": [],
+    "uncoveredRuleIds": [],
+    "invalidCaseLinks": [],
+    "unlinkedCodeLocationIds": []
+  }
+}

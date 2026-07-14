@@ -1,0 +1,569 @@
+{
+  "schemaVersion": "1",
+  "executionMode": "REFERENCE_EXPECTATION_NOT_OPA",
+  "adapterId": "fixture-baseline",
+  "drifts": 16,
+  "errors": 0,
+  "records": [
+    {
+      "caseId": "G06",
+      "input": {
+        "daysSincePurchase": 2,
+        "usageBasisPoints": 0,
+        "promotionalPurchase": true,
+        "finalSale": true,
+        "managerApproved": true,
+        "planType": "ANNUAL"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-c74dd597",
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "relatedRuleIds": [
+        "final-sale-deny",
+        "promotion-approved"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "FINAL_SALE_PRECEDENCE"
+      ]
+    },
+    {
+      "caseId": "D01",
+      "input": {
+        "daysSincePurchase": 14,
+        "usageBasisPoints": 500,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [
+        "refund-eligible"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "DAY_14_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "D02",
+      "input": {
+        "daysSincePurchase": 3,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "ANNUAL"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [
+        "refund-eligible"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "USAGE_2000_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "D03",
+      "input": {
+        "daysSincePurchase": 2,
+        "usageBasisPoints": 500,
+        "promotionalPurchase": true,
+        "finalSale": true,
+        "managerApproved": true,
+        "planType": "ENTERPRISE"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-c74dd597",
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "relatedRuleIds": [
+        "final-sale-deny",
+        "promotion-approved"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "FINAL_SALE_PRECEDENCE"
+      ]
+    },
+    {
+      "caseId": "C-BOUNDARY-f810e650",
+      "input": {
+        "daysSincePurchase": 13,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [
+        "refund-eligible"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "USAGE_2000_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-100e174b",
+      "input": {
+        "daysSincePurchase": 13,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "relatedRuleIds": [
+        "promotion-review"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "USAGE_2000_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-ac95135b",
+      "input": {
+        "daysSincePurchase": 13,
+        "usageBasisPoints": 2001,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the candidate default decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [],
+      "status": "DRIFT",
+      "defectIds": [
+        "PROMOTION_ELIGIBILITY_BYPASS"
+      ]
+    },
+    {
+      "caseId": "C-BOUNDARY-101ed55d",
+      "input": {
+        "daysSincePurchase": 14,
+        "usageBasisPoints": 1999,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [
+        "refund-eligible"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "DAY_14_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-9be5639a",
+      "input": {
+        "daysSincePurchase": 14,
+        "usageBasisPoints": 1999,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "relatedRuleIds": [
+        "promotion-review"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "DAY_14_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "C-BOUNDARY-1089c17b",
+      "input": {
+        "daysSincePurchase": 14,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [
+        "refund-eligible"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "DAY_14_INCLUSIVE",
+        "USAGE_2000_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-c9c2f540",
+      "input": {
+        "daysSincePurchase": 14,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "relatedRuleIds": [
+        "promotion-review"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "DAY_14_INCLUSIVE",
+        "USAGE_2000_INCLUSIVE"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-98443570",
+      "input": {
+        "daysSincePurchase": 14,
+        "usageBasisPoints": 2001,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the candidate default decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [],
+      "status": "DRIFT",
+      "defectIds": [
+        "PROMOTION_ELIGIBILITY_BYPASS"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-4ee64850",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 1999,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the candidate default decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [],
+      "status": "DRIFT",
+      "defectIds": [
+        "PROMOTION_ELIGIBILITY_BYPASS"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-d24b1a0e",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the candidate default decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [],
+      "status": "DRIFT",
+      "defectIds": [
+        "PROMOTION_ELIGIBILITY_BYPASS"
+      ]
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-cbd08539",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 2001,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the candidate default decision.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-2db0db31"
+      ],
+      "relatedRuleIds": [],
+      "status": "DRIFT",
+      "defectIds": [
+        "PROMOTION_ELIGIBILITY_BYPASS"
+      ]
+    },
+    {
+      "caseId": "C-CONFLICT-0becddf0",
+      "input": {
+        "daysSincePurchase": 14,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": true,
+        "finalSale": true,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      },
+      "actual": {
+        "decision": "ALLOW",
+        "matchedRuleId": null,
+        "explanation": "Fixture returned a decision without trace metadata."
+      },
+      "relatedClauseIds": [
+        "clause-c74dd597"
+      ],
+      "relatedRuleIds": [
+        "final-sale-deny"
+      ],
+      "status": "DRIFT",
+      "defectIds": [
+        "FINAL_SALE_PRECEDENCE"
+      ]
+    }
+  ],
+  "defectClusters": [
+    {
+      "defectId": "DAY_14_INCLUSIVE",
+      "recordCount": 5,
+      "witnessCaseIds": [
+        "D01",
+        "C-BOUNDARY-101ed55d",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-BOUNDARY-1089c17b",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "defectId": "USAGE_2000_INCLUSIVE",
+      "recordCount": 5,
+      "witnessCaseIds": [
+        "D02",
+        "C-BOUNDARY-f810e650",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-BOUNDARY-1089c17b",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "defectId": "FINAL_SALE_PRECEDENCE",
+      "recordCount": 3,
+      "witnessCaseIds": [
+        "G06",
+        "D03",
+        "C-CONFLICT-0becddf0"
+      ]
+    },
+    {
+      "defectId": "PROMOTION_ELIGIBILITY_BYPASS",
+      "recordCount": 5,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-MINIMAL_CONTRAST-98443570",
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-MINIMAL_CONTRAST-d24b1a0e",
+        "C-MINIMAL_CONTRAST-cbd08539"
+      ]
+    }
+  ]
+}

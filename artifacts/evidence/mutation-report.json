@@ -1,0 +1,678 @@
+{
+  "executionMode": "REFERENCE_EVALUATOR_NOT_OPA",
+  "killed": 44,
+  "total": 47,
+  "excludedEquivalent": 0,
+  "killRate": 0.9361702127659575,
+  "results": [
+    {
+      "mutantId": "M001-BOOLEAN_INVERT",
+      "operator": "BOOLEAN_INVERT",
+      "description": "Inverted boolean at rule 0.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G01",
+        "G03",
+        "G04",
+        "G05",
+        "G06",
+        "D01",
+        "D02",
+        "D03",
+        "C-BOUNDARY-abce7966",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-1894e746",
+        "C-BOUNDARY-f810e650",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-BOUNDARY-101ed55d",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-BOUNDARY-1089c17b",
+        "C-MINIMAL_CONTRAST-c9c2f540",
+        "C-MINIMAL_CONTRAST-24372e1b",
+        "C-CONFLICT-16766370",
+        "C-CONFLICT-5af3b70b",
+        "C-CONFLICT-506a318b",
+        "C-CONFLICT-0becddf0"
+      ]
+    },
+    {
+      "mutantId": "M002-AND_TO_OR",
+      "operator": "AND_TO_OR",
+      "description": "Changed and to or at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G02",
+        "G03",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-BOUNDARY-e1dd5ebb",
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540",
+        "C-BOUNDARY-dae2f310",
+        "C-MINIMAL_CONTRAST-dcc1890b",
+        "C-MINIMAL_CONTRAST-98443570",
+        "C-BOUNDARY-e3ae81f0",
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-BOUNDARY-b1f5224e",
+        "C-MINIMAL_CONTRAST-0f19e261",
+        "C-MINIMAL_CONTRAST-d24b1a0e",
+        "C-MINIMAL_CONTRAST-d9e1f506",
+        "C-MINIMAL_CONTRAST-cbd08539",
+        "C-GENERATED-fed86770"
+      ]
+    },
+    {
+      "mutantId": "M003-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 0 at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-MINIMAL_CONTRAST-d24b1a0e"
+      ]
+    },
+    {
+      "mutantId": "M004-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 1 at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-MINIMAL_CONTRAST-98443570"
+      ]
+    },
+    {
+      "mutantId": "M005-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 2 at rule 1.",
+      "killed": false,
+      "witnessCaseIds": []
+    },
+    {
+      "mutantId": "M006-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 3 at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G03",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M007-LTE_TO_LT",
+      "operator": "LTE_TO_LT",
+      "description": "Changed lte to lt at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "mutantId": "M008-THRESHOLD_MINUS_ONE",
+      "operator": "THRESHOLD_MINUS_ONE",
+      "description": "Decremented threshold at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "mutantId": "M009-THRESHOLD_PLUS_ONE",
+      "operator": "THRESHOLD_PLUS_ONE",
+      "description": "Incremented threshold at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-MINIMAL_CONTRAST-d24b1a0e"
+      ]
+    },
+    {
+      "mutantId": "M010-LTE_TO_LT",
+      "operator": "LTE_TO_LT",
+      "description": "Changed lte to lt at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "mutantId": "M011-THRESHOLD_MINUS_ONE",
+      "operator": "THRESHOLD_MINUS_ONE",
+      "description": "Decremented threshold at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "mutantId": "M012-THRESHOLD_PLUS_ONE",
+      "operator": "THRESHOLD_PLUS_ONE",
+      "description": "Incremented threshold at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-MINIMAL_CONTRAST-98443570"
+      ]
+    },
+    {
+      "mutantId": "M013-BOOLEAN_INVERT",
+      "operator": "BOOLEAN_INVERT",
+      "description": "Inverted boolean at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G04",
+        "C-MINIMAL_CONTRAST-1894e746",
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "mutantId": "M014-BOOLEAN_INVERT",
+      "operator": "BOOLEAN_INVERT",
+      "description": "Inverted boolean at rule 1.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G03",
+        "G04",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-1894e746",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-MINIMAL_CONTRAST-c9c2f540",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "mutantId": "M015-AND_TO_OR",
+      "operator": "AND_TO_OR",
+      "description": "Changed and to or at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G01",
+        "G02",
+        "D01",
+        "D02",
+        "C-BOUNDARY-abce7966",
+        "C-BOUNDARY-f810e650",
+        "C-BOUNDARY-e1dd5ebb",
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-BOUNDARY-101ed55d",
+        "C-BOUNDARY-1089c17b",
+        "C-BOUNDARY-dae2f310",
+        "C-MINIMAL_CONTRAST-dcc1890b",
+        "C-MINIMAL_CONTRAST-98443570",
+        "C-BOUNDARY-e3ae81f0",
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-BOUNDARY-b1f5224e",
+        "C-MINIMAL_CONTRAST-0f19e261",
+        "C-MINIMAL_CONTRAST-d24b1a0e",
+        "C-BOUNDARY-c2c18019",
+        "C-MINIMAL_CONTRAST-d9e1f506",
+        "C-MINIMAL_CONTRAST-cbd08539",
+        "C-GENERATED-fed86770"
+      ]
+    },
+    {
+      "mutantId": "M016-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 0 at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-0f19e261"
+      ]
+    },
+    {
+      "mutantId": "M017-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 1 at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-dcc1890b"
+      ]
+    },
+    {
+      "mutantId": "M018-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 2 at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G01",
+        "D01",
+        "D02",
+        "C-BOUNDARY-abce7966",
+        "C-BOUNDARY-f810e650",
+        "C-BOUNDARY-101ed55d",
+        "C-BOUNDARY-1089c17b"
+      ]
+    },
+    {
+      "mutantId": "M019-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 3 at rule 2.",
+      "killed": false,
+      "witnessCaseIds": []
+    },
+    {
+      "mutantId": "M020-LTE_TO_LT",
+      "operator": "LTE_TO_LT",
+      "description": "Changed lte to lt at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M021-THRESHOLD_MINUS_ONE",
+      "operator": "THRESHOLD_MINUS_ONE",
+      "description": "Decremented threshold at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M022-THRESHOLD_PLUS_ONE",
+      "operator": "THRESHOLD_PLUS_ONE",
+      "description": "Incremented threshold at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-0f19e261"
+      ]
+    },
+    {
+      "mutantId": "M023-LTE_TO_LT",
+      "operator": "LTE_TO_LT",
+      "description": "Changed lte to lt at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M024-THRESHOLD_MINUS_ONE",
+      "operator": "THRESHOLD_MINUS_ONE",
+      "description": "Decremented threshold at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M025-THRESHOLD_PLUS_ONE",
+      "operator": "THRESHOLD_PLUS_ONE",
+      "description": "Incremented threshold at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-dcc1890b"
+      ]
+    },
+    {
+      "mutantId": "M026-BOOLEAN_INVERT",
+      "operator": "BOOLEAN_INVERT",
+      "description": "Inverted boolean at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G01",
+        "G03",
+        "D01",
+        "D02",
+        "C-BOUNDARY-abce7966",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-BOUNDARY-f810e650",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-BOUNDARY-101ed55d",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-BOUNDARY-1089c17b",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M027-BOOLEAN_INVERT",
+      "operator": "BOOLEAN_INVERT",
+      "description": "Inverted boolean at rule 2.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G03",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M028-AND_TO_OR",
+      "operator": "AND_TO_OR",
+      "description": "Changed and to or at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G02",
+        "C-BOUNDARY-e1dd5ebb",
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-BOUNDARY-dae2f310",
+        "C-MINIMAL_CONTRAST-dcc1890b",
+        "C-MINIMAL_CONTRAST-98443570",
+        "C-BOUNDARY-e3ae81f0",
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-BOUNDARY-b1f5224e",
+        "C-MINIMAL_CONTRAST-0f19e261",
+        "C-MINIMAL_CONTRAST-d24b1a0e",
+        "C-BOUNDARY-c2c18019",
+        "C-GENERATED-fed86770"
+      ]
+    },
+    {
+      "mutantId": "M029-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 0 at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G02",
+        "C-BOUNDARY-e3ae81f0",
+        "C-BOUNDARY-b1f5224e",
+        "C-GENERATED-fed86770"
+      ]
+    },
+    {
+      "mutantId": "M030-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 1 at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-BOUNDARY-e1dd5ebb",
+        "C-BOUNDARY-dae2f310"
+      ]
+    },
+    {
+      "mutantId": "M031-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 2 at rule 3.",
+      "killed": false,
+      "witnessCaseIds": []
+    },
+    {
+      "mutantId": "M032-LTE_TO_LT",
+      "operator": "LTE_TO_LT",
+      "description": "Changed lte to lt at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "D01",
+        "C-BOUNDARY-101ed55d",
+        "C-BOUNDARY-1089c17b"
+      ]
+    },
+    {
+      "mutantId": "M033-THRESHOLD_MINUS_ONE",
+      "operator": "THRESHOLD_MINUS_ONE",
+      "description": "Decremented threshold at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "D01",
+        "C-BOUNDARY-101ed55d",
+        "C-BOUNDARY-1089c17b"
+      ]
+    },
+    {
+      "mutantId": "M034-THRESHOLD_PLUS_ONE",
+      "operator": "THRESHOLD_PLUS_ONE",
+      "description": "Incremented threshold at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-BOUNDARY-e3ae81f0",
+        "C-BOUNDARY-b1f5224e"
+      ]
+    },
+    {
+      "mutantId": "M035-LTE_TO_LT",
+      "operator": "LTE_TO_LT",
+      "description": "Changed lte to lt at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "D02",
+        "C-BOUNDARY-f810e650",
+        "C-BOUNDARY-1089c17b"
+      ]
+    },
+    {
+      "mutantId": "M036-THRESHOLD_MINUS_ONE",
+      "operator": "THRESHOLD_MINUS_ONE",
+      "description": "Decremented threshold at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "D02",
+        "C-BOUNDARY-f810e650",
+        "C-BOUNDARY-1089c17b"
+      ]
+    },
+    {
+      "mutantId": "M037-THRESHOLD_PLUS_ONE",
+      "operator": "THRESHOLD_PLUS_ONE",
+      "description": "Incremented threshold at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "C-BOUNDARY-e1dd5ebb",
+        "C-BOUNDARY-dae2f310"
+      ]
+    },
+    {
+      "mutantId": "M038-BOOLEAN_INVERT",
+      "operator": "BOOLEAN_INVERT",
+      "description": "Inverted boolean at rule 3.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G01",
+        "D01",
+        "D02",
+        "C-BOUNDARY-abce7966",
+        "C-BOUNDARY-f810e650",
+        "C-BOUNDARY-101ed55d",
+        "C-BOUNDARY-1089c17b"
+      ]
+    },
+    {
+      "mutantId": "M039-PRIORITY_SWAP",
+      "operator": "PRIORITY_SWAP",
+      "description": "Swapped conflict priority final-sale-deny/refund-eligible.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G05",
+        "G06",
+        "D03",
+        "C-CONFLICT-16766370",
+        "C-CONFLICT-5af3b70b",
+        "C-CONFLICT-506a318b",
+        "C-CONFLICT-0becddf0"
+      ]
+    },
+    {
+      "mutantId": "M040-PRIORITY_SWAP",
+      "operator": "PRIORITY_SWAP",
+      "description": "Swapped conflict priority final-sale-deny/promotion-approved.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G06",
+        "D03",
+        "C-CONFLICT-0becddf0"
+      ]
+    },
+    {
+      "mutantId": "M041-PRIORITY_SWAP",
+      "operator": "PRIORITY_SWAP",
+      "description": "Swapped conflict priority final-sale-deny/promotion-review.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G06",
+        "D03",
+        "C-CONFLICT-506a318b",
+        "C-CONFLICT-0becddf0"
+      ]
+    },
+    {
+      "mutantId": "M042-RULE_DELETE",
+      "operator": "RULE_DELETE",
+      "description": "Deleted rule final-sale-deny.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G05",
+        "G06",
+        "D03",
+        "C-CONFLICT-16766370",
+        "C-CONFLICT-5af3b70b",
+        "C-CONFLICT-506a318b",
+        "C-CONFLICT-0becddf0"
+      ]
+    },
+    {
+      "mutantId": "M043-RULE_DELETE",
+      "operator": "RULE_DELETE",
+      "description": "Deleted rule promotion-approved.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G04",
+        "C-MINIMAL_CONTRAST-1894e746",
+        "C-MINIMAL_CONTRAST-5c4a82b0",
+        "C-MINIMAL_CONTRAST-ea8e309d",
+        "C-MINIMAL_CONTRAST-24372e1b"
+      ]
+    },
+    {
+      "mutantId": "M044-RULE_DELETE",
+      "operator": "RULE_DELETE",
+      "description": "Deleted rule promotion-review.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G03",
+        "C-MINIMAL_CONTRAST-44e23079",
+        "C-MINIMAL_CONTRAST-100e174b",
+        "C-MINIMAL_CONTRAST-9be5639a",
+        "C-MINIMAL_CONTRAST-c9c2f540"
+      ]
+    },
+    {
+      "mutantId": "M045-RULE_DELETE",
+      "operator": "RULE_DELETE",
+      "description": "Deleted rule refund-eligible.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G01",
+        "D01",
+        "D02",
+        "C-BOUNDARY-abce7966",
+        "C-BOUNDARY-f810e650",
+        "C-BOUNDARY-101ed55d",
+        "C-BOUNDARY-1089c17b"
+      ]
+    },
+    {
+      "mutantId": "M046-DEFAULT_CHANGE",
+      "operator": "DEFAULT_CHANGE",
+      "description": "Changed default to ALLOW.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G02",
+        "C-BOUNDARY-e1dd5ebb",
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-BOUNDARY-dae2f310",
+        "C-MINIMAL_CONTRAST-dcc1890b",
+        "C-MINIMAL_CONTRAST-98443570",
+        "C-BOUNDARY-e3ae81f0",
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-BOUNDARY-b1f5224e",
+        "C-MINIMAL_CONTRAST-0f19e261",
+        "C-MINIMAL_CONTRAST-d24b1a0e",
+        "C-BOUNDARY-c2c18019",
+        "C-MINIMAL_CONTRAST-d9e1f506",
+        "C-MINIMAL_CONTRAST-cbd08539",
+        "C-GENERATED-fed86770"
+      ]
+    },
+    {
+      "mutantId": "M047-DEFAULT_CHANGE",
+      "operator": "DEFAULT_CHANGE",
+      "description": "Changed default to REVIEW.",
+      "killed": true,
+      "witnessCaseIds": [
+        "G02",
+        "C-BOUNDARY-e1dd5ebb",
+        "C-MINIMAL_CONTRAST-f026bb80",
+        "C-MINIMAL_CONTRAST-ac95135b",
+        "C-BOUNDARY-dae2f310",
+        "C-MINIMAL_CONTRAST-dcc1890b",
+        "C-MINIMAL_CONTRAST-98443570",
+        "C-BOUNDARY-e3ae81f0",
+        "C-MINIMAL_CONTRAST-15545d6b",
+        "C-MINIMAL_CONTRAST-4ee64850",
+        "C-BOUNDARY-b1f5224e",
+        "C-MINIMAL_CONTRAST-0f19e261",
+        "C-MINIMAL_CONTRAST-d24b1a0e",
+        "C-BOUNDARY-c2c18019",
+        "C-MINIMAL_CONTRAST-d9e1f506",
+        "C-MINIMAL_CONTRAST-cbd08539",
+        "C-GENERATED-fed86770"
+      ]
+    }
+  ],
+  "survivors": [
+    {
+      "mutantId": "M005-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 2 at rule 1.",
+      "killed": false,
+      "witnessCaseIds": []
+    },
+    {
+      "mutantId": "M019-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 3 at rule 2.",
+      "killed": false,
+      "witnessCaseIds": []
+    },
+    {
+      "mutantId": "M031-PREDICATE_DELETE",
+      "operator": "PREDICATE_DELETE",
+      "description": "Deleted predicate 2 at rule 3.",
+      "killed": false,
+      "witnessCaseIds": []
+    }
+  ],
+  "operatorCounts": {
+    "LTE_TO_LT": 6,
+    "GTE_TO_GT": 0,
+    "AND_TO_OR": 3,
+    "PREDICATE_DELETE": 11,
+    "BOOLEAN_INVERT": 6,
+    "THRESHOLD_MINUS_ONE": 6,
+    "THRESHOLD_PLUS_ONE": 6,
+    "PRIORITY_SWAP": 3,
+    "RULE_DELETE": 4,
+    "DEFAULT_CHANGE": 2
+  }
+}

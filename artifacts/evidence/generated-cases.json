@@ -1,0 +1,720 @@
+[
+  {
+    "id": "D01",
+    "title": "Exactly day 14 remains eligible",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 500,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [
+      "refund-eligible"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "The policy explicitly includes exactly day 14."
+  },
+  {
+    "id": "D02",
+    "title": "Exactly 20 percent usage remains eligible",
+    "input": {
+      "daysSincePurchase": 3,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "ANNUAL"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [
+      "refund-eligible"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "The policy explicitly includes exactly 20 percent usage."
+  },
+  {
+    "id": "D03",
+    "title": "Final sale overrides approved promotion",
+    "input": {
+      "daysSincePurchase": 2,
+      "usageBasisPoints": 500,
+      "promotionalPurchase": true,
+      "finalSale": true,
+      "managerApproved": true,
+      "planType": "ENTERPRISE"
+    },
+    "expectedDecision": "DENY",
+    "source": "CONFLICT",
+    "relatedRuleIds": [
+      "final-sale-deny",
+      "promotion-approved"
+    ],
+    "relatedClauseIds": [
+      "clause-c74dd597",
+      "clause-2db0db31",
+      "clause-68b8918e"
+    ],
+    "rationale": "Final sale has explicit highest-priority denial."
+  },
+  {
+    "id": "C-BOUNDARY-abce7966",
+    "title": "Standard boundary d13 u1999",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [
+      "refund-eligible"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-44e23079",
+    "title": "Promotion contrast d13 u1999 approved false",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "REVIEW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-review"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e",
+      "clause-83647cb3"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-1894e746",
+    "title": "Promotion contrast d13 u1999 approved true",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-approved"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-f810e650",
+    "title": "Standard boundary d13 u2000",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [
+      "refund-eligible"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-100e174b",
+    "title": "Promotion contrast d13 u2000 approved false",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "REVIEW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-review"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e",
+      "clause-83647cb3"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-5c4a82b0",
+    "title": "Promotion contrast d13 u2000 approved true",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-approved"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-e1dd5ebb",
+    "title": "Standard boundary d13 u2001",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-f026bb80",
+    "title": "Promotion contrast d13 u2001 approved false",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-ac95135b",
+    "title": "Promotion contrast d13 u2001 approved true",
+    "input": {
+      "daysSincePurchase": 13,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-101ed55d",
+    "title": "Standard boundary d14 u1999",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [
+      "refund-eligible"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-9be5639a",
+    "title": "Promotion contrast d14 u1999 approved false",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "REVIEW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-review"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e",
+      "clause-83647cb3"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-ea8e309d",
+    "title": "Promotion contrast d14 u1999 approved true",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-approved"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-1089c17b",
+    "title": "Standard boundary d14 u2000",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [
+      "refund-eligible"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-c9c2f540",
+    "title": "Promotion contrast d14 u2000 approved false",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "REVIEW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-review"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e",
+      "clause-83647cb3"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-24372e1b",
+    "title": "Promotion contrast d14 u2000 approved true",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [
+      "promotion-approved"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-dae2f310",
+    "title": "Standard boundary d14 u2001",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-dcc1890b",
+    "title": "Promotion contrast d14 u2001 approved false",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-98443570",
+    "title": "Promotion contrast d14 u2001 approved true",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-e3ae81f0",
+    "title": "Standard boundary d15 u1999",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-15545d6b",
+    "title": "Promotion contrast d15 u1999 approved false",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-4ee64850",
+    "title": "Promotion contrast d15 u1999 approved true",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 1999,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-b1f5224e",
+    "title": "Standard boundary d15 u2000",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-0f19e261",
+    "title": "Promotion contrast d15 u2000 approved false",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-d24b1a0e",
+    "title": "Promotion contrast d15 u2000 approved true",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-BOUNDARY-c2c18019",
+    "title": "Standard boundary d15 u2001",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "BOUNDARY",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Cross-product of exact numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-d9e1f506",
+    "title": "Promotion contrast d15 u2001 approved false",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-MINIMAL_CONTRAST-cbd08539",
+    "title": "Promotion contrast d15 u2001 approved true",
+    "input": {
+      "daysSincePurchase": 15,
+      "usageBasisPoints": 2001,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "MINIMAL_CONTRAST",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "Pairs promotion approval states at numeric threshold neighbors."
+  },
+  {
+    "id": "C-CONFLICT-16766370",
+    "title": "Final-sale conflict promo false approved false",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": false,
+      "finalSale": true,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "CONFLICT",
+    "relatedRuleIds": [
+      "final-sale-deny"
+    ],
+    "relatedClauseIds": [
+      "clause-c74dd597"
+    ],
+    "rationale": "Exercises final-sale precedence over every otherwise eligible state."
+  },
+  {
+    "id": "C-CONFLICT-5af3b70b",
+    "title": "Final-sale conflict promo false approved true",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": false,
+      "finalSale": true,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "CONFLICT",
+    "relatedRuleIds": [
+      "final-sale-deny"
+    ],
+    "relatedClauseIds": [
+      "clause-c74dd597"
+    ],
+    "rationale": "Exercises final-sale precedence over every otherwise eligible state."
+  },
+  {
+    "id": "C-CONFLICT-506a318b",
+    "title": "Final-sale conflict promo true approved false",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": true,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "CONFLICT",
+    "relatedRuleIds": [
+      "final-sale-deny"
+    ],
+    "relatedClauseIds": [
+      "clause-c74dd597"
+    ],
+    "rationale": "Exercises final-sale precedence over every otherwise eligible state."
+  },
+  {
+    "id": "C-CONFLICT-0becddf0",
+    "title": "Final-sale conflict promo true approved true",
+    "input": {
+      "daysSincePurchase": 14,
+      "usageBasisPoints": 2000,
+      "promotionalPurchase": true,
+      "finalSale": true,
+      "managerApproved": true,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "CONFLICT",
+    "relatedRuleIds": [
+      "final-sale-deny"
+    ],
+    "relatedClauseIds": [
+      "clause-c74dd597"
+    ],
+    "rationale": "Exercises final-sale precedence over every otherwise eligible state."
+  },
+  {
+    "id": "C-GENERATED-fed86770",
+    "title": "No-match accepted default",
+    "input": {
+      "daysSincePurchase": 30,
+      "usageBasisPoints": 500,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "ENTERPRISE"
+    },
+    "expectedDecision": "DENY",
+    "source": "GENERATED",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "No explicit eligibility rule matches, so the accepted default applies."
+  }
+]

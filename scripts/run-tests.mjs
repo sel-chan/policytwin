@@ -12,12 +12,14 @@ const suites = {
     "tests/unit/case-generation.test.mjs",
     "tests/unit/mutation-engine.test.mjs",
     "tests/unit/codex-worker-contract.test.mjs",
+    "tests/unit/impact-traceability.test.mjs",
   ],
   integration: [
     "tests/integration/scaffold.integration.test.mjs",
     "tests/integration/refund-fixture.integration.test.mjs",
     "tests/integration/differential-runner.integration.test.mjs",
     "tests/integration/repair-workspace.integration.test.mjs",
+    "tests/integration/evidence-package.integration.test.mjs",
   ],
   eval: [
     "evals/scaffold.eval.test.mjs",
@@ -25,6 +27,7 @@ const suites = {
     "evals/cases/offline-m5.eval.test.mjs",
     "evals/differential/offline-m6.eval.test.mjs",
     "evals/codex/offline-m7.eval.test.mjs",
+    "evals/evidence/offline-m8.eval.test.mjs",
   ],
 };
 

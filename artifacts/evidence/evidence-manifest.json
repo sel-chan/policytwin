@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "1",
+  "algorithm": "SHA-256",
+  "packageStatus": "FAIL",
+  "evidenceMode": "PARTIAL_OFFLINE",
+  "evidenceHash": "05e6f75a03fafa655f97c491983d3044e214f8a30c56fa31099762c095eee655",
+  "entries": [
+    {
+      "file": "app-results-after.json",
+      "bytes": 33746,
+      "sha256": "f3ee47b20f441159767dd16828eff2b80a6481c7a27dd7432fc751e5eab065ef",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "app-results-before.json",
+      "bytes": 35369,
+      "sha256": "fa46f9a5a9f87ac99d2a28b9ccefc7a6f544baf294d26e4f55ad50d68669cec8",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "codex-cartography.json",
+      "bytes": 124,
+      "sha256": "854d42797e6234435de724486020c9eea604912f87e4441383bf67cd468f7d6e",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "codex-review.json",
+      "bytes": 124,
+      "sha256": "854d42797e6234435de724486020c9eea604912f87e4441383bf67cd468f7d6e",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "codex-run-summary.json",
+      "bytes": 637,
+      "sha256": "6d4c788bf8e0c536ab855bed01ba3739809734a7f0346f1adb02716da8ca00e7",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "compiled-policy.rego",
+      "bytes": 3008,
+      "sha256": "ee4c1f7356b1db56e60190a83199b79897d651c3a3b89c617d3890415c8f0117",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "compiler-manifest.json",
+      "bytes": 1450,
+      "sha256": "719d9e0e9db93af4f9f7155f6060f50ffda9495e396fba815d484da4970a661f",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "drift-report-after.json",
+      "bytes": 213,
+      "sha256": "3e8a4725ba9fb83fc8a9fe753532f5736796eb46b39a0a60b4d8c54cdf072b66",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "drift-report-before.json",
+      "bytes": 15116,
+      "sha256": "bc074371c22b54ba366d15095f48a1a4de33800ba4d3d2fd207aebe44fc9058d",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "eval-scorecard.json",
+      "bytes": 1096,
+      "sha256": "f0f8cd26a100793517826fa49c0b5274ec5c63d660cc7b4a4211749a307bf4bb",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "generated-cases.json",
+      "bytes": 19524,
+      "sha256": "39ab38607278241f4c5c343abefcde67e5dd46bb217c9e6c5a10c3f11f0f90b0",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "golden-cases.json",
+      "bytes": 3234,
+      "sha256": "fb52699d412fbbf5c4b904157a1b2fc80657c563ade02bf43149b93802b08d97",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "impact-report.json",
+      "bytes": 12659,
+      "sha256": "d038d85b3046f944a2d87796d5406df99615060e1a2bc99996282a481700bf2d",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "integration.diff",
+      "bytes": 87,
+      "sha256": "351bea3c0085064accc375928fd426d35ae32f70f79e40215ea6af1ea7e68ad2",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "mutation-report.json",
+      "bytes": 18792,
+      "sha256": "bf84b66be59c86b8c8999212b5dd48d6776d774aa0d7e0cf0ad61e2d25db3466",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "opa-results.json",
+      "bytes": 206,
+      "sha256": "2ab14031420284c25d0365ebca4ffe1bbe86cd7f216c200f1e6a3c499450dd0a",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "policy-ir.json",
+      "bytes": 11833,
+      "sha256": "49f4e136564f2bce22ce3c095ff64dd51ae456524821a67fb52300be1c555fb4",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "prompt-manifest.json",
+      "bytes": 595,
+      "sha256": "759e99ddfc7db56c1aa9a5bfb7272b4a05658dc4672045987a75b937ef378a31",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "run-metadata.json",
+      "bytes": 192,
+      "sha256": "4b8afa87a565e04364a643cc6c2d5a8cc367da56f566a6e44cb4d5656b760a4c",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "security-review.md",
+      "bytes": 127,
+      "sha256": "5ba1a5e1ecd899d6877becc399bac96affa96836addf285f9f20b6fe24e60428",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "summary.md",
+      "bytes": 793,
+      "sha256": "f5c5e6360eb04bbab6afce77ccb3e7f6247e5b38eb85da047c2c0cf3395cb2d7",
+      "includedInEvidenceHash": false
+    },
+    {
+      "file": "test-command-log.json",
+      "bytes": 199,
+      "sha256": "d2bbaa3c55c3b50c69c9776c4573deb400d1210b67b49b990726e7fb8be93efe",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "traceability.json",
+      "bytes": 14989,
+      "sha256": "4b49695178424890270779991593673da0c14a8a7e6da5abfdb7edafad8f7642",
+      "includedInEvidenceHash": true
+    },
+    {
+      "file": "verification-summary.json",
+      "bytes": 1198,
+      "sha256": "94f0e764ff13ebf66d974ccae25b08b7cbeea94e3755b9355c0eceaaf2d3a871",
+      "includedInEvidenceHash": false
+    }
+  ]
+}

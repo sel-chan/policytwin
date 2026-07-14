@@ -6,7 +6,7 @@
     "expectedDecision": "ALLOW",
     "source": "USER_GOLDEN",
     "relatedRuleIds": ["refund-eligible"],
-    "relatedClauseIds": ["clause-refund-window"],
+    "relatedClauseIds": ["clause-2db0db31"],
     "rationale": "The request is within both explicit eligibility thresholds."
   },
   {
@@ -15,8 +15,8 @@
     "input": { "daysSincePurchase": 20, "usageBasisPoints": 0, "promotionalPurchase": false, "finalSale": false, "managerApproved": false, "planType": "ANNUAL" },
     "expectedDecision": "DENY",
     "source": "USER_GOLDEN",
-    "relatedRuleIds": ["default-deny"],
-    "relatedClauseIds": ["clause-refund-window"],
+    "relatedRuleIds": [],
+    "relatedClauseIds": ["clause-2db0db31"],
     "rationale": "No eligibility rule matches after day 14."
   },
   {
@@ -26,7 +26,7 @@
     "expectedDecision": "REVIEW",
     "source": "USER_GOLDEN",
     "relatedRuleIds": ["promotion-review"],
-    "relatedClauseIds": ["clause-promotion"],
+    "relatedClauseIds": ["clause-68b8918e", "clause-83647cb3"],
     "rationale": "An eligible promotional request remains under review until approval."
   },
   {
@@ -36,7 +36,7 @@
     "expectedDecision": "ALLOW",
     "source": "USER_GOLDEN",
     "relatedRuleIds": ["promotion-approved"],
-    "relatedClauseIds": ["clause-promotion"],
+    "relatedClauseIds": ["clause-2db0db31", "clause-68b8918e"],
     "rationale": "Manager approval resolves an otherwise eligible promotional request."
   },
   {
@@ -46,7 +46,7 @@
     "expectedDecision": "DENY",
     "source": "USER_GOLDEN",
     "relatedRuleIds": ["final-sale-deny"],
-    "relatedClauseIds": ["clause-final-sale"],
+    "relatedClauseIds": ["clause-c74dd597"],
     "rationale": "Final sale is never refundable."
   },
   {
@@ -56,7 +56,7 @@
     "expectedDecision": "DENY",
     "source": "USER_GOLDEN",
     "relatedRuleIds": ["final-sale-deny", "promotion-approved"],
-    "relatedClauseIds": ["clause-final-sale", "clause-promotion"],
+    "relatedClauseIds": ["clause-c74dd597", "clause-2db0db31", "clause-68b8918e"],
     "rationale": "Final-sale denial has the highest priority."
   }
 ]

@@ -22,6 +22,7 @@
     "verify:live": "node scripts/live-gate.mjs",
     "demo:reset": "node scripts/demo-reset.mjs",
     "demo:run": "node scripts/demo-run.mjs",
+    "evidence:offline": "node scripts/generate-offline-evidence.mjs",
     "submission:check": "node scripts/gate.mjs submission:check"
   }
 }

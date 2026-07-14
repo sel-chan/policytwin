@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1",
+  "compilerVersion": "rego-compiler.v1",
+  "regoSyntaxVersion": "v1",
+  "policyId": "policy-seeded-refund",
+  "policyVersion": 4,
+  "packageName": "policytwin.refund",
+  "query": "data.policytwin.refund.decision",
+  "inputValidation": {
+    "mode": "REGO_AND_PREVALIDATED",
+    "startLine": 6,
+    "endLine": 20
+  },
+  "ruleMappings": [
+    {
+      "ruleId": "final-sale-deny",
+      "priority": 400,
+      "sourceClauseIds": [
+        "clause-c74dd597"
+      ],
+      "predicateRule": "rule_0_predicate",
+      "startLine": 90,
+      "endLine": 98
+    },
+    {
+      "ruleId": "promotion-approved",
+      "priority": 300,
+      "sourceClauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e"
+      ],
+      "predicateRule": "rule_1_predicate",
+      "startLine": 100,
+      "endLine": 109
+    },
+    {
+      "ruleId": "promotion-review",
+      "priority": 200,
+      "sourceClauseIds": [
+        "clause-2db0db31",
+        "clause-68b8918e",
+        "clause-83647cb3"
+      ],
+      "predicateRule": "rule_2_predicate",
+      "startLine": 111,
+      "endLine": 121
+    },
+    {
+      "ruleId": "refund-eligible",
+      "priority": 100,
+      "sourceClauseIds": [
+        "clause-2db0db31"
+      ],
+      "predicateRule": "rule_3_predicate",
+      "startLine": 123,
+      "endLine": 134
+    }
+  ],
+  "defaultMapping": {
+    "decision": "DENY",
+    "startLine": 136,
+    "endLine": 147
+  },
+  "sourceBytes": 3008
+}

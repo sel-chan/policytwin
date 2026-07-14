@@ -45,8 +45,48 @@ interface CaseCandidate {
   rationale: string;
 }
 
-function generatedCandidates(): CaseCandidate[] {
+function collectNumericThresholds(
+  predicate: PolicyIR["rules"][number]["when"],
+  field: "daysSincePurchase" | "usageBasisPoints",
+): number[] {
+  if (predicate.type === "compare") {
+    return predicate.field === field &&
+      typeof predicate.value === "number" &&
+      ["lt", "lte", "gt", "gte"].includes(predicate.operator)
+      ? [predicate.value]
+      : [];
+  }
+  if (predicate.type === "not") {
+    return collectNumericThresholds(predicate.child, field);
+  }
+  if (predicate.type === "in") {
+    return [];
+  }
+  return predicate.children.flatMap((child) => collectNumericThresholds(child, field));
+}
+
+function thresholdValues(policy: PolicyIR, field: "daysSincePurchase" | "usageBasisPoints"): number[] {
+  const values = [
+    ...new Set(policy.rules.flatMap((rule) => collectNumericThresholds(rule.when, field))),
+  ].sort((left, right) => left - right);
+  if (values.length === 0) {
+    throw new Error(`Accepted policy has no numeric threshold for ${field}.`);
+  }
+  return values;
+}
+
+function thresholdNeighbors(values: readonly number[]): number[] {
+  return [
+    ...new Set(values.flatMap((value) => [Math.max(0, value - 1), value, value + 1])),
+  ].sort((left, right) => left - right);
+}
+
+function generatedCandidates(policy: PolicyIR): CaseCandidate[] {
   const candidates: CaseCandidate[] = [];
+  const dayThresholds = thresholdValues(policy, "daysSincePurchase");
+  const usageThresholds = thresholdValues(policy, "usageBasisPoints");
+  const days = thresholdNeighbors(dayThresholds);
+  const usages = thresholdNeighbors(usageThresholds);
   const base = {
     promotionalPurchase: false,
     finalSale: false,
@@ -54,8 +94,8 @@ function generatedCandidates(): CaseCandidate[] {
     planType: "MONTHLY" as const,
   };
 
-  for (const daysSincePurchase of [13, 14, 15]) {
-    for (const usageBasisPoints of [1999, 2000, 2001]) {
+  for (const daysSincePurchase of days) {
+    for (const usageBasisPoints of usages) {
       candidates.push({
         title: `Standard boundary d${daysSincePurchase} u${usageBasisPoints}`,
         source: "BOUNDARY",
@@ -79,14 +119,16 @@ function generatedCandidates(): CaseCandidate[] {
     }
   }
 
+  const exactDay = Math.max(...dayThresholds);
+  const exactUsage = Math.max(...usageThresholds);
   for (const promotionalPurchase of [false, true]) {
     for (const managerApproved of [false, true]) {
       candidates.push({
         title: `Final-sale conflict promo ${promotionalPurchase} approved ${managerApproved}`,
         source: "CONFLICT",
         input: {
-          daysSincePurchase: 14,
-          usageBasisPoints: 2000,
+          daysSincePurchase: exactDay,
+          usageBasisPoints: exactUsage,
           promotionalPurchase,
           finalSale: true,
           managerApproved,
@@ -101,8 +143,8 @@ function generatedCandidates(): CaseCandidate[] {
     title: "No-match accepted default",
     source: "GENERATED",
     input: {
-      daysSincePurchase: 30,
-      usageBasisPoints: 500,
+      daysSincePurchase: exactDay + 16,
+      usageBasisPoints: Math.min(500, exactUsage),
       promotionalPurchase: false,
       finalSale: false,
       managerApproved: false,
@@ -164,7 +206,7 @@ export function generateAcceptedCaseCorpus(
     }
   }
 
-  for (const candidate of generatedCandidates()) {
+  for (const candidate of generatedCandidates(policy)) {
     const input = parseRefundPolicyInput(candidate.input);
     const key = canonicalRefundInputKey(input);
     if (byInput.has(key)) {

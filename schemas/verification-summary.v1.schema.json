@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policytwin.local/schemas/verification-summary.v1.schema.json",
+  "title": "PolicyTwin verification summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "evidenceMode", "policyVersion", "golden", "generated", "driftBefore", "driftAfter", "evaluationOnlyFixedFixtureDrift", "mutation", "regression", "traceability", "security", "externalGates", "evidenceHash", "createdAt"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "evidenceMode": { "enum": ["PARTIAL_OFFLINE", "LIVE_VERIFIED"] },
+    "policyVersion": { "type": "integer", "minimum": 1 },
+    "golden": { "$ref": "#/$defs/testMetric" },
+    "generated": { "$ref": "#/$defs/testMetric" },
+    "driftBefore": { "type": "integer", "minimum": 0 },
+    "driftAfter": { "type": ["integer", "null"], "minimum": 0 },
+    "evaluationOnlyFixedFixtureDrift": { "type": "integer", "minimum": 0 },
+    "mutation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["killed", "total", "excludedEquivalent", "killRate", "executionMode"],
+      "properties": {
+        "killed": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 },
+        "excludedEquivalent": { "type": "integer", "minimum": 0 },
+        "killRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "executionMode": { "const": "REFERENCE_EVALUATOR_NOT_OPA" }
+      }
+    },
+    "regression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "total", "status"],
+      "properties": {
+        "passed": { "type": ["integer", "null"], "minimum": 0 },
+        "total": { "type": ["integer", "null"], "minimum": 0 },
+        "status": { "enum": ["PASS", "FAIL", "NOT_RUN"] }
+      }
+    },
+    "traceability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clausesCovered", "clausesTotal", "rulesCovered", "rulesTotal", "unlinkedCodeLocations"],
+      "properties": {
+        "clausesCovered": { "type": "integer", "minimum": 0 },
+        "clausesTotal": { "type": "integer", "minimum": 0 },
+        "rulesCovered": { "type": "integer", "minimum": 0 },
+        "rulesTotal": { "type": "integer", "minimum": 0 },
+        "unlinkedCodeLocations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical", "high", "status"],
+      "properties": {
+        "critical": { "type": ["integer", "null"], "minimum": 0 },
+        "high": { "type": ["integer", "null"], "minimum": 0 },
+        "status": { "enum": ["PASS", "FAIL", "NOT_RUN"] }
+      }
+    },
+    "externalGates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gpt56", "opa", "codex", "browser", "container", "deployment"],
+      "properties": {
+        "gpt56": { "$ref": "#/$defs/gate" },
+        "opa": { "$ref": "#/$defs/gate" },
+        "codex": { "$ref": "#/$defs/gate" },
+        "browser": { "$ref": "#/$defs/gate" },
+        "container": { "$ref": "#/$defs/gate" },
+        "deployment": { "$ref": "#/$defs/gate" }
+      }
+    },
+    "evidenceHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "gate": { "enum": ["PASS", "FAIL", "NOT_RUN"] },
+    "testMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "total", "executionMode"],
+      "properties": {
+        "passed": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 },
+        "executionMode": { "const": "REFERENCE_EVALUATOR_NOT_OPA" }
+      }
+    }
+  }
+}

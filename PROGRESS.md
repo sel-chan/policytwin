@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7 — Codex cartography, repair, and review (offline worker contracts)`
+- Current milestone: `M8 — Proof, impact, and product polish (offline evidence foundations)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 10:42:37 +09:00`
+- Last updated: `2026-07-14 10:58:32 +09:00`
 - Latest checkpoint commit: `0c6fb85f392243a578eea0452b8de4ff50e58910`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -87,7 +87,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
 | M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
-| M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
+| M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | pending current commit | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
 | M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
 | M10 Submission package | NOT_STARTED |  |  |  |
 
@@ -95,29 +95,29 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Build the dependency-free M7 worker foundation: immutable trusted-fixture copying, closed command policy, strict cartography/repair/review result contracts, deterministic orchestration with injected backends, and explicit separation between offline test doubles and future live Codex evidence.
+Build the dependency-free M8 evidence foundation: versioned 14→30-day impact analysis, clause→rule→case→code traceability, and a reproducible partial evidence package whose verification status remains `FAIL` until real OPA, live GPT/Codex, security, browser, and deployment evidence exists.
 
 ### Failing or missing condition
 
-There is no repair-worker contract, safe fresh-copy lifecycle, command allowlist, cartography/review schema, injected Codex backend boundary, or recoverable failure model. The SDK is not installed and current official SDK behavior has not been verified, so this checkpoint must not claim a Codex run.
+No change-impact engine or evidence-pack generator exists. Required evidence files are absent, proof metrics are not consolidated, and current offline snapshots cannot yet be audited through one hashed manifest. Generating files must not convert reference-evaluator or test-double results into OPA/Codex claims.
 
 ### Planned actions
 
-- [x] Re-read the M7 gate and inspect fixture reset/build/test and current process boundaries.
-- [x] Implement a fresh trusted-fixture copy manager with canonical-source hash protection and contained paths.
-- [x] Define a closed command allowlist with argument validation, timeouts, output bounds, and secret redaction.
-- [x] Define strict versioned cartography, repair, command-evidence, and independent-review contracts.
-- [x] Implement an orchestration boundary using injected offline backends without impersonating Codex.
-- [x] Test success, malformed backend output, command rejection, canonical immutability, and bounded failure recovery.
-- [x] Review the final diff and commit the M7 offline checkpoint.
+- [x] Re-read the M8 gate and inspect accepted policy, cases, differential, compiler, mutation, and worker snapshots.
+- [x] Implement immutable 14→30 policy version change and changed-rule/case impact reporting.
+- [x] Build clause→rule→case→code traceability with explicit uncovered links.
+- [x] Generate every required evidence filename with provenance and truthful `NOT_RUN` external gates.
+- [x] Compute a deterministic evidence manifest/hash and a human summary matching machine status.
+- [x] Test missing/tampered evidence and unsupported PASS claims.
+- [ ] Review the final diff and commit the M8 offline checkpoint.
 
 ### Completion evidence
 
-- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `node scripts/report-offline-m7.mjs`; `pnpm verify`
+- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm evidence:offline`; `node scripts/report-offline-m8.mjs`; `pnpm verify`
 - Exit codes: focused implemented gates all 0; `pnpm verify` is 1 only because `test:e2e` and `submission:check` remain intentionally fail-closed
-- Artifacts: `tests/snapshots/offline-m7-summary.json`; `schemas/codex-results.v1.schema.json`; `prompts/cartographer.v1.md`; `prompts/repair.v1.md`; `prompts/reviewer.v1.md`
+- Artifacts: `artifacts/evidence/` (25 files); `tests/snapshots/offline-m8-impact.json`; `schemas/verification-summary.v1.schema.json`
 - Screenshots: not applicable; no UI implementation exists
-- Commit: `0c6fb85f392243a578eea0452b8de4ff50e58910`
+- Commit: pending current checkpoint
 
 ## Quality gates
 
@@ -127,14 +127,14 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/goal/milestone validator | `PACK_MANIFEST.md` | 2026-07-14 08:20 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 10:33 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain, PolicyIR, compiler, cases, mutation, differential runner, worker contracts, and both fixture variants pass strict TypeScript | 2026-07-14 10:33 +09:00 |
-| Unit tests | PASS | `pnpm test` via `pnpm verify` | 37/37 passed | 2026-07-14 10:33 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 12/12 passed; fresh copy isolation, command environment, fixture tests, drift runner, and reset replay verified | 2026-07-14 10:33 +09:00 |
-| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 10:33 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 14/14 offline/recorded evals pass; live model/Codex/OPA eval remains unverified | 2026-07-14 10:33 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 10:33 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented M0–M7 offline steps pass; only browser and submission gates fail as designed | 2026-07-14 10:33 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 10:58 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain through evidence validation and both fixture variants pass strict TypeScript | 2026-07-14 10:58 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 41/41 passed | 2026-07-14 10:58 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 14/14 passed; evidence regeneration/tamper gates plus prior fixture/worker checks pass | 2026-07-14 10:58 +09:00 |
+| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 10:58 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 16/16 offline/recorded evals pass; live model/Codex/OPA eval remains unverified | 2026-07-14 10:58 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 10:58 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented M0–M8 offline steps pass; only browser and submission gates fail as designed | 2026-07-14 10:58 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -151,19 +151,28 @@ Never fill from estimates.
 | Structured-output schema pass | 100% | UNSET |  |
 | Required ambiguity labels found | 100% | UNSET |  |
 | Explicit seeded semantics mislabeled as ambiguity | 0 | UNSET |  |
-| Golden cases passed | 100% | UNSET |  |
+| Golden cases passed | 100% | 6/6 (offline reference evaluator; not OPA) | `artifacts/evidence/verification-summary.json` |
 | Accepted corpus size | ≥30 | 41 (offline reference corpus including D01–D03) | `tests/snapshots/offline-m5-summary.json` |
 | Seeded app bugs detected | 3/3 | 3/3 | `pnpm demo:run`; `tests/integration/refund-fixture.integration.test.mjs` |
 | Post-repair drift | 0 | 0 (evaluation-only fixed fixture; no Codex/OPA claim) | `tests/snapshots/offline-m6-summary.json` |
 | Mutation kill rate | ≥90% | 93.62% (offline reference; OPA unverified) | `tests/snapshots/offline-m5-summary.json` |
-| Rule-to-clause traceability | 100% | UNSET |  |
-| Rule-to-case traceability | 100% | UNSET |  |
+| Rule-to-clause traceability | 100% | 4/4 rules and 4/4 clauses (offline) | `artifacts/evidence/traceability.json` |
+| Rule-to-case traceability | 100% | 41/41 accepted case links valid (offline) | `artifacts/evidence/traceability.json` |
 | Critical/high security findings | 0 | UNSET |  |
 | Browser happy path | 100% | UNSET |  |
 
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 10:58 +09:00 — M8 offline impact and evidence foundation verified, commit pending
+
+- Milestone: M8 (offline subset; milestone remains in progress)
+- Change: made numeric case boundaries derive from PolicyIR; corrected stale golden/drift clause links; added immutable 14→30 version impact, traceability diagnostics, deterministic evidence generation, SHA-256 manifest validation, strict verification summary, and tamper/false-PASS tests
+- Verified: unit 41/41; integration 14/14; eval 16/16; 8 case expectations change under 14→30; G02 blocks automatic verification; 4/4 clauses, 4/4 rules, 41/41 cases, and 6 code locations linked; 25 evidence files regenerate to hash `05e6f75a03fafa655f97c491983d3044e214f8a30c56fa31099762c095eee655`
+- Recovered failure: first parallel integration run deleted the shared fixture build during evidence generation; classified as code concurrency; isolated evidence compilation under `.tmp/evidence-fixture-build`; retry passed 14/14
+- Truth boundary: verification summary remains `FAIL`; OPA, live GPT-5.6, live Codex, post-repair drift, security, browser, container, and deployment are `NOT_RUN`
+- Commit: pending current checkpoint
 
 ### 2026-07-14 10:42 +09:00 — M7 offline repair-worker foundation committed
 
@@ -281,11 +290,11 @@ A blocker is valid only when the task cannot continue safely without external in
 
 Link to IDs in `DECISIONS.md`.
 
-- None. Current contract choices are accepted through D-011.
+- None. Current contract choices are accepted through D-012.
 
 ## Next action
 
-`Review and commit the M7 offline worker foundation, then continue independent M8 evidence and impact foundations while live SDK/OPA/UI integration remains approval-gated.`
+`Review and commit the M8 offline evidence foundation, then continue independent M9 threat-model, command-security, clean-checkout, license, and container-preparation work.`
 
 ## Pause handoff
 

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN_LIVE",
+  "executionMode": "OFFLINE_TEST_DOUBLE",
+  "liveCodexClaim": false,
+  "contractSnapshot": {
+    "executionMode": "OFFLINE_TEST_DOUBLE",
+    "liveCodexClaim": false,
+    "status": "PASS",
+    "attempts": 2,
+    "cartographyFiles": [
+      "src/refund.ts",
+      "tests/refund.test.mjs"
+    ],
+    "repairAttemptCount": 2,
+    "finalCommandIds": [
+      "fixture-typecheck",
+      "fixture-test"
+    ],
+    "finalCommandsPassed": true,
+    "reviewVerdict": "APPROVE",
+    "failure": null
+  },
+  "reason": "No Codex SDK call or code repair occurred in this partial offline package."
+}

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN_AFTER_CODEX",
+  "evidenceBasis": "EVALUATION_ONLY_FIXED_FIXTURE_NOT_CODEX_REPAIR",
+  "evaluationOnlyFixedFixtureDrifts": 0,
+  "evaluationOnlyFixedFixtureErrors": 0
+}

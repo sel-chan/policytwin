@@ -1,0 +1,458 @@
+{
+  "schemaVersion": "1",
+  "executionMode": "REFERENCE_EVALUATOR_NOT_OPA",
+  "fromVersion": 4,
+  "toVersion": 5,
+  "change": {
+    "field": "daysSincePurchase",
+    "from": 14,
+    "to": 30
+  },
+  "verificationState": "BLOCKED_BY_GOLDEN_CONTRADICTION",
+  "changedClauses": [
+    {
+      "clauseId": "clause-2db0db31",
+      "beforeText": "Customers are eligible for a full refund when the request is made no later than 14 calendar days after purchase, including exactly day 14, and usage is 20% or less.",
+      "afterText": "Customers are eligible for a full refund when the request is made no later than 30 calendar days after purchase, including exactly day 30, and usage is 20% or less."
+    }
+  ],
+  "changedRules": [
+    {
+      "ruleId": "promotion-approved",
+      "before": {
+        "id": "promotion-approved",
+        "sourceClauseIds": [
+          "clause-2db0db31",
+          "clause-68b8918e"
+        ],
+        "title": "Eligible approved promotion",
+        "description": "An otherwise eligible promotional request is allowed after manager approval.",
+        "when": {
+          "type": "and",
+          "children": [
+            {
+              "type": "compare",
+              "field": "daysSincePurchase",
+              "operator": "lte",
+              "value": 14
+            },
+            {
+              "type": "compare",
+              "field": "usageBasisPoints",
+              "operator": "lte",
+              "value": 2000
+            },
+            {
+              "type": "compare",
+              "field": "promotionalPurchase",
+              "operator": "eq",
+              "value": true
+            },
+            {
+              "type": "compare",
+              "field": "managerApproved",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "priority": 300,
+        "explanationTemplate": "The eligible promotional request has manager approval."
+      },
+      "after": {
+        "id": "promotion-approved",
+        "sourceClauseIds": [
+          "clause-2db0db31",
+          "clause-68b8918e"
+        ],
+        "title": "Eligible approved promotion",
+        "description": "An otherwise eligible promotional request is allowed after manager approval.",
+        "when": {
+          "type": "and",
+          "children": [
+            {
+              "type": "compare",
+              "field": "daysSincePurchase",
+              "operator": "lte",
+              "value": 30
+            },
+            {
+              "type": "compare",
+              "field": "usageBasisPoints",
+              "operator": "lte",
+              "value": 2000
+            },
+            {
+              "type": "compare",
+              "field": "promotionalPurchase",
+              "operator": "eq",
+              "value": true
+            },
+            {
+              "type": "compare",
+              "field": "managerApproved",
+              "operator": "eq",
+              "value": true
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "priority": 300,
+        "explanationTemplate": "The eligible promotional request has manager approval."
+      }
+    },
+    {
+      "ruleId": "promotion-review",
+      "before": {
+        "id": "promotion-review",
+        "sourceClauseIds": [
+          "clause-2db0db31",
+          "clause-68b8918e",
+          "clause-83647cb3"
+        ],
+        "title": "Eligible promotion awaits review",
+        "description": "An otherwise eligible promotion remains under review until a manager approves it.",
+        "when": {
+          "type": "and",
+          "children": [
+            {
+              "type": "compare",
+              "field": "daysSincePurchase",
+              "operator": "lte",
+              "value": 14
+            },
+            {
+              "type": "compare",
+              "field": "usageBasisPoints",
+              "operator": "lte",
+              "value": 2000
+            },
+            {
+              "type": "compare",
+              "field": "promotionalPurchase",
+              "operator": "eq",
+              "value": true
+            },
+            {
+              "type": "compare",
+              "field": "managerApproved",
+              "operator": "eq",
+              "value": false
+            }
+          ]
+        },
+        "decision": "REVIEW",
+        "priority": 200,
+        "explanationTemplate": "The eligible promotional request awaits a manager decision."
+      },
+      "after": {
+        "id": "promotion-review",
+        "sourceClauseIds": [
+          "clause-2db0db31",
+          "clause-68b8918e",
+          "clause-83647cb3"
+        ],
+        "title": "Eligible promotion awaits review",
+        "description": "An otherwise eligible promotion remains under review until a manager approves it.",
+        "when": {
+          "type": "and",
+          "children": [
+            {
+              "type": "compare",
+              "field": "daysSincePurchase",
+              "operator": "lte",
+              "value": 30
+            },
+            {
+              "type": "compare",
+              "field": "usageBasisPoints",
+              "operator": "lte",
+              "value": 2000
+            },
+            {
+              "type": "compare",
+              "field": "promotionalPurchase",
+              "operator": "eq",
+              "value": true
+            },
+            {
+              "type": "compare",
+              "field": "managerApproved",
+              "operator": "eq",
+              "value": false
+            }
+          ]
+        },
+        "decision": "REVIEW",
+        "priority": 200,
+        "explanationTemplate": "The eligible promotional request awaits a manager decision."
+      }
+    },
+    {
+      "ruleId": "refund-eligible",
+      "before": {
+        "id": "refund-eligible",
+        "sourceClauseIds": [
+          "clause-2db0db31"
+        ],
+        "title": "Standard refund eligibility",
+        "description": "A non-promotional request within the inclusive day and usage limits is allowed.",
+        "when": {
+          "type": "and",
+          "children": [
+            {
+              "type": "compare",
+              "field": "daysSincePurchase",
+              "operator": "lte",
+              "value": 14
+            },
+            {
+              "type": "compare",
+              "field": "usageBasisPoints",
+              "operator": "lte",
+              "value": 2000
+            },
+            {
+              "type": "compare",
+              "field": "promotionalPurchase",
+              "operator": "eq",
+              "value": false
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "priority": 100,
+        "explanationTemplate": "The request is within the inclusive refund thresholds."
+      },
+      "after": {
+        "id": "refund-eligible",
+        "sourceClauseIds": [
+          "clause-2db0db31"
+        ],
+        "title": "Standard refund eligibility",
+        "description": "A non-promotional request within the inclusive day and usage limits is allowed.",
+        "when": {
+          "type": "and",
+          "children": [
+            {
+              "type": "compare",
+              "field": "daysSincePurchase",
+              "operator": "lte",
+              "value": 30
+            },
+            {
+              "type": "compare",
+              "field": "usageBasisPoints",
+              "operator": "lte",
+              "value": 2000
+            },
+            {
+              "type": "compare",
+              "field": "promotionalPurchase",
+              "operator": "eq",
+              "value": false
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "priority": 100,
+        "explanationTemplate": "The request is within the inclusive refund thresholds."
+      }
+    }
+  ],
+  "changedCases": [
+    {
+      "caseId": "G02",
+      "input": {
+        "daysSincePurchase": 20,
+        "usageBasisPoints": 0,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "ANNUAL"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "ALLOW",
+      "beforeRuleId": null,
+      "afterRuleId": "refund-eligible",
+      "source": "USER_GOLDEN"
+    },
+    {
+      "caseId": "C-BOUNDARY-e3ae81f0",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 1999,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "ALLOW",
+      "beforeRuleId": null,
+      "afterRuleId": "refund-eligible",
+      "source": "BOUNDARY"
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-15545d6b",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 1999,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "REVIEW",
+      "beforeRuleId": null,
+      "afterRuleId": "promotion-review",
+      "source": "MINIMAL_CONTRAST"
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-4ee64850",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 1999,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "ALLOW",
+      "beforeRuleId": null,
+      "afterRuleId": "promotion-approved",
+      "source": "MINIMAL_CONTRAST"
+    },
+    {
+      "caseId": "C-BOUNDARY-b1f5224e",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "ALLOW",
+      "beforeRuleId": null,
+      "afterRuleId": "refund-eligible",
+      "source": "BOUNDARY"
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-0f19e261",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "MONTHLY"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "REVIEW",
+      "beforeRuleId": null,
+      "afterRuleId": "promotion-review",
+      "source": "MINIMAL_CONTRAST"
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-d24b1a0e",
+      "input": {
+        "daysSincePurchase": 15,
+        "usageBasisPoints": 2000,
+        "promotionalPurchase": true,
+        "finalSale": false,
+        "managerApproved": true,
+        "planType": "MONTHLY"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "ALLOW",
+      "beforeRuleId": null,
+      "afterRuleId": "promotion-approved",
+      "source": "MINIMAL_CONTRAST"
+    },
+    {
+      "caseId": "C-GENERATED-fed86770",
+      "input": {
+        "daysSincePurchase": 30,
+        "usageBasisPoints": 500,
+        "promotionalPurchase": false,
+        "finalSale": false,
+        "managerApproved": false,
+        "planType": "ENTERPRISE"
+      },
+      "beforeDecision": "DENY",
+      "afterDecision": "ALLOW",
+      "beforeRuleId": null,
+      "afterRuleId": "refund-eligible",
+      "source": "GENERATED"
+    }
+  ],
+  "goldenContradictionCaseIds": [
+    "G02"
+  ],
+  "regeneratedBoundaryValues": [
+    29,
+    30,
+    31
+  ],
+  "potentialCodeLocations": [
+    {
+      "id": "code-day-window",
+      "file": "src/refund.ts",
+      "lineStart": 13,
+      "lineEnd": 13,
+      "symbol": "withinWindow",
+      "ruleIds": [
+        "promotion-approved",
+        "promotion-review",
+        "refund-eligible"
+      ]
+    },
+    {
+      "id": "code-usage-window",
+      "file": "src/refund.ts",
+      "lineStart": 14,
+      "lineEnd": 14,
+      "symbol": "withinUsage",
+      "ruleIds": [
+        "promotion-approved",
+        "promotion-review",
+        "refund-eligible"
+      ]
+    },
+    {
+      "id": "code-promotion-approved",
+      "file": "src/refund.ts",
+      "lineStart": 16,
+      "lineEnd": 18,
+      "symbol": "decideRefund",
+      "ruleIds": [
+        "promotion-approved"
+      ]
+    },
+    {
+      "id": "code-promotion-review",
+      "file": "src/refund.ts",
+      "lineStart": 28,
+      "lineEnd": 30,
+      "symbol": "decideRefund",
+      "ruleIds": [
+        "promotion-review"
+      ]
+    },
+    {
+      "id": "code-standard-allow",
+      "file": "src/refund.ts",
+      "lineStart": 32,
+      "lineEnd": 32,
+      "symbol": "decideRefund",
+      "ruleIds": [
+        "refund-eligible"
+      ]
+    }
+  ]
+}

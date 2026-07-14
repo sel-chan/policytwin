@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN_IN_ARTIFACT_GENERATION",
+  "commands": [],
+  "reason": "Repository verification is recorded in PROGRESS.md; no fresh command claim is embedded here."
+}

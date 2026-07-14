@@ -205,3 +205,20 @@ Add new entries below this line with the template above.
 - Risks: The eventual SDK adapter may require contract mapping changes after official documentation review.
 - Reversal or migration path: Keep the domain contracts and replace only the injected backend adapter when the current SDK interface is verified.
 - Related files/commits: `src/codex/`, `prompts/cartographer.v1.md`, `prompts/repair.v1.md`, `prompts/reviewer.v1.md`, `PROGRESS.md`.
+
+### D-012 — Partial evidence packages must be complete in shape and fail closed
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M8
+- Context: The required proof filenames can be generated from deterministic offline fixtures before OPA, GPT-5.6, Codex, browser, container, security, and deployment gates are available. Omitting the package hides integration gaps, while filling missing results with evaluation fixtures risks false proof.
+- Options considered:
+  1. wait to create any evidence files until every live gate exists;
+  2. generate every required filename now with explicit provenance and a mandatory failing summary;
+  3. use the evaluation-only fixed fixture as post-Codex repair evidence.
+- Decision: Generate a complete-shape `PARTIAL_OFFLINE` package whose machine and human summaries remain `FAIL`. Record unavailable external work as `NOT_RUN`, keep `driftAfter` null, expose evaluation-only fixed-fixture drift in a separate field, and reject any `PASS` claim unless every external gate, post-repair drift, and security result is proven. Hash every payload file with SHA-256 and validate missing, modified, unmanifested, or contradictory evidence.
+- Evidence: `src/evidence/validate.ts`, `scripts/generate-offline-evidence.mjs`, `artifacts/evidence/verification-summary.json`, and `artifacts/evidence/evidence-manifest.json`.
+- Consequences: Evidence consumers can integrate against the final file surface early without mistaking offline reference results for completion.
+- Risks: Live generation must replace `NOT_RUN` artifacts and preserve validator compatibility rather than layering unsupported claims on the partial package.
+- Reversal or migration path: The same manifest advances to `LIVE_VERIFIED`/`PASS` only after all required gates supply fresh evidence and the fail-closed validator accepts it.
+- Related files/commits: `artifacts/evidence/`, `schemas/verification-summary.v1.schema.json`, `PROGRESS.md`.

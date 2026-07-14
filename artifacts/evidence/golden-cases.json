@@ -1,0 +1,131 @@
+[
+  {
+    "id": "G01",
+    "title": "Ordinary eligible request",
+    "input": {
+      "daysSincePurchase": 3,
+      "usageBasisPoints": 500,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "USER_GOLDEN",
+    "relatedRuleIds": [
+      "refund-eligible"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "The request is within both explicit eligibility thresholds."
+  },
+  {
+    "id": "G02",
+    "title": "Request outside the refund window",
+    "input": {
+      "daysSincePurchase": 20,
+      "usageBasisPoints": 0,
+      "promotionalPurchase": false,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "ANNUAL"
+    },
+    "expectedDecision": "DENY",
+    "source": "USER_GOLDEN",
+    "relatedRuleIds": [],
+    "relatedClauseIds": [
+      "clause-2db0db31"
+    ],
+    "rationale": "No eligibility rule matches after day 14."
+  },
+  {
+    "id": "G03",
+    "title": "Promotion awaiting manager decision",
+    "input": {
+      "daysSincePurchase": 2,
+      "usageBasisPoints": 0,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "REVIEW",
+    "source": "USER_GOLDEN",
+    "relatedRuleIds": [
+      "promotion-review"
+    ],
+    "relatedClauseIds": [
+      "clause-68b8918e",
+      "clause-83647cb3"
+    ],
+    "rationale": "An eligible promotional request remains under review until approval."
+  },
+  {
+    "id": "G04",
+    "title": "Approved eligible promotion",
+    "input": {
+      "daysSincePurchase": 2,
+      "usageBasisPoints": 0,
+      "promotionalPurchase": true,
+      "finalSale": false,
+      "managerApproved": true,
+      "planType": "ENTERPRISE"
+    },
+    "expectedDecision": "ALLOW",
+    "source": "USER_GOLDEN",
+    "relatedRuleIds": [
+      "promotion-approved"
+    ],
+    "relatedClauseIds": [
+      "clause-2db0db31",
+      "clause-68b8918e"
+    ],
+    "rationale": "Manager approval resolves an otherwise eligible promotional request."
+  },
+  {
+    "id": "G05",
+    "title": "Final-sale request",
+    "input": {
+      "daysSincePurchase": 2,
+      "usageBasisPoints": 0,
+      "promotionalPurchase": false,
+      "finalSale": true,
+      "managerApproved": false,
+      "planType": "MONTHLY"
+    },
+    "expectedDecision": "DENY",
+    "source": "USER_GOLDEN",
+    "relatedRuleIds": [
+      "final-sale-deny"
+    ],
+    "relatedClauseIds": [
+      "clause-c74dd597"
+    ],
+    "rationale": "Final sale is never refundable."
+  },
+  {
+    "id": "G06",
+    "title": "Approved promotion cannot override final sale",
+    "input": {
+      "daysSincePurchase": 2,
+      "usageBasisPoints": 0,
+      "promotionalPurchase": true,
+      "finalSale": true,
+      "managerApproved": true,
+      "planType": "ANNUAL"
+    },
+    "expectedDecision": "DENY",
+    "source": "USER_GOLDEN",
+    "relatedRuleIds": [
+      "final-sale-deny",
+      "promotion-approved"
+    ],
+    "relatedClauseIds": [
+      "clause-c74dd597",
+      "clause-2db0db31",
+      "clause-68b8918e"
+    ],
+    "rationale": "Final-sale denial has the highest priority."
+  }
+]

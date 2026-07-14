@@ -6,7 +6,7 @@
     "expectedDecision": "ALLOW",
     "source": "BOUNDARY",
     "relatedRuleIds": ["refund-eligible"],
-    "relatedClauseIds": ["clause-refund-window"],
+    "relatedClauseIds": ["clause-2db0db31"],
     "rationale": "The policy explicitly includes exactly day 14."
   },
   {
@@ -16,7 +16,7 @@
     "expectedDecision": "ALLOW",
     "source": "BOUNDARY",
     "relatedRuleIds": ["refund-eligible"],
-    "relatedClauseIds": ["clause-refund-window"],
+    "relatedClauseIds": ["clause-2db0db31"],
     "rationale": "The policy explicitly includes exactly 20 percent usage."
   },
   {
@@ -26,7 +26,7 @@
     "expectedDecision": "DENY",
     "source": "CONFLICT",
     "relatedRuleIds": ["final-sale-deny", "promotion-approved"],
-    "relatedClauseIds": ["clause-final-sale", "clause-promotion"],
+    "relatedClauseIds": ["clause-c74dd597", "clause-2db0db31", "clause-68b8918e"],
     "rationale": "Final sale has explicit highest-priority denial."
   }
 ]

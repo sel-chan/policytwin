@@ -1,0 +1,42 @@
+{
+  "executionMode": "REFERENCE_EVALUATOR_NOT_OPA",
+  "versions": [4, 5],
+  "threshold": [14, 30],
+  "verificationState": "BLOCKED_BY_GOLDEN_CONTRADICTION",
+  "changedClauseIds": ["clause-2db0db31"],
+  "changedRuleIds": ["promotion-approved", "promotion-review", "refund-eligible"],
+  "changedCaseIds": [
+    "G02",
+    "C-BOUNDARY-e3ae81f0",
+    "C-MINIMAL_CONTRAST-15545d6b",
+    "C-MINIMAL_CONTRAST-4ee64850",
+    "C-BOUNDARY-b1f5224e",
+    "C-MINIMAL_CONTRAST-0f19e261",
+    "C-MINIMAL_CONTRAST-d24b1a0e",
+    "C-GENERATED-fed86770"
+  ],
+  "goldenContradictionCaseIds": ["G02"],
+  "boundaryValues": [29, 30, 31],
+  "potentialCodeLocationIds": [
+    "code-day-window",
+    "code-usage-window",
+    "code-promotion-approved",
+    "code-promotion-review",
+    "code-standard-allow"
+  ],
+  "traceability": {
+    "clausesCovered": 4,
+    "clausesTotal": 4,
+    "rulesCovered": 4,
+    "rulesTotal": 4,
+    "casesLinked": 41,
+    "casesTotal": 41,
+    "unlinkedCodeLocations": 0
+  },
+  "gaps": {
+    "uncoveredClauseIds": [],
+    "uncoveredRuleIds": [],
+    "invalidCaseLinks": [],
+    "unlinkedCodeLocationIds": []
+  }
+}

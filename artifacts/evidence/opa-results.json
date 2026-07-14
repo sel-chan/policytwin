@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN",
+  "executionMode": "NOT_RUN",
+  "reason": "OPA is not installed; reference evaluation is stored separately and is not OPA evidence.",
+  "policyVersion": 4
+}
