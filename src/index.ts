@@ -24,3 +24,5 @@ export * from "./policy-ir/types.js";
 export * from "./policy-ir/clauses.js";
 export * from "./policy-ir/validate.js";
 export * from "./policy-ir/evaluate.js";
+export * from "./policy-ir/resolve.js";
+export * from "./policy-ir/state.js";

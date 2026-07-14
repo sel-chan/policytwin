@@ -6,7 +6,7 @@ PolicyTwin is an evidence-first policy engineering product for the OpenAI Build 
 
 ## Current implementation status
 
-The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2 — PolicyIR and interpretation** is in progress with strict offline `PolicyIR` contracts, deterministic clause segmentation, a closed JSON Schema, a versioned interpreter prompt, and a recorded eval fixture. The recorded fixture is explicitly not a live GPT-5.6 response. Product UI, OPA, live GPT-5.6 interpretation, and Codex repair are not yet implemented.
+The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2 — PolicyIR and interpretation** and **M3 — Decision Queue and versioning** have offline contract checkpoints: strict `PolicyIR`, deterministic clauses, a closed JSON Schema, a recorded eval fixture, immutable ambiguity resolution, golden-case contradiction blocking, and validated state transitions. The recorded fixture is explicitly not a live GPT-5.6 response. Persistence, product UI, OPA, live interpretation, and Codex repair are not yet implemented.
 
 ## Local baseline
 

@@ -8,7 +8,7 @@
 - Current milestone: `M3 — Decision Queue and versioning (offline domain work while external checks remain)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 09:17:07 +09:00`
+- Last updated: `2026-07-14 09:24:55 +09:00`
 - Latest checkpoint commit: `e535209fb2f3f4bac00c0fe95bcfdd27c1296549`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -82,7 +82,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
-| M3 Decision Queue and versioning | IN_PROGRESS | milestone contract reviewed; offline patch/version/state work starting |  | SQLite persistence and Decision Queue UI require the pinned application stack |
+| M3 Decision Queue and versioning | IN_PROGRESS | 20 unit tests pass, including immutable versions, all patch operations, idempotency, revisit behavior, golden contradiction blocking, compile guard, and state transitions |  | SQLite persistence and Decision Queue UI require the pinned application stack |
 | M4 Compiler and OPA | NOT_STARTED |  |  |  |
 | M5 Case generation/conflict/mutation | NOT_STARTED |  |  |  |
 | M6 Differential runner and drift UX | NOT_STARTED |  |  |  |
@@ -104,18 +104,20 @@ Ambiguity options validate structurally but cannot be applied. No version record
 ### Planned actions
 
 - [x] Re-read the M3 gate and inspect the closed patches, recorded ambiguities, golden cases, and validator.
-- [ ] Implement immutable patch application for every `PolicyPatch` operation.
-- [ ] Add decision records, version increments, idempotent same-option behavior, and revisiting decisions.
-- [ ] Add a server-side policy-state transition table and unresolved-decision compile guard.
-- [ ] Reject any decision version that contradicts authoritative golden cases.
-- [ ] Add focused tests for all patch operations, invalid transitions, seeded decision flow, and contradiction blocking.
+- [x] Implement immutable patch application for every `PolicyPatch` operation.
+- [x] Add decision records, version increments, idempotent same-option behavior, and revisiting decisions.
+- [x] Add a server-side policy-state transition table and unresolved-decision compile guard.
+- [x] Reject any decision version that contradicts authoritative golden cases.
+- [x] Add focused tests for all patch operations, invalid transitions, seeded decision flow, and contradiction blocking.
 - [ ] Run broader regressions, update evidence/docs, review the diff, and commit the M3 offline checkpoint.
 
 ### Completion evidence
 
-- Commands: pending M3 implementation
-- Exit codes: pending M3 implementation
-- Artifacts: pending M3 implementation
+- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm verify`
+- Exit codes:
+  - lint, typecheck, and unit tests (20/20): `0`
+  - `pnpm verify`: `1` only for expected unimplemented browser and submission gates; integration 5/5, eval 7/7, reset/replay, and build all passed inside the gate
+- Artifacts: `src/policy-ir/resolve.ts`, `src/policy-ir/state.ts`, policy resolution and state tests
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -129,12 +131,12 @@ Record latest actual result.
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
 | Lint | PASS | `pnpm lint` | repository static checks | 2026-07-14 08:48 +09:00 |
 | Typecheck | PASS | `pnpm typecheck` | domain, PolicyIR, and both fixture variants pass strict TypeScript | 2026-07-14 09:10 +09:00 |
-| Unit tests | PASS | `pnpm test` | 11/11 passed | 2026-07-14 09:10 +09:00 |
+| Unit tests | PASS | `pnpm test` | 20/20 passed | 2026-07-14 09:24 +09:00 |
 | Integration tests | PASS | `pnpm test:integration` | 5/5 passed; exactly 3 reset-copy drifts | 2026-07-14 08:49 +09:00 |
 | Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 08:42 +09:00 |
 | Prompt/eval suite | PASS | `pnpm eval` | 7/7 offline/recorded evals pass; live model eval remains unverified | 2026-07-14 09:10 +09:00 |
 | Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 09:11 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented M0–M2 steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:14 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented M0–M3 steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:21 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -237,7 +239,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement the offline M3 patch/version/state/contradiction domain, then continue toward the next independent deterministic gate while network-dependent M0/M2 work stays explicitly open.`
+`Commit the offline M3 domain checkpoint, then implement and snapshot-test the deterministic PolicyIR-to-Rego compiler while OPA installation remains network-approval gated.`
 
 ## Pause handoff
 
