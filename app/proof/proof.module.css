@@ -1,0 +1,58 @@
+.archiveDownloadCard {
+  margin: 18px 20px 8px;
+  padding: 16px;
+  border: 1px solid #cbdccf;
+  border-radius: 12px;
+  background: #eff8f3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.archiveDownloadCard strong,
+.archiveDownloadCard span,
+.archiveDownloadCard small {
+  display: block;
+}
+
+.archiveDownloadCard strong {
+  font: 700 15px Georgia, serif;
+}
+
+.archiveDownloadCard span {
+  margin-top: 5px;
+  color: #1f6b4f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.archiveDownloadCard small {
+  margin-top: 5px;
+  color: #66736b;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.archiveDownloadCard > a {
+  flex: 0 0 auto;
+  border-radius: 9px;
+  padding: 10px 13px;
+  background: #1f6b4f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  .archiveDownloadCard {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .archiveDownloadCard > a {
+    text-align: center;
+  }
+}

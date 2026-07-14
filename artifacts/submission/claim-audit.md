@@ -8,6 +8,7 @@ DRAFT_NOT_READY — generated from partial offline evidence; do not submit.
 | 16 buggy-fixture corpus drifts | `artifacts/evidence/drift-report-before.json` | OPA-backed expected decisions |
 | 44/47 mutants killed | `artifacts/evidence/mutation-report.json` | Reference evaluator, not OPA |
 | Evaluation-only fixed fixture has zero drift | `artifacts/evidence/drift-report-after.json` | Never call post-repair |
+| Deterministic 38-file USTAR archive | `src/evidence/archive.ts`, integration and browser tests | Recorded reference package only |
 | Six-view browser flow with v1-v5 persistence | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` | Local Chrome E2E only; impact is reference preview |
 | Live GPT-5.6 interpretation | Missing | Must not claim |
 | Live Codex repair/review | Missing | Must not claim |

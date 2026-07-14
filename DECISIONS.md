@@ -408,3 +408,20 @@ Add new entries below this line with the template above.
 - Risks: The fingerprint is an application equality guard, not a cryptographic attestation. It relies on validated deterministic object ordering; the evidence manifest and Ed25519 boundary remain authoritative for package integrity/origin.
 - Reversal or migration path: Generate, validate, hash, and attest a fresh evidence package for each accepted session policy, then replace the reference-only block with session-specific proof.
 - Related files/commits: `README.md`, `docs/architecture.md`, `docs/threat-model.md`, `PROGRESS.md`.
+
+### D-024 — Build the complete proof download as a validated deterministic USTAR archive
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M8/M9
+- Context: FR-16 requires one downloadable archive that excludes secrets and transient logs. The evidence generator already produces 38 closed text files and a semantic SHA-256 manifest, but the web route exposed only 20 individual files. Node.js has no standard ZIP writer, and adding a production dependency for a small deterministic container format would expand the supply chain without improving proof.
+- Options considered:
+  1. add a ZIP library and compress the evidence directory;
+  2. enumerate the evidence directory into a generated archive file;
+  3. validate the exact required-file map and emit an uncompressed fixed-metadata USTAR archive in memory.
+- Decision: Use option 3. Load exactly `REQUIRED_EVIDENCE_FILES`, require a complete semantic package and any required live attestation, reject missing/extra/tampered files plus credential-shaped, private-key, bearer-token, OpenAI-token, personal-path, per-file, and aggregate-size violations, then emit bytewise-sorted USTAR entries with mode `0644`, uid/gid/mtime zero, validated checksums, and two zero termination blocks. Never enumerate the directory or write the archive into `artifacts/evidence/`. The HTTP ETag is the archive SHA-256; the existing semantic evidence hash remains a separate response header.
+- Evidence: `src/evidence/archive.ts`, `app/lib/evidence-download.ts`, `app/api/evidence/archive/route.ts`, `app/proof/page.tsx`, integration archive extraction/forgery tests, and production Chrome download checks.
+- Consequences: Reviewers receive one portable 38-file proof package whose bytes are stable for the same evidence, while every required file remains individually downloadable. The current archive and UI continue to say `PARTIAL_OFFLINE / FAIL` and recorded reference v4.
+- Risks: USTAR is uncompressed and the route builds the archive in memory; fixed 4 MiB per-file and 16 MiB aggregate limits intentionally reject larger future packages. The sensitive-content patterns are a fail-closed guard, not a substitute for release review or live artifact redaction at the source.
+- Reversal or migration path: If binary evidence later exceeds the bounded text package, introduce a separately reviewed streaming archive format with fixed metadata and the same exact allowlist, validation, sensitive-content, hash, and provenance contracts.
+- Related files/commits: `README.md`, `docs/architecture.md`, `docs/threat-model.md`, `docs/limitations.md`, `PROGRESS.md`.

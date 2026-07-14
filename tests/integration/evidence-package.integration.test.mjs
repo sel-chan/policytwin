@@ -1,14 +1,33 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { createHash, generateKeyPairSync, sign } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   computeEvidencePackageHash,
+  createEvidenceArchive,
   liveEvidenceAttestationMessage,
+  MAX_EVIDENCE_DOWNLOAD_FILE_BYTES,
+  REQUIRED_EVIDENCE_FILES,
+  readEvidenceFilesBounded,
+  validateEvidenceDownloadPackage,
   validateEvidencePackage,
 } from "../../dist/index.js";
 
 await import("../../scripts/generate-offline-evidence.mjs");
+const EVIDENCE_DIRECTORY = fileURLToPath(new URL("../../artifacts/evidence/", import.meta.url));
 
 function hashText(value) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -53,13 +72,72 @@ function resignEvidence(files) {
 }
 
 async function loadEvidence() {
-  const directory = new URL("../../artifacts/evidence/", import.meta.url);
-  const names = await readdir(directory);
+  const names = await readdir(EVIDENCE_DIRECTORY);
   return new Map(
     await Promise.all(
-      names.map(async (name) => [name, await readFile(new URL(name, directory), "utf8")]),
+      names.map(async (name) => [name, await readFile(join(EVIDENCE_DIRECTORY, name), "utf8")]),
     ),
   );
+}
+
+async function withEvidenceCopy(callback) {
+  const directory = await mkdtemp(join(tmpdir(), "policytwin-evidence-read-"));
+  try {
+    await cp(EVIDENCE_DIRECTORY, directory, { recursive: true });
+    return await callback(directory);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+function tarString(header, offset, length) {
+  const field = header.subarray(offset, offset + length);
+  const end = field.indexOf(0);
+  return field.subarray(0, end < 0 ? field.length : end).toString("ascii");
+}
+
+function tarOctal(header, offset, length) {
+  const value = tarString(header, offset, length).trim();
+  assert.match(value, /^[0-7]+$/u);
+  return Number.parseInt(value, 8);
+}
+
+function parseTar(archive) {
+  const bytes = Buffer.from(archive);
+  const files = new Map();
+  const headers = [];
+  let offset = 0;
+  while (offset + 1024 <= bytes.length) {
+    const header = bytes.subarray(offset, offset + 512);
+    if (header.every((byte) => byte === 0)) {
+      assert.equal(bytes.subarray(offset).every((byte) => byte === 0), true);
+      assert.equal(bytes.length - offset >= 1024, true);
+      return { files, headers };
+    }
+    const checksumHeader = Buffer.from(header);
+    checksumHeader.fill(0x20, 148, 156);
+    assert.equal(
+      checksumHeader.reduce((sum, byte) => sum + byte, 0),
+      tarOctal(header, 148, 8),
+    );
+    assert.equal(tarString(header, 257, 6), "ustar");
+    assert.equal(tarString(header, 263, 2), "00");
+    assert.equal(tarString(header, 156, 1), "0");
+    assert.equal(tarOctal(header, 100, 8), 0o644);
+    assert.equal(tarOctal(header, 108, 8), 0);
+    assert.equal(tarOctal(header, 116, 8), 0);
+    assert.equal(tarOctal(header, 136, 12), 0);
+    const name = tarString(header, 0, 100);
+    const size = tarOctal(header, 124, 12);
+    const dataStart = offset + 512;
+    const dataEnd = dataStart + size;
+    assert.equal(dataEnd <= bytes.length, true);
+    assert.equal(files.has(name), false);
+    files.set(name, Buffer.from(bytes.subarray(dataStart, dataEnd)));
+    headers.push(Buffer.from(header));
+    offset = dataStart + Math.ceil(size / 512) * 512;
+  }
+  assert.fail("USTAR archive lacks its two zero termination blocks.");
 }
 
 test("generated partial package is complete, deterministic, redacted, and fail-closed", async () => {
@@ -90,6 +168,240 @@ test("generated partial package is complete, deterministic, redacted, and fail-c
   const allContent = [...files.values()].join("\n");
   assert.equal(allContent.includes("F:\\oaibuild"), false);
   assert.equal(allContent.includes("C:\\Users"), false);
+});
+
+test("complete evidence archive is byte-deterministic USTAR with exactly 38 verified files", async () => {
+  const files = await loadEvidence();
+  const reversed = new Map([...files.entries()].reverse());
+  const first = createEvidenceArchive(files, hashText);
+  const second = createEvidenceArchive(reversed, hashText);
+  assert.deepEqual(first.bytes, second.bytes);
+  assert.equal(first.archiveSha256, second.archiveSha256);
+  assert.equal(first.evidenceHash, "99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9");
+  assert.equal(first.evidenceMode, "PARTIAL_OFFLINE");
+  assert.equal(first.packageStatus, "FAIL");
+  assert.equal(first.policyVersion, 4);
+  assert.match(
+    first.fileName,
+    /^policytwin-evidence-v4-partial-offline-fail-[0-9a-f]{12}\.tar$/u,
+  );
+  assert.equal(first.bytes.length % 512, 0);
+
+  const parsed = parseTar(first.bytes);
+  const expectedNames = [...REQUIRED_EVIDENCE_FILES].sort((left, right) =>
+    Buffer.compare(Buffer.from(left, "utf8"), Buffer.from(right, "utf8")),
+  );
+  assert.deepEqual([...parsed.files.keys()], expectedNames);
+  assert.deepEqual(first.entryNames, expectedNames);
+  assert.equal(parsed.files.size, 38);
+  assert.equal(parsed.headers.length, 38);
+  for (const name of expectedNames) {
+    assert.deepEqual(parsed.files.get(name), Buffer.from(files.get(name), "utf8"));
+  }
+  const extracted = new Map(
+    [...parsed.files].map(([name, content]) => [name, content.toString("utf8")]),
+  );
+  assert.equal(validateEvidencePackage(extracted, hashText).evidenceHash, first.evidenceHash);
+});
+
+test("bounded evidence reader rejects oversized, aggregate, non-regular, and invalid UTF-8 files", async (t) => {
+  const original = await loadEvidence();
+  const loaded = await readEvidenceFilesBounded(EVIDENCE_DIRECTORY);
+  assert.deepEqual(loaded, original);
+
+  await withEvidenceCopy(async (directory) => {
+    await writeFile(
+      join(directory, "summary.md"),
+      Buffer.alloc(MAX_EVIDENCE_DOWNLOAD_FILE_BYTES + 1, 0x78),
+    );
+    await assert.rejects(
+      readEvidenceFilesBounded(directory),
+      /bounded regular-file contract/u,
+    );
+  });
+
+  await withEvidenceCopy(async (directory) => {
+    for (const name of [
+      "summary.md",
+      "security-review.md",
+      "integration.diff",
+      "compiled-policy.rego",
+    ]) {
+      await writeFile(
+        join(directory, name),
+        Buffer.alloc(MAX_EVIDENCE_DOWNLOAD_FILE_BYTES, 0x78),
+      );
+    }
+    await writeFile(join(directory, "test-command-log.json"), Buffer.alloc(1024, 0x78));
+    await assert.rejects(
+      readEvidenceFilesBounded(directory),
+      /bounded regular-file contract/u,
+    );
+  });
+
+  await withEvidenceCopy(async (directory) => {
+    await writeFile(join(directory, "summary.md"), Buffer.from([0xc3, 0x28]));
+    await assert.rejects(readEvidenceFilesBounded(directory), TypeError);
+  });
+
+  await withEvidenceCopy(async (directory) => {
+    const target = join(directory, "summary.md");
+    await rm(target, { force: true });
+    try {
+      await symlink(directory, target, "junction");
+    } catch (error) {
+      if (error?.code !== "EPERM") {
+        throw error;
+      }
+      t.diagnostic("Symlink creation is unavailable; non-regular fallback exercised.");
+      await mkdir(target);
+    }
+    await assert.rejects(
+      readEvidenceFilesBounded(directory),
+      /bounded regular-file contract/u,
+    );
+  });
+});
+
+test("archive changes with evidence and rejects extra, missing, or sensitive content", async () => {
+  const original = await loadEvidence();
+  const originalArchive = createEvidenceArchive(original, hashText);
+
+  const changed = new Map(original);
+  changed.set("summary.md", `${changed.get("summary.md")}\nReview note: archive variation.\n`);
+  resignEvidence(changed);
+  const changedArchive = createEvidenceArchive(changed, hashText);
+  assert.notEqual(changedArchive.archiveSha256, originalArchive.archiveSha256);
+  assert.notDeepEqual(changedArchive.bytes, originalArchive.bytes);
+
+  const missing = new Map(original);
+  missing.delete("summary.md");
+  assert.throws(() => createEvidenceArchive(missing, hashText), /exactly the required files/u);
+
+  const extra = new Map(original);
+  extra.set("transient.log", "must never enter the archive\n");
+  assert.throws(() => createEvidenceArchive(extra, hashText), /not hashed|exactly the required/u);
+
+  const sensitive = new Map(original);
+  const secretName = "API" + "_KEY";
+  const secretValue = "must" + "-not-pass";
+  sensitive.set(
+    "summary.md",
+    `${sensitive.get("summary.md")}\n${secretName}=${secretValue}\n`,
+  );
+  resignEvidence(sensitive);
+  assert.throws(
+    () => validateEvidenceDownloadPackage(sensitive, hashText),
+    /credential-shaped assignment/u,
+  );
+  assert.throws(
+    () => createEvidenceArchive(sensitive, hashText),
+    (error) => {
+      assert.match(error.message, /credential-shaped assignment/u);
+      assert.equal(error.message.includes(secretValue), false);
+      return true;
+    },
+  );
+
+  const bearer = new Map(original);
+  const bearerValue = ["Bearer", "abc123"].join(" ");
+  bearer.set("summary.md", `${bearer.get("summary.md")}\nAuthorization: ${bearerValue}\n`);
+  resignEvidence(bearer);
+  assert.throws(() => createEvidenceArchive(bearer, hashText), /credential-shaped content/u);
+
+  const genericSecret = ["generic", "secret", "value"].join("-");
+  for (const [key, whitespace] of [
+    ["apiKey", " "],
+    ["clientSecret", "\n  "],
+    ["GITHUB_TOKEN", " "],
+    ["AWS_SECRET_ACCESS_KEY", " "],
+  ]) {
+    const variant = new Map(original);
+    variant.set(
+      "summary.md",
+      `${variant.get("summary.md")}\n"${key}":${whitespace}"${genericSecret}"\n`,
+    );
+    resignEvidence(variant);
+    assert.throws(
+      () => validateEvidenceDownloadPackage(variant, hashText),
+      /credential-shaped assignment/u,
+    );
+  }
+
+  const safeSentinels = new Map(original);
+  safeSentinels.set(
+    "summary.md",
+    `${safeSentinels.get("summary.md")}\n"apiKey": null\nAuthorization: Bearer UNSET\n`,
+  );
+  resignEvidence(safeSentinels);
+  assert.equal(createEvidenceArchive(safeSentinels, hashText).entryNames.length, 38);
+
+  const openaiCredential = new Map(original);
+  const openaiValue = ["sk", "archive-fake-value-123456789"].join("-");
+  openaiCredential.set(
+    "summary.md",
+    `${openaiCredential.get("summary.md")}\nProvider: ${openaiValue}\n`,
+  );
+  resignEvidence(openaiCredential);
+  assert.throws(
+    () => createEvidenceArchive(openaiCredential, hashText),
+    /credential-shaped content/u,
+  );
+
+  const privateKey = new Map(original);
+  const privateKeyBlock = [
+    "-----BEGIN ",
+    "ENCRYPTED PRIVATE KEY",
+    "-----\nZmFrZQ==\n-----END ",
+    "ENCRYPTED PRIVATE KEY",
+    "-----",
+  ].join("");
+  privateKey.set("summary.md", `${privateKey.get("summary.md")}\n${privateKeyBlock}\n`);
+  resignEvidence(privateKey);
+  assert.throws(() => createEvidenceArchive(privateKey, hashText), /private-key material/u);
+
+  const pathVariants = [
+    ["C:", "Users", "archive-user", "proof.txt"].join("\\"),
+    ["c:", "users", "archive-user", "proof.txt"].join("\\"),
+    ["", "", "server", "share", "archive-user", "proof.txt"].join("\\"),
+    ["", "", "server", "share", "archive-user", "proof.txt"].join("/"),
+    ["file:", "", "server", "share", "archive-user", "proof.txt"].join("/"),
+    ["", "users", "archive-user", "proof.txt"].join("/"),
+    ["", "root", "proof.txt"].join("/"),
+  ];
+  for (const path of pathVariants) {
+    const personalPath = new Map(original);
+    personalPath.set("summary.md", `${personalPath.get("summary.md")}\nLocal: ${path}\n`);
+    resignEvidence(personalPath);
+    assert.throws(
+      () => createEvidenceArchive(personalPath, hashText),
+      /personal or absolute filesystem path/u,
+    );
+  }
+
+  const safeUrl = new Map(original);
+  safeUrl.set(
+    "summary.md",
+    `${safeUrl.get("summary.md")}\nReview URL: https://example.com/proof\n`,
+  );
+  resignEvidence(safeUrl);
+  assert.equal(createEvidenceArchive(safeUrl, hashText).entryNames.length, 38);
+
+  const oversized = new Map(original);
+  oversized.set("summary.md", `${oversized.get("summary.md")}\n${"x".repeat(4 * 1024 * 1024)}\n`);
+  assert.throws(() => createEvidenceArchive(oversized, hashText), /entry exceeds the byte limit/u);
+
+  const aggregate = new Map(original);
+  for (const name of [
+    "summary.md",
+    "security-review.md",
+    "integration.diff",
+    "compiled-policy.rego",
+  ]) {
+    aggregate.set(name, "x".repeat(4 * 1024 * 1024));
+  }
+  aggregate.set("test-command-log.json", "x".repeat(1024));
+  assert.throws(() => createEvidenceArchive(aggregate, hashText), /aggregate byte limit/u);
 });
 
 test("missing, tampered, and unsupported-pass evidence is rejected", async () => {
@@ -434,6 +746,13 @@ test("LIVE_VERIFIED evidence requires a valid trusted Ed25519 attestation", asyn
   const accepted = validateEvidencePackage(files, hashText, options);
   assert.equal(accepted.evidenceMode, "LIVE_VERIFIED");
   assert.equal(accepted.packageStatus, "FAIL");
+  const liveArchive = createEvidenceArchive(files, hashText, options);
+  assert.equal(liveArchive.evidenceMode, "LIVE_VERIFIED");
+  assert.equal(liveArchive.packageStatus, "FAIL");
+  assert.match(
+    liveArchive.fileName,
+    /^policytwin-evidence-v4-live-verified-fail-[0-9a-f]{12}\.tar$/u,
+  );
 
   assert.throws(
     () => validateEvidencePackage(files, hashText, { ...options, now: new Date("2030-07-14T00:00:00.000Z") }),
@@ -444,12 +763,17 @@ test("LIVE_VERIFIED evidence requires a valid trusted Ed25519 attestation", asyn
     () => validateEvidencePackage(files, hashText),
     /not trusted/u,
   );
+  assert.throws(() => createEvidenceArchive(files, hashText), /not trusted/u);
   const invalidSignature = new Map(files);
   const invalidManifest = JSON.parse(invalidSignature.get("evidence-manifest.json"));
   invalidManifest.liveAttestation.signature = `${invalidManifest.liveAttestation.signature[0] === "A" ? "B" : "A"}${invalidManifest.liveAttestation.signature.slice(1)}`;
   invalidSignature.set("evidence-manifest.json", json(invalidManifest));
   assert.throws(
     () => validateEvidencePackage(invalidSignature, hashText, options),
+    /signature is invalid/u,
+  );
+  assert.throws(
+    () => createEvidenceArchive(invalidSignature, hashText, options),
     /signature is invalid/u,
   );
 });

@@ -17,6 +17,7 @@ flowchart LR
   D --> X["Codex repair worker"]
   X --> F
   E --> A["Evidence validator"]
+  A --> T["Deterministic 38-file USTAR archive"]
   A --> S["Live Ed25519 attestation"]
   O --> E["SQLite + evidence store"]
   P --> E
@@ -34,13 +35,13 @@ Implemented offline:
 - policy-derived cases, conflicts, contrasts, and mutation execution;
 - reference differential reports for canonical and evaluation-only fixtures;
 - guarded repair-worker contracts and isolated trusted copies;
-- change impact, traceability, aggregate evidence hashes, semantic cross-checks, and a trusted live-attestation boundary;
+- change impact, traceability, aggregate evidence hashes, semantic cross-checks, a closed byte-deterministic 38-file USTAR download, and a trusted live-attestation boundary;
 - SQLite-backed policy, version, lifecycle, golden-case, and decision persistence with restart recovery;
 - framework-independent workspace orchestration for current-state reads, immutable text versions, and atomic ambiguity resolution;
 - checksum-pinned OPA 1.18.2 compile/evaluation over all 41 accepted cases;
 - a six-view Next.js workspace with real versioned decision/source writes, health/evidence/interpret/workspace routes, and local Chrome E2E coverage.
 
-Proof and Change Impact are bound to the recorded reference policy by a deterministic semantic fingerprint covering version, clauses, rules, ambiguity selections, defaults, normalization, and the input schema. Opaque per-session IDs and model provenance are excluded from that equality check. A mismatch is shown explicitly and blocks the reference 14-to-30 draft; it never re-labels the static evidence as proof for a different session policy.
+Proof and Change Impact are bound to the recorded reference policy by a deterministic semantic fingerprint covering version, clauses, rules, ambiguity selections, defaults, normalization, and the input schema. Opaque per-session IDs and model provenance are excluded from that equality check. A mismatch is shown explicitly and blocks the reference 14-to-30 draft; it never re-labels the static evidence or its archive as proof for a different session policy. The archive route reads no directory listing: it loads exactly `REQUIRED_EVIDENCE_FILES`, validates the full package and any live attestation, rejects sensitive content, and emits fixed USTAR headers and ordering in memory.
 
 Not yet authoritative:
 

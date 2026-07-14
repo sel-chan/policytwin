@@ -1,9 +1,29 @@
 import { expect, test } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
+import { Buffer } from "node:buffer";
+import { mkdir, readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { resolve } from "node:path";
 
 const screenshotDirectory = resolve(process.cwd(), "artifacts", "screenshots");
+
+function tarEntryNames(bytes: Buffer): string[] {
+  const names: string[] = [];
+  let offset = 0;
+  while (offset + 1024 <= bytes.length) {
+    const header = bytes.subarray(offset, offset + 512);
+    if (header.every((byte) => byte === 0)) {
+      return names;
+    }
+    const nameEnd = header.indexOf(0);
+    const name = header.subarray(0, nameEnd < 0 ? 100 : nameEnd).toString("ascii");
+    const sizeText = header.subarray(124, 136).toString("ascii").replaceAll("\0", "").trim();
+    const size = Number.parseInt(sizeText, 8);
+    expect(Number.isSafeInteger(size)).toBe(true);
+    names.push(name);
+    offset += 512 + Math.ceil(size / 512) * 512;
+  }
+  throw new Error("Downloaded USTAR archive has no termination blocks.");
+}
 
 test.beforeAll(async () => {
   await mkdir(screenshotDirectory, { recursive: true });
@@ -133,6 +153,20 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   await expect(
     page.getByText("This session matches recorded reference v4.", { exact: true }),
   ).toBeVisible();
+  const archiveLink = page.getByRole("link", {
+    name: "Download complete reference evidence archive",
+  });
+  await expect(archiveLink).toBeVisible();
+  const [archiveDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    archiveLink.click(),
+  ]);
+  expect(archiveDownload.suggestedFilename()).toMatch(
+    /^policytwin-evidence-v4-partial-offline-fail-[0-9a-f]{12}\.tar$/u,
+  );
+  const downloadedArchivePath = await archiveDownload.path();
+  expect(downloadedArchivePath).not.toBeNull();
+  const downloadedArchiveBody = await readFile(downloadedArchivePath as string);
   await expect(page.getByRole("link", { name: /impact-report\.json/u })).toBeVisible();
   await page.screenshot({ path: resolve(screenshotDirectory, "05-proof.png"), fullPage: true });
 
@@ -278,7 +312,41 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   expect(evidence.ok()).toBe(true);
   expect(evidence.headers()["content-disposition"]).toContain("verification-summary.json");
   expect(evidence.headers()["cache-control"]).toBe("no-store");
-  expect((await evidence.json()).externalGates.opa).toBe("PASS");
+  const verification = await evidence.json();
+  expect(verification.externalGates.opa).toBe("PASS");
+
+  const archive = await request.get("/api/evidence/archive");
+  expect(archive.ok()).toBe(true);
+  expect(archive.headers()["content-type"]).toBe("application/x-tar");
+  expect(archive.headers()["content-disposition"]).toMatch(
+    /policytwin-evidence-v4-partial-offline-fail-[0-9a-f]{12}\.tar/u,
+  );
+  expect(archive.headers()["cache-control"]).toBe("no-store");
+  expect(archive.headers()["x-policytwin-evidence-hash"]).toBe(verification.evidenceHash);
+  expect(archive.headers()["x-policytwin-evidence-mode"]).toBe("PARTIAL_OFFLINE");
+  expect(archive.headers()["x-policytwin-package-status"]).toBe("FAIL");
+  expect(archive.headers().etag).toMatch(/^"[0-9a-f]{64}"$/u);
+  const archiveBody = await archive.body();
+  expect(Buffer.compare(downloadedArchiveBody, archiveBody)).toBe(0);
+  expect(archiveBody.length % 512).toBe(0);
+  expect(archiveBody.subarray(-1024).every((byte) => byte === 0)).toBe(true);
+  expect(archiveBody.includes(Buffer.from("evidence-manifest.json", "ascii"))).toBe(true);
+  const repeatedArchive = await request.get("/api/evidence/archive");
+  expect(repeatedArchive.headers().etag).toBe(archive.headers().etag);
+  expect(Buffer.compare(await repeatedArchive.body(), archiveBody)).toBe(0);
+
+  const manifestDownload = await request.get("/api/evidence/evidence-manifest.json");
+  expect(manifestDownload.ok()).toBe(true);
+  expect((await manifestDownload.json()).evidenceHash).toBe(verification.evidenceHash);
+  const summaryDownload = await request.get("/api/evidence/summary.md");
+  expect(summaryDownload.ok()).toBe(true);
+  expect(await summaryDownload.text()).toContain("Evidence mode: PARTIAL_OFFLINE");
+  const archiveNames = tarEntryNames(archiveBody);
+  expect(archiveNames).toHaveLength(38);
+  for (const name of archiveNames) {
+    const individual = await request.get(`/api/evidence/${encodeURIComponent(name)}`);
+    expect(individual.ok(), `individual evidence download failed: ${name}`).toBe(true);
+  }
 });
 
 test("keyboard focus and mobile layout remain usable", async ({ page }) => {

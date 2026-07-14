@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M3/M8 — persisted decisions, reference-bound proof, and blocked change impact`
+- Current milestone: `M8 — deterministic complete evidence archive`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 21:25:58 +09:00`
-- Latest checkpoint commit: `16c06fc28f7948c3aa3d9748873b77ed3dbf81f6`
+- Last updated: `2026-07-14 22:27:52 +09:00`
+- Latest checkpoint commit: `a359d80498ac52ff4e39ba9ec3dc3be669e57bc6`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -102,45 +102,40 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Make the seeded Decision Queue a real SQLite-backed HTTP write flow, then create a sixth Change Impact view that persists the 14-to-30 source edit as an immutable `DRAFT` while truthfully blocking verification on the authoritative G02 golden contradiction.
+Turn the validated complete-shape evidence directory into one byte-deterministic downloadable archive without adding a dependency, while preserving individual artifact downloads and excluding secrets or transient files by construction.
 
 ### Starting failing condition
 
-At checkpoint start, the Decision Queue resolved the recorded fixture in memory on every render, so no browser action created or restored decision records. The existing `PolicyWorkspaceService` and SQLite repository enforced immutable versions, closed patches, optimistic concurrency, and golden-case validation, but no web route used them.
+The evidence generator produces 38 validated files and a SHA-256 manifest, but the Proof route exposes only 20 individual names and no archive. FR-16 requires a downloadable archive that excludes secrets and transient logs; the current UI therefore cannot deliver the complete proof package in one reviewable download.
 
-The deterministic impact artifact already proved that 14-to-30 changes three rules and eight accepted cases, including authoritative golden case G02 from `DENY` to `ALLOW`. The UI had no impact route and could not safely store that candidate as accepted PolicyIR or claim OPA/Codex repair. The implemented boundary is a persisted text-only v5 `DRAFT` plus a reference-labeled preview that keeps matching v4 proof accessible and verification blocked.
+The repository has no ZIP dependency and the dependency policy forbids adding one for a small deterministic function. The archive must be built only from the closed `REQUIRED_EVIDENCE_FILES` allowlist after semantic package validation, use stable ordering and metadata, and remain `FAIL / PARTIAL_OFFLINE` until live evidence genuinely exists.
 
 ### Planned actions
 
-- [x] Commit the verified five-view/authenticated-evidence checkpoint and re-run the full gate after its ledger update.
-- [x] Map existing workspace persistence, decision-resolution, impact-analysis, UI, security, and test boundaries with two read-only reviews.
-- [x] Add a server-only seeded workspace store, strict same-origin/CSRF mutation contract, replay-safe decision controller, and source-version controller.
-- [x] Add GET workspace and versioned decision/source POST routes with byte limits, no-store responses, closed inputs, and explicit conflict mapping.
-- [x] Replace the static Decision Queue with accessible persisted option writes, loading/error/stale states, and a truthful version ledger.
-- [x] Add Change Impact navigation, read-only deterministic preview, persisted v5 draft action, Proof download, responsive styles, and screenshot 06.
-- [x] Extend unit, integration, restart, concurrency, browser, reset, security, documentation, and evidence checks.
-- [x] Run the full verification gate, inspect desktop/mobile captures, and perform an independent diff review.
-- [x] Commit the verified checkpoint on `main` after the final fix-only review.
-
-Resumed-session hardening checklist:
-
-- [x] Finish anonymous-session isolation, exact public-origin validation, expired-token rejection, and bounded request-body timeout tests.
-- [x] Make custom database reset behavior fail closed and document the single-process SQLite deployment boundary.
-- [x] Verify one-card Decision Queue keyboard progression, screen-reader status, revisit behavior, policy-meaning mismatch, and mobile impact details.
-- [x] Run browser evidence from the production standalone Next.js server so final captures contain no development overlay.
+- [x] Close and commit the verified persisted Decision Queue/reference-bound Change Impact checkpoint and its ledger follow-up.
+- [x] Map the existing evidence validator, manifest, download route, Proof UI, archive requirement, and container sequencing boundary.
+- [x] Implement a dependency-free deterministic USTAR builder with closed safe paths, stable metadata, byte limits, and exact entry ordering.
+- [x] Build archives only after complete semantic evidence validation and include exactly the 38 required files.
+- [x] Expose all required individual evidence files plus a complete archive with safe content headers, deterministic ETag, and no-store behavior.
+- [x] Add a prominent accessible Proof archive action without weakening the recorded-reference and partial-offline labels.
+- [x] Add integration and browser coverage for archive determinism, contents, tamper rejection, headers, and individual-file completeness.
+- [x] Update architecture, README, decisions, threat/limitation/runbook, and evidence documentation from actual behavior.
+- [x] Run focused gates, inspect the Proof capture, and complete an independent adversarial diff review.
+- [ ] Run the full gate, complete the final diff review, and commit the checkpoint on `main`.
 
 ### Completion evidence
 
-- Starting baseline: implementation commit `eae20ed5d92358361c449764ade91c74d7f2d4ba`; ledger commit `c41df19`
-- Starting gate: 56/56 unit, 21/21 integration, 21/21 eval, 2/2 E2E, build, 247-file clean-copy, and 247-file/228-text-file security scan pass
+- Starting baseline: implementation commit `16c06fc28f7948c3aa3d9748873b77ed3dbf81f6`; ledger commit `a359d80498ac52ff4e39ba9ec3dc3be669e57bc6`
+- Starting gate: lint, strict typecheck, 63/63 unit, 22/22 integration, 21/21 eval, 3/3 production Chrome E2E, build, 264-file clean-copy, and 264-file/239-text-file security scan pass
 - Starting expected failures: `license:check`, `container:check`, and `submission:check` only
 - Starting evidence hash: `99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9`
-- Focused current checks: lint, strict typecheck, 63/63 unit, 22/22 integration, 3/3 production Chrome E2E, and direct screenshot inspection pass
-- Recovered failures: project deletion now removes self-referencing versions newest-first; custom-reset test child-process use is explicitly reviewed; static reference proof now rejects alternate v4 meaning; expired tokens cannot replay POST writes
-- Independent review: two P1 truth/security findings were reproduced, fixed, and added to browser/unit coverage; no P0 was reported
-- Full gate: `pnpm verify` completed every local gate and failed only the owner license, unavailable Docker/container, and non-final submission checks
-- Final local evidence: 264-file clean-copy replay; 264-file/239-text-file static security scan; 21/21 eval; production build; submission checker reports 30 truthful unmet requirements
-- Commit: `16c06fc28f7948c3aa3d9748873b77ed3dbf81f6`
+- Container sequencing review: static readiness must remain separate from actual Linux build/start/health evidence; a verified Node base-image digest is not yet recorded, so no placeholder Dockerfile or false container `PASS` will be created in this checkpoint
+- Focused current checks: strict typecheck; 25/25 integration including bounded disk reads, USTAR extraction, sensitive-content/path bypasses, and live Ed25519 archive enforcement; 3/3 production Chrome E2E including a native download, byte comparison, and all 38 individual routes; direct Proof screenshot inspection
+- Recovered failures: an early missing-file assertion was aligned with the stricter exact-set guard; a quadratic credential regex and individual-download bypass were replaced with one linear common validation boundary; disk reads are now bounded before allocation; case/UNC/root/file-URI paths, camel/general secret keys, CR/LF values, short bearer tokens, invalid UTF-8, and symlinks have regression coverage; HTTPS remains allowed
+- Independent review: final read-only review reports no P0/P1; the remaining P2 is repeated-download CPU/body-copy pressure for the currently 227 KiB package, which requires short caching or shared rate limiting before public multi-instance deployment
+- Full gate: `pnpm verify` completed every local gate and failed only `license:check`, `container:check`, and `submission:check`, each for an explicit owner/external/incomplete condition
+- Final local evidence: 63/63 unit, 25/25 integration, 21/21 eval, 3/3 production Chrome E2E, production build, 269-file clean-copy replay, 269-file/244-text-file security scan, unchanged evidence hash, and 30 truthful submission gaps
+- Commit: pending
 
 ## Quality gates
 
@@ -150,21 +145,21 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` | static checks include `.tsx` and CSS while excluding generated Next output | 2026-07-14 21:02 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-14 21:01 +09:00 |
-| Unit tests | PASS | `pnpm test` | 63/63 passed, including non-blocking stream timeout, HTTP 408/413/UTF-8 mapping, exact origin, session expiry, and transactional project cleanup | 2026-07-14 21:01 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 22/22 passed, including real OPA 1.18.2, semantic-forgery rejection, Ed25519 verification, restart persistence, and custom-path reset refusal | 2026-07-14 21:02 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, v1-v5 writes, alternate-policy proof blocking, expired POST rejection, capacity, keyboard focus, and 390px cards | 2026-07-14 21:01 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-14 21:24 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build and all dynamic routes pass | 2026-07-14 21:24 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | exact expected failures only: owner license, unavailable Docker/container, and non-final submission | 2026-07-14 21:24 +09:00 |
+| Lint | PASS | `pnpm lint` | static checks include `.tsx` and CSS while excluding generated Next output | 2026-07-14 22:27 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-14 22:27 +09:00 |
+| Unit tests | PASS | `pnpm test` | 63/63 passed, including non-blocking stream timeout, HTTP 408/413/UTF-8 mapping, exact origin, session expiry, and transactional project cleanup | 2026-07-14 22:27 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 25/25 passed, including real OPA 1.18.2, semantic forgery and live attestation, deterministic USTAR, sensitive-content/path bypasses, bounded disk reads, restart persistence, and safe reset | 2026-07-14 22:27 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; native archive download, identical bytes, all 38 individual artifacts, six views, v1-v5 writes, isolation/capacity/expiry, focus, and 390px cards | 2026-07-14 22:27 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-14 22:27 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build includes the dynamic archive route and all workspace routes | 2026-07-14 22:27 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | exact expected failures only: owner license, unavailable Docker/container, and non-final submission | 2026-07-14 22:27 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 264 source files; frozen offline install and 11 command groups including production Chrome E2E pass | 2026-07-14 21:24 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 269 source files; frozen offline install and 11 command groups including archive integration and production Chrome E2E pass | 2026-07-14 22:27 +09:00 |
 | Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA and health route exist; Dockerfile and daemon remain unavailable | 2026-07-14 21:08 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
 | Dependency/license review | FAIL | `pnpm license:check`; `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-14 15:46 +09:00 |
-| Security review | PASS | `pnpm security:check` via `pnpm verify` | 264 files/239 text files plus Git history; no static critical/high finding; live release review remains required | 2026-07-14 21:24 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 30 unmet requirements: partial proof, container/license, two required captures, media/HTTPS URLs, drafts, and confirmation | 2026-07-14 21:24 +09:00 |
+| Security review | PASS | `pnpm security:check` via `pnpm verify` | 269 files/244 text files plus Git history; no static critical/high finding; live release review remains required | 2026-07-14 22:27 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 30 unmet requirements: partial proof, container/license, two required captures, media/HTTPS URLs, drafts, and confirmation | 2026-07-14 22:27 +09:00 |
 
 ## Product proof metrics
 
@@ -385,6 +380,7 @@ A blocker is valid only when the task cannot continue safely without external in
 | Hosted worker restrictions | Medium | High | Use container/VM host or split worker | Codex / open |
 | Codex SDK/live adapter mismatch | Medium | High | Current package/docs are pinned; validate the real adapter with fresh SDK evidence | Codex / open |
 | Live attestation key custody | Medium | High | Keep private key outside Git/logs/evidence; inject only trusted public keys into verification | Codex / open |
+| Repeated evidence-download pressure | Low locally / Medium when public | Medium | Exact 4 MiB/16 MiB bounds and one active archive build exist; add short metadata-keyed caching or shared rate limiting before public deployment | Codex / M9 open |
 | Docker daemon unavailable | High | Medium | Continue non-container gates; start Docker Desktop before the container gate | Owner/Codex / open |
 | Offline validator/Zod duplication | Medium | Medium | Cross-check both contracts and generate JSON Schema from the pinned runtime schema after network approval | Codex / open |
 | Demo recording/account blocker | Medium | Medium | Prepare script, captions, screenshots, and exact owner action | Codex / open |
@@ -397,18 +393,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Continue the remaining offline-safe Codex SDK adapter, evidence archive, and container prerequisites before owner-only live/license/deployment actions.`
+`Commit the verified M8 archive checkpoint, then continue the remaining offline-safe Codex SDK adapter and static container prerequisites before owner-only live/license/deployment actions.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the verified M3/M8 implementation is committed and the next offline checkpoint is starting`
-- Exact current state: `six-view workspace, isolated SQLite writes, reference-bound proof/impact, local OPA/browser/build/security/clean-copy gates verified; live work remains fail-closed`
-- Last successful command: `pnpm verify completed all local gates; only license:check, container:check, and submission:check failed as expected`
-- Current failing command: `pnpm verify, only for the three documented incomplete release gates`
-- Uncommitted files: `PROGRESS.md ledger-only follow-up awaiting verification and commit`
-- Safe resume command/action: `verify and commit the ledger follow-up, then continue M7/M8/M9`
+- Why paused: `not paused; the M8 archive checkpoint is in final full verification`
+- Exact current state: `the recorded v4 package has a deterministic guarded 38-file USTAR download and complete individual API surface; live work remains fail-closed`
+- Last successful command: `pnpm verify completed every local gate; 63 unit, 25 integration, 21 eval, 3 browser, clean-copy, security, and production build passed`
+- Current failing command: `none for the focused archive checkpoint; pnpm verify still intentionally retains license, container, and submission release failures`
+- Uncommitted files: `M8 archive implementation, tests, Proof capture, generated drafts, and documentation awaiting full verification and checkpoint commit`
+- Safe resume command/action: `review the final diff, commit the M8 archive checkpoint on main, and continue M7/M9`
 - One owner action, if any: `none`
 
 ## Final completion record

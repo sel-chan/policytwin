@@ -28,6 +28,7 @@ Expected current behavior:
 - Repair runs must use unique safe IDs under `.tmp/refund-demo/repair-runs`.
 - Delete no path manually; use repository-owned reset/cleanup helpers.
 - If evidence validation fails, rerun `pnpm evidence:offline`, then inspect `artifacts/evidence/evidence-manifest.json`.
+- In Proof, download the complete reference archive and confirm its filename includes `v4`, `partial-offline`, `fail`, and the evidence-hash prefix. The route returns exactly 38 manifest-validated USTAR entries and never writes the archive into `artifacts/evidence/`.
 - A recorded package must never be presented as a new live run.
 - Never store an Ed25519 live-attestation private key in the repository, `.env` examples, logs, screenshots, or evidence payloads.
 
