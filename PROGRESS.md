@@ -8,8 +8,8 @@
 - Current milestone: `M3 — SQLite persistence and restart recovery`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 12:30:00 +09:00`
-- Latest checkpoint commit: `2ab9d1edb9c56934224f9f81160da80808e12d03`
+- Last updated: `2026-07-14 12:32:10 +09:00`
+- Latest checkpoint commit: `9e293e00e06e71adcf2789e89b330af848150825`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -82,7 +82,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
-| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts plus SQLite project/version/decision persistence; process-style restart, corruption, stale-write, and decision-replay checks pass | pending | Decision Queue UI and web/API wiring require the pinned application stack |
+| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts plus SQLite project/version/decision persistence; process-style restart, corruption, stale-write, and decision-replay checks pass | `9e293e0` | Decision Queue UI and web/API wiring require the pinned application stack |
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
@@ -108,7 +108,7 @@ The repository has pure version and decision functions but no persistence module
 - [x] Implement transactional create, append-version, read, and decision-record operations.
 - [x] Reject stale parents, invalid timestamps, invalid IR/cases, duplicate IDs, and corrupted stored payloads.
 - [x] Prove immutable history and restart recovery with unit and integration tests.
-- [ ] Run full offline regressions, review the diff, update evidence/docs, and commit the checkpoint.
+- [x] Run full offline regressions, review the diff, update evidence/docs, and commit the checkpoint.
 
 ### Completion evidence
 
@@ -116,7 +116,7 @@ The repository has pure version and decision functions but no persistence module
 - Exit codes: `0`; `0` (46/46); `0` (15/15); `1` (expected aggregate failures: license, container, browser, submission only)
 - Artifacts: `src/persistence/sqlite.ts`; `tests/unit/policy-persistence.test.mjs`; `tests/integration/policy-persistence.integration.test.mjs`
 - Screenshots: not applicable to this persistence slice
-- Commit: pending current checkpoint
+- Commit: `9e293e00e06e71adcf2789e89b330af848150825`
 
 ## Quality gates
 
@@ -174,7 +174,7 @@ Append newest entries at the top. Keep entries compact and evidence-oriented.
 - Truth boundary: local Node 22 `node:sqlite` is experimental; production runtime/volume behavior and web/API integration remain unverified
 - Commands: local `node:sqlite` probe; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm submission:draft`; `pnpm security:check`; `pnpm submission:check`; `pnpm verify`
 - Artifacts: `src/persistence/sqlite.ts`, `src/domain/case-validation.ts`, persistence unit/integration tests
-- Commit: pending current checkpoint
+- Commit: `9e293e00e06e71adcf2789e89b330af848150825`
 - Next: run the complete offline gate, review and commit this checkpoint, then continue approved external integration work
 
 ### 2026-07-14 11:48 +09:00 — M10 offline submission foundation verified
@@ -327,7 +327,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement and verify SQLite-backed immutable policy/version/decision persistence with process-restart recovery, then resume the highest-priority external integration gate after scoped network approval.`
+`Audit the remaining offline P0 gaps; if none can be completed without guessing current external contracts, resume the highest-priority official-document, dependency, OPA, and application-stack work after scoped network approval.`
 
 ## Pause handoff
 
