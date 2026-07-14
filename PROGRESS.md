@@ -8,8 +8,8 @@
 - Current milestone: `M9 — Security, reproducibility, and deployment (offline foundations)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 11:28:56 +09:00`
-- Latest checkpoint commit: `efff64154be5645fed1a15bf564bdb849a608cf6`
+- Last updated: `2026-07-14 11:33:15 +09:00`
+- Latest checkpoint commit: `9602a6c38c5707de8e4aafc32a9e0ea636fa2416`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -88,7 +88,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
 | M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
 | M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | `efff641` | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation verified: threat model, 158-file current/history scan, 158-file clean-copy replay, notice/inventory, and fail-closed license/container reports | pending current commit | Owner license choice, app/OPA container, Docker daemon, provider selection, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation verified: threat model, 158-file current/history scan, 158-file clean-copy replay, notice/inventory, and fail-closed license/container reports | `9602a6c` | Owner license choice, app/OPA container, Docker daemon, provider selection, and deployment remain |
 | M10 Submission package | NOT_STARTED |  |  |  |
 
 ## Current checkpoint
@@ -110,7 +110,7 @@ There is no release threat model, limitations document, license/notice, reposito
 - [x] Implement secret/current-history, license, path, command-policy, and unsafe-pattern checks.
 - [x] Implement isolated clean-copy install/build/test/eval/demo/evidence reproduction.
 - [x] Add a fail-closed container/health prerequisite contract without creating a misleading placeholder image.
-- [ ] Review the final diff and commit the M9 offline checkpoint.
+- [x] Review the final diff and commit the M9 offline checkpoint.
 
 ### Completion evidence
 
@@ -118,7 +118,7 @@ There is no release threat model, limitations document, license/notice, reposito
 - Exit codes: security, clean copy, and eval 0; license, container, Docker info, and full verify 1 as explicitly classified below
 - Artifacts: `artifacts/security/security-report.json`; `license-report.json`; `container-report.json`; `clean-checkout-report.json`; `docs/architecture.md`; `docs/threat-model.md`; `docs/limitations.md`; `docs/demo-runbook.md`; `NOTICE.md`
 - Screenshots: not applicable; no UI implementation exists
-- Commit: pending current checkpoint
+- Commit: `9602a6c38c5707de8e4aafc32a9e0ea636fa2416`
 
 ## Quality gates
 
@@ -167,7 +167,7 @@ Never fill from estimates.
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
 
-### 2026-07-14 11:28 +09:00 — M9 offline security and reproducibility foundation verified, commit pending
+### 2026-07-14 11:33 +09:00 — M9 offline security and reproducibility foundation committed
 
 - Milestone: M9 (offline subset; milestone remains in progress)
 - Change: added architecture/threat/limitations/runbook/license-review docs, NOTICE, current+history secret/path/unsafe-process scan, fail-closed license/container checks, container prerequisites, and isolated clean-copy reproduction
@@ -175,7 +175,7 @@ Append newest entries at the top. Keep entries compact and evidence-oriented.
 - Expected failures: project LICENSE requires owner acceptance; container lacks verified OPA, Dockerfile, health route, and running daemon; browser and submission remain absent
 - Recovered failures: history patch scanning falsely joined empty `.env.example` values and was replaced by commit-tree scanning; clean-copy eval self-reference was made explicit as `IN_PROGRESS` until the outer run writes PASS
 - Full gate: `pnpm verify` fails exactly `license:check`, `container:check`, `test:e2e`, and `submission:check`
-- Commit: pending current checkpoint
+- Commit: `9602a6c38c5707de8e4aafc32a9e0ea636fa2416`
 
 ### 2026-07-14 11:06 +09:00 — M8 offline impact and evidence foundation committed
 
