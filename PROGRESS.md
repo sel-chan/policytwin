@@ -8,8 +8,8 @@
 - Current milestone: `M7 — Codex cartography, repair, and review (offline worker contracts)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 10:33:03 +09:00`
-- Latest checkpoint commit: `866bb205455945e0ee14afc8f776c1f5efe5b782`
+- Last updated: `2026-07-14 10:42:37 +09:00`
+- Latest checkpoint commit: `0c6fb85f392243a578eea0452b8de4ff50e58910`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -86,7 +86,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
-| M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | pending current commit | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
+| M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
 | M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
 | M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
 | M10 Submission package | NOT_STARTED |  |  |  |
@@ -109,7 +109,7 @@ There is no repair-worker contract, safe fresh-copy lifecycle, command allowlist
 - [x] Define strict versioned cartography, repair, command-evidence, and independent-review contracts.
 - [x] Implement an orchestration boundary using injected offline backends without impersonating Codex.
 - [x] Test success, malformed backend output, command rejection, canonical immutability, and bounded failure recovery.
-- [ ] Review the final diff and commit the M7 offline checkpoint.
+- [x] Review the final diff and commit the M7 offline checkpoint.
 
 ### Completion evidence
 
@@ -117,7 +117,7 @@ There is no repair-worker contract, safe fresh-copy lifecycle, command allowlist
 - Exit codes: focused implemented gates all 0; `pnpm verify` is 1 only because `test:e2e` and `submission:check` remain intentionally fail-closed
 - Artifacts: `tests/snapshots/offline-m7-summary.json`; `schemas/codex-results.v1.schema.json`; `prompts/cartographer.v1.md`; `prompts/repair.v1.md`; `prompts/reviewer.v1.md`
 - Screenshots: not applicable; no UI implementation exists
-- Commit: pending current checkpoint
+- Commit: `0c6fb85f392243a578eea0452b8de4ff50e58910`
 
 ## Quality gates
 
@@ -165,14 +165,14 @@ Never fill from estimates.
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
 
-### 2026-07-14 10:33 +09:00 — M7 offline repair-worker foundation verified, commit pending
+### 2026-07-14 10:42 +09:00 — M7 offline repair-worker foundation committed
 
 - Milestone: M7 (offline contracts only; milestone remains in progress)
 - Change: added strict worker inputs/results, mode-tagged injected backend, fresh trusted-copy lifecycle, canonical hash guard, closed command IDs, sanitized child environment, time/output limits, bounded retry, independent review rules, three prompts, schema, and snapshot
 - Verified: unit 37/37; integration 12/12; eval 14/14; real fresh-copy fixture test command passes; canonical baseline remains unchanged; full offline gate fails only browser/submission
 - Safety evidence: traversal/absolute paths and unknown commands are rejected; `OPENAI_API_KEY`/`CODEX_API_KEY` are absent from child environments; output secrets and personal home paths are redacted; high/critical review blocks proof
 - Truth boundary: snapshot execution mode is `OFFLINE_TEST_DOUBLE` with `liveCodexClaim: false`; no SDK call, Codex patch, or live review is claimed
-- Commit: pending current checkpoint
+- Commit: `0c6fb85f392243a578eea0452b8de4ff50e58910`
 
 ### 2026-07-14 10:06 +09:00 — M6 offline differential runner committed
 
