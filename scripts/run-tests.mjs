@@ -9,12 +9,18 @@ const suites = {
     "tests/unit/policy-resolution.test.mjs",
     "tests/unit/policy-state.test.mjs",
     "tests/unit/rego-compiler.test.mjs",
+    "tests/unit/case-generation.test.mjs",
+    "tests/unit/mutation-engine.test.mjs",
   ],
   integration: [
     "tests/integration/scaffold.integration.test.mjs",
     "tests/integration/refund-fixture.integration.test.mjs",
   ],
-  eval: ["evals/scaffold.eval.test.mjs", "evals/interpreter/recorded-interpreter.eval.test.mjs"],
+  eval: [
+    "evals/scaffold.eval.test.mjs",
+    "evals/interpreter/recorded-interpreter.eval.test.mjs",
+    "evals/cases/offline-m5.eval.test.mjs",
+  ],
 };
 
 const suite = process.argv[2];

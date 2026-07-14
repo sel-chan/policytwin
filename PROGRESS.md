@@ -8,7 +8,7 @@
 - Current milestone: `M5 — Case generation, conflicts, and mutation (offline reference execution)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 09:36:45 +09:00`
+- Last updated: `2026-07-14 09:46:53 +09:00`
 - Latest checkpoint commit: `27a2b924d44bd900c28cb393e58e5413bb857445`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -84,7 +84,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
 | M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts committed; 20 unit tests pass for all operations and guards | `506a818` | SQLite persistence and Decision Queue UI require the pinned application stack |
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
-| M5 Case generation/conflict/mutation | IN_PROGRESS | milestone contract reviewed; deterministic offline generators starting |  | OPA-backed agreement and final evidence remain unavailable until M4 external gate |
+| M5 Case generation/conflict/mutation | IN_PROGRESS | 32 unit and 9 eval tests pass; snapshot has 38 unique cases, 3 conflicts, 35 contrasts, and 44/47 killed mutants (93.62%) with all 3 survivors reported |  | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | NOT_STARTED |  |  |  |
 | M7 Codex repair and review | NOT_STARTED |  |  |  |
 | M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
@@ -104,18 +104,28 @@ Only six golden and three seeded drift examples exist. There is no deterministic
 ### Planned actions
 
 - [x] Re-read the M5 gate and inspect accepted policy, golden cases, predicate evaluator, and boundary contract.
-- [ ] Generate and deduplicate numeric boundary, promotion-state, final-sale conflict, default, and minimal-contrast cases.
-- [ ] Attach expected decisions and rule/clause traceability from the accepted policy reference evaluator.
-- [ ] Detect overlapping different-decision rules and minimal one-field contrasts with witnesses.
-- [ ] Implement all required mutation operators and execute every non-excluded mutant against the corpus.
-- [ ] Enforce at least 90% kill rate, report survivors, and justify only deterministically equivalent exclusions.
+- [x] Generate and deduplicate numeric boundary, promotion-state, final-sale conflict, default, and minimal-contrast cases.
+- [x] Attach expected decisions and rule/clause traceability from the accepted policy reference evaluator.
+- [x] Detect overlapping different-decision rules and minimal one-field contrasts with witnesses.
+- [x] Implement all required mutation operators and execute every non-excluded mutant against the corpus.
+- [x] Enforce at least 90% kill rate, report survivors, and justify only deterministically equivalent exclusions.
 - [ ] Add case/mutation schemas, focused tests, broader regressions, diff review, and an offline M5 checkpoint.
 
 ### Completion evidence
 
-- Commands: pending M5 implementation
-- Exit codes: pending M5 implementation
-- Artifacts: pending M5 implementation
+- Commands:
+  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm eval`; `pnpm verify`
+  - `node scripts/report-offline-m5.mjs`
+- Exit codes:
+  - first M5 typecheck: `2` because numeric narrowing was lost inside mutation callbacks; captured validated local values and retry passed
+  - first M5 unit run: `1` because final-sale candidates differed in both plan and final-sale fields; aligned plan type and retry passed
+  - final lint, typecheck, unit (32/32), eval (9/9), integration (5/5), demo replay, and build: `0`
+  - final `pnpm verify`: `1` only for expected unimplemented browser and submission gates
+- Actual offline metrics:
+  - cases: `38` (6 golden, 9 boundary, 18 minimal-contrast, 4 conflict, 1 generated default)
+  - conflicts: `3`; one-field contrasts: `35`; unreached rules: `0`
+  - mutation: `44/47` killed, `93.61702127659575%`, `0` equivalent exclusions, `3` reported survivors
+- Artifacts: `src/cases/`, `src/mutation/`, case/mutation schemas, M5 report script, tests, and `tests/snapshots/offline-m5-summary.json`
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -129,12 +139,12 @@ Record latest actual result.
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
 | Lint | PASS | `pnpm lint` | repository static checks | 2026-07-14 08:48 +09:00 |
 | Typecheck | PASS | `pnpm typecheck` | domain, PolicyIR, and both fixture variants pass strict TypeScript | 2026-07-14 09:10 +09:00 |
-| Unit tests | PASS | `pnpm test` | 25/25 passed | 2026-07-14 09:33 +09:00 |
+| Unit tests | PASS | `pnpm test` | 32/32 passed | 2026-07-14 09:45 +09:00 |
 | Integration tests | PASS | `pnpm test:integration` | 5/5 passed; exactly 3 reset-copy drifts | 2026-07-14 08:49 +09:00 |
 | Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 08:42 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 7/7 offline/recorded evals pass; live model eval remains unverified | 2026-07-14 09:10 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 9/9 offline/recorded evals pass; live model/OPA eval remains unverified | 2026-07-14 09:45 +09:00 |
 | Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 09:11 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented M0–M4 offline steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:34 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented M0–M5 offline steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:46 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -152,10 +162,10 @@ Never fill from estimates.
 | Required ambiguity labels found | 100% | UNSET |  |
 | Explicit seeded semantics mislabeled as ambiguity | 0 | UNSET |  |
 | Golden cases passed | 100% | UNSET |  |
-| Accepted corpus size | ≥30 | UNSET |  |
+| Accepted corpus size | ≥30 | 38 (offline reference corpus) | `tests/snapshots/offline-m5-summary.json` |
 | Seeded app bugs detected | 3/3 | 3/3 | `pnpm demo:run`; `tests/integration/refund-fixture.integration.test.mjs` |
 | Post-repair drift | 0 | UNSET |  |
-| Mutation kill rate | ≥90% | UNSET |  |
+| Mutation kill rate | ≥90% | 93.62% (offline reference; OPA unverified) | `tests/snapshots/offline-m5-summary.json` |
 | Rule-to-clause traceability | 100% | UNSET |  |
 | Rule-to-case traceability | 100% | UNSET |  |
 | Critical/high security findings | 0 | UNSET |  |
@@ -257,7 +267,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement the offline M5 case/conflict/mutation engines and prove the measured reference kill rate; do not present reference execution as OPA evidence.`
+`Review and commit the offline M5 checkpoint, then build the differential fixture runner and drift clustering while preserving the distinction between reference expectations and future OPA evidence.`
 
 ## Pause handoff
 

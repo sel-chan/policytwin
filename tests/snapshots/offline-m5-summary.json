@@ -1,0 +1,36 @@
+{
+  "executionMode": "REFERENCE_EVALUATOR_NOT_OPA",
+  "caseCount": 38,
+  "sourceCounts": {
+    "BOUNDARY": 9,
+    "CONFLICT": 4,
+    "GENERATED": 1,
+    "MINIMAL_CONTRAST": 18,
+    "USER_GOLDEN": 6
+  },
+  "conflictCount": 3,
+  "contrastCount": 35,
+  "mutation": {
+    "killed": 44,
+    "total": 47,
+    "killRate": 0.9361702127659575,
+    "survivorCount": 3,
+    "survivorIds": [
+      "M005-PREDICATE_DELETE",
+      "M019-PREDICATE_DELETE",
+      "M031-PREDICATE_DELETE"
+    ],
+    "operatorCounts": {
+      "LTE_TO_LT": 6,
+      "GTE_TO_GT": 0,
+      "AND_TO_OR": 3,
+      "PREDICATE_DELETE": 11,
+      "BOOLEAN_INVERT": 6,
+      "THRESHOLD_MINUS_ONE": 6,
+      "THRESHOLD_PLUS_ONE": 6,
+      "PRIORITY_SWAP": 3,
+      "RULE_DELETE": 4,
+      "DEFAULT_CHANGE": 2
+    }
+  }
+}

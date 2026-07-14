@@ -2,7 +2,7 @@ import type { PolicyCase } from "../domain/cases.js";
 import type { PolicyDecisionResult, RefundPolicyInput } from "../domain/refund.js";
 import type { PolicyIR, Predicate } from "./types.js";
 
-function evaluatePredicate(predicate: Predicate, input: RefundPolicyInput): boolean {
+export function evaluatePredicateReference(predicate: Predicate, input: RefundPolicyInput): boolean {
   if (predicate.type === "compare") {
     const actual = input[predicate.field];
     if (predicate.operator === "eq") {
@@ -30,11 +30,11 @@ function evaluatePredicate(predicate: Predicate, input: RefundPolicyInput): bool
     return predicate.values.some((value) => Object.is(input[predicate.field], value));
   }
   if (predicate.type === "not") {
-    return !evaluatePredicate(predicate.child, input);
+    return !evaluatePredicateReference(predicate.child, input);
   }
   return predicate.type === "and"
-    ? predicate.children.every((child) => evaluatePredicate(child, input))
-    : predicate.children.some((child) => evaluatePredicate(child, input));
+    ? predicate.children.every((child) => evaluatePredicateReference(child, input))
+    : predicate.children.some((child) => evaluatePredicateReference(child, input));
 }
 
 /**
@@ -46,7 +46,7 @@ export function evaluatePolicyIRReference(
   input: RefundPolicyInput,
 ): PolicyDecisionResult {
   const orderedRules = [...policy.rules].sort((left, right) => right.priority - left.priority);
-  const matchedRule = orderedRules.find((rule) => evaluatePredicate(rule.when, input));
+  const matchedRule = orderedRules.find((rule) => evaluatePredicateReference(rule.when, input));
   if (!matchedRule) {
     return {
       decision: policy.defaultDecision,

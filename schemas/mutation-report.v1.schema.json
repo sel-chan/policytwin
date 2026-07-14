@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policytwin.local/schemas/mutation-report.v1.schema.json",
+  "title": "PolicyTwin mutation report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["executionMode", "killed", "total", "excludedEquivalent", "killRate", "results", "survivors", "operatorCounts"],
+  "properties": {
+    "executionMode": { "enum": ["REFERENCE_EVALUATOR_NOT_OPA", "OPA"] },
+    "killed": { "type": "integer", "minimum": 0 },
+    "total": { "type": "integer", "minimum": 0 },
+    "excludedEquivalent": { "type": "integer", "minimum": 0 },
+    "killRate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "results": { "type": "array", "items": { "$ref": "#/$defs/result" } },
+    "survivors": { "type": "array", "items": { "$ref": "#/$defs/result" } },
+    "operatorCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["LTE_TO_LT", "GTE_TO_GT", "AND_TO_OR", "PREDICATE_DELETE", "BOOLEAN_INVERT", "THRESHOLD_MINUS_ONE", "THRESHOLD_PLUS_ONE", "PRIORITY_SWAP", "RULE_DELETE", "DEFAULT_CHANGE"],
+      "properties": {
+        "LTE_TO_LT": { "type": "integer", "minimum": 0 },
+        "GTE_TO_GT": { "type": "integer", "minimum": 0 },
+        "AND_TO_OR": { "type": "integer", "minimum": 0 },
+        "PREDICATE_DELETE": { "type": "integer", "minimum": 0 },
+        "BOOLEAN_INVERT": { "type": "integer", "minimum": 0 },
+        "THRESHOLD_MINUS_ONE": { "type": "integer", "minimum": 0 },
+        "THRESHOLD_PLUS_ONE": { "type": "integer", "minimum": 0 },
+        "PRIORITY_SWAP": { "type": "integer", "minimum": 0 },
+        "RULE_DELETE": { "type": "integer", "minimum": 0 },
+        "DEFAULT_CHANGE": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "operator": { "enum": ["LTE_TO_LT", "GTE_TO_GT", "AND_TO_OR", "PREDICATE_DELETE", "BOOLEAN_INVERT", "THRESHOLD_MINUS_ONE", "THRESHOLD_PLUS_ONE", "PRIORITY_SWAP", "RULE_DELETE", "DEFAULT_CHANGE"] },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutantId", "operator", "description", "killed", "witnessCaseIds"],
+      "properties": {
+        "mutantId": { "type": "string", "minLength": 1 },
+        "operator": { "$ref": "#/$defs/operator" },
+        "description": { "type": "string", "minLength": 1 },
+        "killed": { "type": "boolean" },
+        "witnessCaseIds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    }
+  }
+}
