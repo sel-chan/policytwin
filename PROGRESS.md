@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — external worker RPC and static container prerequisites`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-15 08:18:11 +09:00`
-- Latest checkpoint commit: `6213f1c`
+- Last updated: `2026-07-15 08:26:44 +09:00`
+- Latest checkpoint commit: `24a524629424f2480c6793861c3bcc0ce99f660e`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,9 +93,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter plus a single-run streamed RPC request/response/client contract; exact policy/image/corpus/baseline/final tree-manifest, nonce, signature, command, teardown, replay, and two-file delta checks pass with generated-key test doubles | pending checkpoint | host live construction and live commands remain disabled; actual authentication-enforcing transport, external supervisor/worker image, credentials, fresh SDK repair, zero post-repair drift, live review, and signed evidence remain |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter plus a single-run streamed RPC request/response/client contract; exact policy/image/corpus/baseline/final tree-manifest, nonce, signature, command, teardown, replay, and two-file delta checks pass with generated-key test doubles | `24a5246` | host live construction and live commands remain disabled; actual authentication-enforcing transport, external supervisor/worker image, credentials, fresh SDK repair, zero post-repair drift, live review, and signed evidence remain |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, safe reset, static scan, clean-copy replay, digest-required split web Dockerfile, static container contract, and a prepared dynamic OPA/non-root/read-only-root/SQLite-restart verifier | pending checkpoint | immutable Node base digest, running Docker daemon, actual dynamic web-container PASS, separate worker container, owner license, shared auth/quotas, provider selection, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, safe reset, static scan, clean-copy replay, digest-required split web Dockerfile, static container contract, and a prepared dynamic OPA/non-root/read-only-root/SQLite-restart verifier | `24a5246` | immutable Node base digest, running Docker daemon, actual dynamic web-container PASS, separate worker container, owner license, shared auth/quotas, provider selection, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -188,7 +188,7 @@ Never fill from estimates.
 - Independent review: RPC, container, and consistency reviews found no remaining P0/P1 after receive preallocation/chunk controls, exact manifest/mtime delta binding, mutable Docker build-argument rejection, SQLite API restart verification, signal cleanup, and cleanup-failure propagation were corrected
 - Full gate: `pnpm verify` passes every implemented code/static gate and fails only owner-selected `LICENSE` plus the exact 30-item non-final `submission:check`; `pnpm verify:live` fails closed at missing `OPENAI_API_KEY` and `CODEX_MODEL`
 - Evidence: `artifacts/security/container-static-report.json` is static `PASS`; `artifacts/security/container-report.json` is dynamic `FAIL`; evidence hash remains `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`)
-- Commit: `pending`
+- Commit: `24a524629424f2480c6793861c3bcc0ce99f660e`
 - Next: implement the authentication-enforcing transport and external supervisor/worker runtime without enabling host live execution; verify an immutable Node base-image digest only within an explicitly approved registry scope
 
 ### 2026-07-15 02:21 +09:00 — Fail-closed Codex SDK-compatible adapter contract verified offline
@@ -438,7 +438,7 @@ Fill before `/goal pause` or any handoff.
 - Exact current state: `the host RPC client and static web-container boundaries are verified offline; host live construction/commands remain disabled, actual transport/supervisor/worker/live Codex and dynamic container/deployment remain absent`
 - Last successful command: `pnpm verify completed 105 unit assertions, 31 integration, 22 eval, 3 browser, 281-file clean-copy, 256-file security, static container, and production build checks`
 - Current failing command: `pnpm verify retains only owner LICENSE and 30-item non-final submission failures; pnpm container:verify fails at the unset immutable Node digest; pnpm verify:live fails at missing OPENAI_API_KEY and CODEX_MODEL before the unimplemented worker path`
-- Uncommitted files: `checkpoint changes pending commit`
+- Uncommitted files: `none after the ledger follow-up commit`
 - Safe resume command/action: `start the actual authentication-enforcing transport/supervisor implementation from the clean checkpoint after commit`
 - One owner action, if any: `none`
 
