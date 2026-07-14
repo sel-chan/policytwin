@@ -8,8 +8,8 @@
 - Current milestone: `M10 — Submission package (truthful offline drafts)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 11:48:57 +09:00`
-- Latest checkpoint commit: `9602a6c38c5707de8e4aafc32a9e0ea636fa2416`
+- Last updated: `2026-07-14 11:54:53 +09:00`
+- Latest checkpoint commit: `130c3553abdd1ad668d8c367c0f819d242962029`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -89,7 +89,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
 | M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | `efff641` | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
 | M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation verified: threat model, 158-file current/history scan, 158-file clean-copy replay, notice/inventory, and fail-closed license/container reports | `9602a6c` | Owner license choice, app/OPA container, Docker daemon, provider selection, and deployment remain |
-| M10 Submission package | IN_PROGRESS | 21 submission and 4 demo draft files generated; deterministic checker reports 37 unmet requirements; 43 unit and 21 eval checks pass | pending | Official rules, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
+| M10 Submission package | IN_PROGRESS | 21 submission and 4 demo draft files generated; deterministic checker reports 37 unmet requirements; 43 unit and 21 eval checks pass | `130c355` | Official rules, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
@@ -109,7 +109,7 @@ The starting repository had no submission artifact directory or demo production 
 - [x] Generate demo script, shot list, caption draft, and deterministic demo data.
 - [x] Implement strict `submission:check` that rejects draft markers, stale/unverified rules, missing URLs/media/license, failing proof, and absent confirmation.
 - [x] Test missing/false-ready/tampered submission states without contacting external services.
-- [ ] Run broader regressions, inspect drafts, review, and commit the M10 offline checkpoint.
+- [x] Run broader regressions, inspect drafts, review, and commit the M10 offline checkpoint.
 
 ### Completion evidence
 
@@ -117,7 +117,7 @@ The starting repository had no submission artifact directory or demo production 
 - Exit codes: `0`; `1` (expected fail-closed, 37 unmet requirements); `0` (43/43); `0` (21/21); `1` (expected aggregate failures: license, container, browser, submission only)
 - Artifacts: `artifacts/submission/` (21 files including the check report); `artifacts/demo/` (4 files)
 - Screenshots: not applicable; no UI implementation exists
-- Commit: pending current checkpoint
+- Commit: `130c3553abdd1ad668d8c367c0f819d242962029`
 
 ## Quality gates
 
@@ -173,7 +173,7 @@ Append newest entries at the top. Keep entries compact and evidence-oriented.
 - Verified: 21 submission and 4 demo files generated with mandatory non-final markers; checker reports exactly 37 independent unmet requirements; unit 43/43, integration 14/14, eval 21/21, security 188/188 files and 186 text files with zero findings, clean-copy replay 188 files, build, and three-drift demo all pass
 - Commands: `pnpm submission:draft`; `pnpm submission:check`; `pnpm security:check`; `pnpm verify`
 - Artifacts: `artifacts/submission/`, `artifacts/demo/`, `artifacts/security/security-report.json`, `artifacts/security/clean-checkout-report.json`
-- Commit: pending current checkpoint
+- Commit: `130c3553abdd1ad668d8c367c0f819d242962029`
 - Risks: M10 remains incomplete until current official rules, live proof, owner-selected license, UI screenshots, video, HTTPS URLs, form data, and confirmation exist
 - Next: commit this offline checkpoint, then obtain one scoped network approval for current official documentation and pinned dependency/OPA work
 
