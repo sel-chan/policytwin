@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M4 — Deterministic compiler and OPA (offline compiler work while OPA remains unavailable)`
+- Current milestone: `M5 — Case generation, conflicts, and mutation (offline reference execution)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 09:34:36 +09:00`
-- Latest checkpoint commit: `506a8187bf5fd419122d8d5fdde54c7d77ab728f`
+- Last updated: `2026-07-14 09:36:45 +09:00`
+- Latest checkpoint commit: `27a2b924d44bd900c28cb393e58e5413bb857445`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -83,8 +83,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
 | M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts committed; 20 unit tests pass for all operations and guards | `506a818` | SQLite persistence and Decision Queue UI require the pinned application stack |
-| M4 Compiler and OPA | IN_PROGRESS | 25 unit tests pass; byte-stable 3,008-byte Rego and manifest snapshots cover all predicate types, input validation, priority exclusions, fallback, and exact rule line mappings |  | OPA binary/version and real compile/evaluation evidence require approved installation scope |
-| M5 Case generation/conflict/mutation | NOT_STARTED |  |  |  |
+| M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
+| M5 Case generation/conflict/mutation | IN_PROGRESS | milestone contract reviewed; deterministic offline generators starting |  | OPA-backed agreement and final evidence remain unavailable until M4 external gate |
 | M6 Differential runner and drift UX | NOT_STARTED |  |  |  |
 | M7 Codex repair and review | NOT_STARTED |  |  |  |
 | M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
@@ -95,32 +95,27 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Implement a pure byte-stable `PolicyIR`-to-Rego compiler with exhaustive predicate support, explicit input validation, first-match priority semantics, default fallback, compiler line mappings, and snapshot coverage.
+Generate at least 30 unique traceable cases with required boundaries, overlaps, and minimal contrasts; detect conflicts with witnesses; execute required mutation operators; and compute a truthful offline reference kill rate with survivors and deterministic exclusions.
 
 ### Failing or missing condition
 
-No Rego compiler, compiler manifest, rule/line mapping, snapshot, or compiler tests exist. OPA is not installed, so actual Rego compilation and evaluation cannot yet be claimed.
+Only six golden and three seeded drift examples exist. There is no deterministic corpus generator, canonical input deduplication, minimal-contrast analysis, overlap witness report, mutation generator, actual mutation execution, or score calculation.
 
 ### Planned actions
 
-- [x] Re-read the M4 gate and inspect resolved-policy, state guard, predicate union, and result contracts.
-- [x] Implement deterministic Rego helpers for compare, membership, and/or/not predicates.
-- [x] Encode strict input validation and descending-priority first-match behavior with one default result.
-- [x] Produce a compiler manifest with policy/query metadata and exact rule line ranges.
-- [x] Add seeded Rego/manifest snapshots and every-predicate deterministic tests.
-- [x] Confirm unresolved/invalid IR fails before source generation.
-- [ ] Run broader regressions, update evidence/docs, review the diff, and commit the offline M4 checkpoint.
+- [x] Re-read the M5 gate and inspect accepted policy, golden cases, predicate evaluator, and boundary contract.
+- [ ] Generate and deduplicate numeric boundary, promotion-state, final-sale conflict, default, and minimal-contrast cases.
+- [ ] Attach expected decisions and rule/clause traceability from the accepted policy reference evaluator.
+- [ ] Detect overlapping different-decision rules and minimal one-field contrasts with witnesses.
+- [ ] Implement all required mutation operators and execute every non-excluded mutant against the corpus.
+- [ ] Enforce at least 90% kill rate, report survivors, and justify only deterministically equivalent exclusions.
+- [ ] Add case/mutation schemas, focused tests, broader regressions, diff review, and an offline M5 checkpoint.
 
 ### Completion evidence
 
-- Commands:
-  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm build`; `pnpm verify`
-  - `node scripts/compile-seeded-policy.mjs`; `node scripts/compile-seeded-policy.mjs --manifest`
-- Exit codes:
-  - lint, typecheck, unit tests (25/25), build, integration (5/5), eval (7/7), and demo replay: `0`
-  - first post-hardening snapshot run: `1` because the compiler emitted two final LF characters; compiler normalized to one and retry passed
-  - final `pnpm verify`: `1` only for expected unimplemented browser and submission gates
-- Artifacts: `src/compiler/`, compile script, seeded Rego snapshot, compiler-manifest snapshot, compiler unit tests
+- Commands: pending M5 implementation
+- Exit codes: pending M5 implementation
+- Artifacts: pending M5 implementation
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -169,6 +164,16 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 09:36 +09:00 — M4 deterministic Rego compiler committed
+
+- Milestone: M4 (offline subset; milestone remains in progress)
+- Change: added pure Rego v1 generation, strict Rego input guard, exhaustive predicate helpers, priority exclusions, default fallback, compiler line mappings, snapshots, and compile CLI
+- Verified: unit 25/25; 3,008-byte source and manifest are byte-stable; every predicate type covered; unresolved/invalid IR rejected; full offline gate fails only browser/submission
+- Commands: lint, typecheck, unit, build, compile/manifest output, fail-closed full verification, manifest/diff/secret checks
+- Commit: `27a2b924d44bd900c28cb393e58e5413bb857445`
+- Expected gap: no OPA binary is installed, so Rego compile and evaluation remain unverified
+- Next: deterministic case/conflict/mutation engines using the clearly labeled reference evaluator
 
 ### 2026-07-14 09:26 +09:00 — M3 offline versioned ambiguity resolution committed
 
@@ -252,7 +257,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Review and commit the offline M4 compiler checkpoint, then begin deterministic boundary/conflict/minimal-contrast generation and mutation operators without claiming OPA execution.`
+`Implement the offline M5 case/conflict/mutation engines and prove the measured reference kill rate; do not present reference execution as OPA evidence.`
 
 ## Pause handoff
 
