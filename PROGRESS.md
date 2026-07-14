@@ -8,8 +8,8 @@
 - Current milestone: `M8 — Proof, impact, and product polish (offline evidence foundations)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 10:58:32 +09:00`
-- Latest checkpoint commit: `0c6fb85f392243a578eea0452b8de4ff50e58910`
+- Last updated: `2026-07-14 11:06:26 +09:00`
+- Latest checkpoint commit: `efff64154be5645fed1a15bf564bdb849a608cf6`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -87,7 +87,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
 | M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
-| M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | pending current commit | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
+| M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | `efff641` | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
 | M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
 | M10 Submission package | NOT_STARTED |  |  |  |
 
@@ -109,7 +109,7 @@ No change-impact engine or evidence-pack generator exists. Required evidence fil
 - [x] Generate every required evidence filename with provenance and truthful `NOT_RUN` external gates.
 - [x] Compute a deterministic evidence manifest/hash and a human summary matching machine status.
 - [x] Test missing/tampered evidence and unsupported PASS claims.
-- [ ] Review the final diff and commit the M8 offline checkpoint.
+- [x] Review the final diff and commit the M8 offline checkpoint.
 
 ### Completion evidence
 
@@ -117,7 +117,7 @@ No change-impact engine or evidence-pack generator exists. Required evidence fil
 - Exit codes: focused implemented gates all 0; `pnpm verify` is 1 only because `test:e2e` and `submission:check` remain intentionally fail-closed
 - Artifacts: `artifacts/evidence/` (25 files); `tests/snapshots/offline-m8-impact.json`; `schemas/verification-summary.v1.schema.json`
 - Screenshots: not applicable; no UI implementation exists
-- Commit: pending current checkpoint
+- Commit: `efff64154be5645fed1a15bf564bdb849a608cf6`
 
 ## Quality gates
 
@@ -165,14 +165,14 @@ Never fill from estimates.
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
 
-### 2026-07-14 10:58 +09:00 — M8 offline impact and evidence foundation verified, commit pending
+### 2026-07-14 11:06 +09:00 — M8 offline impact and evidence foundation committed
 
 - Milestone: M8 (offline subset; milestone remains in progress)
 - Change: made numeric case boundaries derive from PolicyIR; corrected stale golden/drift clause links; added immutable 14→30 version impact, traceability diagnostics, deterministic evidence generation, SHA-256 manifest validation, strict verification summary, and tamper/false-PASS tests
 - Verified: unit 41/41; integration 14/14; eval 16/16; 8 case expectations change under 14→30; G02 blocks automatic verification; 4/4 clauses, 4/4 rules, 41/41 cases, and 6 code locations linked; 25 evidence files regenerate to hash `05e6f75a03fafa655f97c491983d3044e214f8a30c56fa31099762c095eee655`
 - Recovered failure: first parallel integration run deleted the shared fixture build during evidence generation; classified as code concurrency; isolated evidence compilation under `.tmp/evidence-fixture-build`; retry passed 14/14
 - Truth boundary: verification summary remains `FAIL`; OPA, live GPT-5.6, live Codex, post-repair drift, security, browser, container, and deployment are `NOT_RUN`
-- Commit: pending current checkpoint
+- Commit: `efff64154be5645fed1a15bf564bdb849a608cf6`
 
 ### 2026-07-14 10:42 +09:00 — M7 offline repair-worker foundation committed
 
