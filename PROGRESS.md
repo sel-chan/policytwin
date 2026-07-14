@@ -8,8 +8,8 @@
 - Current milestone: `M7 — server-side Codex SDK adapter`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-15 02:20:27 +09:00`
-- Latest checkpoint commit: `95790e8`
+- Last updated: `2026-07-15 02:33:11 +09:00`
+- Latest checkpoint commit: `5b1006f`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,7 +93,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, strict semantic schemas, exact two-file/D01-D03/corpus bindings, canonical diff/tree receipts, all-phase poison, unknown-event rejection, sensitive-input/output guards, real trusted commands, and independent P0/P1 reviews pass offline | pending | host live construction is intentionally disabled; external OS-sandbox worker RPC, credentials, fresh real SDK repair, zero post-repair drift, live review, and signed receipts remain |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, strict semantic schemas, exact two-file/D01-D03/corpus bindings, canonical diff/tree receipts, all-phase poison, unknown-event rejection, sensitive-input/output guards, real trusted commands, and independent P0/P1 reviews pass offline | `5b1006f` | host live construction is intentionally disabled; external OS-sandbox worker RPC, credentials, fresh real SDK repair, zero post-repair drift, live review, and signed receipts remain |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
 | M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation plus isolated 24-hour/128-session bounds, exact production origin, CSRF, bounded streaming bodies, safe reset, static scan, and clean-copy replay | `16c06fc` | owner license choice, shared auth/quotas, app container, Docker daemon, provider selection, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
@@ -119,7 +119,7 @@ The M7 foundation has strict prompts, result validators, fresh-copy lifecycle, c
 - [x] Require the exact server-owned 41-case corpus, retain tree-bound commands for every attempt, and require a PolicyIR/corpus/tree-bound full-corpus receipt after every command-passing repair attempt; reject metadata-only edits, test-side tree mutation, incomplete/mismatched results, and any non-passing accepted case.
 - [x] Add fake-SDK unit/integration tests for exact options, schemas, phase isolation, timeout, malformed output, mutation detection, write-set mismatch, metadata ownership, full-corpus verification, and canonical-fixture preservation.
 - [x] Update live-gate wiring and documentation truthfully while retaining a hard failure when credentials, the external OS worker, or fresh live evidence are absent.
-- [x] Run focused gates, independent read-only security/contract reviews, and full `pnpm verify`; final diff review and checkpoint commit remain the next local actions.
+- [x] Run focused gates, independent read-only security/contract reviews, full `pnpm verify`, final diff review, and checkpoint commit on `main`.
 
 ### Completion evidence
 
@@ -190,8 +190,8 @@ Never fill from estimates.
 - Full gate: `pnpm verify` passes every local engineering check and fails only `license:check`, `container:check`, and `submission:check`; `pnpm verify:live` separately fails closed for missing credentials/model, external worker, and fresh evidence
 - Evidence hash: `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1`
 - Expected release gaps: owner-selected LICENSE; Dockerfile/running daemon; external Codex worker; fresh GPT-5.6/Codex calls; signed live proof; two remaining captures; public URLs/video; submission confirmation
-- Commit: pending final diff review and checkpoint commit on `main`
-- Next: commit this verified offline M7 checkpoint, then implement independently safe container prerequisites and external-worker RPC design without enabling host live execution
+- Commit: `5b1006f9b76362e919beb96096988ebac0b7d9f9`
+- Next: implement independently safe container prerequisites and the external-worker RPC design without enabling host live execution
 
 ### 2026-07-14 22:34 +09:00 — Deterministic complete evidence archive verified
 
@@ -417,18 +417,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Review and commit the verified offline M7 adapter checkpoint, then implement static container prerequisites and the external-worker RPC boundary without enabling host live execution.`
+`Implement static container prerequisites and the external-worker RPC boundary without enabling host live execution.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; final diff review and checkpoint commit are in progress`
+- Why paused: `not paused; the M7 implementation checkpoint and verified ledger follow-up are committed`
 - Exact current state: `the offline M7 SDK-compatible adapter and adversarial evidence contract are verified; host live construction remains disabled and no live Codex claim exists`
 - Last successful command: `pnpm verify completed every local code gate: 80 unit, 31 integration, 21 eval, 3 browser, 273-file clean-copy, security, and production build passed`
 - Current failing command: `pnpm verify intentionally retains only license, container, and 30-item non-final submission failures; pnpm verify:live fails closed for missing credentials/model and external worker`
-- Uncommitted files: `M7 adapter, safety/evidence tests, refreshed partial artifacts, and documentation awaiting final review and checkpoint commit`
-- Safe resume command/action: `run final diff/status checks, commit the M7 checkpoint on main, update this ledger with the commit hash, and rerun the required checks`
+- Uncommitted files: `none`
+- Safe resume command/action: `continue container and external-worker boundary work from clean main`
 - One owner action, if any: `none`
 
 ## Final completion record
