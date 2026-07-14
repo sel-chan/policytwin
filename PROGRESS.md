@@ -8,8 +8,8 @@
 - Current milestone: `M8 — deterministic complete evidence archive`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 22:27:52 +09:00`
-- Latest checkpoint commit: `a359d80498ac52ff4e39ba9ec3dc3be669e57bc6`
+- Last updated: `2026-07-14 22:34:30 +09:00`
+- Latest checkpoint commit: `5fecdded3f2bcec43c2fe6cf20bf93afdaccba10`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -94,7 +94,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | offline safety contracts verified; current official SDK docs checked and `@openai/codex-sdk` 0.144.3 installed server-side | `0c6fb85` | SDK adapter, credentials/login, real patch/diff, zero post-repair drift, and live review evidence remain |
-| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | `16c06fc` | deterministic downloadable archive, live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
+| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
 | M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation plus isolated 24-hour/128-session bounds, exact production origin, CSRF, bounded streaming bodies, safe reset, static scan, and clean-copy replay | `16c06fc` | owner license choice, shared auth/quotas, app container, Docker daemon, provider selection, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
@@ -121,7 +121,7 @@ The repository has no ZIP dependency and the dependency policy forbids adding on
 - [x] Add integration and browser coverage for archive determinism, contents, tamper rejection, headers, and individual-file completeness.
 - [x] Update architecture, README, decisions, threat/limitation/runbook, and evidence documentation from actual behavior.
 - [x] Run focused gates, inspect the Proof capture, and complete an independent adversarial diff review.
-- [ ] Run the full gate, complete the final diff review, and commit the checkpoint on `main`.
+- [x] Run the full gate, complete the final diff review, and commit the checkpoint on `main`.
 
 ### Completion evidence
 
@@ -135,7 +135,7 @@ The repository has no ZIP dependency and the dependency policy forbids adding on
 - Independent review: final read-only review reports no P0/P1; the remaining P2 is repeated-download CPU/body-copy pressure for the currently 227 KiB package, which requires short caching or shared rate limiting before public multi-instance deployment
 - Full gate: `pnpm verify` completed every local gate and failed only `license:check`, `container:check`, and `submission:check`, each for an explicit owner/external/incomplete condition
 - Final local evidence: 63/63 unit, 25/25 integration, 21/21 eval, 3/3 production Chrome E2E, production build, 269-file clean-copy replay, 269-file/244-text-file security scan, unchanged evidence hash, and 30 truthful submission gaps
-- Commit: pending
+- Commit: `5fecdded3f2bcec43c2fe6cf20bf93afdaccba10`
 
 ## Quality gates
 
@@ -181,6 +181,19 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-14 22:34 +09:00 — Deterministic complete evidence archive verified
+
+- Milestone: M8 advances with the required downloadable archive; it remains in progress only for fresh live proof, signing, and final submission captures
+- Change: added a dependency-free fixed-metadata USTAR builder, exact 38-file download allowlist, bounded regular-file UTF-8 reader, common semantic/sensitive-content validation, complete individual evidence API, native Proof download action, and truthful generated submission copy
+- Security boundary: 4 MiB per file and 16 MiB aggregate limits apply before parsing; symlinks/non-files, invalid UTF-8, missing/extra/tampered payloads, credential/private-key/bearer/OpenAI-token content, absolute/personal/file-URI paths, and untrusted or invalid live attestations fail closed; one archive build runs per process at a time
+- Recovered review findings: replaced a quadratic secret regex, closed the individual-download bypass, bounded disk allocation, covered camel/general credential keys and CR/LF values, expanded Windows/UNC/POSIX path detection without rejecting HTTPS, and verified a real browser download plus all 38 individual routes
+- Verified: lint; strict typecheck; 63 unit; 25 integration; 21 eval; 3 production Chrome E2E; production build; 269-file clean-copy replay; 269-file/244-text-file security scan; direct Proof screenshot inspection; independent final review reports no P0/P1
+- Full gate: `pnpm verify` fails only `license:check`, `container:check`, and `submission:check`; the submission checker reports 30 truthful unmet requirements
+- Evidence hash: `99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9`
+- Commit: `5fecdded3f2bcec43c2fe6cf20bf93afdaccba10`
+- Residual: repeated public downloads need short metadata-keyed caching or shared rate limiting before deployment; the current package is approximately 227 KiB and remains bounded/fail-closed
+- Next: implement the offline-safe server-side Codex SDK adapter, then return to static container prerequisites once a verified base-image digest is within approved network scope
 
 ### 2026-07-14 21:08 +09:00 — Persisted Decision Queue and reference-bound Change Impact verified
 
@@ -393,18 +406,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Commit the verified M8 archive checkpoint, then continue the remaining offline-safe Codex SDK adapter and static container prerequisites before owner-only live/license/deployment actions.`
+`Continue the offline-safe server-side Codex SDK adapter, then static container prerequisites, before owner-only live/license/deployment actions.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the M8 archive checkpoint is in final full verification`
-- Exact current state: `the recorded v4 package has a deterministic guarded 38-file USTAR download and complete individual API surface; live work remains fail-closed`
+- Why paused: `not paused; the verified M8 archive implementation is committed and its ledger follow-up is being checked`
+- Exact current state: `the recorded v4 package has a committed deterministic guarded 38-file USTAR download and complete individual API surface; live work remains fail-closed`
 - Last successful command: `pnpm verify completed every local gate; 63 unit, 25 integration, 21 eval, 3 browser, clean-copy, security, and production build passed`
 - Current failing command: `none for the focused archive checkpoint; pnpm verify still intentionally retains license, container, and submission release failures`
-- Uncommitted files: `M8 archive implementation, tests, Proof capture, generated drafts, and documentation awaiting full verification and checkpoint commit`
-- Safe resume command/action: `review the final diff, commit the M8 archive checkpoint on main, and continue M7/M9`
+- Uncommitted files: `PROGRESS.md ledger-only follow-up awaiting verification and commit`
+- Safe resume command/action: `verify and commit the ledger follow-up, then begin the M7 Codex SDK adapter checklist`
 - One owner action, if any: `none`
 
 ## Final completion record
