@@ -23,6 +23,10 @@
     "demo:reset": "node scripts/demo-reset.mjs",
     "demo:run": "node scripts/demo-run.mjs",
     "evidence:offline": "node scripts/generate-offline-evidence.mjs",
+    "security:check": "node scripts/security-check.mjs",
+    "license:check": "node scripts/license-check.mjs",
+    "clean:check": "node scripts/clean-checkout.mjs",
+    "container:check": "node scripts/container-check.mjs",
     "submission:check": "node scripts/gate.mjs submission:check"
   }
 }

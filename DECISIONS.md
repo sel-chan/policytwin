@@ -222,3 +222,20 @@ Add new entries below this line with the template above.
 - Risks: Live generation must replace `NOT_RUN` artifacts and preserve validator compatibility rather than layering unsupported claims on the partial package.
 - Reversal or migration path: The same manifest advances to `LIVE_VERIFIED`/`PASS` only after all required gates supply fresh evidence and the fail-closed validator accepts it.
 - Related files/commits: `artifacts/evidence/`, `schemas/verification-summary.v1.schema.json`, `PROGRESS.md`.
+
+### D-013 — Do not guess the project license or create a placeholder container
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M9
+- Context: Choosing a repository license requires owner acceptance, while a container built before the web server, pinned OPA, health endpoint, and verified base digest would imply deployment readiness that does not exist.
+- Options considered:
+  1. assume MIT and build a placeholder Node health server;
+  2. omit all license/container work until the end;
+  3. prepare inventories and strict prerequisite checks while keeping both gates failed.
+- Decision: Record the zero-production-dependency inventory and recommendation without granting a license. Keep `license:check` failed until the owner selects a license. Define container prerequisites and report each missing item, but do not add a Dockerfile or fake health server until the actual Next.js/OPA application exists and image versions can be verified.
+- Evidence: `docs/license-review.md`, `NOTICE.md`, `scripts/license-check.mjs`, `container-contract.json`, `scripts/container-check.mjs`, and `artifacts/security/`.
+- Consequences: `pnpm verify` now truthfully includes license and container failures in addition to browser/submission gaps.
+- Risks: Owner license selection and Docker Desktop startup remain unavoidable later actions; current official base image and OPA facts still require approved network lookup.
+- Reversal or migration path: Add the accepted `LICENSE`, resolved dependency notices, verified image digest, pinned OPA checksum, production health route, and real Docker build/health evidence, then allow both checks to pass.
+- Related files/commits: `PROGRESS.md`, `docs/threat-model.md`, `docs/limitations.md`.

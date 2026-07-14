@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1",
+  "status": "FAIL",
+  "projectLicensePresent": false,
+  "noticePresent": true,
+  "productionDependencies": [],
+  "failures": [
+    "OWNER_DECISION_REQUIRED: project LICENSE is absent."
+  ]
+}

@@ -28,6 +28,7 @@ const suites = {
     "evals/differential/offline-m6.eval.test.mjs",
     "evals/codex/offline-m7.eval.test.mjs",
     "evals/evidence/offline-m8.eval.test.mjs",
+    "evals/security/offline-m9.eval.test.mjs",
   ],
 };
 

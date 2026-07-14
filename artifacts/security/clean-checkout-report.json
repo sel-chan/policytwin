@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1",
+  "status": "PASS",
+  "copiedFiles": 158,
+  "sourceIncludedNodeModules": false,
+  "credentialVariablesForwarded": [],
+  "commands": [
+    {
+      "command": "pnpm install --offline --frozen-lockfile",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm lint",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test:integration",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm eval",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm demo:reset",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm demo:run",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm evidence:offline",
+      "exitCode": 0
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1",
+  "status": "FAIL",
+  "daemonAvailable": false,
+  "dockerServerVersion": null,
+  "contractStatus": "NOT_READY",
+  "opaVersion": "UNVERIFIED",
+  "failures": [
+    "Container contract is not ready or OPA is unverified.",
+    "Dockerfile is absent.",
+    "Production health endpoint is absent.",
+    "Docker daemon is unavailable."
+  ]
+}

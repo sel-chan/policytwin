@@ -27,9 +27,11 @@ pnpm build
 pnpm demo:reset
 pnpm demo:run
 pnpm evidence:offline
+pnpm security:check
+pnpm clean:check
 ```
 
-`pnpm demo:run` must report exactly three baseline drifts. `pnpm verify`, `pnpm verify:live`, `pnpm test:e2e`, and `pnpm submission:check` remain fail-closed until their required product capabilities exist. See `PROGRESS.md` for exact evidence and current blockers.
+`pnpm demo:run` must report exactly three baseline drifts. `pnpm security:check` scans current files and Git history without printing suspected values. `pnpm clean:check` reproduces implemented gates from an isolated copy without dependencies or model credentials. `pnpm verify` currently fails closed on the owner-required project license, incomplete container, browser E2E, and submission; `pnpm verify:live` also remains fail-closed. See `PROGRESS.md` for exact evidence and current blockers.
 
 The dependency-free runtime validator is an offline bootstrap, not a substitute for the required project-pinned Zod and strict Responses API integration. Those are added only after the repository's external network scope is approved and current official documentation is verified.
 

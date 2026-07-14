@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_READY",
+  "nodeVersion": "22.22.2",
+  "opaVersion": "UNVERIFIED",
+  "applicationPort": 3000,
+  "healthPath": "/api/health",
+  "trustedFixtureId": "seeded-refund-demo",
+  "requires": [
+    "Dockerfile",
+    "pinned base image digest",
+    "pinned OPA version and checksum",
+    "production web server",
+    "health endpoint",
+    "server-side Codex worker",
+    "persistent data path"
+  ]
+}

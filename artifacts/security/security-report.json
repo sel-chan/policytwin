@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "status": "PASS",
+  "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
+  "scannedFiles": 158,
+  "scannedTextFiles": 156,
+  "gitHistoryScanned": true,
+  "productionDependencyCount": 0,
+  "reviewedChildProcessFiles": [
+    "fixtures/refund-demo/baseline/tests/refund.test.mjs",
+    "scripts/clean-checkout.mjs",
+    "scripts/container-check.mjs",
+    "scripts/process.mjs",
+    "scripts/repair-command.mjs",
+    "scripts/security-check.mjs"
+  ],
+  "findings": []
+}

@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M8 — Proof, impact, and product polish (offline evidence foundations)`
+- Current milestone: `M9 — Security, reproducibility, and deployment (offline foundations)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 11:06:26 +09:00`
+- Last updated: `2026-07-14 11:28:56 +09:00`
 - Latest checkpoint commit: `efff64154be5645fed1a15bf564bdb849a608cf6`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -88,36 +88,37 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
 | M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
 | M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | `efff641` | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
-| M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation verified: threat model, 158-file current/history scan, 158-file clean-copy replay, notice/inventory, and fail-closed license/container reports | pending current commit | Owner license choice, app/OPA container, Docker daemon, provider selection, and deployment remain |
 | M10 Submission package | NOT_STARTED |  |  |  |
 
 ## Current checkpoint
 
 ### Objective
 
-Build the dependency-free M8 evidence foundation: versioned 14→30-day impact analysis, clause→rule→case→code traceability, and a reproducible partial evidence package whose verification status remains `FAIL` until real OPA, live GPT/Codex, security, browser, and deployment evidence exists.
+Build the dependency-free M9 foundation: document the trusted-fixture threat boundary, automate secret/history/license/static-security checks, prove current implemented gates from an isolated clean copy, and prepare a pinned container/health contract without claiming a container run or deployment while Docker is unavailable.
 
 ### Failing or missing condition
 
-No change-impact engine or evidence-pack generator exists. Required evidence files are absent, proof metrics are not consolidated, and current offline snapshots cannot yet be audited through one hashed manifest. Generating files must not convert reference-evaluator or test-double results into OPA/Codex claims.
+There is no release threat model, limitations document, license/notice, repository security gate, clean-copy reproduction script, or container definition. Docker CLI exists but `docker info` fails because the Desktop Linux engine pipe is absent. The web health endpoint and deployable application stack do not yet exist.
 
 ### Planned actions
 
-- [x] Re-read the M8 gate and inspect accepted policy, cases, differential, compiler, mutation, and worker snapshots.
-- [x] Implement immutable 14→30 policy version change and changed-rule/case impact reporting.
-- [x] Build clause→rule→case→code traceability with explicit uncovered links.
-- [x] Generate every required evidence filename with provenance and truthful `NOT_RUN` external gates.
-- [x] Compute a deterministic evidence manifest/hash and a human summary matching machine status.
-- [x] Test missing/tampered evidence and unsupported PASS claims.
-- [x] Review the final diff and commit the M8 offline checkpoint.
+- [x] Re-read the M9 gate and reproduce Docker daemon unavailability.
+- [x] Write architecture, threat-model, limitations, license-review, and demo/recovery documentation.
+- [x] Add third-party notice and current zero-production-dependency inventory.
+- [ ] Add the owner-selected project `LICENSE`; `license:check` remains fail-closed until acceptance.
+- [x] Implement secret/current-history, license, path, command-policy, and unsafe-pattern checks.
+- [x] Implement isolated clean-copy install/build/test/eval/demo/evidence reproduction.
+- [x] Add a fail-closed container/health prerequisite contract without creating a misleading placeholder image.
+- [ ] Review the final diff and commit the M9 offline checkpoint.
 
 ### Completion evidence
 
-- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm evidence:offline`; `node scripts/report-offline-m8.mjs`; `pnpm verify`
-- Exit codes: focused implemented gates all 0; `pnpm verify` is 1 only because `test:e2e` and `submission:check` remain intentionally fail-closed
-- Artifacts: `artifacts/evidence/` (25 files); `tests/snapshots/offline-m8-impact.json`; `schemas/verification-summary.v1.schema.json`
+- Commands: `pnpm security:check`; `pnpm license:check`; `pnpm container:check`; `pnpm clean:check`; `pnpm eval`; `pnpm verify`; `docker info --format '{{.ServerVersion}}'`
+- Exit codes: security, clean copy, and eval 0; license, container, Docker info, and full verify 1 as explicitly classified below
+- Artifacts: `artifacts/security/security-report.json`; `license-report.json`; `container-report.json`; `clean-checkout-report.json`; `docs/architecture.md`; `docs/threat-model.md`; `docs/limitations.md`; `docs/demo-runbook.md`; `NOTICE.md`
 - Screenshots: not applicable; no UI implementation exists
-- Commit: `efff64154be5645fed1a15bf564bdb849a608cf6`
+- Commit: pending current checkpoint
 
 ## Quality gates
 
@@ -132,14 +133,15 @@ Record latest actual result.
 | Unit tests | PASS | `pnpm test` via `pnpm verify` | 41/41 passed | 2026-07-14 10:58 +09:00 |
 | Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 14/14 passed; evidence regeneration/tamper gates plus prior fixture/worker checks pass | 2026-07-14 10:58 +09:00 |
 | Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 10:58 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 16/16 offline/recorded evals pass; live model/Codex/OPA eval remains unverified | 2026-07-14 10:58 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 19/19 offline/recorded evals pass; live model/Codex/OPA eval remains unverified | 2026-07-14 11:28 +09:00 |
 | Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 10:58 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented M0–M8 offline steps pass; only browser and submission gates fail as designed | 2026-07-14 10:58 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented gates pass; expected remaining failures are license, container, browser, and submission | 2026-07-14 11:28 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
-| Container health | NOT_RUN |  |  |  |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 158 files copied; offline frozen install and 9 implemented command groups pass; no source `node_modules` or credential variables | 2026-07-14 11:28 +09:00 |
+| Container health | FAIL | `pnpm container:check`; `docker info` | OPA/container contract not ready; Dockerfile and health route absent; Docker daemon unavailable | 2026-07-14 11:28 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | NOT_RUN |  |  |  |
-| Security review | NOT_RUN |  |  |  |
+| Dependency/license review | FAIL | `pnpm license:check` | zero production dependencies and NOTICE present; owner-selected project LICENSE absent | 2026-07-14 11:28 +09:00 |
+| Security review | PASS | `pnpm security:check` | offline static scope only: 158 files, 156 text files, full Git history, zero findings; release review remains NOT_RUN | 2026-07-14 11:28 +09:00 |
 | Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | fail-closed: artifacts and URLs absent | 2026-07-14 08:42 +09:00 |
 
 ## Product proof metrics
@@ -164,6 +166,16 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 11:28 +09:00 — M9 offline security and reproducibility foundation verified, commit pending
+
+- Milestone: M9 (offline subset; milestone remains in progress)
+- Change: added architecture/threat/limitations/runbook/license-review docs, NOTICE, current+history secret/path/unsafe-process scan, fail-closed license/container checks, container prerequisites, and isolated clean-copy reproduction
+- Verified: security scan PASS across 158 files, 156 text files, and full Git history with zero findings; clean copy PASS across frozen offline install, lint, typecheck, 41 unit, 14 integration, 19 eval, build, reset, drift replay, and evidence regeneration; no credential variables forwarded
+- Expected failures: project LICENSE requires owner acceptance; container lacks verified OPA, Dockerfile, health route, and running daemon; browser and submission remain absent
+- Recovered failures: history patch scanning falsely joined empty `.env.example` values and was replaced by commit-tree scanning; clean-copy eval self-reference was made explicit as `IN_PROGRESS` until the outer run writes PASS
+- Full gate: `pnpm verify` fails exactly `license:check`, `container:check`, `test:e2e`, and `submission:check`
+- Commit: pending current checkpoint
 
 ### 2026-07-14 11:06 +09:00 — M8 offline impact and evidence foundation committed
 
@@ -290,11 +302,11 @@ A blocker is valid only when the task cannot continue safely without external in
 
 Link to IDs in `DECISIONS.md`.
 
-- None. Current contract choices are accepted through D-012.
+- Project license selection requires owner acceptance; see D-013 and `docs/license-review.md`.
 
 ## Next action
 
-`Review and commit the M8 offline evidence foundation, then continue independent M9 threat-model, command-security, clean-checkout, license, and container-preparation work.`
+`Review and commit the M9 offline foundation, then prepare truthful M10 submission copy/assets while official rules, publishing, video, and final license remain owner/network gated.`
 
 ## Pause handoff
 
