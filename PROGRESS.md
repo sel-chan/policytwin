@@ -8,8 +8,8 @@
 - Current milestone: `M6 — Differential runner and drift UX (offline fixture runner)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 10:02:56 +09:00`
-- Latest checkpoint commit: `66431fc9b8dabb93438fd8ab8d51336c0169eb87`
+- Last updated: `2026-07-14 10:06:52 +09:00`
+- Latest checkpoint commit: `866bb205455945e0ee14afc8f776c1f5efe5b782`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -85,7 +85,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts committed; 20 unit tests pass for all operations and guards | `506a818` | SQLite persistence and Decision Queue UI require the pinned application stack |
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
-| M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | pending current commit | OPA results and web drift UX remain unavailable |
+| M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
 | M7 Codex repair and review | NOT_STARTED |  |  |  |
 | M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
 | M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
@@ -109,7 +109,7 @@ The offline implementation is complete, but the authoritative expectation source
 - [x] Cluster each mismatch into the three required defects plus the observed promotional eligibility bypass.
 - [x] Prove the canonical baseline exposes D01–D03 and the fixed fixture has zero drift.
 - [x] Add deterministic before/after snapshots, schemas, focused integration tests, and report CLI.
-- [ ] Review the final diff and commit the offline M6 checkpoint.
+- [x] Review the final diff and commit the offline M6 checkpoint.
 
 ### Completion evidence
 
@@ -117,7 +117,7 @@ The offline implementation is complete, but the authoritative expectation source
 - Exit codes: focused implemented gates all 0; `pnpm verify` is 1 only because `test:e2e` and `submission:check` remain intentionally fail-closed
 - Artifacts: `tests/snapshots/offline-m6-summary.json`; `tests/snapshots/offline-m5-summary.json`; `schemas/differential-report.v1.schema.json`
 - Screenshots: not applicable; no UI implementation exists
-- Commit: pending current checkpoint
+- Commit: `866bb205455945e0ee14afc8f776c1f5efe5b782`
 
 ## Quality gates
 
@@ -165,14 +165,14 @@ Never fill from estimates.
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
 
-### 2026-07-14 10:02 +09:00 — M6 offline differential runner verified, commit pending
+### 2026-07-14 10:06 +09:00 — M6 offline differential runner committed
 
 - Milestone: M6 (offline subset; milestone remains in progress)
 - Change: preserved D01–D03 in the 41-case corpus; added typed differential records, per-case error isolation, deterministic defect clustering, strict schema, report CLI, integration/eval coverage, and before/after snapshot
 - Verified: unit 32/32; integration 9/9; eval 11/11; baseline 25 matches, 16 drifts, 0 errors; fixed reference 41 matches, 0 drifts, 0 errors; full offline gate fails only browser/submission
 - Diagnostic correction: the first run exposed five previously unclassified promotional approvals outside basic eligibility; these are now truthfully reported as `PROMOTION_ELIGIBILITY_BYPASS`
 - Expected gap: execution mode is `REFERENCE_EXPECTATION_NOT_OPA`; no Codex repair claim or web drift UX exists
-- Commit: pending current checkpoint
+- Commit: `866bb205455945e0ee14afc8f776c1f5efe5b782`
 
 ### 2026-07-14 09:49 +09:00 — M5 offline case/conflict/mutation engines committed
 
