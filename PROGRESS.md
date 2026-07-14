@@ -9,7 +9,7 @@
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
 - Last updated: `2026-07-14 15:55:00 +09:00`
-- Latest checkpoint commit: `85259ea1e70449c1307b382e3f2541fb7e8c2327`
+- Latest checkpoint commit: `1d7261d0f41201e8501558d8b59368605d258db1`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -86,11 +86,11 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
-| M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | pending checkpoint | Docker daemon remains unavailable but is outside the M0 gate |
+| M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | `1d7261d` | Docker daemon remains unavailable but is outside the M0 gate |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; current Responses API/Structured Outputs contract verified; project-pinned Zod 4.4.3 and OpenAI 6.46.0 installed | `e535209` | shared Zod runtime schema, server adapter, credentials, and fresh GPT-5.6 evidence remain |
 | M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts, SQLite persistence, and framework-independent workspace service; restart, immutable text versions, atomic/idempotent resolution, corruption, stale-write, and decision-replay checks pass | `85259ea` | Decision Queue UI and Next.js 16 route wiring remain |
-| M4 Compiler and OPA | IN_PROGRESS | engine gate passes: official OPA 1.18.2 strict compile/evaluation, 41/41 accepted cases, deterministic compiler, and invalid-input rejection | pending checkpoint | compilation UI status remains before the milestone is complete |
+| M4 Compiler and OPA | IN_PROGRESS | engine gate passes: official OPA 1.18.2 strict compile/evaluation, 41/41 accepted cases, deterministic compiler, and invalid-input rejection | `1d7261d` | compilation UI status remains before the milestone is complete |
 | M5 Case generation/conflict/mutation | IN_PROGRESS | canonical corpus has 41 unique cases including D01–D03; real OPA agreement passes; 3 conflicts, 36 contrasts, and 44/47 reference-evaluated mutants (93.62%) | `66431fc` | mutation execution is still reference-based; Case Lab UI and final evidence remain |
 | M6 Differential runner and drift UX | IN_PROGRESS | OPA-backed expected results produce 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | web drift UX and actual post-Codex evidence remain |
 | M7 Codex repair and review | IN_PROGRESS | offline safety contracts verified; current official SDK docs checked and `@openai/codex-sdk` 0.144.3 installed server-side | `0c6fb85` | SDK adapter, credentials/login, real patch/diff, zero post-repair drift, and live review evidence remain |
@@ -123,7 +123,7 @@ The first full clean-copy replay stalled while materializing a hoisted dependenc
 - [x] Update `SUBMISSION.md`, `PROGRESS.md`, generated rules-check artifacts, and durable decisions from verified sources.
 - [x] Select and install pinned application/API/test dependencies and acquire a checksum-verified official OPA binary.
 - [x] Run narrow checks followed by the complete offline regression gate and review the diff.
-- [ ] Commit the checkpoint on the current branch and record its hash.
+- [x] Commit the checkpoint on the current branch and record its hash.
 
 ### Completion evidence
 
@@ -131,7 +131,7 @@ The first full clean-copy replay stalled while materializing a hoisted dependenc
 - Exit codes: all implemented/narrow gates pass; authoritative `pnpm verify` exits 1 only for `license:check`, `container:check`, `submission:check`, and `test:e2e`
 - Artifacts: `config/build-week-rules.v1.json`; `artifacts/evidence/opa-results.json`; `artifacts/evidence/verification-summary.json`; `artifacts/security/security-report.json`; `artifacts/security/clean-checkout-report.json`; `artifacts/submission/rules-check.md`
 - Screenshots: pending
-- Commit: pending
+- Commit: `1d7261d0f41201e8501558d8b59368605d258db1`
 
 ## Quality gates
 
@@ -185,7 +185,7 @@ Never fill from estimates.
 - Verified: frozen offline install; production audit 0 vulnerabilities after PostCSS 8.5.19 override; lint; TypeScript; 49 unit; 17 integration including 41 OPA cases; 21 eval; build; 200-file clean-copy replay; 200-file/198-text-file security scan; D01–D03 replay
 - Full gate: `pnpm verify` fails only `license:check`, `container:check`, `submission:check`, and `test:e2e`, each for an explicit incomplete/owner/external condition
 - Evidence hash: `2dc9b83479eae24d6086dd76c46bd1d07b4ceb64d2e82b229b6b7fbd4692a111`
-- Commit: pending
+- Commit: `1d7261d0f41201e8501558d8b59368605d258db1`
 - Next: review and commit this checkpoint, then implement the server-side GPT-5.6 adapter and five-screen Next.js workspace without claiming live model evidence until credentials exist
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
