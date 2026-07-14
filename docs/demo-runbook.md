@@ -4,6 +4,8 @@
 
 From the repository root:
 
+The offline commands below assume this machine already has the exact pnpm store, verified OPA binary, and Chrome described in `README.md`. A new computer must use the network-enabled installation procedure in the README first.
+
 ```powershell
 pnpm install --offline --frozen-lockfile
 pnpm demo:reset

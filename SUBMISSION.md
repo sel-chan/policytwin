@@ -121,7 +121,7 @@ GPT-5.6 is used for policy-semantic interpretation and adversarial ambiguity/cou
 
 ### Why Codex
 
-Codex reads the real fixture repository, maps policy-related code and tests, applies the smallest repair, runs commands, and returns a reviewable diff and evidence. Codex is part of the product workflow, not only the tool used to build it.
+Codex reads the trusted fixture copy, maps policy-related code and tests, repairs the source inside a server-fixed two-file write set, and enables the exact server-owned D01-D03 assertions already present as skipped tests. PolicyTwin retains every fixed typecheck/test attempt with full execution-tree hashes, rejects SDK command events and test-side tree changes, directly replays the exact hash-bound 41-case corpus, and only then performs a separate read-only review. Codex is part of the product workflow, not only the tool used to build it.
 
 ## 4. Draft long description
 
@@ -135,7 +135,7 @@ A policy can say “within 14 days and 20% usage or less,” but production code
 
 PolicyTwin accepts a natural-language SaaS refund policy and representative examples. GPT-5.6 converts the text into a strict intermediate representation and surfaces only genuinely unresolved normalization, measurement, or default-outcome questions as explicit decision cards. Clearly stated inclusivity and final-sale precedence become rules and tests, not artificial ambiguities. Once approved, a deterministic compiler produces Rego and OPA evaluates a generated corpus of golden, boundary, conflict, and minimal-contrast cases.
 
-PolicyTwin then runs the same cases against a real TypeScript refund application. Any mismatch appears as policy drift with the input, expected decision, actual decision, source clause, rule, and relevant code. Codex maps the repository, repairs the code in a fresh fixture copy, adds regression tests, and reruns the full verification loop.
+PolicyTwin then runs the same cases against a real TypeScript refund application. Any mismatch appears as policy drift with the input, expected decision, actual decision, source clause, rule, and relevant code. Codex maps the repository, repairs the code in a fresh fixture copy, enables the exact server-owned regression assertions already present in the fixture, and reruns the full verification loop.
 
 The final Proof view reports compilation, golden cases, generated cases, drift before and after, mutation score, regression results, traceability, security review, and an evidence hash.
 
@@ -338,7 +338,7 @@ Show day 14, 20%, and precedence drift.
 
 #### 2:00–2:30 — Repair with Codex
 
-> Codex maps the repository, finds the eligibility path, makes the smallest repair, adds regression tests, and runs the project commands.
+> Codex maps the repository, finds the eligibility path, makes the smallest repair, and enables the exact server-owned regression assertions. PolicyTwin then runs the fixed verification commands, the complete 41-case corpus, and a separate read-only review.
 
 Show timeline and diff.
 

@@ -1,8 +1,20 @@
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
-import { assertSafeRelativePath } from "../codex/safety.js";
+import { TextDecoder } from "node:util";
+import { createCanonicalFixtureDiff } from "../codex/diff.js";
+import {
+  assertNoSensitiveWorkerText,
+  assertSafeRelativePath,
+} from "../codex/safety.js";
+import {
+  CARTOGRAPHY_MODEL_OUTPUT_SCHEMA,
+  REPAIR_MODEL_OUTPUT_SCHEMA,
+  REVIEW_MODEL_OUTPUT_SCHEMA,
+} from "../codex/sdk-output-schemas.js";
+import type { CommandEvidence, PolicyVerificationEvidence } from "../codex/types.js";
 import {
   parseCartographyResult,
   parseCommandEvidence,
+  parsePolicyVerificationEvidence,
   parseRepairResult,
   parseReviewResult,
 } from "../codex/validate.js";
@@ -143,7 +155,27 @@ const TRUSTED_CONTAINER_OPA = {
   sha256: "9903e5125ac281104f2c4b7371d10cc3b74a98933743fcbfc174f9bf0ab20de8",
 } as const;
 const TRUSTED_FIXTURE_BASELINE_SHA256 =
-  "108d66bc8dbcad753e0cf92ac74aacf7a616a5b301df62b411e391e5fad7e89a";
+  "c982be2db25a8908fffd4908453094403613e16daf3cc7bd056b616bf1780a88";
+const TRUSTED_REGRESSION_TEST_SHA256 =
+  "b2285ae673d0d4ce164bbe896649d611462820c4c34ebce5073fdc77980ef68a";
+const TRUSTED_ACCEPTED_CORPUS_SHA256 =
+  "2658993bb79e56bf5dfbc1cc762786fdd25b52afe0b63c5ffb1c0b1deb132f57";
+const TRUSTED_FIXTURE_BASELINE_PATHS = [
+  ".",
+  "package.json",
+  "src",
+  "src/refund.ts",
+  "tests",
+  "tests/refund.test.mjs",
+  "tsconfig.json",
+];
+const TRUSTED_CODE_REPAIR_PATHS = new Set(["src/refund.ts", "tests/refund.test.mjs"]);
+const TRUSTED_GENERATED_EXECUTION_PATHS = new Set([
+  "dist",
+  "dist/refund.d.ts",
+  "dist/refund.js",
+]);
+const TRUSTED_EXECUTION_METADATA_PATHS = new Set(["."]);
 const REQUIRED_LIVE_COMMANDS = [
   "pnpm lint",
   "pnpm typecheck",
@@ -165,6 +197,10 @@ const REQUIRED_LIVE_COMMANDS = [
 export interface EvidenceHashEntry {
   file: string;
   includedInEvidenceHash: boolean;
+}
+
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function evidenceContribution(file: string, content: string): string {
@@ -196,7 +232,7 @@ export function computeEvidencePackageHash(
 ): string {
   const included = entries
     .filter((entry) => entry.includedInEvidenceHash)
-    .sort((left, right) => left.file.localeCompare(right.file));
+    .sort((left, right) => compareText(left.file, right.file));
   const aggregate = included
     .map((entry) => {
       const content = files.get(entry.file);
@@ -273,7 +309,7 @@ function canonicalValue(value: unknown): unknown {
   if (typeof value === "object" && value !== null) {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
-        .sort(([left], [right]) => left.localeCompare(right))
+        .sort(([left], [right]) => compareText(left, right))
         .map(([key, item]) => [key, canonicalValue(item)]),
     );
   }
@@ -286,6 +322,122 @@ function sameJson(left: unknown, right: unknown): boolean {
 
 function sameStringSet(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((item) => right.includes(item));
+}
+
+export function validatePolicyVerificationAttemptsAgainstEvidence(
+  value: unknown,
+  cases: readonly PolicyCase[],
+  applicationDecisions: ReadonlyMap<string, unknown>,
+  repairRunIds: readonly string[],
+  finalAttempt: number,
+  expectedBindings: {
+    fixtureTreeSha256: string;
+    acceptedCorpusSha256: string;
+    policyIrSha256: string;
+  },
+): PolicyVerificationEvidence[] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > repairRunIds.length) {
+    throw new Error("Codex PASS summary has an invalid accepted-corpus receipt history.");
+  }
+  const receipts = value.map((item) => parsePolicyVerificationEvidence(item));
+  const casesById = new Map(cases.map((policyCase) => [policyCase.id, policyCase]));
+  const seenAttempts = new Set<number>();
+  let previousAttempt = 0;
+  for (const receipt of receipts) {
+    if (
+      seenAttempts.has(receipt.attempt) ||
+      receipt.attempt <= previousAttempt ||
+      receipt.attempt > repairRunIds.length ||
+      receipt.repairRunId !== repairRunIds[receipt.attempt - 1] ||
+      receipt.acceptedCorpusSha256 !== expectedBindings.acceptedCorpusSha256 ||
+      receipt.policyIrSha256 !== expectedBindings.policyIrSha256
+    ) {
+      throw new Error("Policy verification history is not bound to ordered repair attempts.");
+    }
+    seenAttempts.add(receipt.attempt);
+    previousAttempt = receipt.attempt;
+    if (receipt.total !== cases.length || receipt.results.length !== cases.length) {
+      throw new Error("Policy verification history does not cover the accepted corpus.");
+    }
+    for (const result of receipt.results) {
+      const policyCase = casesById.get(result.caseId);
+      if (policyCase === undefined || result.expectedDecision !== policyCase.expectedDecision) {
+        throw new Error("Policy verification history changed an accepted case expectation.");
+      }
+    }
+  }
+  const finalReceipt = receipts.at(-1) as PolicyVerificationEvidence;
+  if (
+    receipts.slice(0, -1).some((receipt) => receipt.status !== "FAIL") ||
+    finalReceipt.attempt !== finalAttempt ||
+    finalReceipt.status !== "PASS" ||
+    finalReceipt.passed !== cases.length ||
+    finalReceipt.fixtureTreeSha256 !== expectedBindings.fixtureTreeSha256
+  ) {
+    throw new Error("Policy verification history does not end in the final full-corpus PASS receipt.");
+  }
+  for (const result of finalReceipt.results) {
+    const applicationDecision = applicationDecisions.get(result.caseId);
+    if (!isDecision(applicationDecision) || applicationDecision !== result.actualDecision) {
+      throw new Error(
+        `Policy verification result ${result.caseId} does not match post-repair application evidence.`,
+      );
+    }
+  }
+  return receipts;
+}
+
+export function validateCommandEvidenceHistory(
+  value: unknown,
+  repairRunIds: readonly string[],
+  finalAttempt: number,
+  policyVerificationAttempts: readonly PolicyVerificationEvidence[],
+  finalFixtureTreeSha256: string,
+): CommandEvidence[] {
+  if (!Array.isArray(value) || value.length !== repairRunIds.length * 2) {
+    throw new Error("Codex command evidence does not preserve every repair attempt.");
+  }
+  const commands = value.map((item) => parseCommandEvidence(item));
+  const receiptByAttempt = new Map(
+    policyVerificationAttempts.map((receipt) => [receipt.attempt, receipt]),
+  );
+  for (let index = 0; index < commands.length; index += 2) {
+    const attempt = index / 2 + 1;
+    const typecheck = commands[index];
+    const fixtureTest = commands[index + 1];
+    if (
+      typecheck === undefined ||
+      fixtureTest === undefined ||
+      typecheck.attempt !== attempt ||
+      fixtureTest.attempt !== attempt ||
+      typecheck.repairRunId !== repairRunIds[attempt - 1] ||
+      fixtureTest.repairRunId !== repairRunIds[attempt - 1] ||
+      typecheck.commandId !== "fixture-typecheck" ||
+      fixtureTest.commandId !== "fixture-test" ||
+      typecheck.fixtureTreeAfterSha256 !== fixtureTest.fixtureTreeBeforeSha256 ||
+      fixtureTest.fixtureTreeBeforeSha256 !== fixtureTest.fixtureTreeAfterSha256
+    ) {
+      throw new Error("Codex command evidence breaks the ordered build/test tree boundary.");
+    }
+    const commandsPassed = [typecheck, fixtureTest].every(
+      (command) => command.exitCode === 0 && !command.timedOut,
+    );
+    const policyReceipt = receiptByAttempt.get(attempt);
+    if (
+      commandsPassed !== (policyReceipt !== undefined) ||
+      (policyReceipt !== undefined &&
+        policyReceipt.fixtureTreeSha256 !== fixtureTest.fixtureTreeAfterSha256)
+    ) {
+      throw new Error("Codex command and policy-verification histories disagree.");
+    }
+    if (
+      attempt === finalAttempt &&
+      (!commandsPassed || fixtureTest.fixtureTreeAfterSha256 !== finalFixtureTreeSha256)
+    ) {
+      throw new Error("Final Codex commands do not bind to the post-repair fixture tree.");
+    }
+  }
+  return commands;
 }
 
 function parseAttestation(value: unknown): LiveEvidenceAttestation | null {
@@ -1010,12 +1162,15 @@ function validateLiveAttestation(
   }
 }
 
-interface ValidatedFixtureTree {
+export interface ValidatedFixtureTree {
   treeSha256: string;
+  contentTreeSha256: string;
   files: ReadonlyMap<string, string>;
+  contents: ReadonlyMap<string, string>;
+  entries: ReadonlyMap<string, string>;
 }
 
-function validateFixtureTreeReceipt(
+export function validateFixtureTreeReceipt(
   files: ReadonlyMap<string, string>,
   name: "fixture-tree-before.json" | "fixture-tree-after.json",
   runId: string,
@@ -1039,16 +1194,59 @@ function validateFixtureTreeReceipt(
     throw new Error(`${name} metadata is invalid.`);
   }
   const treeHash = createHash("sha256");
+  const contentTreeHash = createHash("sha256");
   const fileHashes = new Map<string, string>();
+  const fileContents = new Map<string, string>();
+  const entryFingerprints = new Map<string, string>();
   let previousPath = "";
   for (const [index, value] of receipt.files.entries()) {
     const item = record(value, `${name} file ${index}`);
-    exactKeys(item, ["path", "bytes", "sha256", "contentBase64"], `${name} file ${index}`);
-    const path = assertSafeRelativePath(item.path, `${name} file ${index}.path`);
-    const contentBase64 = nonEmptyString(item.contentBase64, `${name} file ${index}.contentBase64`);
+    if (item.kind === "directory") {
+      exactKeys(item, ["path", "kind", "mode", "mtimeMs"], `${name} file ${index}`);
+    } else if (item.kind === "file") {
+      exactKeys(
+        item,
+        ["path", "kind", "mode", "mtimeMs", "bytes", "sha256", "contentBase64"],
+        `${name} file ${index}`,
+      );
+    } else {
+      throw new Error(`${name} file ${index}.kind is invalid.`);
+    }
+    const path =
+      item.path === "." && item.kind === "directory"
+        ? "."
+        : assertSafeRelativePath(item.path, `${name} file ${index}.path`);
+    if (
+      compareText(path, previousPath) <= 0 ||
+      entryFingerprints.has(path) ||
+      !Number.isInteger(item.mode) ||
+      (item.mode as number) < 0 ||
+      !Number.isFinite(item.mtimeMs) ||
+      (item.mtimeMs as number) < 0
+    ) {
+      throw new Error(`${name} entry ${path} is not canonical.`);
+    }
+    previousPath = path;
+    treeHash.update(item.kind === "directory" ? "directory\0" : "file\0", "utf8");
+    treeHash.update(path, "utf8");
+    treeHash.update("\0", "utf8");
+    treeHash.update(String(item.mode), "utf8");
+    treeHash.update("\0", "utf8");
+    treeHash.update(String(item.mtimeMs), "utf8");
+    treeHash.update("\0", "utf8");
+    if (item.kind === "directory") {
+      entryFingerprints.set(
+        path,
+        `directory:${String(item.mode)}:${String(item.mtimeMs)}`,
+      );
+      continue;
+    }
+    const contentBase64 = nonEmptyString(
+      item.contentBase64,
+      `${name} file ${index}.contentBase64`,
+    );
     const content = Buffer.from(contentBase64, "base64");
     if (
-      path.localeCompare(previousPath) <= 0 ||
       fileHashes.has(path) ||
       content.toString("base64") !== contentBase64 ||
       item.bytes !== content.byteLength ||
@@ -1056,18 +1254,62 @@ function validateFixtureTreeReceipt(
     ) {
       throw new Error(`${name} file ${path} is not a canonical content receipt.`);
     }
-    previousPath = path;
     fileHashes.set(path, item.sha256 as string);
-    treeHash.update(path, "utf8");
-    treeHash.update("\0", "utf8");
+    try {
+      const decoded = new TextDecoder("utf-8", { fatal: true }).decode(content);
+      if (!Buffer.from(decoded, "utf8").equals(content) || decoded.includes("\0")) {
+        throw new Error("non-canonical text");
+      }
+      fileContents.set(path, decoded);
+    } catch {
+      throw new Error(`${name} file ${path} is not canonical NUL-free UTF-8 text.`);
+    }
+    entryFingerprints.set(
+      path,
+      `file:${String(item.mode)}:${String(item.mtimeMs)}:${String(item.sha256)}`,
+    );
     treeHash.update(content);
     treeHash.update("\0", "utf8");
+    contentTreeHash.update(path, "utf8");
+    contentTreeHash.update("\0", "utf8");
+    contentTreeHash.update(content);
+    contentTreeHash.update("\0", "utf8");
   }
   const treeSha256 = treeHash.digest("hex");
   if (treeSha256 !== receipt.treeSha256) {
     throw new Error(`${name} tree hash does not match its file contents.`);
   }
-  return { treeSha256, files: fileHashes };
+  return {
+    treeSha256,
+    contentTreeSha256: contentTreeHash.digest("hex"),
+    files: fileHashes,
+    contents: fileContents,
+    entries: entryFingerprints,
+  };
+}
+
+export function validateCanonicalIntegrationDiff(
+  diff: string,
+  beforeTree: ValidatedFixtureTree,
+  afterTree: ValidatedFixtureTree,
+  changedFiles: readonly string[],
+): void {
+  assertNoSensitiveWorkerText(diff, "Codex integration diff", 256 * 1024);
+  const expected = createCanonicalFixtureDiff(
+    changedFiles.map((path) => {
+      const before = beforeTree.contents.get(path);
+      const after = afterTree.contents.get(path);
+      if (before === undefined || after === undefined) {
+        throw new Error(`Codex integration diff references an absent fixture file: ${path}`);
+      }
+      return { path, before, after };
+    }),
+  );
+  if (diff !== expected) {
+    throw new Error(
+      "Codex integration diff does not exactly reconstruct the attested fixture content change.",
+    );
+  }
 }
 
 function validateCodexCommandReceipts(
@@ -1529,7 +1771,7 @@ export function validateEvidencePackage(
   if (promptManifest.schemaVersion !== "1" || !Array.isArray(promptManifest.prompts)) {
     throw new Error("Prompt manifest metadata is invalid.");
   }
-  const promptFiles = new Set<string>();
+  const promptFiles = new Map<string, string>();
   for (const [index, value] of promptManifest.prompts.entries()) {
     const entry = record(value, `prompt manifest entry ${index}`);
     exactKeys(entry, ["file", "sha256"], `prompt manifest entry ${index}`);
@@ -1541,7 +1783,7 @@ export function validateEvidencePackage(
     ) {
       throw new Error(`Prompt manifest entry ${index} is invalid or duplicated.`);
     }
-    promptFiles.add(file);
+    promptFiles.set(file, entry.sha256);
   }
   for (const file of [
     `prompts/${policy.metadata.promptVersion}.md`,
@@ -1553,6 +1795,9 @@ export function validateEvidencePackage(
       throw new Error(`Prompt manifest is missing the required prompt: ${file}`);
     }
   }
+  if (promptFiles.size !== 4) {
+    throw new Error("Prompt manifest must contain exactly the four trusted prompts.");
+  }
   const goldenCases = parseEvidenceCases(parseJsonArray(files, "golden-cases.json"), "golden cases", "GOLDEN", policy);
   const generatedCases = parseEvidenceCases(parseJsonArray(files, "generated-cases.json"), "generated cases", "GENERATED", policy);
   const cases = [...goldenCases, ...generatedCases];
@@ -1563,6 +1808,10 @@ export function validateEvidencePackage(
     new Set(cases.map((policyCase) => policyCase.id)).size !== cases.length
   ) {
     throw new Error("Accepted evidence corpus is empty, undersized, or contains duplicate IDs.");
+  }
+  const acceptedCorpusSha256 = hashText(JSON.stringify(cases));
+  if (acceptedCorpusSha256 !== TRUSTED_ACCEPTED_CORPUS_SHA256) {
+    throw new Error("Evidence does not contain the exact server-owned accepted corpus.");
   }
   const acceptedCaseIds = new Set(cases.map((policyCase) => policyCase.id));
 
@@ -1715,7 +1964,12 @@ export function validateEvidencePackage(
     const after = parseJson(files, "drift-report-after.json");
     const appAfter = parseJson(files, "app-results-after.json");
     validateDifferentialReport(after, "Post-repair drift report", cases, opaResults);
-    validateDifferentialReport(appAfter, "Post-repair application results", cases, opaResults);
+    const appAfterRecords = validateDifferentialReport(
+      appAfter,
+      "Post-repair application results",
+      cases,
+      opaResults,
+    );
     if (
       !sameJson(after, appAfter) ||
       after.executionMode !== "OPA_EXPECTATION" ||
@@ -1729,7 +1983,7 @@ export function validateEvidencePackage(
     }
 
     const codex = parseJson(files, "codex-run-summary.json");
-    exactKeys(codex, ["schemaVersion", "executionMode", "status", "attempts", "cartography", "repairAttempts", "commandEvidence", "review", "failure"], "Codex run summary");
+    exactKeys(codex, ["schemaVersion", "executionMode", "status", "attempts", "cartography", "repairAttempts", "commandEvidence", "commandFailures", "policyVerificationAttempts", "review", "failure"], "Codex run summary");
     if (
       codex.schemaVersion !== "1" ||
       codex.executionMode !== "LIVE_CODEX_SDK" ||
@@ -1739,33 +1993,109 @@ export function validateEvidencePackage(
       (codex.attempts as number) > 2 ||
       codex.failure !== null ||
       !Array.isArray(codex.repairAttempts) ||
-      !Array.isArray(codex.commandEvidence)
+      !Array.isArray(codex.commandEvidence) ||
+      !Array.isArray(codex.commandFailures) ||
+      codex.commandFailures.length !== 0 ||
+      !Array.isArray(codex.policyVerificationAttempts)
     ) {
       throw new Error("Codex PASS summary is incomplete.");
     }
     const cartography = parseCartographyResult(codex.cartography, "LIVE_CODEX_SDK");
     const repairs = codex.repairAttempts.map((value) => parseRepairResult(value, "LIVE_CODEX_SDK"));
-    const commands = codex.commandEvidence.map((value) => parseCommandEvidence(value));
+    const applicationDecisions = new Map(
+      [...appAfterRecords].map(([caseId, applicationRecord]) => {
+        const actual = applicationRecord.actual;
+        return [
+          caseId,
+          typeof actual === "object" && actual !== null && !Array.isArray(actual)
+            ? (actual as Record<string, unknown>).decision
+            : null,
+        ];
+      }),
+    );
+    const policyVerificationAttempts = validatePolicyVerificationAttemptsAgainstEvidence(
+      codex.policyVerificationAttempts,
+      cases,
+      applicationDecisions,
+      repairs.map((repair) => repair.metadata.runId),
+      codex.attempts as number,
+      {
+        fixtureTreeSha256: runMetadata.fixtureAfterSha256 as string,
+        acceptedCorpusSha256,
+        policyIrSha256: hashText(JSON.stringify(policy)),
+      },
+    );
+    const commands = validateCommandEvidenceHistory(
+      codex.commandEvidence,
+      repairs.map((repair) => repair.metadata.runId),
+      codex.attempts as number,
+      policyVerificationAttempts,
+      runMetadata.fixtureAfterSha256 as string,
+    );
     const review = parseReviewResult(codex.review, "LIVE_CODEX_SDK");
-    const commandIds = commands.map((command) => command.commandId);
+    const finalCommands = commands.filter((command) => command.attempt === codex.attempts);
+    const commandIds = finalCommands.map((command) => command.commandId);
     const workerRunIds = [
       cartography.metadata.runId,
       ...repairs.map((repair) => repair.metadata.runId),
       review.metadata.runId,
     ];
     const proposedFiles = new Set(cartography.proposedFilesToChange);
+    const metadataMatchesCartography = (metadata: typeof cartography.metadata) =>
+      metadata.backendId === cartography.metadata.backendId &&
+      metadata.sdkVersion === cartography.metadata.sdkVersion &&
+      metadata.model === cartography.metadata.model &&
+      metadata.modelReasoningEffort === cartography.metadata.modelReasoningEffort;
+    const metadataMatchesPhase = (
+      metadata: typeof cartography.metadata,
+      promptFile: string,
+      outputSchema: unknown,
+    ) =>
+      metadata.promptTemplateSha256 === promptFiles.get(promptFile) &&
+      metadata.outputSchemaSha256 === hashText(JSON.stringify(outputSchema));
+    const workerMetadata = [
+      cartography.metadata,
+      ...repairs.map((repair) => repair.metadata),
+      review.metadata,
+    ];
     if (
       repairs.length !== codex.attempts ||
-      commands.length !== 2 ||
+      finalCommands.length !== 2 ||
       new Set(commandIds).size !== 2 ||
       !commandIds.includes("fixture-typecheck") ||
       !commandIds.includes("fixture-test") ||
-      commands.some((command) => command.exitCode !== 0 || command.timedOut) ||
+      finalCommands.some((command) => command.exitCode !== 0 || command.timedOut) ||
       review.verdict !== "APPROVE" ||
-      review.metadata.backendId !== cartography.metadata.backendId ||
-      repairs.some((repair) => repair.metadata.backendId !== cartography.metadata.backendId) ||
+      cartography.metadata.backendId !== "@openai/codex-sdk@0.144.3" ||
+      cartography.metadata.sdkVersion !== "0.144.3" ||
+      !metadataMatchesCartography(review.metadata) ||
+      repairs.some((repair) => !metadataMatchesCartography(repair.metadata)) ||
+      !metadataMatchesPhase(
+        cartography.metadata,
+        "prompts/cartographer.v1.md",
+        CARTOGRAPHY_MODEL_OUTPUT_SCHEMA,
+      ) ||
+      repairs.some(
+        (repair) =>
+          !metadataMatchesPhase(
+            repair.metadata,
+            "prompts/repair.v1.md",
+            REPAIR_MODEL_OUTPUT_SCHEMA,
+          ),
+      ) ||
+      !metadataMatchesPhase(
+        review.metadata,
+        "prompts/reviewer.v1.md",
+        REVIEW_MODEL_OUTPUT_SCHEMA,
+      ) ||
+      new Set(workerMetadata.map((metadata) => metadata.requestSha256)).size !==
+        workerMetadata.length ||
       new Set(workerRunIds).size !== workerRunIds.length ||
-      repairs.some((repair) => repair.changedFiles.some((file) => !proposedFiles.has(file))) ||
+      repairs.some(
+        (repair) =>
+          !sameStringSet(repair.changedFiles, [...proposedFiles]) ||
+          repair.changedFiles.some((file) => !proposedFiles.has(file)),
+      ) ||
       !sameJson(parseJson(files, "codex-cartography.json"), cartography) ||
       !sameJson(parseJson(files, "codex-review.json"), review) ||
       externalGates.codex !== "PASS"
@@ -1789,28 +2119,47 @@ export function validateEvidencePackage(
     }
     const beforeTree = validateFixtureTreeReceipt(files, "fixture-tree-before.json", runId);
     const afterTree = validateFixtureTreeReceipt(files, "fixture-tree-after.json", runId);
-    const treePaths = new Set([...beforeTree.files.keys(), ...afterTree.files.keys()]);
-    const changedTreeFiles = [...treePaths].filter(
-      (path) => beforeTree.files.get(path) !== afterTree.files.get(path),
+    const treePaths = new Set([...beforeTree.entries.keys(), ...afterTree.entries.keys()]);
+    const changedTreeEntries = [...treePaths].filter(
+      (path) => beforeTree.entries.get(path) !== afterTree.entries.get(path),
     );
+    const changedSourceEntries = changedTreeEntries.filter(
+      (path) =>
+        !TRUSTED_GENERATED_EXECUTION_PATHS.has(path) &&
+        !TRUSTED_EXECUTION_METADATA_PATHS.has(path),
+    );
+    const generatedTreeIsExact =
+      [...TRUSTED_GENERATED_EXECUTION_PATHS].every(
+        (path) => !beforeTree.entries.has(path) && afterTree.entries.has(path),
+      ) &&
+      changedTreeEntries
+        .filter((path) => path === "dist" || path.startsWith("dist/"))
+        .every((path) => TRUSTED_GENERATED_EXECUTION_PATHS.has(path));
+    validateCanonicalIntegrationDiff(diff, beforeTree, afterTree, diffFiles);
     if (
-      beforeTree.treeSha256 !== TRUSTED_FIXTURE_BASELINE_SHA256 ||
+      beforeTree.contentTreeSha256 !== TRUSTED_FIXTURE_BASELINE_SHA256 ||
+      !sameStringSet([...beforeTree.entries.keys()], TRUSTED_FIXTURE_BASELINE_PATHS) ||
       runMetadata.fixtureBeforeSha256 !== beforeTree.treeSha256 ||
       runMetadata.fixtureAfterSha256 !== afterTree.treeSha256 ||
       beforeTree.treeSha256 === afterTree.treeSha256 ||
-      !sameStringSet(changedTreeFiles, diffFiles) ||
+      !sameStringSet(changedSourceEntries, diffFiles) ||
+      !sameStringSet(changedSourceEntries, [...TRUSTED_CODE_REPAIR_PATHS]) ||
+      !generatedTreeIsExact ||
+      afterTree.files.get("tests/refund.test.mjs") !== TRUSTED_REGRESSION_TEST_SHA256 ||
       runMetadata.integrationDiffSha256 !== hashText(diff) ||
       after.adapterId !== `seeded-refund-demo@${afterTree.treeSha256}`
     ) {
       throw new Error("Codex fixture and integration diff hashes are missing or inconsistent.");
     }
     validateCodexCommandReceipts(files, commands, runId, afterTree.treeSha256, hashText);
-    const passedRegressionCommands = commands.filter((command) => command.exitCode === 0 && !command.timedOut).length;
+    const passedRegressionCommands = finalCommands.filter(
+      (command) => command.exitCode === 0 && !command.timedOut,
+    ).length;
     if (
       regression.status !== "PASS" ||
-      regression.total !== commands.length ||
+      regression.total !== finalCommands.length ||
       regression.passed !== passedRegressionCommands ||
-      commands.length <= 0
+      finalCommands.length <= 0
     ) {
       throw new Error("Regression summary does not match Codex command evidence.");
     }
@@ -1837,6 +2186,31 @@ export function validateEvidencePackage(
   }
   if (manifest.evidenceMode === "PARTIAL_OFFLINE") {
     const codex = parseJson(files, "codex-run-summary.json");
+    exactKeys(
+      codex,
+      [
+        "schemaVersion",
+        "status",
+        "executionMode",
+        "liveCodexClaim",
+        "policyVerificationAttempts",
+        "contractSnapshot",
+        "reason",
+      ],
+      "Partial offline Codex summary",
+    );
+    if (
+      codex.schemaVersion !== "1" ||
+      !Array.isArray(codex.policyVerificationAttempts) ||
+      codex.policyVerificationAttempts.length !== 0 ||
+      typeof codex.contractSnapshot !== "object" ||
+      codex.contractSnapshot === null ||
+      Array.isArray(codex.contractSnapshot) ||
+      typeof codex.reason !== "string" ||
+      codex.reason.trim().length === 0
+    ) {
+      throw new Error("Partial offline Codex summary must contain no live verification receipt.");
+    }
     const evaluationApp = parseJson(files, "app-results-after.json");
     validateDifferentialReport(
       evaluationApp,

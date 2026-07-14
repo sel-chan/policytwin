@@ -34,7 +34,7 @@ Implemented offline:
 - deterministic Rego source generation;
 - policy-derived cases, conflicts, contrasts, and mutation execution;
 - reference differential reports for canonical and evaluation-only fixtures;
-- guarded repair-worker contracts and isolated trusted copies;
+- guarded repair-worker contracts, isolated trusted copies, and a pinned server-side Codex SDK-compatible adapter contract with separate phase threads, a server-fixed two-file write set, forbidden SDK command execution, sensitive-context/output rejection, failed-write workspace poisoning, digest-pinned D01-D03 fixture assertions, structured model-only outputs, prompt/request/schema-bound server provenance, retained per-attempt command/tree receipts, canonical before/after receipt-bound diffs, and a PolicyIR/corpus/tree-bound 41-case receipt before review;
 - change impact, traceability, aggregate evidence hashes, semantic cross-checks, a closed byte-deterministic 38-file USTAR download, and a trusted live-attestation boundary;
 - SQLite-backed policy, version, lifecycle, golden-case, and decision persistence with restart recovery;
 - framework-independent workspace orchestration for current-state reads, immutable text versions, and atomic ambiguity resolution;
@@ -45,7 +45,7 @@ Proof and Change Impact are bound to the recorded reference policy by a determin
 
 Not yet authoritative:
 
-- GPT-5.6 and Codex nodes still require fresh credentialed runs and signed live evidence;
+- GPT-5.6 and Codex nodes still require fresh credentialed execution and signed live evidence; the SDK-compatible adapter controls are verified offline, but the host live-backend factory intentionally rejects and no SDK turn is represented as live proof before an external fixture-only OS-sandbox worker RPC exists;
 - the 14-to-30 impact candidate is a persisted text-only `DRAFT`; it is not accepted PolicyIR and remains blocked by G02;
 - mutation execution remains reference-based rather than OPA-backed;
 - the application container, deployed health check, live browser run, and deployment do not exist.

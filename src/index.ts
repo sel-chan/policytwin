@@ -39,6 +39,7 @@ export * from "./differential/types.js";
 export * from "./differential/run.js";
 export * from "./codex/types.js";
 export * from "./codex/safety.js";
+export * from "./codex/diff.js";
 export * from "./codex/validate.js";
 export * from "./codex/orchestrate.js";
 export * from "./impact/types.js";

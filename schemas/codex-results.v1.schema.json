@@ -7,7 +7,9 @@
     { "$ref": "#/$defs/repairInput" },
     { "$ref": "#/$defs/repair" },
     { "$ref": "#/$defs/review" },
+    { "$ref": "#/$defs/commandResult" },
     { "$ref": "#/$defs/commandEvidence" },
+    { "$ref": "#/$defs/policyVerification" },
     { "$ref": "#/$defs/workerReport" }
   ],
   "$defs": {
@@ -17,14 +19,54 @@
       "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
     },
     "executionMode": { "enum": ["OFFLINE_TEST_DOUBLE", "LIVE_CODEX_SDK"] },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "decision": { "enum": ["ALLOW", "DENY", "REVIEW"] },
     "commandId": { "enum": ["fixture-typecheck", "fixture-test"] },
+    "refundInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["daysSincePurchase", "usageBasisPoints", "promotionalPurchase", "finalSale", "managerApproved", "planType"],
+      "properties": {
+        "daysSincePurchase": { "type": "integer", "minimum": 0 },
+        "usageBasisPoints": { "type": "integer", "minimum": 0 },
+        "promotionalPurchase": { "type": "boolean" },
+        "finalSale": { "type": "boolean" },
+        "managerApproved": { "type": "boolean" },
+        "planType": { "enum": ["MONTHLY", "ANNUAL", "ENTERPRISE"] }
+      }
+    },
+    "driftWitness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "input", "expectedDecision", "actualDecision", "defectIds", "relatedClauseIds", "relatedRuleIds"],
+      "properties": {
+        "caseId": { "type": "string", "minLength": 1 },
+        "input": { "$ref": "#/$defs/refundInput" },
+        "expectedDecision": { "$ref": "#/$defs/decision" },
+        "actualDecision": { "$ref": "#/$defs/decision" },
+        "defectIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["DAY_14_INCLUSIVE", "USAGE_2000_INCLUSIVE", "FINAL_SALE_PRECEDENCE", "PROMOTION_ELIGIBILITY_BYPASS", "UNCLASSIFIED"] }
+        },
+        "relatedClauseIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "relatedRuleIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
     "metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["executionMode", "backendId", "runId", "startedAt", "completedAt"],
+      "required": ["executionMode", "backendId", "sdkVersion", "model", "modelReasoningEffort", "promptTemplateSha256", "requestSha256", "outputSchemaSha256", "runId", "startedAt", "completedAt"],
       "properties": {
         "executionMode": { "$ref": "#/$defs/executionMode" },
         "backendId": { "type": "string", "minLength": 1 },
+        "sdkVersion": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "modelReasoningEffort": { "enum": ["minimal", "low", "medium", "high", "xhigh"] },
+        "promptTemplateSha256": { "$ref": "#/$defs/sha256" },
+        "requestSha256": { "$ref": "#/$defs/sha256" },
+        "outputSchemaSha256": { "$ref": "#/$defs/sha256" },
         "runId": { "type": "string", "minLength": 1 },
         "startedAt": { "type": "string", "format": "date-time" },
         "completedAt": { "type": "string", "format": "date-time" }
@@ -60,13 +102,23 @@
     "repairInput": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["policyId", "policyVersion", "fixtureId", "policySummary", "failingCaseIds", "allowedCommandIds", "maxRepairAttempts"],
+      "required": ["policyId", "policyVersion", "fixtureId", "sourcePolicy", "policySummary", "acceptedPolicyIr", "acceptedCases", "failingCaseIds", "failingDriftWitnesses", "allowedCommandIds", "maxRepairAttempts"],
       "properties": {
         "policyId": { "type": "string", "minLength": 1 },
         "policyVersion": { "type": "integer", "minimum": 1 },
         "fixtureId": { "const": "seeded-refund-demo" },
-        "policySummary": { "type": "string", "minLength": 1 },
+        "sourcePolicy": { "type": "string", "minLength": 1, "maxLength": 32768 },
+        "policySummary": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "acceptedPolicyIr": { "$ref": "https://policytwin.local/schemas/policy-ir.v1.schema.json" },
+        "acceptedCases": {
+          "type": "array",
+          "minItems": 41,
+          "maxItems": 41,
+          "uniqueItems": true,
+          "items": { "$ref": "https://policytwin.local/schemas/cases.v1.schema.json#/$defs/policyCase" }
+        },
         "failingCaseIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "failingDriftWitnesses": { "type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/driftWitness" } },
         "allowedCommandIds": { "$ref": "#/$defs/commandArray" },
         "maxRepairAttempts": { "type": "integer", "minimum": 1, "maximum": 2 }
       }
@@ -74,7 +126,7 @@
     "cartography": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "phase", "metadata", "relevantFiles", "entryPoints", "policyLogicLocations", "testFiles", "risks", "proposedFilesToChange", "verificationCommandIds"],
+      "required": ["schemaVersion", "phase", "metadata", "relevantFiles", "entryPoints", "policyLogicLocations", "dataFlow", "testFiles", "risks", "proposedFilesToChange", "verificationCommandIds"],
       "properties": {
         "schemaVersion": { "const": "1" },
         "phase": { "const": "CARTOGRAPHY" },
@@ -82,6 +134,7 @@
         "relevantFiles": { "$ref": "#/$defs/pathArray" },
         "entryPoints": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/location" } },
         "policyLogicLocations": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/location" } },
+        "dataFlow": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/location" } },
         "testFiles": { "allOf": [{ "$ref": "#/$defs/pathArray" }, { "minItems": 1 }] },
         "risks": { "$ref": "#/$defs/stringArray" },
         "proposedFilesToChange": { "$ref": "#/$defs/pathArray" },
@@ -91,7 +144,7 @@
     "repair": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "phase", "metadata", "changedFiles", "summary", "rationale", "addedTests", "remainingRisks", "verificationCommandIds"],
+      "required": ["schemaVersion", "phase", "metadata", "changedFiles", "summary", "rationale", "remainingRisks", "verificationCommandIds"],
       "properties": {
         "schemaVersion": { "const": "1" },
         "phase": { "const": "REPAIR" },
@@ -99,7 +152,6 @@
         "changedFiles": { "allOf": [{ "$ref": "#/$defs/pathArray" }, { "minItems": 1 }] },
         "summary": { "type": "string", "minLength": 1 },
         "rationale": { "$ref": "#/$defs/stringArray" },
-        "addedTests": { "allOf": [{ "$ref": "#/$defs/pathArray" }, { "minItems": 1 }] },
         "remainingRisks": { "$ref": "#/$defs/stringArray" },
         "verificationCommandIds": { "$ref": "#/$defs/commandArray" }
       }
@@ -129,10 +181,10 @@
         "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
       }
     },
-    "commandEvidence": {
+    "commandResult": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "commandId", "exitCode", "timedOut", "durationMs", "stdout", "stderr", "outputTruncated"],
+      "required": ["schemaVersion", "commandId", "exitCode", "timedOut", "durationMs", "stdout", "stderr", "outputTruncated", "fixtureTreeBeforeSha256", "fixtureTreeAfterSha256"],
       "properties": {
         "schemaVersion": { "const": "1" },
         "commandId": { "$ref": "#/$defs/commandId" },
@@ -141,7 +193,76 @@
         "durationMs": { "type": "integer", "minimum": 0 },
         "stdout": { "type": "string" },
         "stderr": { "type": "string" },
-        "outputTruncated": { "type": "boolean" }
+        "outputTruncated": { "type": "boolean" },
+        "fixtureTreeBeforeSha256": { "$ref": "#/$defs/sha256" },
+        "fixtureTreeAfterSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "commandEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "commandId", "exitCode", "timedOut", "durationMs", "stdout", "stderr", "outputTruncated", "fixtureTreeBeforeSha256", "fixtureTreeAfterSha256", "attempt", "repairRunId"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "commandId": { "$ref": "#/$defs/commandId" },
+        "exitCode": { "type": "integer", "minimum": 0 },
+        "timedOut": { "type": "boolean" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "stdout": { "type": "string" },
+        "stderr": { "type": "string" },
+        "outputTruncated": { "type": "boolean" },
+        "fixtureTreeBeforeSha256": { "$ref": "#/$defs/sha256" },
+        "fixtureTreeAfterSha256": { "$ref": "#/$defs/sha256" },
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "repairRunId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "commandFailureEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "commandId", "attempt", "repairRunId", "failureKind", "error"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "commandId": { "$ref": "#/$defs/commandId" },
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "repairRunId": { "type": "string", "minLength": 1 },
+        "failureKind": { "const": "COMMAND_RUNNER_OR_EVIDENCE_ERROR" },
+        "error": { "type": "string", "minLength": 1 }
+      }
+    },
+    "policyVerificationCaseResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "expectedDecision", "actualDecision", "status", "error"],
+      "properties": {
+        "caseId": { "type": "string", "minLength": 1 },
+        "expectedDecision": { "$ref": "#/$defs/decision" },
+        "actualDecision": { "oneOf": [{ "$ref": "#/$defs/decision" }, { "type": "null" }] },
+        "status": { "enum": ["PASS", "FAIL", "ERROR"] },
+        "error": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      }
+    },
+    "policyVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "executionMode", "attempt", "repairRunId", "fixtureTreeSha256", "acceptedCorpusSha256", "policyIrSha256", "status", "total", "passed", "results"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "executionMode": { "const": "SERVER_OWNED_CORPUS" },
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "repairRunId": { "type": "string", "minLength": 1 },
+        "fixtureTreeSha256": { "$ref": "#/$defs/sha256" },
+        "acceptedCorpusSha256": { "$ref": "#/$defs/sha256" },
+        "policyIrSha256": { "$ref": "#/$defs/sha256" },
+        "status": { "enum": ["PASS", "FAIL"] },
+        "total": { "type": "integer", "minimum": 41, "maximum": 41 },
+        "passed": { "type": "integer", "minimum": 0, "maximum": 41 },
+        "results": {
+          "type": "array",
+          "minItems": 41,
+          "maxItems": 41,
+          "items": { "$ref": "#/$defs/policyVerificationCaseResult" }
+        }
       }
     },
     "failure": {
@@ -149,14 +270,14 @@
       "additionalProperties": false,
       "required": ["code", "message"],
       "properties": {
-        "code": { "enum": ["CARTOGRAPHY_INVALID", "REPAIR_INVALID", "COMMAND_FAILED", "REVIEW_INVALID", "REVIEW_BLOCKED"] },
+        "code": { "enum": ["CARTOGRAPHY_INVALID", "REPAIR_INVALID", "COMMAND_FAILED", "POLICY_VERIFICATION_FAILED", "REVIEW_INVALID", "REVIEW_BLOCKED"] },
         "message": { "type": "string", "minLength": 1 }
       }
     },
     "workerReport": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "executionMode", "status", "attempts", "cartography", "repairAttempts", "commandEvidence", "review", "failure"],
+      "required": ["schemaVersion", "executionMode", "status", "attempts", "cartography", "repairAttempts", "commandEvidence", "commandFailures", "policyVerificationAttempts", "review", "failure"],
       "properties": {
         "schemaVersion": { "const": "1" },
         "executionMode": { "$ref": "#/$defs/executionMode" },
@@ -165,6 +286,8 @@
         "cartography": { "oneOf": [{ "$ref": "#/$defs/cartography" }, { "type": "null" }] },
         "repairAttempts": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/repair" } },
         "commandEvidence": { "type": "array", "items": { "$ref": "#/$defs/commandEvidence" } },
+        "commandFailures": { "type": "array", "items": { "$ref": "#/$defs/commandFailureEvidence" } },
+        "policyVerificationAttempts": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/policyVerification" } },
         "review": { "oneOf": [{ "$ref": "#/$defs/review" }, { "type": "null" }] },
         "failure": { "oneOf": [{ "$ref": "#/$defs/failure" }, { "type": "null" }] }
       }

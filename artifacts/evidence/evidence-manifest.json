@@ -3,7 +3,7 @@
   "algorithm": "SHA-256",
   "packageStatus": "FAIL",
   "evidenceMode": "PARTIAL_OFFLINE",
-  "evidenceHash": "99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9",
+  "evidenceHash": "4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1",
   "liveAttestation": null,
   "entries": [
     {
@@ -50,8 +50,8 @@
     },
     {
       "file": "codex-run-summary.json",
-      "bytes": 637,
-      "sha256": "6d4c788bf8e0c536ab855bed01ba3739809734a7f0346f1adb02716da8ca00e7",
+      "bytes": 864,
+      "sha256": "b1df961c98ba24811ea6e1cbace09aad8dba95cef6196d9b78d44c31c43891ba",
       "includedInEvidenceHash": true
     },
     {
@@ -183,7 +183,7 @@
     {
       "file": "prompt-manifest.json",
       "bytes": 595,
-      "sha256": "c8457bb926198eecfac4d360234df007b108cd7670f5ae80cf6f83d34c309c0c",
+      "sha256": "ee41ec32cbd573b96dfe2ca17554edaed5b74b892c4e3ce080f6f163af15b712",
       "includedInEvidenceHash": true
     },
     {
@@ -207,7 +207,7 @@
     {
       "file": "summary.md",
       "bytes": 817,
-      "sha256": "9ea6313a82c9584977bbad5f910932da0f2a5d1ba8fad57b6226743107608652",
+      "sha256": "1ec59bc571e64193b2a23908376c7176c3750c5f0629732ed887091f7d926bd4",
       "includedInEvidenceHash": true
     },
     {
@@ -225,7 +225,7 @@
     {
       "file": "verification-summary.json",
       "bytes": 1155,
-      "sha256": "2664cf2e1b70eca00e0cc6c4b045742472889cabb01a6c2e5d83175e24291c30",
+      "sha256": "d1f1110b20e6db244fd49b0aff1326236c9700c38454782932c57c10888bf7d8",
       "includedInEvidenceHash": true
     }
   ]

@@ -19,6 +19,8 @@ const PRIVATE_KEY_BLOCK = new RegExp(
 );
 const BEARER_CREDENTIAL = /\bBearer\s+([A-Za-z0-9._~+/=-]+)/giu;
 const OPENAI_CREDENTIAL = /\bsk-[A-Za-z0-9_-]{16,}/u;
+const CREDENTIAL_URL =
+  /\b[A-Za-z][A-Za-z0-9+.-]*:\/\/[^\s/:@]+:[^\s/@]+@[^\s]+/u;
 const WINDOWS_ABSOLUTE_PATH = /(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\r\n\s]+/u;
 const UNC_PATH = /(?<!:)(?:\\\\|\/\/)[^\\/\r\n\s]+[\\/][^\\/\r\n\s]+/u;
 const FILE_URI = /\bfile:\/\/[^\r\n\s]+/iu;
@@ -85,8 +87,21 @@ function isSensitiveCredentialKey(value: string): boolean {
     "accesstoken",
     "authtoken",
     "clientsecret",
+    "connectionstring",
+    "connectionuri",
+    "databaseuri",
+    "databaseurl",
+    "mongodburi",
+    "mongodburl",
+    "mongouri",
     "password",
+    "postgresqluri",
+    "postgresqlurl",
+    "postgresuri",
+    "postgresurl",
     "privatekey",
+    "redisuri",
+    "redisurl",
     "secret",
     "secretaccesskey",
     "secretkey",
@@ -157,7 +172,11 @@ function assertNoSensitiveContent(name: string, content: string): void {
   if (hasSensitiveAssignment(content)) {
     throw new Error(`Evidence archive rejected a credential-shaped assignment in ${name}.`);
   }
-  if (hasBearerCredential(content) || OPENAI_CREDENTIAL.test(content)) {
+  if (
+    hasBearerCredential(content) ||
+    OPENAI_CREDENTIAL.test(content) ||
+    CREDENTIAL_URL.test(content)
+  ) {
     throw new Error(`Evidence archive rejected credential-shaped content in ${name}.`);
   }
   if (

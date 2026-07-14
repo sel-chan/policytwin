@@ -17,6 +17,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   computeEvidencePackageHash,
+  createCanonicalFixtureDiff,
   createEvidenceArchive,
   liveEvidenceAttestationMessage,
   MAX_EVIDENCE_DOWNLOAD_FILE_BYTES,
@@ -24,6 +25,8 @@ import {
   readEvidenceFilesBounded,
   validateEvidenceDownloadPackage,
   validateEvidencePackage,
+  validateCanonicalIntegrationDiff,
+  validateFixtureTreeReceipt,
 } from "../../dist/index.js";
 
 await import("../../scripts/generate-offline-evidence.mjs");
@@ -35,6 +38,40 @@ function hashText(value) {
 
 function json(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
+}
+
+function fixtureTreeReceipt(entries, runId) {
+  const treeHash = createHash("sha256");
+  const files = entries.map((entry) => {
+    treeHash.update(entry.kind === "directory" ? "directory\0" : "file\0", "utf8");
+    treeHash.update(entry.path, "utf8");
+    treeHash.update("\0", "utf8");
+    treeHash.update(String(entry.mode), "utf8");
+    treeHash.update("\0", "utf8");
+    treeHash.update(String(entry.mtimeMs), "utf8");
+    treeHash.update("\0", "utf8");
+    if (entry.kind === "directory") return entry;
+    const content = Buffer.from(entry.content, "utf8");
+    treeHash.update(content);
+    treeHash.update("\0", "utf8");
+    return {
+      path: entry.path,
+      kind: "file",
+      mode: entry.mode,
+      mtimeMs: entry.mtimeMs,
+      bytes: content.byteLength,
+      sha256: createHash("sha256").update(content).digest("hex"),
+      contentBase64: content.toString("base64"),
+    };
+  });
+  return json({
+    schemaVersion: "1",
+    status: "PASS",
+    runId,
+    fixtureId: "seeded-refund-demo",
+    treeSha256: treeHash.digest("hex"),
+    files,
+  });
 }
 
 function resignEvidence(files) {
@@ -177,7 +214,7 @@ test("complete evidence archive is byte-deterministic USTAR with exactly 38 veri
   const second = createEvidenceArchive(reversed, hashText);
   assert.deepEqual(first.bytes, second.bytes);
   assert.equal(first.archiveSha256, second.archiveSha256);
-  assert.equal(first.evidenceHash, "99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9");
+  assert.equal(first.evidenceHash, "4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1");
   assert.equal(first.evidenceMode, "PARTIAL_OFFLINE");
   assert.equal(first.packageStatus, "FAIL");
   assert.equal(first.policyVersion, 4);
@@ -202,6 +239,186 @@ test("complete evidence archive is byte-deterministic USTAR with exactly 38 veri
     [...parsed.files].map(([name, content]) => [name, content.toString("utf8")]),
   );
   assert.equal(validateEvidencePackage(extracted, hashText).evidenceHash, first.evidenceHash);
+});
+
+test("live fixture receipts bind directory structure, modes, mtimes, and file content", () => {
+  const runId = "live-tree-contract";
+  const entries = [
+    { path: "src", kind: "directory", mode: 16_877, mtimeMs: 1_000 },
+    {
+      path: "src/refund.ts",
+      kind: "file",
+      mode: 33_188,
+      mtimeMs: 2_000,
+      content: "export const decision = 'ALLOW';\n",
+    },
+  ];
+  const receipt = fixtureTreeReceipt(entries, runId);
+  const files = new Map([["fixture-tree-before.json", receipt]]);
+  const validated = validateFixtureTreeReceipt(files, "fixture-tree-before.json", runId);
+  assert.equal(validated.entries.size, 2);
+  assert.equal(validated.files.size, 1);
+
+  const tampered = JSON.parse(receipt);
+  tampered.files[1].mtimeMs += 1;
+  assert.throws(
+    () =>
+      validateFixtureTreeReceipt(
+        new Map([["fixture-tree-before.json", json(tampered)]]),
+        "fixture-tree-before.json",
+        runId,
+      ),
+    /tree hash does not match/u,
+  );
+
+  for (const content of ["\uFEFFexport {};\n", "export const value = '\0';\n"]) {
+    const nonCanonical = fixtureTreeReceipt(
+      [
+        { path: "src", kind: "directory", mode: 16_877, mtimeMs: 1_000 },
+        {
+          path: "src/refund.ts",
+          kind: "file",
+          mode: 33_188,
+          mtimeMs: 2_000,
+          content,
+        },
+      ],
+      runId,
+    );
+    assert.throws(
+      () =>
+        validateFixtureTreeReceipt(
+          new Map([["fixture-tree-before.json", nonCanonical]]),
+          "fixture-tree-before.json",
+          runId,
+        ),
+      /canonical NUL-free UTF-8/u,
+    );
+  }
+});
+
+test("integration diff is the canonical byte-for-byte change between attested trees", () => {
+  const runId = "live-diff-contract";
+  const beforeFiles = new Map([
+    [
+      "fixture-tree-before.json",
+      fixtureTreeReceipt(
+        [
+          { path: "src", kind: "directory", mode: 16_877, mtimeMs: 1_000 },
+          {
+            path: "src/refund.ts",
+            kind: "file",
+            mode: 33_188,
+            mtimeMs: 2_000,
+            content: "export const decision = 'DENY';\n",
+          },
+        ],
+        runId,
+      ),
+    ],
+  ]);
+  const afterFiles = new Map([
+    [
+      "fixture-tree-after.json",
+      fixtureTreeReceipt(
+        [
+          { path: "src", kind: "directory", mode: 16_877, mtimeMs: 1_000 },
+          {
+            path: "src/refund.ts",
+            kind: "file",
+            mode: 33_188,
+            mtimeMs: 3_000,
+            content: "export const decision = 'ALLOW';\n",
+          },
+        ],
+        runId,
+      ),
+    ],
+  ]);
+  const beforeTree = validateFixtureTreeReceipt(
+    beforeFiles,
+    "fixture-tree-before.json",
+    runId,
+  );
+  const afterTree = validateFixtureTreeReceipt(
+    afterFiles,
+    "fixture-tree-after.json",
+    runId,
+  );
+  const diff = createCanonicalFixtureDiff([
+    {
+      path: "src/refund.ts",
+      before: beforeTree.contents.get("src/refund.ts"),
+      after: afterTree.contents.get("src/refund.ts"),
+    },
+  ]);
+  assert.equal(
+    diff,
+    [
+      "diff --git a/src/refund.ts b/src/refund.ts",
+      "--- a/src/refund.ts",
+      "+++ b/src/refund.ts",
+      "@@ -1,1 +1,1 @@",
+      "-export const decision = 'DENY';",
+      "+export const decision = 'ALLOW';",
+      "",
+    ].join("\n"),
+  );
+  assert.doesNotThrow(() =>
+    validateCanonicalIntegrationDiff(diff, beforeTree, afterTree, ["src/refund.ts"]),
+  );
+  const fabricated = [
+    "diff --git a/src/refund.ts b/src/refund.ts",
+    "--- a/src/refund.ts",
+    "+++ b/src/refund.ts",
+    "@@ -1,1 +1,1 @@",
+    "-fabricated before",
+    "+fabricated after",
+    "",
+  ].join("\n");
+  assert.throws(
+    () =>
+      validateCanonicalIntegrationDiff(fabricated, beforeTree, afterTree, [
+        "src/refund.ts",
+      ]),
+    /does not exactly reconstruct/u,
+  );
+  assert.equal(
+    createCanonicalFixtureDiff([
+      { path: "src/empty.ts", before: "", after: "export {};" },
+    ]),
+    [
+      "diff --git a/src/empty.ts b/src/empty.ts",
+      "--- a/src/empty.ts",
+      "+++ b/src/empty.ts",
+      "@@ -0,0 +1,1 @@",
+      "+export {};",
+      "\\ No newline at end of file",
+      "",
+    ].join("\n"),
+  );
+  assert.equal(
+    createCanonicalFixtureDiff([
+      { path: "src/no-final-newline.ts", before: "DENY", after: "ALLOW" },
+    ]),
+    [
+      "diff --git a/src/no-final-newline.ts b/src/no-final-newline.ts",
+      "--- a/src/no-final-newline.ts",
+      "+++ b/src/no-final-newline.ts",
+      "@@ -1,1 +1,1 @@",
+      "-DENY",
+      "\\ No newline at end of file",
+      "+ALLOW",
+      "\\ No newline at end of file",
+      "",
+    ].join("\n"),
+  );
+  assert.match(
+    createCanonicalFixtureDiff([
+      { path: "src/crlf.ts", before: "DENY\r\n", after: "ALLOW\r\n" },
+    ]),
+    /@@ -1,1 \+1,1 @@\n-DENY\r\n\+ALLOW\r\n$/u,
+  );
 });
 
 test("bounded evidence reader rejects oversized, aggregate, non-regular, and invalid UTF-8 files", async (t) => {
@@ -315,6 +532,7 @@ test("archive changes with evidence and rejects extra, missing, or sensitive con
     ["clientSecret", "\n  "],
     ["GITHUB_TOKEN", " "],
     ["AWS_SECRET_ACCESS_KEY", " "],
+    ["MONGODB_URI", " "],
   ]) {
     const variant = new Map(original);
     variant.set(
@@ -325,6 +543,25 @@ test("archive changes with evidence and rejects extra, missing, or sensitive con
     assert.throws(
       () => validateEvidenceDownloadPackage(variant, hashText),
       /credential-shaped assignment/u,
+    );
+  }
+
+  const databaseCredentialUrl = [
+    "postgres",
+    "://reviewer:",
+    genericSecret,
+    "@db/policy",
+  ].join("");
+  for (const content of [
+    `"databaseUrl": "${databaseCredentialUrl}"`,
+    `Connection: ${databaseCredentialUrl}`,
+  ]) {
+    const variant = new Map(original);
+    variant.set("summary.md", `${variant.get("summary.md")}\n${content}\n`);
+    resignEvidence(variant);
+    assert.throws(
+      () => createEvidenceArchive(variant, hashText),
+      /credential-shaped (?:assignment|content)/u,
     );
   }
 
@@ -511,6 +748,18 @@ test("re-signed semantic OPA, mutation, traceability, and differential forgeries
     /deterministic mutant corpus/u,
   );
 
+  const relabeledAcceptedCorpus = await loadEvidence();
+  const relabeledGeneratedCases = JSON.parse(
+    relabeledAcceptedCorpus.get("generated-cases.json"),
+  );
+  relabeledGeneratedCases[0].title = "Self-consistent but not server-owned";
+  relabeledAcceptedCorpus.set("generated-cases.json", json(relabeledGeneratedCases));
+  resignEvidence(relabeledAcceptedCorpus);
+  assert.throws(
+    () => validateEvidencePackage(relabeledAcceptedCorpus, hashText),
+    /exact server-owned accepted corpus/u,
+  );
+
   const linklessCase = await loadEvidence();
   const linklessGolden = JSON.parse(linklessCase.get("golden-cases.json"));
   linklessGolden[0].relatedClauseIds = [];
@@ -611,6 +860,16 @@ test("re-signed semantic OPA, mutation, traceability, and differential forgeries
   assert.throws(
     () => validateEvidencePackage(falsePartialCodex, hashText),
     /explicit test double/u,
+  );
+
+  const falsePartialReceipt = await loadEvidence();
+  const partialCodex = JSON.parse(falsePartialReceipt.get("codex-run-summary.json"));
+  partialCodex.policyVerificationAttempts = [{ fabricated: true }];
+  falsePartialReceipt.set("codex-run-summary.json", json(partialCodex));
+  resignEvidence(falsePartialReceipt);
+  assert.throws(
+    () => validateEvidencePackage(falsePartialReceipt, hashText),
+    /no live verification receipt/u,
   );
 });
 

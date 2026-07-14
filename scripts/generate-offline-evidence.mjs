@@ -163,6 +163,7 @@ payload.set(
     status: "NOT_RUN_LIVE",
     executionMode: "OFFLINE_TEST_DOUBLE",
     liveCodexClaim: false,
+    policyVerificationAttempts: [],
     contractSnapshot: offlineM7,
     reason: "No Codex SDK call or code repair occurred in this partial offline package.",
   }),

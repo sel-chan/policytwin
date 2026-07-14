@@ -5,8 +5,13 @@
   "attempts": 2,
   "cartographyFiles": ["src/refund.ts", "tests/refund.test.mjs"],
   "repairAttemptCount": 2,
+  "commandEvidenceAttemptCount": 2,
+  "retainedFailedCommandCount": 1,
   "finalCommandIds": ["fixture-typecheck", "fixture-test"],
   "finalCommandsPassed": true,
+  "policyVerificationAttemptCount": 1,
+  "policyVerificationStatus": "PASS",
+  "policyVerificationTotal": 41,
   "reviewVerdict": "APPROVE",
   "failure": null
 }

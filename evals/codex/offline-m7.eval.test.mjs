@@ -15,12 +15,16 @@ const snapshot = JSON.parse(
 );
 
 test("Codex worker schemas are closed at every executable result boundary", () => {
-  for (const name of ["metadata", "location", "repairInput", "cartography", "repair", "finding", "review", "commandEvidence", "failure", "workerReport"]) {
+  for (const name of ["refundInput", "driftWitness", "metadata", "location", "repairInput", "cartography", "repair", "finding", "review", "commandResult", "commandEvidence", "policyVerificationCaseResult", "policyVerification", "failure", "workerReport"]) {
     assert.equal(schema.$defs[name].additionalProperties, false, name);
   }
   assert.deepEqual(schema.$defs.executionMode.enum, ["OFFLINE_TEST_DOUBLE", "LIVE_CODEX_SDK"]);
   assert.deepEqual(schema.$defs.commandId.enum, ["fixture-typecheck", "fixture-test"]);
   assert.equal(schema.$defs.workerReport.properties.attempts.maximum, 2);
+  assert.equal(schema.$defs.repairInput.properties.acceptedCases.minItems, 41);
+  assert.equal(schema.$defs.repairInput.properties.acceptedCases.maxItems, 41);
+  assert.equal(schema.$defs.policyVerification.required.includes("repairRunId"), true);
+  assert.equal(schema.$defs.workerReport.required.includes("policyVerificationAttempts"), true);
 });
 
 test("cartography, repair, and review prompts preserve the trusted-fixture boundary", () => {
@@ -39,6 +43,11 @@ test("offline M7 snapshot cannot be mistaken for live Codex evidence", () => {
   assert.equal(snapshot.liveCodexClaim, false);
   assert.equal(snapshot.status, "PASS");
   assert.equal(snapshot.attempts, 2);
+  assert.equal(snapshot.commandEvidenceAttemptCount, 2);
+  assert.equal(snapshot.retainedFailedCommandCount, 1);
   assert.deepEqual(snapshot.finalCommandIds, ["fixture-typecheck", "fixture-test"]);
+  assert.equal(snapshot.policyVerificationAttemptCount, 1);
+  assert.equal(snapshot.policyVerificationStatus, "PASS");
+  assert.equal(snapshot.policyVerificationTotal, 41);
   assert.equal(snapshot.reviewVerdict, "APPROVE");
 });

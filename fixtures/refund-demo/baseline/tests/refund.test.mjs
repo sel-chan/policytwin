@@ -1,20 +1,9 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import test from "node:test";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const command = process.platform === "win32" ? "tsc.cmd" : "tsc";
-const build = spawnSync(command, ["-p", "tsconfig.json"], {
-  cwd: root,
-  stdio: "inherit",
-  shell: process.platform === "win32",
-});
-if (build.status !== 0) {
-  process.exit(build.status ?? 1);
-}
-
 const moduleUrl = pathToFileURL(resolve(root, "dist", "refund.js"));
 moduleUrl.searchParams.set("test", String(Date.now()));
 const { decideRefund } = await import(moduleUrl.href);
@@ -42,4 +31,24 @@ test("reviews an eligible promotion until approval", () => {
 
 test("denies a non-promotional final-sale request", () => {
   assert.equal(decideRefund({ ...eligibleInput, finalSale: true }), "DENY");
+});
+
+test.skip("regression D01 allows the exact day-14 boundary", () => {
+  assert.equal(decideRefund({ ...eligibleInput, daysSincePurchase: 14 }), "ALLOW");
+});
+
+test.skip("regression D02 allows the exact 2000-bps usage boundary", () => {
+  assert.equal(decideRefund({ ...eligibleInput, usageBasisPoints: 2000 }), "ALLOW");
+});
+
+test.skip("regression D03 keeps final sale above approved promotion", () => {
+  assert.equal(
+    decideRefund({
+      ...eligibleInput,
+      promotionalPurchase: true,
+      managerApproved: true,
+      finalSale: true,
+    }),
+    "DENY",
+  );
 });
