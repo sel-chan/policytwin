@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_READY",
+  "evidenceHash": "05e6f75a03fafa655f97c491983d3044e214f8a30c56fa31099762c095eee655",
+  "evidenceStatus": "FAIL",
+  "staticSecurityStatus": "PASS",
+  "cleanCopyStatus": "PASS",
+  "rulesStatus": "NOT_RUN",
+  "confirmation": null
+}

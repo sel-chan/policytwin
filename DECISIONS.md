@@ -239,3 +239,20 @@ Add new entries below this line with the template above.
 - Risks: Owner license selection and Docker Desktop startup remain unavoidable later actions; current official base image and OPA facts still require approved network lookup.
 - Reversal or migration path: Add the accepted `LICENSE`, resolved dependency notices, verified image digest, pinned OPA checksum, production health route, and real Docker build/health evidence, then allow both checks to pass.
 - Related files/commits: `PROGRESS.md`, `docs/threat-model.md`, `docs/limitations.md`.
+
+### D-014 — Keep submission drafts invalid by construction until live proof exists
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M10
+- Context: Judge-facing copy and demo plans can be derived from offline evidence before official rules, live verification, deployment, media, license, and submission confirmation exist. A polished draft without machine-enforced invalidity could be mistaken for a publishable package.
+- Options considered:
+  1. defer all submission materials until engineering and deployment are complete;
+  2. generate polished files without readiness markers and rely on manual review;
+  3. generate complete-shape drafts with mandatory non-final markers and a fail-closed consistency checker.
+- Decision: Generate every offline submission and demo artifact as `DRAFT_NOT_READY`, retain null URLs and unverified rule fields, and fail `submission:check` for any draft marker, non-live proof, missing license/media/HTTPS URL/official-rule verification/confirmation, or non-final submission state. Changing the state field alone must never hide independent failures.
+- Evidence: `scripts/generate-submission-draft.mjs`, `scripts/submission-check.mjs`, `scripts/submission-validation.mjs`, `artifacts/submission/submission-check-report.json`, and submission unit/eval tests.
+- Consequences: M10 copy and production planning can advance offline while the repository continues to reject publication and submission claims.
+- Risks: The generated copy must be refreshed after live evidence changes, and final rule/form fields still require current official sources.
+- Reversal or migration path: Replace draft markers and null fields only with verified live values, regenerate the package, and require the same checker to pass before owner submission action.
+- Related files/commits: `artifacts/submission/`, `artifacts/demo/`, `SUBMISSION.md`, `PROGRESS.md`.

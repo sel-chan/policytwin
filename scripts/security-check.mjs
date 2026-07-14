@@ -149,7 +149,8 @@ for (const commit of commits) {
       const isRedactionTest =
         file === "tests/unit/codex-worker-contract.test.mjs" &&
         pathMatch[0].includes("Users\\alice");
-      if (!isRedactionTest) {
+      const isScannerPattern = file === "scripts/security-check.mjs";
+      if (!isRedactionTest && !isScannerPattern) {
         findings.push(`git-history:${file}: absolute personal path`);
       }
     }

@@ -3,7 +3,7 @@
 ## 0. Truthful status
 
 - Submission status: `NOT_STARTED`
-- Last rules check: `UNSET`
+- Last rules check: `NOT_RUN — external network approval required`
 - Exact official deadline and timezone: `UNSET`
 - Local deadline: `UNSET`
 - Selected category/track: `UNSET`
@@ -20,6 +20,16 @@ Allowed final states:
 - `READY_FOR_OWNER_ACTION`
 
 Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OWNER_ACTION` while engineering, deployment, recording, or copy work remains.
+
+### Current offline draft
+
+- `artifacts/submission/` contains 21 generated files, including the machine-readable state and latest checker report.
+- `artifacts/demo/` contains a draft script, shot list, caption file, and deterministic demo data.
+- Every judge-facing draft remains marked `DRAFT_NOT_READY`; no generated file claims submission readiness.
+- `pnpm submission:check` currently fails with 37 explicit unmet requirements.
+- Official rules, live proof, project license, screenshots, video, public URLs, form fields, and confirmation remain unverified or absent.
+
+These files are production scaffolding only. They must be regenerated from live verified evidence before publication or submission.
 
 ## 1. Official challenge baseline
 

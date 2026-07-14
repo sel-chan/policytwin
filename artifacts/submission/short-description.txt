@@ -1,0 +1,2 @@
+DRAFT_NOT_READY — generated from partial offline evidence; do not submit.
+PolicyTwin is an evidence-first policy engineering prototype that structures SaaS refund rules, generates executable Rego and edge cases, exposes drift in a TypeScript fixture, and prepares a guarded Codex repair workflow. Current evidence is offline and fail-closed; live GPT-5.6, OPA, Codex, UI, and deployment remain unverified.

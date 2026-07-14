@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M9 — Security, reproducibility, and deployment (offline foundations)`
+- Current milestone: `M10 — Submission package (truthful offline drafts)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 11:33:15 +09:00`
+- Last updated: `2026-07-14 11:48:57 +09:00`
 - Latest checkpoint commit: `9602a6c38c5707de8e4aafc32a9e0ea636fa2416`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -89,36 +89,35 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
 | M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | `efff641` | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
 | M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation verified: threat model, 158-file current/history scan, 158-file clean-copy replay, notice/inventory, and fail-closed license/container reports | `9602a6c` | Owner license choice, app/OPA container, Docker daemon, provider selection, and deployment remain |
-| M10 Submission package | NOT_STARTED |  |  |  |
+| M10 Submission package | IN_PROGRESS | 21 submission and 4 demo draft files generated; deterministic checker reports 37 unmet requirements; 43 unit and 21 eval checks pass | pending | Official rules, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
 ### Objective
 
-Build the dependency-free M9 foundation: document the trusted-fixture threat boundary, automate secret/history/license/static-security checks, prove current implemented gates from an isolated clean copy, and prepare a pinned container/health contract without claiming a container run or deployment while Docker is unavailable.
+Generate a complete but unmistakably `NOT_READY` English submission/demonstration draft from current evidence, and replace the placeholder submission gate with a deterministic checker that lists every missing official, engineering, URL, media, license, and confirmation requirement.
 
 ### Failing or missing condition
 
-There is no release threat model, limitations document, license/notice, repository security gate, clean-copy reproduction script, or container definition. Docker CLI exists but `docker info` fails because the Desktop Linux engine pipe is absent. The web health endpoint and deployable application stack do not yet exist.
+The starting repository had no submission artifact directory or demo production files. Its checker was only a generic failure message and could not detect stale rules, missing URLs, unsupported claims, absent screenshots/video, failing proof, missing license, or submission confirmation.
 
 ### Planned actions
 
-- [x] Re-read the M9 gate and reproduce Docker daemon unavailability.
-- [x] Write architecture, threat-model, limitations, license-review, and demo/recovery documentation.
-- [x] Add third-party notice and current zero-production-dependency inventory.
-- [ ] Add the owner-selected project `LICENSE`; `license:check` remains fail-closed until acceptance.
-- [x] Implement secret/current-history, license, path, command-policy, and unsafe-pattern checks.
-- [x] Implement isolated clean-copy install/build/test/eval/demo/evidence reproduction.
-- [x] Add a fail-closed container/health prerequisite contract without creating a misleading placeholder image.
-- [x] Review the final diff and commit the M9 offline checkpoint.
+- [x] Re-read the M10 gate, `SUBMISSION.md`, and current partial proof status.
+- [x] Generate every required English submission text file from actual evidence with a draft marker.
+- [x] Generate links, rules, screenshot, judging-map, and quantitative claim-audit files.
+- [x] Generate demo script, shot list, caption draft, and deterministic demo data.
+- [x] Implement strict `submission:check` that rejects draft markers, stale/unverified rules, missing URLs/media/license, failing proof, and absent confirmation.
+- [x] Test missing/false-ready/tampered submission states without contacting external services.
+- [ ] Run broader regressions, inspect drafts, review, and commit the M10 offline checkpoint.
 
 ### Completion evidence
 
-- Commands: `pnpm security:check`; `pnpm license:check`; `pnpm container:check`; `pnpm clean:check`; `pnpm eval`; `pnpm verify`; `docker info --format '{{.ServerVersion}}'`
-- Exit codes: security, clean copy, and eval 0; license, container, Docker info, and full verify 1 as explicitly classified below
-- Artifacts: `artifacts/security/security-report.json`; `license-report.json`; `container-report.json`; `clean-checkout-report.json`; `docs/architecture.md`; `docs/threat-model.md`; `docs/limitations.md`; `docs/demo-runbook.md`; `NOTICE.md`
+- Commands: `pnpm submission:draft`; `pnpm submission:check`; `pnpm test`; `pnpm eval`; `pnpm verify`
+- Exit codes: `0`; `1` (expected fail-closed, 37 unmet requirements); `0` (43/43); `0` (21/21); `1` (expected aggregate failures: license, container, browser, submission only)
+- Artifacts: `artifacts/submission/` (21 files including the check report); `artifacts/demo/` (4 files)
 - Screenshots: not applicable; no UI implementation exists
-- Commit: `9602a6c38c5707de8e4aafc32a9e0ea636fa2416`
+- Commit: pending current checkpoint
 
 ## Quality gates
 
@@ -126,23 +125,23 @@ Record latest actual result.
 
 | Gate | Status | Command | Evidence/artifact | Last run |
 |---|---|---|---|---|
-| Document contract validation | PASS | PowerShell manifest/hash/fence/goal/milestone validator | `PACK_MANIFEST.md` | 2026-07-14 08:20 +09:00 |
+| Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 10:58 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain through evidence validation and both fixture variants pass strict TypeScript | 2026-07-14 10:58 +09:00 |
-| Unit tests | PASS | `pnpm test` via `pnpm verify` | 41/41 passed | 2026-07-14 10:58 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 14/14 passed; evidence regeneration/tamper gates plus prior fixture/worker checks pass | 2026-07-14 10:58 +09:00 |
-| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 10:58 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 19/19 offline/recorded evals pass; live model/Codex/OPA eval remains unverified | 2026-07-14 11:28 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 10:58 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented gates pass; expected remaining failures are license, container, browser, and submission | 2026-07-14 11:28 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 11:48 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain through submission validation and both fixture variants pass strict TypeScript | 2026-07-14 11:48 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 43/43 passed, including false-ready and tampered submission-state rejection | 2026-07-14 11:48 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 14/14 passed; evidence regeneration/tamper gates plus prior fixture/worker checks pass | 2026-07-14 11:48 +09:00 |
+| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 11:48 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass, including draft generation and submission audit; live model/Codex/OPA eval remains unverified | 2026-07-14 11:48 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 11:48 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | every implemented gate passes; exact expected remaining failures are license, container, browser, and submission | 2026-07-14 11:48 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 158 files copied; offline frozen install and 9 implemented command groups pass; no source `node_modules` or credential variables | 2026-07-14 11:28 +09:00 |
-| Container health | FAIL | `pnpm container:check`; `docker info` | OPA/container contract not ready; Dockerfile and health route absent; Docker daemon unavailable | 2026-07-14 11:28 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 188 files copied; offline frozen install and 10 implemented command groups pass; no source `node_modules` or credential variables | 2026-07-14 11:48 +09:00 |
+| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA/container contract not ready; Dockerfile and health route absent; Docker daemon unavailable | 2026-07-14 11:48 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check` | zero production dependencies and NOTICE present; owner-selected project LICENSE absent | 2026-07-14 11:28 +09:00 |
-| Security review | PASS | `pnpm security:check` | offline static scope only: 158 files, 156 text files, full Git history, zero findings; release review remains NOT_RUN | 2026-07-14 11:28 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | fail-closed: artifacts and URLs absent | 2026-07-14 08:42 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check` via `pnpm verify` | zero production dependencies and NOTICE present; owner-selected project LICENSE absent | 2026-07-14 11:48 +09:00 |
+| Security review | PASS | `pnpm security:check` via `pnpm verify` | offline static scope only: 188 files, 186 text files, full Git history, zero findings; release review remains NOT_RUN | 2026-07-14 11:48 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | expected fail-closed result with 37 explicit unmet requirements; draft artifacts exist but live proof, official rules, license, media, URLs, and confirmation do not | 2026-07-14 11:48 +09:00 |
 
 ## Product proof metrics
 
@@ -166,6 +165,17 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 11:48 +09:00 — M10 offline submission foundation verified
+
+- Milestone: M10 (offline subset; milestone remains in progress)
+- Change: added evidence-derived English submission/demo drafts, machine-readable readiness state, strict fail-closed submission validation, unit/eval coverage, and a Git-history scanner self-pattern exclusion
+- Verified: 21 submission and 4 demo files generated with mandatory non-final markers; checker reports exactly 37 independent unmet requirements; unit 43/43, integration 14/14, eval 21/21, security 188/188 files and 186 text files with zero findings, clean-copy replay 188 files, build, and three-drift demo all pass
+- Commands: `pnpm submission:draft`; `pnpm submission:check`; `pnpm security:check`; `pnpm verify`
+- Artifacts: `artifacts/submission/`, `artifacts/demo/`, `artifacts/security/security-report.json`, `artifacts/security/clean-checkout-report.json`
+- Commit: pending current checkpoint
+- Risks: M10 remains incomplete until current official rules, live proof, owner-selected license, UI screenshots, video, HTTPS URLs, form data, and confirmation exist
+- Next: commit this offline checkpoint, then obtain one scoped network approval for current official documentation and pinned dependency/OPA work
 
 ### 2026-07-14 11:33 +09:00 — M9 offline security and reproducibility foundation committed
 
@@ -306,7 +316,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Review and commit the M9 offline foundation, then prepare truthful M10 submission copy/assets while official rules, publishing, video, and final license remain owner/network gated.`
+`Run the complete offline verification gate, inspect the M10 draft package, commit the checkpoint, then request one scoped network approval for official documentation and dependency work.`
 
 ## Pause handoff
 

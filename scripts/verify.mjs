@@ -8,13 +8,14 @@ const steps = [
   "security:check",
   "license:check",
   "container:check",
+  "submission:draft",
+  "submission:check",
   "clean:check",
   "eval",
   "demo:reset",
   "demo:run",
   "test:e2e",
   "build",
-  "submission:check",
 ];
 const failures = [];
 

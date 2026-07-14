@@ -27,6 +27,7 @@
     "license:check": "node scripts/license-check.mjs",
     "clean:check": "node scripts/clean-checkout.mjs",
     "container:check": "node scripts/container-check.mjs",
-    "submission:check": "node scripts/gate.mjs submission:check"
+    "submission:draft": "node scripts/generate-submission-draft.mjs",
+    "submission:check": "node scripts/submission-check.mjs"
   }
 }

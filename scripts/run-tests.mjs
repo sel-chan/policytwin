@@ -13,6 +13,7 @@ const suites = {
     "tests/unit/mutation-engine.test.mjs",
     "tests/unit/codex-worker-contract.test.mjs",
     "tests/unit/impact-traceability.test.mjs",
+    "tests/unit/submission-validation.test.mjs",
   ],
   integration: [
     "tests/integration/scaffold.integration.test.mjs",
@@ -29,6 +30,7 @@ const suites = {
     "evals/codex/offline-m7.eval.test.mjs",
     "evals/evidence/offline-m8.eval.test.mjs",
     "evals/security/offline-m9.eval.test.mjs",
+    "evals/submission/offline-m10.eval.test.mjs",
   ],
 };
 
