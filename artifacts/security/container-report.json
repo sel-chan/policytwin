@@ -1,13 +1,24 @@
 {
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "status": "FAIL",
-  "daemonAvailable": false,
-  "dockerServerVersion": null,
-  "contractStatus": "NOT_READY",
-  "opaVersion": "1.18.2",
+  "scope": "DYNAMIC_WEB_CONTAINER",
+  "workerContainerVerified": false,
+  "releaseReady": false,
+  "facts": {
+    "dockerServerVersion": null,
+    "imageId": null,
+    "baseImage": null,
+    "opaVersion": null,
+    "opaSha256": null,
+    "runtimeUid": null,
+    "readOnlyRoot": false,
+    "healthStatus": null,
+    "healthResponse": null,
+    "persistentVolume": false,
+    "sqliteStatePersisted": false,
+    "volumeOwnerUid": null
+  },
   "failures": [
-    "Container contract is not ready.",
-    "Dockerfile is absent.",
-    "Docker daemon is unavailable."
+    "Container verification requires a verified immutable Node 22.22.2 image."
   ]
 }

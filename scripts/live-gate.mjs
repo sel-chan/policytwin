@@ -1,12 +1,14 @@
-const missingCredentials = ["OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_MODEL"].filter(
+const missingHostConfiguration = ["OPENAI_API_KEY", "CODEX_MODEL"].filter(
   (name) => !process.env[name],
 );
 
-if (missingCredentials.length > 0) {
-  console.error(`verify:live is fail-closed: missing ${missingCredentials.join(", ")}.`);
+if (missingHostConfiguration.length > 0) {
+  console.error(
+    `verify:live is fail-closed: missing host configuration ${missingHostConfiguration.join(", ")}.`,
+  );
 } else {
   console.error(
-    "verify:live is fail-closed: the server-side Responses and Codex SDK adapters exist, but the fresh end-to-end runner, post-repair 41-case receipts, live attestation, and evidence promotion are not implemented yet.",
+    "verify:live is fail-closed: the Responses adapter and signed external-worker RPC client contract exist, but the authentication-enforcing transport, supervisor/worker image, worker-only Codex credential, immutable verification workspace, fresh end-to-end runner, live attestation, and evidence promotion are not implemented yet.",
   );
 }
 

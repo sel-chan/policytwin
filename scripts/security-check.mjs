@@ -24,6 +24,7 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "fixtures/refund-demo/baseline/tests/refund.test.mjs",
   "scripts/clean-checkout.mjs",
   "scripts/container-check.mjs",
+  "scripts/container-verify.mjs",
   "scripts/process.mjs",
   "scripts/repair-command.mjs",
   "scripts/security-check.mjs",

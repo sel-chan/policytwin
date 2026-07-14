@@ -3,6 +3,7 @@ import { executable, runOrExit } from "./process.mjs";
 const suites = {
   unit: [
     "tests/unit/scaffold.test.mjs",
+    "tests/unit/container-contract.test.mjs",
     "tests/unit/refund-domain.test.mjs",
     "tests/unit/clause-segmentation.test.mjs",
     "tests/unit/policy-ir-validation.test.mjs",
@@ -15,6 +16,7 @@ const suites = {
     "tests/unit/mutation-engine.test.mjs",
     "tests/unit/codex-worker-contract.test.mjs",
     "tests/unit/codex-sdk-adapter.test.mjs",
+    "tests/unit/worker-rpc.test.mjs",
     "tests/unit/impact-traceability.test.mjs",
     "tests/unit/submission-validation.test.mjs",
     "tests/unit/openai-interpreter.test.mjs",

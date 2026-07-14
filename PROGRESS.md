@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7 — server-side Codex SDK adapter`
+- Current milestone: `M7/M9 — external worker RPC and static container prerequisites`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-15 02:33:11 +09:00`
-- Latest checkpoint commit: `5b1006f`
+- Last updated: `2026-07-15 08:18:11 +09:00`
+- Latest checkpoint commit: `6213f1c`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,47 +93,44 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, strict semantic schemas, exact two-file/D01-D03/corpus bindings, canonical diff/tree receipts, all-phase poison, unknown-event rejection, sensitive-input/output guards, real trusted commands, and independent P0/P1 reviews pass offline | `5b1006f` | host live construction is intentionally disabled; external OS-sandbox worker RPC, credentials, fresh real SDK repair, zero post-repair drift, live review, and signed receipts remain |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter plus a single-run streamed RPC request/response/client contract; exact policy/image/corpus/baseline/final tree-manifest, nonce, signature, command, teardown, replay, and two-file delta checks pass with generated-key test doubles | pending checkpoint | host live construction and live commands remain disabled; actual authentication-enforcing transport, external supervisor/worker image, credentials, fresh SDK repair, zero post-repair drift, live review, and signed evidence remain |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation plus isolated 24-hour/128-session bounds, exact production origin, CSRF, bounded streaming bodies, safe reset, static scan, and clean-copy replay | `16c06fc` | owner license choice, shared auth/quotas, app container, Docker daemon, provider selection, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, safe reset, static scan, clean-copy replay, digest-required split web Dockerfile, static container contract, and a prepared dynamic OPA/non-root/read-only-root/SQLite-restart verifier | pending checkpoint | immutable Node base digest, running Docker daemon, actual dynamic web-container PASS, separate worker container, owner license, shared auth/quotas, provider selection, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
 ### Objective
 
-Complete the offline-safe, pinned `@openai/codex-sdk`-compatible adapter contract for separate cartography, repair, and review phases while keeping live construction impossible in the host process. This checkpoint proves the contract with a fake SDK stream, real trusted fixture commands, and adversarial evidence validation; it does not claim that a live Codex call or repair occurred.
+Define and verify the fail-closed external-worker RPC boundary for one complete Codex repair run, add the independently safe web-container prerequisites, and keep every host-process live SDK/command path disabled. This checkpoint is contract and static-container work only; it must not claim a live Codex call, a running container, or deployment.
 
 ### Starting failing condition
 
-The M7 foundation has strict prompts, result validators, fresh-copy lifecycle, closed command IDs, bounded retries, and an injected offline test double, but no production adapter calls the installed SDK. `pnpm verify:live` therefore correctly fails with “fresh GPT-5.6 and Codex integration is not implemented yet.” No code currently proves SDK thread options, controlled subprocess environment, structured-output schemas, server-owned metadata, phase isolation, read-only mutation detection, or actual repair write-set reconciliation.
+At checkpoint start, the host correctly rejected `createIsolatedWorkerCodexSdkBackend()` and live command execution, but had no RPC request/response schema, replay defense, trusted worker identity, signed result receipt, preallocation byte cap, teardown binding, or transport client. The web application had standalone output and a health route but no Dockerfile or `.dockerignore`; the Docker daemon was unavailable and the immutable Node base-image digest had not been verified within the approved network scope.
 
 ### Planned actions
 
-- [x] Read the M7/FR-13–15/live-gate contract, installed SDK types/README, current worker prompts/schema/orchestrator, fresh-workspace lifecycle, command runner, and tests.
-- [x] Define a narrow SDK facade plus model-output-only schemas so metadata and observed changed files remain server-owned evidence.
-- [x] Enforce an allowlisted SDK subprocess environment, explicit model/effort, exact managed working directory, `approvalPolicy: never`, disabled web search/network, and phase-specific sandbox modes.
-- [x] Run cartography, repair, and review in distinct SDK threads with bounded abort signals and no thread resumption across trust phases.
-- [x] Snapshot the fixture around every phase; reject any read-only mutation and reconcile repair content changes against both the actual filesystem delta and approved cartography write set.
-- [x] Assemble prompts only from bounded, validated policy/IR/drift/command inputs and the versioned prompt text; never expose credentials, parent paths, or the evaluation-only fixed fixture.
-- [x] Require the exact server-owned 41-case corpus, retain tree-bound commands for every attempt, and require a PolicyIR/corpus/tree-bound full-corpus receipt after every command-passing repair attempt; reject metadata-only edits, test-side tree mutation, incomplete/mismatched results, and any non-passing accepted case.
-- [x] Add fake-SDK unit/integration tests for exact options, schemas, phase isolation, timeout, malformed output, mutation detection, write-set mismatch, metadata ownership, full-corpus verification, and canonical-fixture preservation.
-- [x] Update live-gate wiring and documentation truthfully while retaining a hard failure when credentials, the external OS worker, or fresh live evidence are absent.
-- [x] Run focused gates, independent read-only security/contract reviews, full `pnpm verify`, final diff review, and checkpoint commit on `main`.
+- [x] Re-read the repository contract and current ledger, inspect the clean `main` worktree, and refresh the official Codex SDK/sandbox manual.
+- [x] Complete independent read-only RPC, container, and adversarial security gap reviews.
+- [x] Define a strict single-run RPC request/response and supervisor receipt with exact keys, bounded canonical JSON, nonce/request/result hashes, expiry, sequence, and Ed25519 verification.
+- [x] Reject secrets, personal/absolute paths, arbitrary commands, unknown protocol fields, replayed/mismatched responses, untrusted keys, oversized frames, and incomplete isolation/teardown claims before any result reaches orchestration or evidence.
+- [x] Provide a transport-injected host client contract that can validate an external worker result but cannot construct the SDK, run live fixture commands, or self-assert OS isolation in the host process.
+- [x] Add unit and integration coverage for valid signed test-double receipts, streamed receive limits, exact baseline/final tree-manifest deltas, and security-negative cases while retaining host-live rejection tests.
+- [x] Add `.dockerignore`, a digest-required web Dockerfile contract, static container validation, and separate daemon-backed verification without representing the future Codex worker as part of the web image.
+- [x] Correct architecture/threat/limitations/runbook truth boundaries, record D-028, and regenerate truthful submission drafts.
+- [x] Run focused tests, lint, typecheck, full offline verification, dynamic fail-closed probes, and independent final reviews; commit remains the final checkpoint action.
 
 ### Completion evidence
 
-- Starting baseline: archive implementation commit `5fecdded3f2bcec43c2fe6cf20bf93afdaccba10`; ledger follow-up `95790e8`
-- Starting gate: lint, strict typecheck, 63/63 unit, 25/25 integration, 21/21 eval, 3/3 production Chrome E2E, build, 269-file clean-copy, and 269-file/244-text-file security scan pass
-- Starting expected failures: `license:check`, `container:check`, and `submission:check`; `verify:live` separately fails because credentials and the fresh GPT/Codex runner are absent
-- Installed SDK evidence: `@openai/codex-sdk` 0.144.3 types expose separate `startThread` calls, strict `outputSchema`, `AbortSignal`, `read-only`/`workspace-write` sandboxes, working-directory control, disabled web search/network, approval policy, and a controlled CLI environment; direct host SDK construction is disabled by D-027
-- Truth boundary: all adapter tests use an injected fake SDK facade and `OFFLINE_TEST_DOUBLE`; no in-process path can emit `LIVE_CODEX_SDK`, and a future external worker RPC must own real construction and signed live receipts
-- Offline adapter evidence: exact two-file write set; digest-pinned D01-D03 assertions; exact server-owned 41-case digest `2658993bb79e56bf5dfbc1cc762786fdd25b52afe0b63c5ffb1c0b1deb132f57`; canonical before/after receipt-bound unified diff; command/tree/PolicyIR/run bindings; sensitive prompt, fixture, command, DSN/URI, and archive rejection; all-phase workspace poisoning; unknown lifecycle fail-closed
-- Independent review: final contract and security reviews found no remaining P0/P1 after fixes; external worker process limits, hard timeout/reaping, fresh live evidence, and request-body retention remain release work
-- Focused gates: lint PASS; typecheck PASS; 80/80 unit PASS; 31/31 integration PASS; 21/21 eval PASS; security PASS across 248 text files and Git history
-- Full gate: `pnpm verify` ran lint, typecheck, 80 unit, 31 integration, security, 273-file clean copy, 21 eval, demo reset/run, 3 browser tests, and production build successfully; it failed only the expected owner/external `license:check`, `container:check`, and `submission:check` gates
-- Evidence: truthful `PARTIAL_OFFLINE/FAIL` package hash `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1`; `submission:check` reports 30 unmet external/final requirements
-- Recovery evidence: an attempted parallel unit/integration run hit Windows `dist` locking (`EPERM`); serial reruns passed. `pnpm exec prettier` was unavailable because Prettier is not a project dependency; the repository's canonical `pnpm lint` check passes.
+- Starting HEAD: `6213f1c`; clean `main` worktree.
+- Starting local gate: lint, strict typecheck, 80/80 unit, 31/31 integration, 21/21 eval, 3/3 production Chrome E2E, security, clean-copy replay, and production build pass from the prior checkpoint.
+- Current expected failures: owner-selected project license, immutable base-image digest/dynamic container verification, 30-item non-final submission gate, and the separate fresh live gate.
+- Official source refresh: current Codex manual confirms server-side SDK use, per-thread sandbox modes, disabled network controls, dedicated `CODEX_HOME`, and that sandbox enforcement applies to spawned commands; these SDK controls supplement but do not prove the required external OS boundary.
+- RPC result: declared-length asynchronous raw frames are rejected before body access above 4 MiB; 64 KiB/chunk and 1,024-chunk limits, exact UTF-8/JSON, request/nonce/expiry/replay/signature, fixed command/corpus, cleanup, and host-known path/kind/mode/mtime/file-hash baseline/final manifest checks are covered by 24 focused assertions within the 105-test unit suite.
+- Container result: `.dockerignore`, a two-stage standalone web Dockerfile, daemon-free static validation, and a daemon-backed verifier exist. The dynamic verifier rejects mutable image references, prepares volume ownership, requires non-root/read-only-root/resource/OPA/health controls, verifies a real API SQLite mutation across restart, and fails if tracked resource cleanup fails. `container:check` is `PASS`; `container:verify` is truthfully `FAIL` before build because `nodeBaseImage` is unset.
+- Full verification: lint, typecheck, 105/105 unit, 31/31 integration, 22/22 eval, 3/3 Chrome E2E, 281-file clean-copy replay, 256-text-file plus Git-history security scan, demo reset/run, static container contract, and production build pass. `pnpm verify` fails only `license:check` and the 30-item `submission:check`.
+- Live verification: `pnpm verify:live` fails closed for missing host `OPENAI_API_KEY` and `CODEX_MODEL`; no authentication-enforcing transport, supervisor/worker, live SDK turn, or live evidence promotion exists.
+- Independent final reviews: RPC, container, and cross-document reviewers found no remaining P0/P1 after streamed receive limits, tree-manifest mtime binding, mutable image rejection, actual SQLite restart verification, and cleanup-failure propagation were corrected.
 
 ## Quality gates
 
@@ -143,21 +140,22 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` | static checks include `.tsx` and CSS while excluding generated Next output | 2026-07-15 02:21 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-15 02:21 +09:00 |
-| Unit tests | PASS | `pnpm test` | 80/80 passed, including SDK phase isolation, exact write/corpus/test bindings, all-phase poison, unknown lifecycle rejection, sensitive context/output/URI rejection, and host-live factory rejection | 2026-07-15 02:21 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 31/31 passed, including real OPA 1.18.2, exact corpus, canonical diff/fixture receipt binding, semantic forgeries, live attestation, deterministic USTAR, real trusted repair commands, and safe reset | 2026-07-15 02:21 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; native archive download, identical bytes, all 38 individual artifacts, six views, v1-v5 writes, isolation/capacity/expiry, focus, and 390px cards | 2026-07-15 02:21 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-15 02:21 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build includes the dynamic archive route and all workspace routes | 2026-07-15 02:21 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | exact expected failures only: owner license, unavailable Dockerfile/daemon, and 30-item non-final submission gate | 2026-07-15 02:21 +09:00 |
-| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: `OPENAI_API_KEY`, `CODEX_API_KEY`, `CODEX_MODEL`, external worker, and fresh live evidence are absent | 2026-07-15 02:20 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 273 source files; frozen offline install and 11 command groups including archive integration and production Chrome E2E pass | 2026-07-15 02:21 +09:00 |
-| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA and health route exist; Dockerfile and daemon remain unavailable | 2026-07-15 02:21 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | static checks include `.tsx`, CSS, RPC, and container scripts while excluding generated Next output | 2026-07-15 08:14 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-15 08:14 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 105/105 assertions passed, including streamed RPC frames, signature/replay/teardown, exact tree-manifest delta/mtime/content binding, static container contract, SDK phase isolation, and host-live rejection | 2026-07-15 08:18 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 31/31 passed, including real OPA 1.18.2, exact corpus, canonical diff/fixture receipt binding, semantic forgeries, live attestation, deterministic USTAR, trusted commands, and safe reset | 2026-07-15 08:14 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` via `pnpm verify` | 3/3 production standalone Chrome tests; native archive download, identical bytes, all 38 individual artifacts, six views, v1-v5 writes, isolation/capacity/expiry, focus, and 390px cards | 2026-07-15 08:14 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 22/22 offline/recorded evals pass, including the external-worker precondition boundary; live model/Codex work remains unverified | 2026-07-15 08:14 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-15 08:14 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | all implemented code/static gates pass; exact expected failures are owner-selected project LICENSE and the 30-item non-final submission gate | 2026-07-15 08:14 +09:00 |
+| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed at missing host `OPENAI_API_KEY` and `CODEX_MODEL`; authentication-enforcing transport, supervisor/worker, worker credential, and fresh evidence are also not implemented | 2026-07-15 08:14 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 281 source files; frozen offline install and all 11 command groups including production Chrome E2E pass | 2026-07-15 08:14 +09:00 |
+| Static container contract | PASS | `pnpm container:check` via `pnpm verify` | `artifacts/security/container-static-report.json`: `STATIC_WEB_CONTAINER/PASS`, no worker, no base digest, no dynamic/release claim | 2026-07-15 08:14 +09:00 |
+| Dynamic container health | FAIL | `pnpm container:verify` | `artifacts/security/container-report.json`: `DYNAMIC_WEB_CONTAINER/FAIL`; immutable Node digest is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-15 08:06 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check`; `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-15 02:21 +09:00 |
-| Security review | PASS | `pnpm security:check` via `pnpm verify` | 248 text files plus Git history; independent M7 contract/security reviews report no remaining P0/P1; live release review remains required | 2026-07-15 02:21 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 30 unmet requirements: partial proof, container/license, two required captures, media/HTTPS URLs, drafts, and confirmation | 2026-07-15 02:21 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-15 08:14 +09:00 |
+| Security review | PASS | `pnpm security:check` via `pnpm verify` | 256 text files plus Git history; RPC/container/consistency final reviews report no remaining P0/P1; live release review remains required | 2026-07-15 08:14 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | exactly 30 unmet requirements: partial proof, dynamic container/license, two required captures, media/HTTPS URLs, drafts, and confirmation | 2026-07-15 08:14 +09:00 |
 
 ## Product proof metrics
 
@@ -179,6 +177,19 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-15 08:14 +09:00 — External worker RPC and static web-container boundaries verified offline
+
+- Milestones: M7 and M9 remain `IN_PROGRESS`; this checkpoint completes the host RPC client contract and static web-container prerequisites, not the external worker, live Codex run, dynamic container, or deployment
+- RPC change: added one complete-run canonical request/response protocol, declared-length asynchronous receive contract, 4 MiB/64 KiB/1,024-chunk limits, single-use request/nonce/expiry/replay checks, trusted Ed25519 supervisor receipts, exact worker/policy/corpus bindings, cleanup proof, and host-known baseline versus signed final path/kind/mode/mtime/file-hash manifest comparison that permits only `src/refund.ts` and `tests/refund.test.mjs`
+- Container change: added `.dockerignore`, split standalone web Dockerfile with no worker/credentials or mutable base fallback, daemon-free static validation, and a dynamic verifier prepared to check immutable build input, OPA digest, loopback health, non-root/read-only/resource limits, named-volume ownership, an actual API SQLite mutation across restart, and cleanup failures
+- Truth boundary: `authenticationMode` is only an interface precondition; no mTLS/socket-ACL transport, external supervisor/worker image, SDK turn, worker credential, or live response exists. `container:check` passes only `STATIC_WEB_CONTAINER`; `container:verify` remains `DYNAMIC_WEB_CONTAINER/FAIL` because the immutable Node image digest is unset and therefore does not reach the unavailable daemon.
+- Verified: lint; strict typecheck; 105/105 unit assertions; 31/31 integration; 22/22 eval; 3/3 production Chrome E2E; 281-file clean-copy replay; 256-text-file plus Git-history security scan; demo reset/run; static container contract; production build; generated fail-closed submission drafts
+- Independent review: RPC, container, and consistency reviews found no remaining P0/P1 after receive preallocation/chunk controls, exact manifest/mtime delta binding, mutable Docker build-argument rejection, SQLite API restart verification, signal cleanup, and cleanup-failure propagation were corrected
+- Full gate: `pnpm verify` passes every implemented code/static gate and fails only owner-selected `LICENSE` plus the exact 30-item non-final `submission:check`; `pnpm verify:live` fails closed at missing `OPENAI_API_KEY` and `CODEX_MODEL`
+- Evidence: `artifacts/security/container-static-report.json` is static `PASS`; `artifacts/security/container-report.json` is dynamic `FAIL`; evidence hash remains `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`)
+- Commit: `pending`
+- Next: implement the authentication-enforcing transport and external supervisor/worker runtime without enabling host live execution; verify an immutable Node base-image digest only within an explicitly approved registry scope
 
 ### 2026-07-15 02:21 +09:00 — Fail-closed Codex SDK-compatible adapter contract verified offline
 
@@ -417,18 +428,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement static container prerequisites and the external-worker RPC boundary without enabling host live execution.`
+`Implement the authentication-enforcing transport and external supervisor/worker runtime without enabling host live execution; separately verify the immutable Node base-image digest within an explicitly approved registry scope.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the M7 implementation checkpoint and verified ledger follow-up are committed`
-- Exact current state: `the offline M7 SDK-compatible adapter and adversarial evidence contract are verified; host live construction remains disabled and no live Codex claim exists`
-- Last successful command: `pnpm verify completed every local code gate: 80 unit, 31 integration, 21 eval, 3 browser, 273-file clean-copy, security, and production build passed`
-- Current failing command: `pnpm verify intentionally retains only license, container, and 30-item non-final submission failures; pnpm verify:live fails closed for missing credentials/model and external worker`
-- Uncommitted files: `none`
-- Safe resume command/action: `continue container and external-worker boundary work from clean main`
+- Why paused: `not paused; the external-worker RPC/static-container checkpoint is at final commit handoff`
+- Exact current state: `the host RPC client and static web-container boundaries are verified offline; host live construction/commands remain disabled, actual transport/supervisor/worker/live Codex and dynamic container/deployment remain absent`
+- Last successful command: `pnpm verify completed 105 unit assertions, 31 integration, 22 eval, 3 browser, 281-file clean-copy, 256-file security, static container, and production build checks`
+- Current failing command: `pnpm verify retains only owner LICENSE and 30-item non-final submission failures; pnpm container:verify fails at the unset immutable Node digest; pnpm verify:live fails at missing OPENAI_API_KEY and CODEX_MODEL before the unimplemented worker path`
+- Uncommitted files: `checkpoint changes pending commit`
+- Safe resume command/action: `start the actual authentication-enforcing transport/supervisor implementation from the clean checkpoint after commit`
 - One owner action, if any: `none`
 
 ## Final completion record
@@ -436,8 +447,8 @@ Fill before `/goal pause` or any handoff.
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `FAIL_EXPECTED — license, container, and submission only`
-- `pnpm verify:live`: `FAIL — fresh GPT/Codex integration and credentials absent`
+- `pnpm verify`: `FAIL_EXPECTED — all implemented gates pass; owner LICENSE and non-final submission only`
+- `pnpm verify:live`: `FAIL — host credentials plus authentication-enforcing transport/supervisor/worker/fresh GPT/Codex evidence absent`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`
 - Demo video: `NOT_VERIFIED`

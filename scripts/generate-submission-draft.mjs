@@ -63,7 +63,7 @@ write(
 write(
   submissionDirectory,
   "how-we-built-it.md",
-  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, deterministic clause segmentation and Rego generation, checksum-pinned OPA 1.18.2 compilation and evaluation, reference mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, versioned same-origin/CSRF-protected decision and source routes, a server-only GPT-5.6 Responses adapter contract, a six-view Next.js workspace, Chrome E2E checks, blocked impact/traceability reports, SHA-256 evidence manifests, semantic claim recomputation, a closed and sensitive-content-guarded 38-file USTAR archive, a trusted Ed25519 live-attestation boundary, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: a fresh GPT-5.6 response, live server-side Codex SDK work, production SQLite volume behavior, a pinned Docker image, live attestation signing, and deployment.`,
+  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, deterministic clause segmentation and Rego generation, checksum-pinned OPA 1.18.2 compilation and evaluation, reference mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, versioned same-origin/CSRF-protected decision and source routes, a server-only GPT-5.6 Responses adapter contract, a streamed and signed external-worker RPC client contract with exact tree-manifest delta validation, a six-view Next.js workspace, Chrome E2E checks, blocked impact/traceability reports, SHA-256 evidence manifests, semantic claim recomputation, a closed and sensitive-content-guarded 38-file USTAR archive, a trusted Ed25519 live-attestation boundary, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: a fresh GPT-5.6 response, the actual authenticated supervisor/worker transport and live Codex SDK work, production SQLite container persistence, a digest-pinned Docker image, live attestation signing, and deployment.`,
 );
 write(
   submissionDirectory,
@@ -83,17 +83,17 @@ write(
 write(
   submissionDirectory,
   "whats-next.md",
-  `# What's next\n\n${draft}\n\nComplete a fresh GPT-5.6 run, integrate and verify the current server-side Codex SDK, connect live run state to the existing six-screen workspace, finish the container/deployment, select a project license, record the demo, complete owner eligibility declarations, and submit. Post-challenge expansion remains outside the MVP.`,
+  `# What's next\n\n${draft}\n\nComplete a fresh GPT-5.6 run, implement and verify the authentication-enforcing external supervisor/worker transport around the pinned server-side Codex SDK, connect live run state to the existing six-screen workspace, finish the container/deployment, select a project license, record the demo, complete owner eligibility declarations, and submit. Post-challenge expansion remains outside the MVP.`,
 );
 write(
   submissionDirectory,
   "technologies.txt",
-  `${draft}\nImplemented offline: TypeScript, Node.js, pnpm, Next.js 16, React 19, Playwright with Chrome, Node.js built-in SQLite persistence, OpenAI Responses adapter contract, Rego source generation, OPA 1.18.2, Git.\nPlanned/unverified: fresh GPT-5.6 Structured Output, live Codex SDK work, production SQLite volume behavior, Docker, and deployment.`,
+  `${draft}\nImplemented offline: TypeScript, Node.js, pnpm, Next.js 16, React 19, Playwright with Chrome, Node.js built-in SQLite persistence, OpenAI Responses adapter contract, streamed signed external-worker RPC contract, Rego source generation, OPA 1.18.2, Dockerfile/static container checks, Git.\nPlanned/unverified: fresh GPT-5.6 Structured Output, the authentication-enforcing external Codex supervisor/worker and live SDK run, dynamic SQLite container persistence, digest-pinned Docker runtime, and deployment.`,
 );
 write(
   submissionDirectory,
   "openai-and-codex-usage.md",
-  `# OpenAI and Codex usage\n\n${draft}\n\nStatus: NOT_RUN_LIVE.\n\nThe intended live path uses GPT-5.6 through the Responses API for strict semantic interpretation and the server-side Codex SDK for read-only cartography, repair in a fresh trusted fixture copy, command execution, and independent review. Current files contain prompts, schemas, worker contracts, test doubles, and safety controls only. No submission may claim live OpenAI/Codex work until \`pnpm verify:live\` captures fresh request/run evidence.`,
+  `# OpenAI and Codex usage\n\n${draft}\n\nStatus: NOT_RUN_LIVE.\n\nThe intended live path uses GPT-5.6 through the Responses API for strict semantic interpretation and delegates one complete repair run to an external supervisor whose future transport must enforce mTLS or protected local-socket authentication. The host RPC contract binds a single-use request, declared-length streamed response, fixed write/command/corpus policy, host-known baseline and signed final tree manifests, trusted supervisor signature, separate immutable verification workspace, and teardown receipt. Its current authentication mode is an interface precondition only; no transport or worker exists yet. Current files contain prompts, schemas, offline SDK streams, signed RPC test doubles, and safety controls only. No submission may claim live OpenAI/Codex work until \`pnpm verify:live\` captures fresh request/run evidence.`,
 );
 write(
   submissionDirectory,

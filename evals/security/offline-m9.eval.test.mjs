@@ -32,10 +32,17 @@ test("offline security and clean-copy checks pass without becoming a release rev
 test("license and container remain fail-closed for explicit owner/external work", () => {
   assert.equal(license.status, "FAIL");
   assert.equal(license.failures.some((failure) => failure.includes("OWNER_DECISION_REQUIRED")), true);
+  assert.equal(container.schemaVersion, "2");
   assert.equal(container.status, "FAIL");
-  assert.equal(container.daemonAvailable, false);
-  assert.equal(container.opaVersion, "1.18.2");
-  assert.equal(container.contractStatus, "NOT_READY");
+  assert.equal(container.scope, "DYNAMIC_WEB_CONTAINER");
+  assert.equal(container.workerContainerVerified, false);
+  assert.equal(container.releaseReady, false);
+  assert.equal(container.facts.baseImage, null);
+  assert.equal(container.facts.healthStatus, null);
+  assert.equal(
+    container.failures.some((failure) => failure.includes("immutable Node 22.22.2 image")),
+    true,
+  );
 });
 
 test("threat and limitation documents preserve the hosted trust boundary", () => {

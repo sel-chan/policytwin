@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "status": "PASS",
+  "scope": "STATIC_WEB_CONTAINER",
+  "targetPlatform": "linux/amd64",
+  "contractStatus": "STATIC_PREPARED",
+  "baseImagePinned": false,
+  "nodeBaseImage": null,
+  "opaVersion": "1.18.2",
+  "webContainerIncludesLiveCodexWorker": false,
+  "workerContainerStatus": "NOT_IMPLEMENTED",
+  "dynamicContainerVerified": false,
+  "releaseReady": false,
+  "failures": []
+}

@@ -13,6 +13,11 @@ const prompts = await Promise.all(
 const snapshot = JSON.parse(
   await readFile(new URL("../../tests/snapshots/offline-m7-summary.json", import.meta.url)),
 );
+const [rpcContract, rpcClient, sdkAdapter] = await Promise.all([
+  "worker-rpc-contract.ts",
+  "worker-rpc-client.ts",
+  "sdk-adapter.ts",
+].map((name) => readFile(new URL(`../../src/codex/${name}`, import.meta.url), "utf8")));
 
 test("Codex worker schemas are closed at every executable result boundary", () => {
   for (const name of ["refundInput", "driftWitness", "metadata", "location", "repairInput", "cartography", "repair", "finding", "review", "commandResult", "commandEvidence", "policyVerificationCaseResult", "policyVerification", "failure", "workerReport"]) {
@@ -50,4 +55,14 @@ test("offline M7 snapshot cannot be mistaken for live Codex evidence", () => {
   assert.equal(snapshot.policyVerificationStatus, "PASS");
   assert.equal(snapshot.policyVerificationTotal, 41);
   assert.equal(snapshot.reviewVerdict, "APPROVE");
+});
+
+test("external worker RPC keeps authentication as a transport precondition rather than a host live path", () => {
+  assert.match(rpcContract, /PolicyTwin-External-Worker-RPC-v1/u);
+  assert.match(rpcContract, /processTreeReaped: true/u);
+  assert.match(rpcContract, /IMMUTABLE_RECONSTRUCTED/u);
+  assert.match(rpcClient, /MUTUAL_TLS.*LOCAL_SOCKET_ACL/su);
+  assert.match(rpcClient, /Ed25519/u);
+  assert.match(rpcClient, /one active run/u);
+  assert.match(sdkAdapter, /Live Codex SDK construction is disabled in the host process/u);
 });

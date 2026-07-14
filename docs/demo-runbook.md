@@ -11,6 +11,7 @@ pnpm install --offline --frozen-lockfile
 pnpm demo:reset
 pnpm demo:run
 pnpm evidence:offline
+pnpm container:check
 pnpm verify
 ```
 
@@ -19,7 +20,12 @@ Expected current behavior:
 - `demo:run` reports D01, D02, and D03 as drift;
 - `evidence:offline` regenerates a deterministic `PARTIAL_OFFLINE` package;
 - the package status is `FAIL`; OPA is `PASS`, while GPT-5.6, Codex, live browser, container, and deployment remain `NOT_RUN`;
-- `verify` executes local Chrome E2E and all other implemented gates, then fails only on the owner-selected license, real container health, and non-final submission package.
+- `container:check` validates the daemon-free web-image contract and confirms the live Codex worker is absent;
+- `verify` executes local Chrome E2E and all other implemented offline gates, while the owner-selected license and non-final submission package still fail. Dynamic container health remains a separate release gate.
+
+## Future dynamic container verification
+
+`pnpm container:verify` requires a verified immutable `node:22.22.2-<variant>@sha256:<digest>` value in `container-contract.json` and a running Docker Linux daemon. The Dockerfile also rejects mutable build-argument references if the wrapper is bypassed. The verifier initializes the named `/data` volume ownership in a short root-only setup container, then runs the application as `node` with a read-only root filesystem. It verifies OPA version/checksum and health, creates a real versioned workspace decision through the application API, restarts the container, and reads the same SQLite state back. Normal completion, handled errors, `SIGINT`, and `SIGTERM` trigger idempotent removal of the tracked temporary container, volume, and image; a removal error fails the normal gate and is reported on signal paths. Forced process termination such as `SIGKILL` cannot provide that guarantee. The command does not verify or enable the separate Codex worker.
 
 ## Recovery
 

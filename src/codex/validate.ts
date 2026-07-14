@@ -343,7 +343,20 @@ export function parseRepairWorkerInput(value: unknown): RepairWorkerInput {
     throw new Error("Repair input policy identity does not match the accepted PolicyIR.");
   }
   const sourceClauses = segmentPolicyClauses(sourcePolicy);
-  if (JSON.stringify(sourceClauses) !== JSON.stringify(acceptedPolicyIr.clauses)) {
+  if (
+    sourceClauses.length !== acceptedPolicyIr.clauses.length ||
+    sourceClauses.some((clause, index) => {
+      const accepted = acceptedPolicyIr.clauses[index];
+      return (
+        accepted === undefined ||
+        clause.id !== accepted.id ||
+        clause.text !== accepted.text ||
+        clause.startOffset !== accepted.startOffset ||
+        clause.endOffset !== accepted.endOffset ||
+        clause.normalizedText !== accepted.normalizedText
+      );
+    })
+  ) {
     throw new Error("Repair input source policy does not match the accepted PolicyIR clauses.");
   }
   assertPolicyReadyToCompile(acceptedPolicyIr);

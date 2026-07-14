@@ -12,7 +12,7 @@ The repository now includes:
 - a deterministic PolicyIR-to-Rego compiler and checksum-pinned OPA 1.18.2 execution over 41 accepted cases;
 - boundary, conflict, contrast, differential, and mutation checks that expose all three seeded TypeScript defects;
 - a server-only GPT-5.6 Responses adapter contract with strict structured output, full-source traceability, golden-case contradiction blocking, bounded retries, and a token-gated HTTP route;
-- a server-only Codex SDK 0.144.3 adapter contract with separate read-only cartography, a server-fixed two-file write set, bounded workspace-write repair, independent read-only review, controlled child environment, command-execution rejection, prompt/request/schema hashes, retained per-attempt command receipts, and a tree-bound server-owned 41-case execution receipt required before review;
+- a server-only Codex SDK 0.144.3 adapter contract plus a bounded external-worker RPC client contract with a required transport-authentication mode, streamed preallocation/chunk limits, single-use request capabilities, trusted supervisor signatures, host-known baseline/final tree-manifest comparison, a fixed two-file write set, and host live execution still disabled;
 - Policy Studio, an anonymous-session-isolated SQLite Decision Queue, Case Lab, Integration/Drift, Proof, and blocked Change Impact views in Next.js;
 - Chrome E2E coverage for all six views, browser-session isolation, versioned decision/source writes, CSRF rejection, golden-conflict blocking, complete evidence downloads, keyboard navigation, and a 390px mobile layout;
 - a complete, hash-covered `PARTIAL_OFFLINE` evidence package, adversarial semantic validation, a byte-deterministic 38-file USTAR download, and fail-closed submission drafts.
@@ -29,8 +29,8 @@ flowchart LR
   D --> E["Deterministic Rego compiler"]
   E --> F["OPA + generated cases"]
   F --> G["TypeScript differential runner"]
-  G --> H["Codex repair in trusted copy"]
-  H --> I["Regression + mutation + review"]
+  G --> H["Authentication-required single-run RPC"]
+  H --> I["External Codex repair + immutable verification"]
   I --> J["Hash-covered proof package"]
   J --> K["Trusted live attestation"]
 ```
@@ -61,7 +61,7 @@ Copy `.env.example` to a local ignored environment file when exercising live int
 |---|---|
 | `OPENAI_API_KEY` | Server-side Responses API access; never expose to the browser |
 | `OPENAI_MODEL` | Configurable model, default `gpt-5.6` |
-| `CODEX_API_KEY` | Server-side Codex SDK access; injected only into the SDK CLI, never fixture verification commands |
+| `CODEX_API_KEY` | Future external-worker-only Codex access; never set in the web image, sent over RPC, or passed to fixture commands |
 | `CODEX_MODEL` | Required explicit model for live repair; no personal Codex default is inherited |
 | `POLICYTWIN_RUN_TOKEN` | High-entropy token required by `POST /api/interpret` |
 | `POLICYTWIN_ATTESTATION_PUBLIC_KEYS_JSON` | Trusted Ed25519 public-key map used to verify live evidence downloads; never a private key |
@@ -91,10 +91,11 @@ pnpm clean:check
 pnpm verify
 pnpm verify:live
 pnpm container:check
+pnpm container:verify
 pnpm submission:check
 ```
 
-`pnpm demo:reset` removes only the default ignored demo SQLite file and restores the trusted fixture; stop the development server first on Windows. It fails closed when `POLICYTWIN_DATABASE_PATH` points elsewhere and never deletes that custom file. Browser sessions receive separate seeded projects; new sessions require same-origin fetch metadata, expire after 24 hours, and are capped at 128 per process. This is bounded demo isolation, not user authentication or a multi-instance storage design. `pnpm demo:run` must report exactly three seeded drifts. `pnpm verify` is the deterministic offline gate; it currently fails only on explicitly incomplete owner/external release gates. `pnpm verify:live` must capture fresh GPT-5.6 and Codex evidence before completion.
+`pnpm demo:reset` removes only the default ignored demo SQLite file and restores the trusted fixture; stop the development server first on Windows. It fails closed when `POLICYTWIN_DATABASE_PATH` points elsewhere and never deletes that custom file. Browser sessions receive separate seeded projects; new sessions require same-origin fetch metadata, expire after 24 hours, and are capped at 128 per process. This is bounded demo isolation, not user authentication or a multi-instance storage design. `pnpm demo:run` must report exactly three seeded drifts. `pnpm verify` is the deterministic offline gate and runs the daemon-free static container contract. `pnpm container:verify` is the separate dynamic image/OPA/non-root/read-only-root/health gate; it initializes the named volume for the non-root runtime, persists an actual workspace decision through the API, restarts the container, and reads the same SQLite state back. It currently fails before build because the immutable Node base-image digest is unset; the Docker daemon also remains unavailable but is reached only after that fail-closed precondition. `pnpm verify:live` must capture fresh GPT-5.6 and Codex evidence before completion.
 
 Browser evidence is under `artifacts/screenshots/`. Machine-readable proof is under `artifacts/evidence/`; every unavailable live result is labeled `NOT_RUN` rather than simulated. The evidence API exposes every required artifact individually, and the Proof view builds `/api/evidence/archive` in memory from the exact 38-file allowlist, so transient files are never collected.
 
@@ -110,7 +111,7 @@ Only the bundled trusted refund fixture may be executed or modified. Uploaded or
 
 Codex phases use distinct SDK threads. Cartography and review are read-only and fail if the fixture changes; repair uses workspace-write with network and web search disabled. Before any SDK turn, the adapter rejects sensitive or personal-path content in the complete trusted context and every canonical NUL-free UTF-8 fixture file. It rejects every SDK `command_execution` lifecycle event, so only the orchestrator may run the two fixed verification commands, and it rejects sensitive command output at the contract boundary. Model output cannot expand writes beyond `src/refund.ts` and `tests/refund.test.mjs`, nor set SDK provenance, changed files, command receipts, regression claims, or policy-verification results. Server-owned metadata binds the prompt template, complete request, and output schema hashes. The repair must enable the exact digest-pinned D01-D03 assertions already present as skipped tests, while the server requires the exact hash-bound golden-plus-generated 41-case corpus. It derives changes from fixture snapshots, retains successful results and runner/evidence failures for every attempt, and rejects any test that changes file content, structure, mode, or mtime after typecheck. A failed write phase poisons the disposable workspace so no later phase can reuse it. The server then evaluates all 41 cases through a separate trusted runner whose receipt is bound to the attempt, repair run, final execution tree, accepted corpus, and PolicyIR. The executed exact tests plus the 41-case receipt—not model prose or a reported link—are the regression proof. Missing, altered, erroring, or non-passing results block review.
 
-The SDK sandbox is not treated as a host read jail. No web-process route invokes the live adapter, the host live-backend factory always rejects, and the local command runner rejects `LIVE_CODEX_SDK` outright. A credentialed live repair must run the SDK, closed commands, and the immutable 41-case runner inside a future external OS sandbox/container with fixture-only mounts, no network, a non-privileged user, process/CPU/memory limits, and verified teardown. Until that worker and its receipts exist, `pnpm verify:live` remains fail-closed.
+The SDK sandbox is not treated as a host read jail. No web-process route invokes the live adapter, the host live-backend factory always rejects, and the local command runner rejects `LIVE_CODEX_SDK` outright. The host RPC contract requires a transport to declare mTLS or protected local-socket ACL, but the current repository has no transport implementation and therefore does not yet prove authentication. Its client accepts only a declared-length asynchronous byte stream, rejects the body before allocation when the length exceeds 4 MiB, limits each chunk to 64 KiB and the frame to 1,024 chunks, then validates canonical UTF-8/JSON. It binds the response to a one-use nonce/request/policy/image digest, verifies a pinned Ed25519 supervisor key, compares host-known baseline and signed final path/kind/mode/mtime/file-hash manifests so exactly the two allowed files changed, requires immutable command/corpus tree receipts, and rejects missing process-tree/workspace teardown. The future supervisor may expose only an OpenAI-specific egress proxy to the SDK; fixture commands and corpus verification remain non-networked. No transport, supervisor, worker image, or live response exists yet, so `pnpm verify:live` remains fail-closed.
 
 Self-rehashing an edited evidence package cannot promote it to `LIVE_VERIFIED`: live status requires both semantic consistency and a trusted detached signature. No private attestation key belongs in this repository.
 
