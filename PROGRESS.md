@@ -8,8 +8,8 @@
 - Current milestone: `M3 — Persisted policy workspace service`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 12:41:44 +09:00`
-- Latest checkpoint commit: `a6a4ff6def7d05a2a91484f40cdd569ab774eb4c`
+- Last updated: `2026-07-14 12:47:17 +09:00`
+- Latest checkpoint commit: `85259ea1e70449c1307b382e3f2541fb7e8c2327`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -82,7 +82,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
-| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts, SQLite persistence, and framework-independent workspace service; restart, immutable text versions, atomic/idempotent resolution, corruption, stale-write, and decision-replay checks pass | pending | Decision Queue UI and Next.js route wiring require the pinned application stack |
+| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts, SQLite persistence, and framework-independent workspace service; restart, immutable text versions, atomic/idempotent resolution, corruption, stale-write, and decision-replay checks pass | `85259ea` | Decision Queue UI and Next.js route wiring require the pinned application stack |
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
@@ -108,7 +108,7 @@ The repository now persists projects and decisions, but callers must manually re
 - [x] Implement project creation/read, immutable policy-text version creation, and ambiguity resolution.
 - [x] Preserve expected-version concurrency, golden contradictions, decision replay, and idempotency.
 - [x] Add service tests including restart-backed persistence behavior.
-- [ ] Run full regressions, update docs/evidence, review, and commit the checkpoint.
+- [x] Run full regressions, update docs/evidence, review, and commit the checkpoint.
 
 ### Completion evidence
 
@@ -116,7 +116,7 @@ The repository now persists projects and decisions, but callers must manually re
 - Exit codes: `0`; `0` (49/49); `0` (15/15); `1` (expected aggregate failures: license, container, browser, submission only)
 - Artifacts: `src/workspace/service.ts`; `tests/unit/policy-workspace-service.test.mjs`; updated restart integration test
 - Screenshots: not applicable to this server-service slice
-- Commit: pending current checkpoint
+- Commit: `85259ea1e70449c1307b382e3f2541fb7e8c2327`
 
 ## Quality gates
 
@@ -172,7 +172,7 @@ Append newest entries at the top. Keep entries compact and evidence-oriented.
 - Verified: unit 49/49 and integration 15/15; new text preserves authoritative golden cases and prior source; repeated choices are idempotent; stale expected versions and contradictory default-review choices do not create versions; three service-driven decisions survive SQLite close/reopen
 - Commands: `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm verify`
 - Artifacts: `src/workspace/service.ts`, `tests/unit/policy-workspace-service.test.mjs`, updated `tests/integration/policy-persistence.integration.test.mjs`
-- Commit: pending current checkpoint
+- Commit: `85259ea1e70449c1307b382e3f2541fb7e8c2327`
 - Risks: no HTTP route or Decision Queue UI exists; those require the approved pinned Next.js application stack
 - Next: run the complete offline gate, review and commit, then re-audit remaining offline P0 work
 
@@ -315,7 +315,7 @@ A blocker is valid only when the task cannot continue safely without external in
 
 | ID | Type | Exact blocker | Work already completed | One owner action | Resume condition |
 |---|---|---|---|---|---|
-| None |  |  |  |  |  |
+| B-001 | External network approval | Current official OpenAI/Codex/Build Week/OPA/Next.js facts, pinned package installation, and OPA acquisition cannot be performed under the unapproved network boundary | All independent offline domain, compiler, cases, mutation, differential, repair safety, evidence, security, submission-draft, SQLite persistence, and workspace-service work completed and verified | Approve network use limited to official documentation lookup, pinned pnpm package installation, and official OPA binary acquisition | Official sources can be recorded and M0/M2/M4/M7 plus the web stack can resume without guessing |
 
 ## Risks
 
@@ -338,19 +338,19 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Implement and verify the persisted policy workspace service, then re-audit the remaining offline P0 gaps before requesting any new external action.`
+`After B-001 approval, verify current official sources, install the pinned application/API/test stack and OPA, then resume M0 followed by the live M2/M4/M7 and web UI gates.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `UNSET`
-- Exact current state: `UNSET`
-- Last successful command: `UNSET`
-- Current failing command: `UNSET`
-- Uncommitted files: `UNSET`
-- Safe resume command/action: `UNSET`
-- One owner action, if any: `UNSET`
+- Why paused: `B-001 — required external network scope is not approved`
+- Exact current state: `M1 passes; M2–M10 have truthful offline foundations; M3 now includes restart-safe SQLite persistence and a tested server workspace service; external/live/UI/deployment gates remain incomplete`
+- Last successful command: `pnpm build` within the final `pnpm verify`; full implemented suites also passed (`49` unit, `15` integration, `21` eval)
+- Current failing command: `pnpm verify` exits `1` only for `license:check`, `container:check`, `submission:check`, and `test:e2e`; `pnpm verify:live` remains fail-closed
+- Uncommitted files: `none after this ledger checkpoint`
+- Safe resume command/action: `verify the approved scope, then check official sources before any install or API-specific implementation`
+- One owner action, if any: `Approve external network use limited to official documentation lookup, pinned pnpm package installation, and official OPA binary acquisition.`
 
 ## Final completion record
 
