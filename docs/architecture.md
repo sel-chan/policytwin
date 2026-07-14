@@ -38,15 +38,17 @@ Implemented offline:
 - SQLite-backed policy, version, lifecycle, golden-case, and decision persistence with restart recovery;
 - framework-independent workspace orchestration for current-state reads, immutable text versions, and atomic ambiguity resolution;
 - checksum-pinned OPA 1.18.2 compile/evaluation over all 41 accepted cases;
-- a five-view Next.js workspace, health/evidence/interpret routes, and local Chrome E2E coverage.
+- a six-view Next.js workspace with real versioned decision/source writes, health/evidence/interpret/workspace routes, and local Chrome E2E coverage.
+
+Proof and Change Impact are bound to the recorded reference policy by a deterministic semantic fingerprint covering version, clauses, rules, ambiguity selections, defaults, normalization, and the input schema. Opaque per-session IDs and model provenance are excluded from that equality check. A mismatch is shown explicitly and blocks the reference 14-to-30 draft; it never re-labels the static evidence as proof for a different session policy.
 
 Not yet authoritative:
 
 - GPT-5.6 and Codex nodes still require fresh credentialed runs and signed live evidence;
-- the Decision Queue UI is evidence-backed but not yet wired to persisted write APIs;
+- the 14-to-30 impact candidate is a persisted text-only `DRAFT`; it is not accepted PolicyIR and remains blocked by G02;
 - mutation execution remains reference-based rather than OPA-backed;
 - the application container, deployed health check, live browser run, and deployment do not exist.
 
-The offline persistence adapter uses Node.js 22's built-in experimental `node:sqlite` API behind `SQLitePolicyRepository`. Production readiness remains unclaimed until the current official API contract, selected container runtime, backup behavior, and deployment persistence volume are verified.
+The offline persistence adapter uses Node.js 22's built-in experimental `node:sqlite` API behind `SQLitePolicyRepository`. Each anonymous browser session maps to a hashed internal project ID; only same-origin browser fetches may create a session, expired projects are removed after 24 hours, and a process stores at most 128 active anonymous projects. Public-origin and HTTPS configuration is validated before project creation, and every mutation rechecks server-side expiry before writing. Browser mutations accept only the public seeded policy ID, version path, and closed option/source body; an exact configured production origin, an HttpOnly SameSite session and CSRF cookie, a matching custom header, byte and ten-second body limits, and a single-process write gate protect the route. Production readiness remains unclaimed until authentication, shared quotas, the selected container runtime, backup behavior, distributed coordination, and deployment persistence volume are verified.
 
 The application boundary accepts only the bundled `seeded-refund-demo` fixture for write execution. Policy text is untrusted semantic input; it never becomes executable code directly.

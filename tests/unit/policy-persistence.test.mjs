@@ -83,6 +83,47 @@ test("strictly creates an immutable initial project snapshot", async (testContex
   );
 });
 
+test("lists projects and deletes an isolated project with all child records", async (testContext) => {
+  const { repository } = await withRepository(testContext);
+  createSeededProject(repository);
+  const resolved = resolvePolicyAmbiguity(
+    recorded,
+    "ambiguity-purchase-day-index",
+    "purchase-day-zero",
+    goldenCases,
+    "2026-07-14T02:01:00.000Z",
+  );
+  repository.appendVersion({
+    policyId: recorded.policyId,
+    expectedParentVersion: 1,
+    sourceText,
+    goldenCases,
+    policyIR: resolved.policy,
+    decisionRecord: resolved.decisionRecord,
+    createdAt: "2026-07-14T02:01:00.000Z",
+  });
+  repository.createProject({
+    id: "policy-session-second",
+    title: "Second isolated session",
+    sourceText: "Draft",
+    goldenCases: [],
+    createdAt: "2026-07-14T02:02:00.000Z",
+  });
+
+  assert.deepEqual(
+    repository.listProjects().map((project) => project.id),
+    [recorded.policyId, "policy-session-second"],
+  );
+  assert.equal(repository.deleteProject(recorded.policyId), true);
+  assert.equal(repository.getProject(recorded.policyId), null);
+  assert.deepEqual(repository.listVersions(recorded.policyId), []);
+  assert.deepEqual(repository.listDecisionRecords(recorded.policyId), []);
+  assert.equal(repository.deleteProject(recorded.policyId), false);
+  assert.deepEqual(repository.listProjects().map((project) => project.id), [
+    "policy-session-second",
+  ]);
+});
+
 test("rejects stale versions, mismatched decisions, and invalid source traceability", async (testContext) => {
   const { repository } = await withRepository(testContext);
   createSeededProject(repository);

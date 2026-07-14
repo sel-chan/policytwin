@@ -7,6 +7,7 @@ const navigation = [
   ["cases", "/cases", "Case Lab", "03"],
   ["integration", "/integration", "Integration / Drift", "04"],
   ["proof", "/proof", "Proof", "05"],
+  ["impact", "/impact", "Change Impact", "06"],
 ] as const;
 
 export function WorkspaceShell({

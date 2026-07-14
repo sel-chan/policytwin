@@ -9,6 +9,7 @@ import {
 import {
   readUtf8BodyLimited,
   RequestBodyTooLargeError,
+  RequestBodyTimeoutError,
   SingleRunGate,
 } from "../../dist/openai/request-guard.js";
 
@@ -60,6 +61,43 @@ test("streams request bodies under a byte limit and reserves one run before awai
     (error) => error instanceof RequestBodyTooLargeError,
   );
 
+  const chunkedBody = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode("12"));
+      controller.enqueue(new TextEncoder().encode("34"));
+      controller.close();
+    },
+  });
+  await assert.rejects(
+    readUtf8BodyLimited(
+      new Request("http://policytwin.local/api/interpret", {
+        method: "POST",
+        body: chunkedBody,
+        duplex: "half",
+      }),
+      3,
+    ),
+    (error) => error instanceof RequestBodyTooLargeError,
+  );
+
+  const invalidUtf8Body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(Uint8Array.from([0xc3]));
+      controller.close();
+    },
+  });
+  await assert.rejects(
+    readUtf8BodyLimited(
+      new Request("http://policytwin.local/api/interpret", {
+        method: "POST",
+        body: invalidUtf8Body,
+        duplex: "half",
+      }),
+      3,
+    ),
+    TypeError,
+  );
+
   const gate = new SingleRunGate();
   const release = gate.tryAcquire();
   assert.equal(typeof release, "function");
@@ -67,6 +105,41 @@ test("streams request bodies under a byte limit and reserves one run before awai
   release();
   assert.equal(typeof gate.tryAcquire(), "function");
   assert.throws(() => release(), /more than once/u);
+});
+
+test("bounds a stalled request body without waiting for the pending stream read", async () => {
+  let releasePull;
+  let cancelled = false;
+  const stalledBody = new ReadableStream({
+    pull() {
+      return new Promise((resolve) => {
+        releasePull = resolve;
+      });
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const request = new Request("http://policytwin.local/api/interpret", {
+    method: "POST",
+    body: stalledBody,
+    duplex: "half",
+  });
+  const bodyRead = readUtf8BodyLimited(request, 32, 20).then(
+    () => ({ type: "resolved" }),
+    (error) => ({ type: "rejected", error }),
+  );
+  const outcome = await Promise.race([
+    bodyRead,
+    new Promise((resolve) =>
+      setTimeout(() => resolve({ type: "outer-timeout" }), 250),
+    ),
+  ]);
+  releasePull?.();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(outcome.type, "rejected");
+  assert.ok(outcome.error instanceof RequestBodyTimeoutError);
+  assert.equal(cancelled, true);
 });
 
 test("builds a strict GPT-5.6 Responses request and trusts only server provenance", async () => {

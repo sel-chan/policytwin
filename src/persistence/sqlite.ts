@@ -625,6 +625,38 @@ export class SQLitePolicyRepository {
     return row ? this.#projectFromRow(row) : null;
   }
 
+  listProjects(): StoredPolicyProject[] {
+    this.#ensureOpen();
+    return this.#database
+      .prepare(
+        "SELECT id,title,current_version,created_at,updated_at FROM policy_projects ORDER BY created_at,id",
+      )
+      .all()
+      .map((row) => this.#projectFromRow(row));
+  }
+
+  deleteProject(policyIdValue: unknown): boolean {
+    this.#ensureOpen();
+    const policyId = identifier(policyIdValue, "$policyId");
+    return this.#transaction(() => {
+      this.#database.prepare("DELETE FROM policy_decisions WHERE policy_id = ?").run(policyId);
+      const versions = this.#database
+        .prepare("SELECT version FROM policy_versions WHERE policy_id = ? ORDER BY version DESC")
+        .all(policyId)
+        .map((row) => rowInteger(row, "version"));
+      const deleteVersion = this.#database.prepare(
+        "DELETE FROM policy_versions WHERE policy_id = ? AND version = ?",
+      );
+      for (const version of versions) {
+        deleteVersion.run(policyId, version);
+      }
+      const deletion = this.#database
+        .prepare("DELETE FROM policy_projects WHERE id = ?")
+        .run(policyId);
+      return Number(deletion.changes) === 1;
+    });
+  }
+
   getVersion(policyIdValue: unknown, versionValue: unknown): StoredPolicyVersion | null {
     this.#ensureOpen();
     const policyId = identifier(policyIdValue, "$policyId");

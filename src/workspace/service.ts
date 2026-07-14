@@ -168,6 +168,14 @@ export class PolicyWorkspaceService {
   createPolicyTextVersion(value: unknown): PolicyWorkspaceSnapshot {
     const input = parseTextVersionInput(value);
     const workspace = this.getWorkspace(input.policyId);
+    if (
+      workspace.project.currentVersion === input.expectedVersion + 1 &&
+      workspace.currentVersion.parentVersion === input.expectedVersion &&
+      workspace.currentVersion.policyIR === null &&
+      workspace.currentVersion.sourceText === input.sourceText
+    ) {
+      return workspace;
+    }
     this.#assertExpectedVersion(workspace, input.expectedVersion);
     this.repository.appendVersion({
       policyId: input.policyId,
@@ -182,6 +190,20 @@ export class PolicyWorkspaceService {
   resolveAmbiguity(value: unknown): WorkspaceResolutionResult {
     const input = parseResolutionInput(value);
     const workspace = this.getWorkspace(input.policyId);
+    if (workspace.project.currentVersion > input.expectedVersion) {
+      const replayedRecord = workspace.decisionRecords.find(
+        (record) =>
+          record.fromVersion === input.expectedVersion &&
+          record.ambiguityId === input.ambiguityId,
+      );
+      if (replayedRecord?.selectedOptionId === input.selectedOptionId) {
+        return {
+          workspace,
+          decisionRecord: replayedRecord,
+          idempotent: true,
+        };
+      }
+    }
     this.#assertExpectedVersion(workspace, input.expectedVersion);
     if (!workspace.currentVersion.policyIR) {
       throw new PolicyWorkspaceServiceError(

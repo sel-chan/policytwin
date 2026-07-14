@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { DatabaseSync } from "node:sqlite";
 import { resolve } from "node:path";
 
 const screenshotDirectory = resolve(process.cwd(), "artifacts", "screenshots");
@@ -8,22 +9,108 @@ test.beforeAll(async () => {
   await mkdir(screenshotDirectory, { recursive: true });
 });
 
-test("five evidence-backed views are navigable and truthful", async ({ page, request }) => {
+test("persisted decisions, evidence views, and blocked change impact remain truthful", async ({
+  browser,
+  page,
+  request,
+}) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Policy Studio" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Policy Studio/u })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  await expect(page.getByText("Recorded baseline", { exact: true })).toBeVisible();
-  await expect(page.getByText("v4", { exact: true })).toBeVisible();
+  await expect(page.getByText("SQLite v1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Needs decision", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Interpret with GPT-5.6" })).toBeDisabled();
   await page.screenshot({ path: resolve(screenshotDirectory, "01-policy-studio.png"), fullPage: true });
 
+  const directWorkspaceCreation = await request.get(
+    "/api/policies/policy-seeded-refund/workspace",
+  );
+  expect(directWorkspaceCreation.status()).toBe(403);
+
+  const untrustedMutation = await request.post(
+    "/api/policies/policy-seeded-refund/versions/1/ambiguities/ambiguity-purchase-day-index/resolve",
+    { data: { selectedOptionId: "purchase-day-zero" } },
+  );
+  expect(untrustedMutation.status()).toBe(403);
+
   await page.getByRole("link", { name: /Decision Queue/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Decision Queue" })).toBeVisible();
+  await expect(page.getByText("0 / 3 resolved", { exact: true })).toBeVisible();
+  await expect(page.locator(".decision-card")).toHaveCount(1);
+
+  const firstChoice = page.getByRole("button", { name: /Purchase day is day 0/u });
+  await firstChoice.focus();
+  await expect(firstChoice).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("1 / 3 resolved", { exact: true })).toBeVisible();
+  await expect(page.getByText("SQLite current version:")).toContainText("v2");
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: "Is usage measured at request time or decision time?",
+    }),
+  ).toBeFocused();
+  const replayedDecision = await page.evaluate(async () => {
+    const workspaceResponse = await fetch(
+      "/api/policies/policy-seeded-refund/workspace",
+      { cache: "no-store" },
+    );
+    const workspace = (await workspaceResponse.json()) as { csrfToken: string };
+    const response = await fetch(
+      "/api/policies/policy-seeded-refund/versions/1/ambiguities/ambiguity-purchase-day-index/resolve",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-PolicyTwin-CSRF": workspace.csrfToken,
+        },
+        body: JSON.stringify({ selectedOptionId: "purchase-day-zero" }),
+      },
+    );
+    return { status: response.status, body: await response.json() };
+  });
+  expect(replayedDecision.status).toBe(200);
+  expect(replayedDecision.body.idempotent).toBe(true);
+  expect(replayedDecision.body.workspace.project.currentVersion).toBe(2);
+
+  await page.getByRole("button", { name: /Measure at request time/u }).click();
+  await expect(page.getByText("2 / 3 resolved", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: "What is the result when no eligibility rule matches?",
+    }),
+  ).toBeFocused();
+
+  await page.getByRole("button", { name: /Review by default/u }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Decision not stored." }),
+  ).toContainText("authoritative golden case");
+  await expect(page.getByText("2 / 3 resolved", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: /Deny by default/u }).click();
   await expect(page.getByText("3 / 3 resolved", { exact: true })).toBeVisible();
+  await expect(page.getByText("SQLite current version:")).toContainText("v4");
+  await expect(
+    page.getByRole("heading", { level: 2, name: "All required ambiguity decisions are explicit" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("3 / 3 resolved", { exact: true })).toBeVisible();
+  await expect(page.getByText("SQLite current version:")).toContainText("v4");
   await page.screenshot({ path: resolve(screenshotDirectory, "02-decision-queue.png"), fullPage: true });
+  await page.getByRole("button", { name: "Revisit" }).first().click();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Is the purchase day counted as day 0 or day 1?" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Purchase day is day 0/u })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Purchase day is day 0/u })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.reload();
 
   await page.getByRole("link", { name: /Case Lab/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Case Lab" })).toBeVisible();
@@ -40,8 +127,144 @@ test("five evidence-backed views are navigable and truthful", async ({ page, req
 
   await page.getByRole("link", { name: /Proof/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Proof" })).toBeVisible();
-  await expect(page.getByText("OPA proven. Live repair still pending.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Reference v4 OPA proof is preserved. Live repair still pending.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("This session matches recorded reference v4.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /impact-report\.json/u })).toBeVisible();
   await page.screenshot({ path: resolve(screenshotDirectory, "05-proof.png"), fullPage: true });
+
+  await page.getByRole("link", { name: /Change Impact/u }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Change Impact" })).toBeVisible();
+  await expect(page.getByText("G02 blocks verification", { exact: true })).toBeVisible();
+  await expect(page.getByText("REFERENCE_EVALUATOR_NOT_OPA", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Candidate policy text")).toHaveValue(/including exactly day 30/u);
+  await expect(page.getByLabel("Candidate policy text")).not.toHaveValue(/including exactly day 14/u);
+  await page.getByRole("button", { name: "Create draft v5" }).click();
+  await expect(page.getByRole("button", { name: "Draft v5 persisted" })).toBeDisabled();
+  await expect(page.getByText("No code changed", { exact: true })).toBeVisible();
+  const replayedSource = await page.evaluate(async () => {
+    const workspaceResponse = await fetch(
+      "/api/policies/policy-seeded-refund/workspace",
+      { cache: "no-store" },
+    );
+    const workspace = (await workspaceResponse.json()) as {
+      csrfToken: string;
+      workspace: { currentVersion: { sourceText: string } };
+    };
+    const response = await fetch(
+      "/api/policies/policy-seeded-refund/versions/4/source",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-PolicyTwin-CSRF": workspace.csrfToken,
+        },
+        body: JSON.stringify({ sourceText: workspace.workspace.currentVersion.sourceText }),
+      },
+    );
+    return { status: response.status, body: await response.json() };
+  });
+  expect(replayedSource.status).toBe(200);
+  expect(replayedSource.body.idempotent).toBe(true);
+  expect(replayedSource.body.workspace.project.currentVersion).toBe(5);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Draft v5 persisted" })).toBeDisabled();
+  await page.screenshot({ path: resolve(screenshotDirectory, "06-change-impact.png"), fullPage: true });
+
+  await page.getByRole("link", { name: /Decision Queue/u }).click();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Interpret v5 before changing decisions" }),
+  ).toBeVisible();
+  await expect(page.locator(".decision-card")).toHaveCount(0);
+
+  const isolatedContext = await browser.newContext();
+  try {
+    const isolatedPage = await isolatedContext.newPage();
+    await isolatedPage.goto("http://127.0.0.1:3210/decisions");
+    await expect(isolatedPage.getByText("0 / 3 resolved", { exact: true })).toBeVisible();
+    await expect(isolatedPage.getByText("SQLite current version:")).toContainText("v1");
+    await isolatedPage.getByRole("button", { name: /Purchase day is day 1/u }).click();
+    await isolatedPage.getByRole("button", { name: /Measure at decision time/u }).click();
+    await isolatedPage.getByRole("button", { name: /Deny by default/u }).click();
+    await expect(isolatedPage.getByText("3 / 3 resolved", { exact: true })).toBeVisible();
+    await isolatedPage.getByRole("link", { name: /Proof/u }).click();
+    await expect(
+      isolatedPage.getByText("Recorded proof does not match this session.", { exact: true }),
+    ).toBeVisible();
+    await isolatedPage.getByRole("link", { name: /Change Impact/u }).click();
+    await expect(
+      isolatedPage.getByText("Reference proof does not match this session.", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      isolatedPage.getByRole("button", { name: "Seeded reference decisions required" }),
+    ).toBeDisabled();
+    const isolatedWorkspace = await isolatedPage.evaluate(async () => {
+      const response = await fetch("/api/policies/policy-seeded-refund/workspace", {
+        cache: "no-store",
+      });
+      return response.json() as Promise<{
+        csrfToken: string;
+        workspace: {
+          project: { id: string };
+          currentVersion: { sourceText: string };
+        };
+      }>;
+    });
+    const alternateChangedSource = isolatedWorkspace.workspace.currentVersion.sourceText
+      .replaceAll("14 calendar days", "30 calendar days")
+      .replaceAll("exactly day 14", "exactly day 30");
+    const bypassedImpact = await isolatedPage.evaluate(async ({ csrfToken, sourceText }) => {
+      const response = await fetch(
+        "/api/policies/policy-seeded-refund/versions/4/source",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-PolicyTwin-CSRF": csrfToken,
+          },
+          body: JSON.stringify({ sourceText }),
+        },
+      );
+      return { status: response.status, body: await response.json() };
+    }, {
+      csrfToken: isolatedWorkspace.csrfToken,
+      sourceText: alternateChangedSource,
+    });
+    expect(bypassedImpact).toEqual({
+      status: 409,
+      body: { error: "REFERENCE_POLICY_MISMATCH" },
+    });
+    const databasePath = process.env.POLICYTWIN_E2E_DATABASE_PATH;
+    expect(databasePath).toBeTruthy();
+    const database = new DatabaseSync(databasePath!);
+    database
+      .prepare("UPDATE policy_projects SET created_at = ? WHERE id = ?")
+      .run("2000-01-01T00:00:00.000Z", isolatedWorkspace.workspace.project.id);
+    database.close();
+    const expiredMutation = await isolatedPage.evaluate(async ({ csrfToken, sourceText }) => {
+      const response = await fetch(
+        "/api/policies/policy-seeded-refund/versions/4/source",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-PolicyTwin-CSRF": csrfToken,
+          },
+          body: JSON.stringify({ sourceText }),
+        },
+      );
+      return { status: response.status, body: await response.json() };
+    }, {
+      csrfToken: isolatedWorkspace.csrfToken,
+      sourceText: alternateChangedSource,
+    });
+    expect(expiredMutation).toEqual({ status: 403, body: { error: "INVALID_SESSION" } });
+  } finally {
+    await isolatedContext.close();
+  }
 
   const health = await request.get("/api/health");
   expect(health.ok()).toBe(true);
@@ -68,13 +291,50 @@ test("keyboard focus and mobile layout remain usable", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Policy Studio" })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/proof");
+  await page.goto("/impact");
   await expect(page.getByRole("navigation", { name: "Workspace views" })).toBeVisible();
-  for (const label of ["Policy Studio", "Decision Queue", "Case Lab", "Integration / Drift", "Proof"]) {
+  for (const label of [
+    "Policy Studio",
+    "Decision Queue",
+    "Case Lab",
+    "Integration / Drift",
+    "Proof",
+    "Change Impact",
+  ]) {
     await expect(page.getByRole("link", { name: new RegExp(label, "u") })).toBeVisible();
   }
-  await expect(page.getByRole("heading", { level: 1, name: "Proof" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Change Impact" })).toBeVisible();
+  const mobileG02 = page.getByLabel("Impact for case G02");
+  await expect(mobileG02).toBeVisible();
+  await expect(mobileG02.getByText("DENY", { exact: true })).toBeVisible();
+  await expect(mobileG02.getByText("ALLOW", { exact: true })).toBeVisible();
+  await expect(mobileG02.getByText("refund-eligible", { exact: true })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await page.screenshot({ path: resolve(screenshotDirectory, "07-mobile-or-responsive.png"), fullPage: true });
+});
+
+test("anonymous workspace capacity fails closed without creating another project", async ({
+  browser,
+}) => {
+  const finalAllowedContext = await browser.newContext();
+  try {
+    const finalAllowedPage = await finalAllowedContext.newPage();
+    await finalAllowedPage.goto("http://127.0.0.1:3210/");
+    await expect(finalAllowedPage.getByText("SQLite v1", { exact: true })).toBeVisible();
+  } finally {
+    await finalAllowedContext.close();
+  }
+
+  const rejectedContext = await browser.newContext();
+  try {
+    const rejectedPage = await rejectedContext.newPage();
+    await rejectedPage.goto("http://127.0.0.1:3210/");
+    await expect(
+      rejectedPage.getByRole("heading", { level: 2, name: "Workspace unavailable" }),
+    ).toBeVisible();
+    await expect(rejectedPage.getByText(/temporary capacity/u)).toBeVisible();
+  } finally {
+    await rejectedContext.close();
+  }
 });

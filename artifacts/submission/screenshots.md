@@ -9,6 +9,7 @@ Local Chrome captures completed:
 - `03-case-lab-drift.png`
 - `04-integration-drift.png` (baseline drift view; not the required live Codex repair capture)
 - `05-proof.png`
+- `06-change-impact.png` (blocked reference preview; not a fresh OPA/Codex run)
 - `07-mobile-or-responsive.png`
 
-Submission-required captures still missing: `04-codex-repair.png`, `06-change-impact.png`, and `08-architecture.png`.
+Submission-required captures still missing: `04-codex-repair.png` and `08-architecture.png`.

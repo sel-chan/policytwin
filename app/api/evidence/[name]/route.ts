@@ -18,6 +18,7 @@ const ALLOWED = new Set([
   "mutation-run-summary.json",
   "mutation-opa-results.json",
   "traceability.json",
+  "impact-report.json",
   "browser-run-summary.json",
   "browser-run-details.json",
   "container-run-summary.json",

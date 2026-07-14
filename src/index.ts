@@ -46,5 +46,6 @@ export * from "./impact/analyze.js";
 export * from "./traceability/report.js";
 export * from "./evidence/validate.js";
 export * from "./workspace/service.js";
+export * from "./workspace/http.js";
 export * from "./openai/interpreter.js";
 export * from "./openai/request-guard.js";

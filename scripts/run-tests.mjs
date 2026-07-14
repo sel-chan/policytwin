@@ -17,6 +17,7 @@ const suites = {
     "tests/unit/impact-traceability.test.mjs",
     "tests/unit/submission-validation.test.mjs",
     "tests/unit/openai-interpreter.test.mjs",
+    "tests/unit/workspace-http.test.mjs",
   ],
   integration: [
     "tests/integration/scaffold.integration.test.mjs",

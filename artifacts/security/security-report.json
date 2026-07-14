@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 247,
-  "scannedTextFiles": 228,
+  "scannedFiles": 264,
+  "scannedTextFiles": 239,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [
@@ -13,7 +13,8 @@
     "scripts/process.mjs",
     "scripts/repair-command.mjs",
     "scripts/security-check.mjs",
-    "src/opa/runner.ts"
+    "src/opa/runner.ts",
+    "tests/integration/refund-fixture.integration.test.mjs"
   ],
   "findings": []
 }

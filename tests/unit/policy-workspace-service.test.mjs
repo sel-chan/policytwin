@@ -64,6 +64,15 @@ test("creates an immutable DRAFT version while preserving golden cases", async (
   assert.equal(workspace.currentVersion.policyIR, null);
   assert.deepEqual(workspace.currentVersion.goldenCases, goldenCases);
   assert.equal(repository.getVersion(recorded.policyId, 1).sourceText, sourceText);
+
+  const replayed = service.createPolicyTextVersion({
+    policyId: recorded.policyId,
+    expectedVersion: 1,
+    sourceText: changedText,
+    createdAt: "2026-07-14T04:02:00.000Z",
+  });
+  assert.equal(replayed.project.currentVersion, 2);
+  assert.equal(replayed.currentVersion.createdAt, "2026-07-14T04:01:00.000Z");
 });
 
 test("resolves atomically, preserves idempotency, and blocks stale or contradictory choices", async (testContext) => {
@@ -78,6 +87,17 @@ test("resolves atomically, preserves idempotency, and blocks stale or contradict
   assert.equal(first.idempotent, false);
   assert.equal(first.workspace.project.currentVersion, 2);
   assert.equal(first.workspace.decisionRecords.length, 1);
+
+  const replayed = service.resolveAmbiguity({
+    policyId: recorded.policyId,
+    expectedVersion: 1,
+    ambiguityId: "ambiguity-purchase-day-index",
+    selectedOptionId: "purchase-day-zero",
+    decidedAt: "2026-07-14T04:01:30.000Z",
+  });
+  assert.equal(replayed.idempotent, true);
+  assert.equal(replayed.workspace.project.currentVersion, 2);
+  assert.equal(replayed.decisionRecord.id, first.decisionRecord.id);
 
   const repeated = service.resolveAmbiguity({
     policyId: recorded.policyId,

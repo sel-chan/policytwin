@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { parseRefundPolicyInput } from "../../dist/index.js";
 import {
@@ -63,4 +65,25 @@ test("reset is deterministic, preserves the baseline, and reproduces three drift
     (policyCase) => currentModule.decideRefund(policyCase.input) !== policyCase.expectedDecision,
   );
   assert.equal(drifts.length, 3);
+});
+
+test("demo reset refuses to delete a configured custom SQLite path", async (testContext) => {
+  const directory = await mkdtemp(join(tmpdir(), "policytwin-reset-guard-"));
+  testContext.after(() => rm(directory, { recursive: true, force: true }));
+  const customDatabasePath = join(directory, "custom.sqlite");
+  await writeFile(customDatabasePath, "owner-data", "utf8");
+  // Security-reviewed test boundary: the executable and script are fixed,
+  // and the generated path is passed only as an environment value.
+  const result = spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL("../../scripts/demo-reset.mjs", import.meta.url))],
+    {
+      cwd: fileURLToPath(new URL("../../", import.meta.url)),
+      env: { ...process.env, POLICYTWIN_DATABASE_PATH: customDatabasePath },
+      encoding: "utf8",
+    },
+  );
+  assert.notEqual(result.status, 0);
+  assert.match(`${result.stdout}${result.stderr}`, /refuses to delete a custom/u);
+  assert.equal(await readFile(customDatabasePath, "utf8"), "owner-data");
 });

@@ -6,6 +6,7 @@ import {
 import {
   readUtf8BodyLimited,
   RequestBodyTooLargeError,
+  RequestBodyTimeoutError,
   SingleRunGate,
 } from "../../../dist/openai/request-guard.js";
 
@@ -59,10 +60,15 @@ export async function POST(request: Request) {
   try {
     let body: unknown;
     try {
-      body = JSON.parse(await readUtf8BodyLimited(request, MAX_REQUEST_BYTES)) as unknown;
+      body = JSON.parse(
+        await readUtf8BodyLimited(request, MAX_REQUEST_BYTES, 10_000),
+      ) as unknown;
     } catch (error) {
       if (error instanceof RequestBodyTooLargeError) {
         return json({ error: "REQUEST_TOO_LARGE" }, 413);
+      }
+      if (error instanceof RequestBodyTimeoutError) {
+        return json({ error: "REQUEST_TIMEOUT" }, 408);
       }
       return json({ error: "INVALID_JSON" }, 400);
     }

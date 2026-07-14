@@ -21,7 +21,10 @@ Expected current behavior:
 
 ## Recovery
 
-- Run `pnpm demo:reset` to replace only `.tmp/refund-demo/current` from the canonical baseline.
+- Stop `pnpm dev`, then run `pnpm demo:reset` to remove only the ignored default `.data/policytwin.sqlite` files and replace `.tmp/refund-demo/current` from the canonical baseline. If `POLICYTWIN_DATABASE_PATH` points to any custom location, the command fails and never deletes that file; unset the variable before resetting the repository-local demo.
+- Open Decision Queue to create v2, v3, and v4 through the SQLite-backed API; reload to confirm the ledger persists.
+- Open Change Impact to persist the exact 14-to-30 source edit as v5 `DRAFT`; confirm G02 blocks verification and no code repair is claimed.
+- If alternate purchase-day or usage-time choices were accepted, confirm Proof labels the mismatch and Change Impact disables v5 instead of reusing the seeded reference evidence.
 - Repair runs must use unique safe IDs under `.tmp/refund-demo/repair-runs`.
 - Delete no path manually; use repository-owned reset/cleanup helpers.
 - If evidence validation fails, rerun `pnpm evidence:offline`, then inspect `artifacts/evidence/evidence-manifest.json`.

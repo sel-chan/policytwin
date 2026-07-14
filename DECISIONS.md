@@ -319,7 +319,7 @@ Add new entries below this line with the template above.
   3. compile the core through a dedicated NodeNext config, typecheck the web app through the Next config, and use the default Turbopack build.
 - Decision: Keep `tsconfig.build.json` as the deterministic NodeNext core compiler, make the root `tsconfig.json` the strict Next.js/Bundler typecheck, and have `typecheck`, tests, development, and production build invoke the narrow core build first. Import only required prebuilt core submodules from server components and routes.
 - Evidence: `scripts/build-core.mjs`, `scripts/typecheck.mjs`, `scripts/build.mjs`, `app/lib/demo-data.ts`, and repeated `pnpm typecheck`/`pnpm build` passes.
-- Consequences: The core remains framework-independent while the five-view web application builds on the current drive.
+- Consequences: The core remains framework-independent while the six-view web application builds on the current drive.
 - Risks: The prebuilt boundary is a repository-layout coupling and must remain covered by clean-copy and standalone-output checks.
 - Reversal or migration path: Move the core into an explicit workspace package on a symlink-capable filesystem while preserving its public contracts and tests.
 - Related files/commits: `tsconfig.json`, `tsconfig.build.json`, `next.config.ts`, `PROGRESS.md`.
@@ -357,3 +357,54 @@ Add new entries below this line with the template above.
 - Risks: The live signer, external key custody/rotation, structured receipt production, and successful live fixture are not implemented yet. A compromised trusted signer can still attest false work, so the live runner must execute gates directly and protect its key.
 - Reversal or migration path: Replace the local Ed25519 trust list with CI OIDC/Sigstore or another verifiable build attestation while preserving the signed evidence hash, run identity, semantic checks, and fail-closed default.
 - Related files/commits: `README.md`, `docs/threat-model.md`, `schemas/verification-summary.v1.schema.json`, `PROGRESS.md`.
+
+### D-021 — Persist only accepted decisions and text-only blocked impact drafts through seeded web routes
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M3/M8/M9
+- Context: The existing Decision Queue replayed a recorded v4 in memory, while the 14-to-30 impact engine proves that the candidate contradicts authoritative golden case G02. Storing the candidate as accepted PolicyIR would silently weaken the golden-case gate, but leaving every screen read-only would fail the M3 and FR-17 product contracts.
+- Options considered:
+  1. keep static UI replay and show the impact artifact without a persisted version;
+  2. persist the contradictory v5 candidate as accepted PolicyIR and mark its proof partial;
+  3. wire seeded, versioned HTTP mutations to the existing SQLite service, persist accepted ambiguity choices as PolicyIR versions, and persist the 14-to-30 edit only as a text-only `DRAFT` with a reference-evaluator preview.
+- Decision: Use option 3. The browser can mutate only `policy-seeded-refund` through versioned paths and closed bodies. Accepted decisions produce immutable v2-v4 PolicyIR and decision records. The exact source edit produces replay-safe v5 `DRAFT` with no PolicyIR. G02 remains authoritative, v4 proof remains accessible, and no OPA/Codex/code-change claim is made. Mutation routes require same-origin browser metadata, an HttpOnly SameSite CSRF cookie plus matching custom header, byte limits, and a shared per-process write gate.
+- Evidence: `src/workspace/service.ts`, `src/workspace/http.ts`, `app/api/policies/`, `app/decisions/`, `app/impact/`, unit tests, and Chrome E2E covering v1-v5, conflict rejection, refresh persistence, and mobile layout.
+- Consequences: M3's UI write/persistence gate and M8's minimum impact interaction become demonstrable without weakening evidence truthfulness.
+- Risks: The public demo has anonymous session isolation but no authenticated identity; SQLite, capacity, expiry, and the gate are process-local, so multi-instance hosting requires shared identity, quotas, cleanup, and coordination.
+- Reversal or migration path: Add authenticated per-user projects and a shared transactional store while preserving version-path CAS, closed patches, replay semantics, golden blocking, and draft-versus-accepted provenance.
+- Related files/commits: `README.md`, `docs/architecture.md`, `docs/threat-model.md`, `PROGRESS.md`.
+
+### D-022 — Bound anonymous demo sessions and trust one configured public origin
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M3/M8/M9
+- Context: A shared seeded project lets one reviewer overwrite another's demo, while issuing a permanent SQLite project for every cookie-less GET permits unbounded disk growth. Proxy-derived host/protocol values also cannot define a production trust boundary safely.
+- Options considered:
+  1. retain one global seeded project;
+  2. require full account authentication before the demo can be used;
+  3. isolate a bounded anonymous demo session now and retain authentication/shared quotas as a release boundary.
+- Decision: Use option 3. A 256-bit HttpOnly SameSite session token maps through SHA-256 to an internal project ID. A new token is issued only for a same-origin browser fetch. Production requires an exact `POLICYTWIN_PUBLIC_ORIGIN` and HTTPS, validated before project creation, except the explicit loopback-only E2E override. Anonymous projects expire after 24 hours and are capped at 128 per process; expired projects and all child rows are deleted transactionally, and every mutation rechecks expiry. Mutation bodies have an overall ten-second read deadline and are parsed before the write gate.
+- Evidence: `app/lib/policy-workspace-store.ts`, `app/lib/workspace-http.ts`, `src/persistence/sqlite.ts`, request/persistence unit tests, and production-server Chrome E2E with a second isolated browser context.
+- Consequences: Reviewers no longer share versions, slow bodies do not monopolize writes, and repeated anonymous requests cannot grow one process's database without bound.
+- Risks: Anonymous tokens are not user identity. Caps, TTL cleanup, and write serialization remain process-local; a deployed multi-instance service still needs authenticated sessions, shared rate limits/quotas, and coordinated storage cleanup.
+- Reversal or migration path: Move session/project ownership and quotas to a shared authenticated store while preserving hashed opaque identifiers, exact-origin/CSRF checks, immutable CAS versions, and transactional cleanup.
+- Related files/commits: `.env.example`, `README.md`, `docs/architecture.md`, `docs/threat-model.md`, `PROGRESS.md`.
+
+### D-023 — Bind recorded proof and impact to exact reference policy meaning
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M3/M8
+- Context: Purchase-day indexing and usage measurement have multiple valid options. A session can therefore reach v4 with different normalization from the seeded reference v4 while sharing the same version number. Version equality alone would falsely present static OPA evidence and the 14-to-30 impact preview as proof for another PolicyIR.
+- Options considered:
+  1. remove alternative ambiguity options from the demo;
+  2. treat every v4 as equivalent because the current fixture inputs are already normalized;
+  3. compare accepted policy meaning and block reference evidence reuse on mismatch.
+- Decision: Use option 3. Compute a deterministic equality fingerprint over policy version, schema/domain, clauses, rules, ambiguity selections, default, normalization, and input schema while excluding opaque per-session IDs and provenance. Proof states whether the latest validated session meaning matches the recorded reference. Change Impact requires the same match before persisting v5. A mismatch is explicit and cannot inherit the reference package's claims.
+- Evidence: `app/lib/policy-meaning.ts`, `app/proof/proof-session-boundary.tsx`, `app/impact/change-impact-client.tsx`, and Chrome E2E covering alternate v4 choices and blocked impact.
+- Consequences: Valid alternative decisions remain reviewable without allowing a static evidence package to impersonate session-specific proof.
+- Risks: The fingerprint is an application equality guard, not a cryptographic attestation. It relies on validated deterministic object ordering; the evidence manifest and Ed25519 boundary remain authoritative for package integrity/origin.
+- Reversal or migration path: Generate, validate, hash, and attest a fresh evidence package for each accepted session policy, then replace the reference-only block with session-specific proof.
+- Related files/commits: `README.md`, `docs/architecture.md`, `docs/threat-model.md`, `PROGRESS.md`.

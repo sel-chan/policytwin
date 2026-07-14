@@ -43,12 +43,12 @@ write(submissionDirectory, "tagline.txt", `Turn policy text into verified produc
 write(
   submissionDirectory,
   "short-description.txt",
-  `${draft}\nPolicyTwin is an evidence-first policy engineering prototype that structures SaaS refund rules, generates executable Rego and edge cases, verifies them with checksum-pinned OPA 1.18.2, exposes drift in a TypeScript fixture, and prepares a guarded Codex repair workflow. The five-view Next.js workspace and local Chrome E2E flow are verified; live GPT-5.6, Codex repair, container, and deployment evidence remain unavailable.`,
+  `${draft}\nPolicyTwin is an evidence-first policy engineering prototype that structures SaaS refund rules, generates executable Rego and edge cases, verifies them with checksum-pinned OPA 1.18.2, exposes drift in a TypeScript fixture, and prepares a guarded Codex repair workflow. The six-view Next.js workspace, persisted decision flow, blocked change-impact draft, and local Chrome E2E flow are verified; live GPT-5.6, Codex repair, container, and deployment evidence remain unavailable.`,
 );
 write(
   submissionDirectory,
   "long-description.md",
-  `# PolicyTwin\n\n${draft}\n\nBusiness policies live in prose while customer decisions live in code. PolicyTwin is designed to connect a policy sentence to an explicit decision, deterministic rule, edge cases, application behavior, code location, and reviewable proof.\n\nThe current offline build validates strict PolicyIR, resolves genuine ambiguity through closed patches, generates byte-stable Rego, verifies 41 traceable cases with checksum-pinned OPA 1.18.2, detects 16 mismatches in a deliberately buggy refund fixture, executes 47 policy mutants, maps change impact, renders a five-view web workspace, passes local Chrome E2E checks, and produces a hash-covered, semantically validated evidence package.\n\nThe critical challenge path is not complete. The package status is **FAIL / PARTIAL_OFFLINE** because fresh GPT-5.6, live Codex repair/review, container health, deployment, video, and submission have not run. A live package additionally requires a trusted Ed25519 attestation.`,
+  `# PolicyTwin\n\n${draft}\n\nBusiness policies live in prose while customer decisions live in code. PolicyTwin is designed to connect a policy sentence to an explicit decision, deterministic rule, edge cases, application behavior, code location, and reviewable proof.\n\nThe current offline build validates strict PolicyIR, resolves genuine ambiguity through closed persisted patches, generates byte-stable Rego, verifies 41 traceable cases with checksum-pinned OPA 1.18.2, detects 16 mismatches in a deliberately buggy refund fixture, executes 47 policy mutants, maps a blocked 14-to-30 change into a text-only v5 draft, renders a six-view web workspace, passes local Chrome E2E checks, and produces a hash-covered, semantically validated evidence package.\n\nThe critical challenge path is not complete. The package status is **FAIL / PARTIAL_OFFLINE** because fresh GPT-5.6, live Codex repair/review, container health, deployment, video, and submission have not run. A live package additionally requires a trusted Ed25519 attestation.`,
 );
 write(
   submissionDirectory,
@@ -58,12 +58,12 @@ write(
 write(
   submissionDirectory,
   "what-it-does.md",
-  `# What it does\n\n${draft}\n\nPolicyTwin interprets a refund policy into a constrained intermediate representation, records unresolved decisions, compiles accepted meaning deterministically, generates boundary/conflict/contrast cases, compares those cases with a trusted TypeScript fixture, and prepares a guarded Codex repair and independent-review workflow. Policy Studio, Decision Queue, Case Lab, Integration/Drift, and Proof views expose the current offline evidence without presenting it as a live repair.`,
+  `# What it does\n\n${draft}\n\nPolicyTwin interprets a refund policy into a constrained intermediate representation, records unresolved decisions, compiles accepted meaning deterministically, generates boundary/conflict/contrast cases, compares those cases with a trusted TypeScript fixture, and prepares a guarded Codex repair and independent-review workflow. Policy Studio, Decision Queue, Case Lab, Integration/Drift, Proof, and Change Impact views expose the current offline evidence without presenting it as a live repair.`,
 );
 write(
   submissionDirectory,
   "how-we-built-it.md",
-  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, deterministic clause segmentation and Rego generation, checksum-pinned OPA 1.18.2 compilation and evaluation, reference mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, a server-only GPT-5.6 Responses adapter contract, a five-view Next.js workspace, Chrome E2E checks, impact/traceability reports, SHA-256 evidence manifests, semantic claim recomputation, a trusted Ed25519 live-attestation boundary, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: a fresh GPT-5.6 response, live server-side Codex SDK work, production SQLite volume behavior, a pinned Docker image, live attestation signing, and deployment.`,
+  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, deterministic clause segmentation and Rego generation, checksum-pinned OPA 1.18.2 compilation and evaluation, reference mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, versioned same-origin/CSRF-protected decision and source routes, a server-only GPT-5.6 Responses adapter contract, a six-view Next.js workspace, Chrome E2E checks, blocked impact/traceability reports, SHA-256 evidence manifests, semantic claim recomputation, a trusted Ed25519 live-attestation boundary, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: a fresh GPT-5.6 response, live server-side Codex SDK work, production SQLite volume behavior, a pinned Docker image, live attestation signing, and deployment.`,
 );
 write(
   submissionDirectory,
@@ -83,7 +83,7 @@ write(
 write(
   submissionDirectory,
   "whats-next.md",
-  `# What's next\n\n${draft}\n\nComplete a fresh GPT-5.6 run, integrate and verify the current server-side Codex SDK, connect live run state to the existing five-screen workspace, finish the container/deployment, select a project license, record the demo, complete owner eligibility declarations, and submit. Post-challenge expansion remains outside the MVP.`,
+  `# What's next\n\n${draft}\n\nComplete a fresh GPT-5.6 run, integrate and verify the current server-side Codex SDK, connect live run state to the existing six-screen workspace, finish the container/deployment, select a project license, record the demo, complete owner eligibility declarations, and submit. Post-challenge expansion remains outside the MVP.`,
 );
 write(
   submissionDirectory,
@@ -98,7 +98,7 @@ write(
 write(
   submissionDirectory,
   "judging-evidence-map.md",
-  `# Judging evidence map\n\n${draft}\n\n| Criterion | Current evidence | Status |\n|---|---|---|\n| Technical implementation | \`artifacts/evidence/\`, real OPA execution, compiler/case/mutation/differential/worker contracts | PARTIAL_OFFLINE |\n| Design and UX | Five Next.js views and six local Chrome captures in \`artifacts/screenshots/\` | LOCAL_BROWSER_PASS |\n| Potential impact | Policy-to-code drift narrative and counterexamples | DRAFT |\n| Quality of idea | Evidence-first separation of semantics, execution, repair, and proof | DRAFT |`,
+  `# Judging evidence map\n\n${draft}\n\n| Criterion | Current evidence | Status |\n|---|---|---|\n| Technical implementation | \`artifacts/evidence/\`, real OPA execution, compiler/case/mutation/differential/worker contracts | PARTIAL_OFFLINE |\n| Design and UX | Six Next.js views and seven local Chrome captures in \`artifacts/screenshots/\` | LOCAL_BROWSER_PASS |\n| Potential impact | Persisted policy decisions, blocked 14-to-30 draft, drift narrative, and counterexamples | DRAFT |\n| Quality of idea | Evidence-first separation of semantics, execution, repair, and proof | DRAFT |`,
 );
 write(
   submissionDirectory,
@@ -115,7 +115,7 @@ write(
 write(
   submissionDirectory,
   "screenshots.md",
-  `# Screenshots\n\n${draft}\n\nLocal Chrome captures completed:\n\n- \`01-policy-studio.png\`\n- \`02-decision-queue.png\`\n- \`03-case-lab-drift.png\`\n- \`04-integration-drift.png\` (baseline drift view; not the required live Codex repair capture)\n- \`05-proof.png\`\n- \`07-mobile-or-responsive.png\`\n\nSubmission-required captures still missing: \`04-codex-repair.png\`, \`06-change-impact.png\`, and \`08-architecture.png\`.`,
+  `# Screenshots\n\n${draft}\n\nLocal Chrome captures completed:\n\n- \`01-policy-studio.png\`\n- \`02-decision-queue.png\`\n- \`03-case-lab-drift.png\`\n- \`04-integration-drift.png\` (baseline drift view; not the required live Codex repair capture)\n- \`05-proof.png\`\n- \`06-change-impact.png\` (blocked reference preview; not a fresh OPA/Codex run)\n- \`07-mobile-or-responsive.png\`\n\nSubmission-required captures still missing: \`04-codex-repair.png\` and \`08-architecture.png\`.`,
 );
 write(
   submissionDirectory,
@@ -125,7 +125,7 @@ write(
 write(
   submissionDirectory,
   "claim-audit.md",
-  `# Claim audit\n\n${draft}\n\n| Claim | Evidence | Allowed wording |\n|---|---|---|\n| 41 accepted policy cases | \`artifacts/evidence/opa-results.json\`, \`artifacts/evidence/verification-summary.json\` | Real local OPA 1.18.2 execution |\n| 16 buggy-fixture corpus drifts | \`artifacts/evidence/drift-report-before.json\` | OPA-backed expected decisions |\n| ${verification.mutation.killed}/${verification.mutation.total} mutants killed | \`artifacts/evidence/mutation-report.json\` | Reference evaluator, not OPA |\n| Evaluation-only fixed fixture has zero drift | \`artifacts/evidence/drift-report-after.json\` | Never call post-repair |\n| Five-view browser flow | \`tests/e2e/workspace.spec.ts\`, \`artifacts/screenshots/\` | Local Chrome E2E only |\n| Live GPT-5.6 interpretation | Missing | Must not claim |\n| Live Codex repair/review | Missing | Must not claim |\n| Deployment/submission | Missing | Must not claim |`,
+  `# Claim audit\n\n${draft}\n\n| Claim | Evidence | Allowed wording |\n|---|---|---|\n| 41 accepted policy cases | \`artifacts/evidence/opa-results.json\`, \`artifacts/evidence/verification-summary.json\` | Real local OPA 1.18.2 execution |\n| 16 buggy-fixture corpus drifts | \`artifacts/evidence/drift-report-before.json\` | OPA-backed expected decisions |\n| ${verification.mutation.killed}/${verification.mutation.total} mutants killed | \`artifacts/evidence/mutation-report.json\` | Reference evaluator, not OPA |\n| Evaluation-only fixed fixture has zero drift | \`artifacts/evidence/drift-report-after.json\` | Never call post-repair |\n| Six-view browser flow with v1-v5 persistence | \`tests/e2e/workspace.spec.ts\`, \`artifacts/screenshots/\` | Local Chrome E2E only; impact is reference preview |\n| Live GPT-5.6 interpretation | Missing | Must not claim |\n| Live Codex repair/review | Missing | Must not claim |\n| Deployment/submission | Missing | Must not claim |`,
 );
 write(
   submissionDirectory,
@@ -167,7 +167,7 @@ write(
 write(
   demoDirectory,
   "shot-list.md",
-  `# Shot list\n\n${draft}\n\n1. Policy Studio and source clauses — local browser capture complete.\n2. Decision Queue — local browser capture complete.\n3. Case Lab with D01–D03 — local browser capture complete.\n4. Codex repair timeline and diff — missing live run/UI.\n5. Proof view — partial FAIL view captured; live proof missing.\n6. Change impact — offline data exists; UI missing.\n7. Responsive view — local 390px capture complete.\n8. End card with verified URLs — missing.`,
+  `# Shot list\n\n${draft}\n\n1. Policy Studio and source clauses — local browser capture complete.\n2. Persisted Decision Queue — local browser capture complete.\n3. Case Lab with D01–D03 — local browser capture complete.\n4. Codex repair timeline and diff — missing live run/UI.\n5. Proof view — partial FAIL view captured; live proof missing.\n6. Blocked 14-to-30 Change Impact — local browser capture complete.\n7. Responsive view — local 390px capture complete.\n8. End card with verified URLs — missing.`,
 );
 write(
   demoDirectory,

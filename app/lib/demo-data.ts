@@ -26,6 +26,35 @@ interface TraceabilityArtifact {
   }>;
 }
 
+export interface ImpactArtifact {
+  schemaVersion: "1";
+  executionMode: "REFERENCE_EVALUATOR_NOT_OPA";
+  fromVersion: number;
+  toVersion: number;
+  change: { field: string; from: number; to: number };
+  verificationState: "BLOCKED_BY_GOLDEN_CONTRADICTION";
+  changedClauses: Array<{ clauseId: string; beforeText: string; afterText: string }>;
+  changedRules: Array<{ ruleId: string }>;
+  changedCases: Array<{
+    caseId: string;
+    beforeDecision: string;
+    afterDecision: string;
+    beforeRuleId: string | null;
+    afterRuleId: string | null;
+    source: string;
+  }>;
+  goldenContradictionCaseIds: string[];
+  regeneratedBoundaryValues: number[];
+  potentialCodeLocations: Array<{
+    id: string;
+    file: string;
+    lineStart: number;
+    lineEnd: number;
+    symbol: string;
+    ruleIds: string[];
+  }>;
+}
+
 export function demoData() {
   const sourceText = readFileSync(
     resolve(process.cwd(), "fixtures", "interpreter", "seeded-refund-policy.txt"),
@@ -61,6 +90,12 @@ export function demoData() {
   const traceabilityValue = JSON.parse(
     readFileSync(
       resolve(process.cwd(), "artifacts", "evidence", "traceability.json"),
+      "utf8",
+    ),
+  ) as unknown;
+  const impactValue = JSON.parse(
+    readFileSync(
+      resolve(process.cwd(), "artifacts", "evidence", "impact-report.json"),
       "utf8",
     ),
   ) as unknown;
@@ -118,5 +153,6 @@ export function demoData() {
         }),
       ),
     },
+    impact: impactValue as ImpactArtifact,
   };
 }
