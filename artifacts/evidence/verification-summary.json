@@ -6,12 +6,12 @@
   "golden": {
     "passed": 6,
     "total": 6,
-    "executionMode": "REFERENCE_EVALUATOR_NOT_OPA"
+    "executionMode": "OPA_CLI"
   },
   "generated": {
     "passed": 35,
     "total": 35,
-    "executionMode": "REFERENCE_EVALUATOR_NOT_OPA"
+    "executionMode": "OPA_CLI"
   },
   "driftBefore": 16,
   "driftAfter": null,
@@ -42,12 +42,12 @@
   },
   "externalGates": {
     "gpt56": "NOT_RUN",
-    "opa": "NOT_RUN",
+    "opa": "PASS",
     "codex": "NOT_RUN",
     "browser": "NOT_RUN",
     "container": "NOT_RUN",
     "deployment": "NOT_RUN"
   },
-  "evidenceHash": "05e6f75a03fafa655f97c491983d3044e214f8a30c56fa31099762c095eee655",
+  "evidenceHash": "2dc9b83479eae24d6086dd76c46bd1d07b4ceb64d2e82b229b6b7fbd4692a111",
   "createdAt": "2026-07-14T01:00:00.000Z"
 }

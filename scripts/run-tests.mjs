@@ -24,6 +24,7 @@ const suites = {
     "tests/integration/repair-workspace.integration.test.mjs",
     "tests/integration/evidence-package.integration.test.mjs",
     "tests/integration/policy-persistence.integration.test.mjs",
+    "tests/integration/opa-runner.integration.test.mjs",
   ],
   eval: [
     "evals/scaffold.eval.test.mjs",

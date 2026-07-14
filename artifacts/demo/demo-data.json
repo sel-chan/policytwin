@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1",
   "status": "DRAFT_NOT_RECORDED",
-  "evidenceHash": "05e6f75a03fafa655f97c491983d3044e214f8a30c56fa31099762c095eee655",
+  "evidenceHash": "2dc9b83479eae24d6086dd76c46bd1d07b4ceb64d2e82b229b6b7fbd4692a111",
   "caseCount": 41,
   "driftBefore": 16,
   "postRepairDrift": null,
@@ -15,7 +15,7 @@
   },
   "externalGates": {
     "gpt56": "NOT_RUN",
-    "opa": "NOT_RUN",
+    "opa": "PASS",
     "codex": "NOT_RUN",
     "browser": "NOT_RUN",
     "container": "NOT_RUN",

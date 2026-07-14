@@ -28,7 +28,13 @@ test("generated partial package is complete, deterministic, redacted, and fail-c
   const verification = JSON.parse(files.get("verification-summary.json"));
   assert.equal(verification.driftAfter, null);
   assert.equal(verification.evaluationOnlyFixedFixtureDrift, 0);
-  assert.equal(Object.values(verification.externalGates).every((status) => status === "NOT_RUN"), true);
+  assert.equal(verification.externalGates.opa, "PASS");
+  assert.equal(
+    Object.entries(verification.externalGates)
+      .filter(([name]) => name !== "opa")
+      .every(([, status]) => status === "NOT_RUN"),
+    true,
+  );
   const allContent = [...files.values()].join("\n");
   assert.equal(allContent.includes("F:\\oaibuild"), false);
   assert.equal(allContent.includes("C:\\Users"), false);

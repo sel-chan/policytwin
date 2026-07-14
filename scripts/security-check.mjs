@@ -27,6 +27,7 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "scripts/process.mjs",
   "scripts/repair-command.mjs",
   "scripts/security-check.mjs",
+  "src/opa/runner.ts",
 ]);
 const TEST_SECRET_SENTINELS = new Set([
   "secret-value-123456789",

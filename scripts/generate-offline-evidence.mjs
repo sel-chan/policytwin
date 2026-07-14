@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import {
   REQUIRED_EVIDENCE_FILES,
@@ -12,6 +12,7 @@ import {
   resolvePolicyAmbiguity,
   runDifferentialCases,
   runOfflineMutationSuite,
+  runOpaCases,
   validateEvidencePackage,
 } from "../dist/index.js";
 import { ROOT } from "./process.mjs";
@@ -57,6 +58,38 @@ for (const [ambiguityId, optionId] of [
 const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
 const generatedCases = cases.filter((policyCase) => policyCase.source !== "USER_GOLDEN");
 const compilation = compilePolicyToRego(policy);
+const containerContract = readJson("container-contract.json");
+const opaPath = resolve(
+  process.env.OPA_PATH ??
+    resolve(
+      ROOT,
+      ".tools",
+      "opa",
+      containerContract.opaVersion,
+      process.platform === "win32" ? "opa.exe" : "opa",
+    ),
+);
+if (!existsSync(opaPath)) {
+  throw new Error("Verified OPA binary is required; run pnpm opa:install first.");
+}
+const opa = runOpaCases({
+  executablePath: opaPath,
+  expectedVersion: containerContract.opaVersion,
+  expectedExecutableSha256:
+    process.platform === "win32"
+      ? containerContract.opaWindowsSha256
+      : containerContract.opaLinuxAmd64StaticSha256,
+  regoSource: compilation.source,
+  query: compilation.manifest.query,
+  cases,
+});
+const opaCasesById = new Map(cases.map((policyCase) => [policyCase.id, policyCase]));
+const opaMismatches = opa.results.filter(
+  (result) => result.result.decision !== opaCasesById.get(result.caseId)?.expectedDecision,
+);
+if (opaMismatches.length > 0) {
+  throw new Error(`OPA disagrees with ${opaMismatches.length} accepted case(s).`);
+}
 const mutation = runOfflineMutationSuite(policy, cases);
 const before = runDifferentialCases(policy, cases, "fixture-baseline", baseline.decideRefund);
 const fixedReference = runDifferentialCases(
@@ -92,11 +125,13 @@ payload.set("generated-cases.json", json(generatedCases));
 payload.set(
   "opa-results.json",
   json({
-    schemaVersion: "1",
-    status: "NOT_RUN",
-    executionMode: "NOT_RUN",
-    reason: "OPA is not installed; reference evaluation is stored separately and is not OPA evidence.",
+    ...opa,
+    status: "PASS",
     policyVersion: policy.version,
+    acceptedCaseAgreement: {
+      passed: opa.results.length,
+      total: cases.length,
+    },
   }),
 );
 payload.set("app-results-before.json", json(before));
@@ -212,7 +247,8 @@ payload.set(
       acceptedCorpusSize: { value: cases.length, target: 30, status: "PASS_REFERENCE" },
       postRepairDrift: { value: null, target: 0, status: "NOT_RUN_LIVE" },
       evaluationOnlyFixedFixtureDrift: { value: fixedReference.drifts, target: 0, status: "PASS_EVALUATION_ONLY" },
-      mutationKillRate: { value: mutation.killRate, target: 0.9, status: "PASS_REFERENCE_NOT_OPA" },
+      opaCaseAgreement: { value: opa.results.length, target: cases.length, status: "PASS_OPA" },
+      mutationKillRate: { value: mutation.killRate, target: 0.9, status: "PASS_REFERENCE_NOT_OPA_MUTATION" },
       ruleClauseTraceability: { value: traceability.metrics.rulesCovered / traceability.metrics.rulesTotal, target: 1, status: "PASS_OFFLINE" },
       securityFindings: { value: null, target: 0, status: "NOT_RUN" },
       browserHappyPath: { value: null, target: 1, status: "NOT_RUN" }
@@ -231,8 +267,8 @@ const verificationSummary = {
   status: "FAIL",
   evidenceMode: "PARTIAL_OFFLINE",
   policyVersion: policy.version,
-  golden: { passed: goldenCases.length, total: goldenCases.length, executionMode: "REFERENCE_EVALUATOR_NOT_OPA" },
-  generated: { passed: generatedCases.length, total: generatedCases.length, executionMode: "REFERENCE_EVALUATOR_NOT_OPA" },
+  golden: { passed: goldenCases.length, total: goldenCases.length, executionMode: "OPA_CLI" },
+  generated: { passed: generatedCases.length, total: generatedCases.length, executionMode: "OPA_CLI" },
   driftBefore: before.drifts,
   driftAfter: null,
   evaluationOnlyFixedFixtureDrift: fixedReference.drifts,
@@ -254,7 +290,7 @@ const verificationSummary = {
   security: { critical: null, high: null, status: "NOT_RUN" },
   externalGates: {
     gpt56: "NOT_RUN",
-    opa: "NOT_RUN",
+    opa: "PASS",
     codex: "NOT_RUN",
     browser: "NOT_RUN",
     container: "NOT_RUN",
@@ -269,12 +305,12 @@ Status: FAIL
 Evidence mode: PARTIAL_OFFLINE
 Evidence hash: ${evidenceHash}
 
-This package proves deterministic offline contracts only. It does not prove a GPT-5.6 call, OPA execution, Codex repair, post-repair drift, browser flow, security release review, container, deployment, or submission.
+This package proves deterministic offline contracts and real OPA v${opa.opaVersion} execution. It does not prove a GPT-5.6 call, Codex repair, post-repair drift, browser flow, security release review, container, deployment, or submission.
 
-- Accepted reference corpus: ${cases.length} cases (${goldenCases.length} golden, ${generatedCases.length} generated)
+- Accepted OPA corpus: ${opa.results.length}/${cases.length} cases (${goldenCases.length} golden, ${generatedCases.length} generated)
 - Buggy fixture reference differential: ${before.drifts} drifts, ${before.errors} execution errors
 - Evaluation-only fixed fixture: ${fixedReference.drifts} drifts; this is not Codex repair evidence
-- Reference mutation score: ${mutation.killed}/${mutation.total} (${(mutation.killRate * 100).toFixed(2)}%); this is not OPA evidence
+- Reference mutation score: ${mutation.killed}/${mutation.total} (${(mutation.killRate * 100).toFixed(2)}%); mutation execution is not yet OPA-backed
 - Traceability: ${traceability.metrics.clausesCovered}/${traceability.metrics.clausesTotal} clauses and ${traceability.metrics.rulesCovered}/${traceability.metrics.rulesTotal} rules covered
 - 14→30 impact preview: ${impact.changedCases.length} changed case expectations; blocked by golden case ${impact.goldenContradictionCaseIds.join(", ")}
 `;

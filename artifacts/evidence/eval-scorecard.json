@@ -28,10 +28,15 @@
       "target": 0,
       "status": "PASS_EVALUATION_ONLY"
     },
+    "opaCaseAgreement": {
+      "value": 41,
+      "target": 41,
+      "status": "PASS_OPA"
+    },
     "mutationKillRate": {
       "value": 0.9361702127659575,
       "target": 0.9,
-      "status": "PASS_REFERENCE_NOT_OPA"
+      "status": "PASS_REFERENCE_NOT_OPA_MUTATION"
     },
     "ruleClauseTraceability": {
       "value": 1,

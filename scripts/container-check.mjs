@@ -5,12 +5,11 @@ import { ROOT } from "./process.mjs";
 
 const contract = JSON.parse(readFileSync(resolve(ROOT, "container-contract.json"), "utf8"));
 const failures = [];
-if (
-  contract.schemaVersion !== "1" ||
-  contract.status !== "READY" ||
-  contract.opaVersion === "UNVERIFIED"
-) {
-  failures.push("Container contract is not ready or OPA is unverified.");
+if (contract.schemaVersion !== "1" || contract.status !== "READY") {
+  failures.push("Container contract is not ready.");
+}
+if (contract.opaVersion === "UNVERIFIED") {
+  failures.push("Container OPA version is unverified.");
 }
 if (!existsSync(resolve(ROOT, "Dockerfile"))) {
   failures.push("Dockerfile is absent.");

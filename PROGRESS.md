@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M3 — Persisted policy workspace service`
+- Current milestone: `M2 — Live interpreter adapter and web/API integration`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 12:47:17 +09:00`
+- Last updated: `2026-07-14 15:55:00 +09:00`
 - Latest checkpoint commit: `85259ea1e70449c1307b382e3f2541fb7e8c2327`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -38,30 +38,37 @@ Fill with actual evidence.
 | Node.js | v22.22.2 | `node --version` | Supported LTS/newer baseline |
 | pnpm | 11.7.0 | `pnpm --version` | Available globally |
 | Docker | 29.1.5 CLI; daemon unavailable | `docker --version`; `docker info --format '{{.ServerVersion}}'` | Docker Desktop Linux engine pipe is absent |
-| OPA | NOT_INSTALLED | `opa version` | Command not found; address during M0 implementation |
+| OPA | 1.18.2, Rego v1, windows/amd64 | `.tools/opa/1.18.2/opa.exe version`; SHA-256 verification | Official binary is repository-ignored; checksum `b9022224ee660c87cc35ce957c21c352fa57b267d71fb4e1ce779a38e107c9df` |
 | Codex client | codex-cli 0.144.0 | `codex --version` |  |
 | Goal mode | stable/enabled | `codex features list` | `goals stable true` |
 | OpenAI API auth | UNSET | redacted environment-name check only | `OPENAI_API_KEY` and `CODEX_API_KEY` are not configured; never record secrets |
-| Codex SDK feasibility | PARTIAL | `codex --version`; `npm list --global --depth=0` | Codex CLI 0.144.0 is present; project SDK dependency is not installed |
-| Browser/Playwright | UNSET |  |  |
+| Codex SDK feasibility | PARTIAL | `codex --version`; `pnpm list --depth 0` | Codex CLI 0.144.0 and project-pinned `@openai/codex-sdk` 0.144.3 are installed; live adapter/credentials remain unverified |
+| Browser/Playwright | PARTIAL | `pnpm list --depth 0` | Playwright 1.61.1 is installed; web application, browser binary, and E2E suite remain unverified |
 | GitHub auth | UNSET | redacted status only |  |
 | Deployment auth | UNSET | redacted status only |  |
-| Devpost access | UNSET | redacted status only |  |
+| Devpost access | PACKAGE_CACHED_NOT_CALLABLE | local plugin manifest; `codex plugin list`; current tool inventory | Devpost Hackathons 3.0.0 package and required app manifest exist in the curated remote cache, but it is absent from the CLI active-plugin list and exposes no callable Devpost tool in this task |
+
+## Approved external network scope
+
+- Approved by owner: `2026-07-14`
+- Approved scope: direct verification of the three supplied OpenAI Build Week/Devpost URLs, current official OpenAI/Codex/OPA/Next.js documentation lookup, pinned pnpm package installation, and official OPA binary acquisition needed for the PolicyTwin goal
+- Not inferred from this approval: Git push, public repository publication, deployment, media upload, challenge registration, terms acceptance, or final submission
+- Supplied official URLs: `https://openai.com/build-week/`; `https://openai.devpost.com/`; `https://openai.devpost.com/rules`
 
 ## Challenge facts verified
 
 Replace placeholders after checking current official sources.
 
-- Official challenge URL: `UNSET`
-- Exact submission deadline and timezone: `UNSET`
-- Local deadline: `UNSET`
-- Selected track/category: `UNSET`
-- Team/eligibility status: `UNSET`
-- Repository visibility requirement: `UNSET`
-- Demo video constraints: `UNSET`
-- Required submission fields: `UNSET`
-- Rules checked at: `UNSET`
-- Source links: `UNSET`
+- Official challenge URL: `https://openai.devpost.com/`
+- Exact submission deadline and timezone: `2026-07-21 17:00 PDT (UTC-07:00)`
+- Local deadline: `2026-07-22 09:00 KST (UTC+09:00)`
+- Selected track/category: `Developer Tools`
+- Team/eligibility status: `Republic of Korea and current API-supported-territory condition verified; age, conflicts, representative, and legal declarations remain owner-confirmed fields`
+- Repository visibility requirement: `public with relevant licensing, or private and shared with testing@devpost.com and build-week-event@openai.com`
+- Demo video constraints: `public YouTube, less than 3 minutes, clear audio, show the project and use of Codex/GPT-5.6, no unlicensed third-party marks/music/material`
+- Required submission fields: `category; description; demo video; repository; README Codex collaboration narrative; /feedback session ID; developer-tool installation/platform/testing path; working access and testing instructions`
+- Rules checked at: `2026-07-14 13:07:58 +09:00`
+- Source links: `https://openai.com/build-week/`; `https://openai.devpost.com/`; `https://openai.devpost.com/rules`
 
 ## Baseline
 
@@ -79,44 +86,52 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
-| M0 Preflight and baseline | IN_PROGRESS | document-contract validation, Git baseline, offline install, strict TypeScript scaffold, unit/integration/eval, and build pass; official rules and pinned project dependencies remain | `c175d1c` | OPA, Docker daemon, browser stack, SDK/API facts, and challenge facts are not yet verified |
+| M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | pending checkpoint | Docker daemon remains unavailable but is outside the M0 gate |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
-| M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
-| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts, SQLite persistence, and framework-independent workspace service; restart, immutable text versions, atomic/idempotent resolution, corruption, stale-write, and decision-replay checks pass | `85259ea` | Decision Queue UI and Next.js route wiring require the pinned application stack |
-| M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
-| M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
-| M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
-| M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | `0c6fb85` | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
+| M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; current Responses API/Structured Outputs contract verified; project-pinned Zod 4.4.3 and OpenAI 6.46.0 installed | `e535209` | shared Zod runtime schema, server adapter, credentials, and fresh GPT-5.6 evidence remain |
+| M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts, SQLite persistence, and framework-independent workspace service; restart, immutable text versions, atomic/idempotent resolution, corruption, stale-write, and decision-replay checks pass | `85259ea` | Decision Queue UI and Next.js 16 route wiring remain |
+| M4 Compiler and OPA | IN_PROGRESS | engine gate passes: official OPA 1.18.2 strict compile/evaluation, 41/41 accepted cases, deterministic compiler, and invalid-input rejection | pending checkpoint | compilation UI status remains before the milestone is complete |
+| M5 Case generation/conflict/mutation | IN_PROGRESS | canonical corpus has 41 unique cases including D01–D03; real OPA agreement passes; 3 conflicts, 36 contrasts, and 44/47 reference-evaluated mutants (93.62%) | `66431fc` | mutation execution is still reference-based; Case Lab UI and final evidence remain |
+| M6 Differential runner and drift UX | IN_PROGRESS | OPA-backed expected results produce 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | web drift UX and actual post-Codex evidence remain |
+| M7 Codex repair and review | IN_PROGRESS | offline safety contracts verified; current official SDK docs checked and `@openai/codex-sdk` 0.144.3 installed server-side | `0c6fb85` | SDK adapter, credentials/login, real patch/diff, zero post-repair drift, and live review evidence remain |
 | M8 Proof, impact, and polish | IN_PROGRESS | offline foundation verified: 14→30 impact, G02 contradiction block, 4/4 clause and rule traceability, 41/41 valid case links, deterministic 25-file FAIL evidence package | `efff641` | Proof UI, archive/download, screenshots, accessibility, and browser gates require the application stack |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation verified: threat model, 158-file current/history scan, 158-file clean-copy replay, notice/inventory, and fail-closed license/container reports | `9602a6c` | Owner license choice, app/OPA container, Docker daemon, provider selection, and deployment remain |
-| M10 Submission package | IN_PROGRESS | 21 submission and 4 demo draft files generated; deterministic checker reports 37 unmet requirements; 43 unit and 21 eval checks pass | `130c355` | Official rules, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | offline foundation plus checksum-pinned Windows/Linux OPA contract and exact dependency lock | `9602a6c` | owner license choice, dependency/license inventory refresh, app container, Docker daemon, provider selection, and deployment remain |
+| M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
 ### Objective
 
-Connect the pure policy-resolution domain and SQLite repository through a framework-independent server service that exposes strict workspace reads, immutable policy-text version creation, and atomic ambiguity resolution suitable for future Next.js route handlers.
+Close the M0 network-enabled preflight with verified challenge facts, an exact application/API/test stack, real OPA execution evidence, supply-chain checks, and clean-copy reproducibility.
 
-### Failing or missing condition
+### Recovered conditions
 
-The repository now persists projects and decisions, but callers must manually read the current version, invoke `resolvePolicyAmbiguity`, and append the result. There is no single server-side operation that enforces expected-version concurrency, preserves golden cases/source text, handles idempotent selections, or returns a complete current workspace. A future route could therefore omit one of these required steps.
+Official challenge facts are verified and recorded. The Devpost package is cached but not exposed as a callable task capability. Exact project dependencies are locked and installed, and the official OPA 1.18.2 Windows binary is checksum-verified under the ignored `.tools` directory.
+
+The first two approved `pnpm install` attempts resolved 473 packages and downloaded 372, then failed with `ERR_PNPM_EISDIR` while creating a Playwright symlink because the workspace is on an exFAT `F:` drive. The first recovery placed `node-linker=hoisted` in `.npmrc`, but pnpm 11 reads non-auth project settings only from `pnpm-workspace.yaml`, so the retry correctly reproduced the same failure. This was classified as an environment/filesystem configuration failure and recovered with `nodeLinker: hoisted` in `pnpm-workspace.yaml`.
+
+The hoisted retry passed the symlink stage but failed importing `semver.js` because the shared pnpm store contained mutated or incomplete package entries; `pnpm store status` confirmed broad `ERR_PNPM_MODIFIED_DEPENDENCY` findings. A bounded `pnpm install --force` refetched the exact lock graph. The first dependency audit found one moderate PostCSS advisory through Next.js; an exact 8.5.19 override removed it and the production audit now reports zero vulnerabilities. The shared-store mutation report remains an environment caveat; frozen offline installation passes.
+
+The first full clean-copy replay stalled while materializing a hoisted dependency tree on exFAT. Moving only the disposable clean checkout to the operating-system temporary directory preserved isolation and reduced the replay to about one minute. TypeScript 6 also required `--ignoreConfig` for the one-file fixture compilation path; all affected tests now pass.
 
 ### Planned actions
 
-- [x] Confirm the missing orchestration boundary between domain resolution and persistence.
-- [x] Define a narrow repository port and strict service inputs/results.
-- [x] Implement project creation/read, immutable policy-text version creation, and ambiguity resolution.
-- [x] Preserve expected-version concurrency, golden contradictions, decision replay, and idempotency.
-- [x] Add service tests including restart-backed persistence behavior.
-- [x] Run full regressions, update docs/evidence, review, and commit the checkpoint.
+- [x] Re-read the goal and all required control documents.
+- [x] Confirm the clean Git baseline and inspect the Devpost plugin cache, manifest, CLI registration, and current tool exposure.
+- [x] Fetch and inspect the supplied official Build Week and Devpost pages, including exact deadline, eligibility, judging, repository, video, and submission fields.
+- [x] Cross-check current official OpenAI/Codex, OPA, and Next.js implementation facts needed by M0/M2/M4/M7.
+- [x] Update `SUBMISSION.md`, `PROGRESS.md`, generated rules-check artifacts, and durable decisions from verified sources.
+- [x] Select and install pinned application/API/test dependencies and acquire a checksum-verified official OPA binary.
+- [x] Run narrow checks followed by the complete offline regression gate and review the diff.
+- [ ] Commit the checkpoint on the current branch and record its hash.
 
 ### Completion evidence
 
-- Commands: `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm verify`
-- Exit codes: `0`; `0` (49/49); `0` (15/15); `1` (expected aggregate failures: license, container, browser, submission only)
-- Artifacts: `src/workspace/service.ts`; `tests/unit/policy-workspace-service.test.mjs`; updated restart integration test
-- Screenshots: not applicable to this server-service slice
-- Commit: `85259ea1e70449c1307b382e3f2541fb7e8c2327`
+- Commands: `pnpm install --offline --frozen-lockfile`; `pnpm audit --prod --json`; `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm build`; `pnpm security:check`; `pnpm clean:check`; `pnpm verify`
+- Exit codes: all implemented/narrow gates pass; authoritative `pnpm verify` exits 1 only for `license:check`, `container:check`, `submission:check`, and `test:e2e`
+- Artifacts: `config/build-week-rules.v1.json`; `artifacts/evidence/opa-results.json`; `artifacts/evidence/verification-summary.json`; `artifacts/security/security-report.json`; `artifacts/security/clean-checkout-report.json`; `artifacts/submission/rules-check.md`
+- Screenshots: pending
+- Commit: pending
 
 ## Quality gates
 
@@ -125,22 +140,22 @@ Record latest actual result.
 | Gate | Status | Command | Evidence/artifact | Last run |
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
-| Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 12:41 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain through persisted workspace service and submission validation pass strict TypeScript | 2026-07-14 12:41 +09:00 |
-| Unit tests | PASS | `pnpm test` via `pnpm verify` | 49/49 passed, including workspace reads, immutable text versions, atomic/idempotent resolution, stale writes, contradictions, and corruption | 2026-07-14 12:41 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 15/15 passed; service-created four versions and three decisions survive close/reopen with lifecycle state | 2026-07-14 12:41 +09:00 |
-| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 12:41 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass, including draft generation and submission audit; live model/Codex/OPA eval remains unverified | 2026-07-14 12:41 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 12:41 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | every implemented gate passes; exact expected remaining failures are license, container, browser, and submission | 2026-07-14 12:41 +09:00 |
+| Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 15:46 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 | 2026-07-14 15:46 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 49/49 passed | 2026-07-14 15:46 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 17/17 passed, including OPA 1.18.2 over all 41 accepted cases | 2026-07-14 15:46 +09:00 |
+| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 15:46 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-14 15:46 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 15:46 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | exact expected failures: license, container, submission, and browser; all implemented gates pass | 2026-07-14 15:46 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 195 files copied; offline frozen install and 10 implemented command groups pass; no source `node_modules` or credential variables | 2026-07-14 12:41 +09:00 |
-| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA/container contract not ready; Dockerfile and health route absent; Docker daemon unavailable | 2026-07-14 12:41 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 200 files; frozen install and 10 command groups pass; no source `node_modules` or credentials | 2026-07-14 15:46 +09:00 |
+| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA 1.18.2 verified; contract, Dockerfile, health route, and daemon remain unavailable | 2026-07-14 15:46 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check` via `pnpm verify` | zero production dependencies and NOTICE present; owner-selected project LICENSE absent | 2026-07-14 12:41 +09:00 |
-| Security review | PASS | `pnpm security:check` via `pnpm verify` | offline static scope only: 195 files, 193 text files, full Git history, zero findings; release review remains NOT_RUN | 2026-07-14 12:41 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | expected fail-closed result with 37 explicit unmet requirements; draft artifacts exist but live proof, official rules, license, media, URLs, and confirmation do not | 2026-07-14 12:41 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check`; `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-14 15:46 +09:00 |
+| Security review | PASS | `pnpm security:check` via `pnpm verify` | 200 files, 198 text files, full Git history, 7 reviewed process boundaries, zero findings | 2026-07-14 15:46 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 36 unmet requirements; official rules are no longer a failure, while live proof/license/media/URLs/confirmation remain | 2026-07-14 15:46 +09:00 |
 
 ## Product proof metrics
 
@@ -151,17 +166,27 @@ Never fill from estimates.
 | Structured-output schema pass | 100% | UNSET |  |
 | Required ambiguity labels found | 100% | UNSET |  |
 | Explicit seeded semantics mislabeled as ambiguity | 0 | UNSET |  |
-| Golden cases passed | 100% | 6/6 (offline reference evaluator; not OPA) | `artifacts/evidence/verification-summary.json` |
+| Golden cases passed | 100% | 6/6 (OPA CLI 1.18.2) | `artifacts/evidence/verification-summary.json` |
 | Accepted corpus size | ≥30 | 41 (offline reference corpus including D01–D03) | `tests/snapshots/offline-m5-summary.json` |
 | Seeded app bugs detected | 3/3 | 3/3 | `pnpm demo:run`; `tests/integration/refund-fixture.integration.test.mjs` |
 | Post-repair drift | 0 | 0 (evaluation-only fixed fixture; no Codex/OPA claim) | `tests/snapshots/offline-m6-summary.json` |
-| Mutation kill rate | ≥90% | 93.62% (offline reference; OPA unverified) | `tests/snapshots/offline-m5-summary.json` |
+| Mutation kill rate | ≥90% | 93.62% (reference mutation execution; accepted cases separately agree with OPA) | `tests/snapshots/offline-m5-summary.json` |
 | Rule-to-clause traceability | 100% | 4/4 rules and 4/4 clauses (offline) | `artifacts/evidence/traceability.json` |
 | Rule-to-case traceability | 100% | 41/41 accepted case links valid (offline) | `artifacts/evidence/traceability.json` |
 | Critical/high security findings | 0 | UNSET |  |
 | Browser happy path | 100% | UNSET |  |
 
 ## Checkpoint log
+
+### 2026-07-14 15:47 +09:00 — M0 official preflight and real OPA gate verified
+
+- Milestone: M0 PASS; M4 engine gate PASS while UI portion remains in progress
+- Change: verified official challenge rules and Developer Tools track; confirmed cached Devpost package is not callable; installed exact Next/OpenAI/Codex/Zod/Playwright stack; added checksum-pinned OPA 1.18.2 installer/runner/evidence; refreshed submission, license, container, and security truth boundaries
+- Verified: frozen offline install; production audit 0 vulnerabilities after PostCSS 8.5.19 override; lint; TypeScript; 49 unit; 17 integration including 41 OPA cases; 21 eval; build; 200-file clean-copy replay; 200-file/198-text-file security scan; D01–D03 replay
+- Full gate: `pnpm verify` fails only `license:check`, `container:check`, `submission:check`, and `test:e2e`, each for an explicit incomplete/owner/external condition
+- Evidence hash: `2dc9b83479eae24d6086dd76c46bd1d07b4ceb64d2e82b229b6b7fbd4692a111`
+- Commit: pending
+- Next: review and commit this checkpoint, then implement the server-side GPT-5.6 adapter and five-screen Next.js workspace without claiming live model evidence until credentials exist
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
 
@@ -315,7 +340,7 @@ A blocker is valid only when the task cannot continue safely without external in
 
 | ID | Type | Exact blocker | Work already completed | One owner action | Resume condition |
 |---|---|---|---|---|---|
-| B-001 | External network approval | Current official OpenAI/Codex/Build Week/OPA/Next.js facts, pinned package installation, and OPA acquisition cannot be performed under the unapproved network boundary | All independent offline domain, compiler, cases, mutation, differential, repair safety, evidence, security, submission-draft, SQLite persistence, and workspace-service work completed and verified | Approve network use limited to official documentation lookup, pinned pnpm package installation, and official OPA binary acquisition | Official sources can be recorded and M0/M2/M4/M7 plus the web stack can resume without guessing |
+| — | — | No active blocker for the approved documentation/package/OPA scope | B-001 was cleared by the owner's 2026-07-14 approval | — | Continue the current checkpoint |
 
 ## Risks
 
@@ -338,19 +363,19 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`After B-001 approval, verify current official sources, install the pinned application/API/test stack and OPA, then resume M0 followed by the live M2/M4/M7 and web UI gates.`
+`Verify the supplied official challenge pages, record exact rules and dates, then install the pinned application/API/test stack and checksum-verified OPA before resuming the web and live-integration gates.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `B-001 — required external network scope is not approved`
-- Exact current state: `M1 passes; M2–M10 have truthful offline foundations; M3 now includes restart-safe SQLite persistence and a tested server workspace service; external/live/UI/deployment gates remain incomplete`
-- Last successful command: `pnpm build` within the final `pnpm verify`; full implemented suites also passed (`49` unit, `15` integration, `21` eval)
-- Current failing command: `pnpm verify` exits `1` only for `license:check`, `container:check`, `submission:check`, and `test:e2e`; `pnpm verify:live` remains fail-closed
-- Uncommitted files: `none after this ledger checkpoint`
-- Safe resume command/action: `verify the approved scope, then check official sources before any install or API-specific implementation`
-- One owner action, if any: `Approve external network use limited to official documentation lookup, pinned pnpm package installation, and official OPA binary acquisition.`
+- Why paused: `not paused; B-001 approval received and work resumed`
+- Exact current state: `official-rule verification and approved dependency/OPA preflight are in progress`
+- Last successful command: `codex plugin list` and local Devpost manifest inspection
+- Current failing command: `none for this checkpoint yet`
+- Uncommitted files: `PROGRESS.md while this checkpoint is active`
+- Safe resume command/action: `continue official-page verification from the supplied URLs`
+- One owner action, if any: `none`
 
 ## Final completion record
 

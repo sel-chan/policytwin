@@ -61,6 +61,7 @@ export function compileCurrentFixture() {
   assertManagedPath(CURRENT_BUILD, resolve(ROOT, ".tmp", "refund-demo", "current-dist"));
   rmSync(CURRENT_BUILD, { recursive: true, force: true });
   runOrExit(executable("tsc"), [
+    "--ignoreConfig",
     "--target",
     "ES2022",
     "--module",

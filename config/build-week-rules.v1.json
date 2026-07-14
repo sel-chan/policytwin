@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1",
+  "challenge": "OpenAI Build Week",
+  "checkedAt": "2026-07-14T13:07:58+09:00",
+  "status": "VERIFIED_OFFICIAL_SOURCES",
+  "sourcePriority": "Official Rules prevail over the marketing page, challenge overview, and optional Devpost plugin.",
+  "sources": [
+    {
+      "url": "https://openai.com/build-week/",
+      "title": "OpenAI Build Week",
+      "retrieval": "HTTP 200 direct official-page fetch",
+      "result": "VERIFIED"
+    },
+    {
+      "url": "https://openai.devpost.com/",
+      "title": "OpenAI Build Week challenge overview",
+      "retrieval": "HTTP 200 direct official-page fetch",
+      "result": "VERIFIED"
+    },
+    {
+      "url": "https://openai.devpost.com/rules",
+      "title": "OpenAI Build Week Official Rules",
+      "retrieval": "HTTP 200 direct official-page fetch",
+      "result": "VERIFIED"
+    }
+  ],
+  "dates": {
+    "registrationPeriod": "2026-07-09 10:00 PT through 2026-07-21 17:00 PT",
+    "submissionPeriod": "2026-07-13 09:00 PT through 2026-07-21 17:00 PT",
+    "submissionDeadlinePacific": "2026-07-21T17:00:00-07:00",
+    "submissionDeadlineKorea": "2026-07-22T09:00:00+09:00",
+    "judgingPeriodOfficialRules": "2026-07-22 10:00 PT through 2026-08-05 17:00 PT",
+    "winnersAnnounced": "On or around 2026-08-12 14:00 PT"
+  },
+  "tracks": [
+    "Apps for Your Life",
+    "Work and Productivity",
+    "Developer Tools",
+    "Education"
+  ],
+  "selectedTrack": "Developer Tools",
+  "selectedTrackRationale": "PolicyTwin is a testing, agentic workflow, and policy-to-code verification tool for developers.",
+  "eligibility": {
+    "location": "Republic of Korea appears in the eligible territory list and eligibility also requires current OpenAI API support.",
+    "age": "Entrant must be at least the age of majority where they reside; a parent or guardian may enter for an under-age student.",
+    "teams": "Eligible individuals, teams, and qualifying organizations may enter; a team or organization must appoint an authorized representative.",
+    "ownerDeclarations": "PENDING_OWNER_CONFIRMATION"
+  },
+  "projectRequirements": [
+    "Build a working project with Codex and GPT-5.6 in one eligible track.",
+    "The project must install and run consistently and function as depicted in the submission.",
+    "New projects are allowed; pre-existing projects must be meaningfully extended after the submission period starts and clearly distinguish prior and new work with evidence.",
+    "Third-party SDKs, APIs, data, and open-source components require authorization and license compliance."
+  ],
+  "submissionRequirements": [
+    "Choose the best-aligned category.",
+    "Provide an English project description explaining features and functionality.",
+    "Provide a public YouTube demonstration video shorter than three minutes with clear audio showing the project and use of Codex and GPT-5.6.",
+    "Provide a repository URL that is public with relevant licensing or private and shared with testing@devpost.com and build-week-event@openai.com.",
+    "README must explain Codex collaboration, acceleration, key decisions, and how GPT-5.6 and Codex contributed.",
+    "Provide the /feedback Codex Session ID for the project thread where most core functionality was built.",
+    "Developer tools must include installation instructions, supported platforms, and a judge-ready demo, sandbox, test account, or equivalent path that does not require rebuilding from scratch.",
+    "Provide free, unrestricted working-project access for judging through the end of the judging period.",
+    "Submission materials must be in English or include English translations."
+  ],
+  "judgingCriteria": [
+    "Technological Implementation",
+    "Design",
+    "Potential Impact",
+    "Quality of the Idea"
+  ],
+  "judgingWeight": "EQUALLY_WEIGHTED",
+  "plugin": {
+    "required": false,
+    "sourceOfTruth": false,
+    "rule": "The Devpost Hackathons plugin is optional. Official Rules and the Hackathon Website prevail over plugin output."
+  },
+  "knownDiscrepancies": [
+    "The OpenAI marketing page shows judging through August 7, while the Official Rules end judging on August 5 at 17:00 PT; the Official Rules control."
+  ]
+}

@@ -29,6 +29,8 @@ export * from "./policy-ir/resolve.js";
 export * from "./policy-ir/state.js";
 export * from "./compiler/types.js";
 export * from "./compiler/rego.js";
+export * from "./opa/types.js";
+export * from "./opa/runner.js";
 export * from "./cases/generate.js";
 export * from "./cases/analyze.js";
 export * from "./mutation/mutate.js";

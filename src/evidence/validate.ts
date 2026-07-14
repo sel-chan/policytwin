@@ -232,8 +232,28 @@ export function validateEvidencePackage(
   const opa = parseJson(files, "opa-results.json");
   const codex = parseJson(files, "codex-run-summary.json");
   if (manifest.evidenceMode === "PARTIAL_OFFLINE") {
-    if (opa.status !== "NOT_RUN" || codex.status !== "NOT_RUN_LIVE") {
-      throw new Error("Partial offline evidence must not impersonate OPA or live Codex work.");
+    if (codex.status !== "NOT_RUN_LIVE") {
+      throw new Error("Partial offline evidence must not impersonate live Codex work.");
+    }
+    if (opa.status === "PASS") {
+      const agreement = record(opa.acceptedCaseAgreement, "OPA acceptedCaseAgreement");
+      const results = Array.isArray(opa.results) ? opa.results : [];
+      if (
+        opa.executionMode !== "OPA_CLI" ||
+        typeof opa.opaVersion !== "string" ||
+        !/^\d+\.\d+\.\d+$/u.test(opa.opaVersion) ||
+        typeof opa.executableSha256 !== "string" ||
+        !/^[a-f0-9]{64}$/u.test(opa.executableSha256) ||
+        !Number.isSafeInteger(agreement.passed) ||
+        !Number.isSafeInteger(agreement.total) ||
+        agreement.passed !== agreement.total ||
+        agreement.total !== results.length ||
+        externalGates.opa !== "PASS"
+      ) {
+        throw new Error("OPA PASS evidence is incomplete or inconsistent.");
+      }
+    } else if (opa.status !== "NOT_RUN" || externalGates.opa !== "NOT_RUN") {
+      throw new Error("Partial offline OPA status is inconsistent.");
     }
     if (verification.driftAfter !== null) {
       throw new Error("Partial offline evidence cannot claim post-Codex repair drift.");

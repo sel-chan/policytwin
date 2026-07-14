@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1",
   "status": "NOT_READY",
-  "evidenceHash": "05e6f75a03fafa655f97c491983d3044e214f8a30c56fa31099762c095eee655",
+  "evidenceHash": "2dc9b83479eae24d6086dd76c46bd1d07b4ceb64d2e82b229b6b7fbd4692a111",
   "evidenceStatus": "FAIL",
   "staticSecurityStatus": "PASS",
   "cleanCopyStatus": "PASS",
-  "rulesStatus": "NOT_RUN",
+  "rulesStatus": "VERIFIED_OFFICIAL_SOURCES",
   "confirmation": null
 }

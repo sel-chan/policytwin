@@ -2,3 +2,25 @@ packages:
   - apps/*
   - packages/*
   - fixtures/*
+
+# F: is exFAT and cannot represent pnpm's default symlinked layout.
+nodeLinker: hoisted
+
+# Reviewed native dependency setup scripts required by Next.js and its lint resolver.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+
+# Pin the patched PostCSS line across Next.js after GHSA-qx2v-qp2m-jg93.
+overrides:
+  postcss: 8.5.19
+
+# Build Week requires the current Codex SDK. Exact versions remain pinned in
+# package.json and pnpm-lock.yaml; these names exempt only the 24-hour age gate.
+minimumReleaseAgeExclude:
+  - '@openai/codex-sdk'
+  - '@openai/codex'
+  - postcss@8.5.19
+
+# Never let a test or executable command silently mutate dependencies.
+verifyDepsBeforeRun: error

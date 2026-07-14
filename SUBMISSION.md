@@ -3,10 +3,10 @@
 ## 0. Truthful status
 
 - Submission status: `NOT_STARTED`
-- Last rules check: `NOT_RUN — external network approval required`
-- Exact official deadline and timezone: `UNSET`
-- Local deadline: `UNSET`
-- Selected category/track: `UNSET`
+- Last rules check: `2026-07-14 13:07:58 +09:00 — official OpenAI and Devpost pages fetched directly`
+- Exact official deadline and timezone: `2026-07-21 17:00 PDT (UTC-07:00)`
+- Local deadline: `2026-07-22 09:00 KST (UTC+09:00)`
+- Selected category/track: `Developer Tools`
 - Live application URL: `UNSET`
 - Public repository URL: `UNSET`
 - Demo video URL: `UNSET`
@@ -33,15 +33,36 @@ These files are production scaffolding only. They must be regenerated from live 
 
 ## 1. Official challenge baseline
 
-As of the creation of this file, the official OpenAI Build Week page states:
+Verified on 2026-07-14 from the official rules and challenge pages:
 
-- challenge opens July 13, 2026;
-- submission deadline July 21, 2026;
-- judging is based on technical implementation, design and user experience, potential impact, and quality of the idea;
-- strong entries should demonstrate thoughtful use of GPT-5.6 and Codex and clearly communicate the problem, solution, and approach;
-- submission should include a project description, demo video, code repository, and any additional judging materials.
+- registration: July 9, 2026 at 10:00 PT through July 21, 2026 at 17:00 PT;
+- submissions: July 13, 2026 at 09:00 PT through July 21, 2026 at 17:00 PT;
+- submission deadline in Korea: July 22, 2026 at 09:00 KST;
+- official-rules judging period: July 22 at 10:00 PT through August 5 at 17:00 PT;
+- winners: on or around August 12 at 14:00 PT;
+- tracks: Apps for Your Life, Work and Productivity, Developer Tools, and Education;
+- PolicyTwin track: **Developer Tools**, because it is a testing and agentic policy-to-code verification tool;
+- judging criteria are equally weighted: Technological Implementation, Design, Potential Impact, and Quality of the Idea;
+- the Devpost plugin is optional and is not a source of truth; the Official Rules and challenge website prevail.
 
-Before implementation begins and again before final submission, verify the exact rules, deadline time/timezone, eligibility, track, team rules, repository visibility, video constraints, required form fields, allowed prior work, licenses, and use-of-AI disclosures on the current official challenge pages.
+The OpenAI marketing page lists judging through August 7, while the Official Rules list August 5 at 17:00 PT. The Official Rules control.
+
+Eligibility location context is compatible with the Republic of Korea and current OpenAI API-supported territories, but the owner must still confirm age-of-majority, conflict, representative, and other declarations before registration or submission.
+
+### Verified submission requirements
+
+- working project built with Codex and GPT-5.6 in one track;
+- English project description;
+- public YouTube demo video shorter than three minutes, with clear audio, showing the project and how Codex and GPT-5.6 were used;
+- repository URL that is public with relevant licensing, or private and shared with `testing@devpost.com` and `build-week-event@openai.com`;
+- README describing Codex collaboration, acceleration, key decisions, and GPT-5.6/Codex contributions;
+- `/feedback` Codex Session ID for the thread where most core functionality was built;
+- for developer tools, installation instructions, supported platforms, and a judge-ready demo/sandbox/test path without rebuilding from scratch;
+- free, unrestricted project access for judging through the end of the judging period;
+- clear evidence separating pre-existing work from meaningful work added during the submission period when applicable;
+- authorization and license compliance for third-party components.
+
+Re-check these facts immediately before final publication because the Official Rules allow amendments.
 
 Official entry point:
 
@@ -50,6 +71,7 @@ Official entry point:
 Challenge details linked by OpenAI:
 
 - https://openai.devpost.com/
+- https://openai.devpost.com/rules
 
 If current rules differ from this file, update this file and follow the current rules. Record the source and timestamp in `PROGRESS.md`.
 

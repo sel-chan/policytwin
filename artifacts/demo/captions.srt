@@ -12,11 +12,11 @@ Material ambiguity becomes an explicit versioned decision instead of a hidden gu
 
 4
 00:01:15,000 --> 00:01:40,000
-A deterministic compiler and generated cases create executable evidence. OPA is not yet run.
+A deterministic compiler and OPA 1.18.2 verify 41 accepted policy cases.
 
 5
 00:01:40,000 --> 00:02:00,000
-The offline reference comparison exposes the three seeded defects.
+The OPA-backed comparison exposes the three seeded defects.
 
 6
 00:02:00,000 --> 00:02:30,000

@@ -4,9 +4,9 @@
   "daemonAvailable": false,
   "dockerServerVersion": null,
   "contractStatus": "NOT_READY",
-  "opaVersion": "UNVERIFIED",
+  "opaVersion": "1.18.2",
   "failures": [
-    "Container contract is not ready or OPA is unverified.",
+    "Container contract is not ready.",
     "Dockerfile is absent.",
     "Production health endpoint is absent.",
     "Docker daemon is unavailable."

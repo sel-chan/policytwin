@@ -29,6 +29,7 @@ const verification = jsonFile("artifacts/evidence/verification-summary.json");
 const manifest = jsonFile("artifacts/evidence/evidence-manifest.json");
 const security = jsonFile("artifacts/security/security-report.json");
 const clean = jsonFile("artifacts/security/clean-checkout-report.json");
+const challengeRules = jsonFile("config/build-week-rules.v1.json");
 const mutationRate = (verification.mutation.killRate * 100).toFixed(2);
 const draft = "DRAFT_NOT_READY — generated from partial offline evidence; do not submit.";
 
@@ -42,12 +43,12 @@ write(submissionDirectory, "tagline.txt", `Turn policy text into verified produc
 write(
   submissionDirectory,
   "short-description.txt",
-  `${draft}\nPolicyTwin is an evidence-first policy engineering prototype that structures SaaS refund rules, generates executable Rego and edge cases, exposes drift in a TypeScript fixture, and prepares a guarded Codex repair workflow. Current evidence is offline and fail-closed; live GPT-5.6, OPA, Codex, UI, and deployment remain unverified.`,
+  `${draft}\nPolicyTwin is an evidence-first policy engineering prototype that structures SaaS refund rules, generates executable Rego and edge cases, verifies them with checksum-pinned OPA 1.18.2, exposes drift in a TypeScript fixture, and prepares a guarded Codex repair workflow. Current evidence is offline and fail-closed; live GPT-5.6, Codex, UI, and deployment remain unverified.`,
 );
 write(
   submissionDirectory,
   "long-description.md",
-  `# PolicyTwin\n\n${draft}\n\nBusiness policies live in prose while customer decisions live in code. PolicyTwin is designed to connect a policy sentence to an explicit decision, deterministic rule, edge cases, application behavior, code location, and reviewable proof.\n\nThe current offline build validates strict PolicyIR, resolves genuine ambiguity through closed patches, generates byte-stable Rego, derives 41 traceable cases, detects 16 mismatches in a deliberately buggy refund fixture, executes 47 policy mutants, maps change impact, and produces a tamper-evident evidence package.\n\nThe critical challenge path is not complete. The package status is **FAIL / PARTIAL_OFFLINE** because GPT-5.6, OPA, live Codex repair/review, browser UX, container health, deployment, video, and submission have not run.`,
+  `# PolicyTwin\n\n${draft}\n\nBusiness policies live in prose while customer decisions live in code. PolicyTwin is designed to connect a policy sentence to an explicit decision, deterministic rule, edge cases, application behavior, code location, and reviewable proof.\n\nThe current offline build validates strict PolicyIR, resolves genuine ambiguity through closed patches, generates byte-stable Rego, verifies 41 traceable cases with checksum-pinned OPA 1.18.2, detects 16 mismatches in a deliberately buggy refund fixture, executes 47 policy mutants, maps change impact, and produces a tamper-evident evidence package.\n\nThe critical challenge path is not complete. The package status is **FAIL / PARTIAL_OFFLINE** because GPT-5.6, live Codex repair/review, browser UX, container health, deployment, video, and submission have not run.`,
 );
 write(
   submissionDirectory,
@@ -62,7 +63,7 @@ write(
 write(
   submissionDirectory,
   "how-we-built-it.md",
-  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, dependency-free runtime validation, deterministic clause segmentation and Rego generation, reference case/differential/mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, framework-independent workspace orchestration, impact/traceability reports, SHA-256 evidence manifests, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: OpenAI Responses API with GPT-5.6 Structured Outputs, real OPA, server-side Codex SDK, Next.js/Playwright integration, production SQLite volume behavior, a pinned Docker image, and live deployment.`,
+  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, dependency-free runtime validation, deterministic clause segmentation and Rego generation, checksum-pinned OPA 1.18.2 compilation and evaluation, reference mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, framework-independent workspace orchestration, impact/traceability reports, SHA-256 evidence manifests, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: OpenAI Responses API with GPT-5.6 Structured Outputs, live server-side Codex SDK work, Next.js/Playwright integration, production SQLite volume behavior, a pinned Docker image, and live deployment.`,
 );
 write(
   submissionDirectory,
@@ -72,7 +73,7 @@ write(
 write(
   submissionDirectory,
   "accomplishments.md",
-  `# Accomplishments\n\n${draft}\n\nCurrent offline evidence only:\n\n- ${verification.golden.passed}/${verification.golden.total} golden and ${verification.generated.passed}/${verification.generated.total} generated cases agree with the reference evaluator.\n- The buggy fixture exposes ${verification.driftBefore} corpus drifts including all three seeded defects.\n- ${verification.mutation.killed}/${verification.mutation.total} mutants are killed (${mutationRate}%) under the reference evaluator.\n- ${verification.traceability.clausesCovered}/${verification.traceability.clausesTotal} clauses and ${verification.traceability.rulesCovered}/${verification.traceability.rulesTotal} rules are linked.\n- The evaluation-only fixed fixture has zero drift, but this is not a Codex repair claim.`,
+  `# Accomplishments\n\n${draft}\n\nCurrent offline evidence only:\n\n- ${verification.golden.passed}/${verification.golden.total} golden and ${verification.generated.passed}/${verification.generated.total} generated cases pass real OPA 1.18.2 evaluation.\n- The buggy fixture exposes ${verification.driftBefore} OPA-backed corpus drifts including all three seeded defects.\n- ${verification.mutation.killed}/${verification.mutation.total} mutants are killed (${mutationRate}%) under the reference mutation evaluator; mutation execution has not yet moved to OPA.\n- ${verification.traceability.clausesCovered}/${verification.traceability.clausesTotal} clauses and ${verification.traceability.rulesCovered}/${verification.traceability.rulesTotal} rules are linked.\n- The evaluation-only fixed fixture has zero drift, but this is not a Codex repair claim.`,
 );
 write(
   submissionDirectory,
@@ -82,12 +83,12 @@ write(
 write(
   submissionDirectory,
   "whats-next.md",
-  `# What's next\n\n${draft}\n\nComplete the live GPT-5.6 and OPA path, integrate the current server-side Codex SDK, connect the verified SQLite repository to the five-screen web workspace, verify browser accessibility, finish the container/deployment, select a project license, record the demo, verify official rules, and submit. Post-challenge expansion remains outside the MVP.`,
+  `# What's next\n\n${draft}\n\nComplete the live GPT-5.6 path, integrate and verify the current server-side Codex SDK, connect the verified SQLite repository to the five-screen web workspace, verify browser accessibility, finish the container/deployment, select a project license, record the demo, complete owner eligibility declarations, and submit. Post-challenge expansion remains outside the MVP.`,
 );
 write(
   submissionDirectory,
   "technologies.txt",
-  `${draft}\nImplemented offline: TypeScript, Node.js, pnpm, Node.js built-in SQLite persistence, Rego source generation, Git.\nPlanned/unverified: GPT-5.6 Responses API, OpenAI Structured Outputs, OPA, Codex SDK, Next.js, production SQLite volume behavior, Playwright, Docker.`,
+  `${draft}\nImplemented offline: TypeScript, Node.js, pnpm, Node.js built-in SQLite persistence, Rego source generation, OPA 1.18.2, Git.\nPlanned/unverified: GPT-5.6 Responses API, OpenAI Structured Outputs, live Codex SDK work, Next.js, production SQLite volume behavior, Playwright, Docker.`,
 );
 write(
   submissionDirectory,
@@ -97,7 +98,7 @@ write(
 write(
   submissionDirectory,
   "judging-evidence-map.md",
-  `# Judging evidence map\n\n${draft}\n\n| Criterion | Current evidence | Status |\n|---|---|---|\n| Technical implementation | \`artifacts/evidence/\`, compiler/case/mutation/differential/worker contracts | PARTIAL_OFFLINE |\n| Design and UX | UI specification in \`PLAN.md\`; no browser screenshots | NOT_RUN |\n| Potential impact | Policy-to-code drift narrative and counterexamples | DRAFT |\n| Quality of idea | Evidence-first separation of semantics, execution, repair, and proof | DRAFT |`,
+  `# Judging evidence map\n\n${draft}\n\n| Criterion | Current evidence | Status |\n|---|---|---|\n| Technical implementation | \`artifacts/evidence/\`, real OPA execution, compiler/case/mutation/differential/worker contracts | PARTIAL_OFFLINE |\n| Design and UX | UI specification in \`PLAN.md\`; no browser screenshots | NOT_RUN |\n| Potential impact | Policy-to-code drift narrative and counterexamples | DRAFT |\n| Quality of idea | Evidence-first separation of semantics, execution, repair, and proof | DRAFT |`,
 );
 write(
   submissionDirectory,
@@ -119,17 +120,17 @@ write(
 write(
   submissionDirectory,
   "rules-check.md",
-  `# Official rules check\n\n${draft}\n\nStatus: UNVERIFIED_NO_NETWORK_APPROVAL\nChecked at: NOT_RUN\n\nThe official OpenAI Build Week and linked challenge pages have not been accessed in this run. Deadline time/timezone, eligibility, tracks, repository visibility, video limit, required fields, disclosures, and form URL remain unverified.`,
+  `# Official rules check\n\n${draft}\n\nStatus: ${challengeRules.status}\nChecked at: ${challengeRules.checkedAt}\n\nOfficial deadline: ${challengeRules.dates.submissionDeadlinePacific} (${challengeRules.dates.submissionDeadlineKorea}).\n\nSelected track: ${challengeRules.selectedTrack} — ${challengeRules.selectedTrackRationale}\n\nOwner eligibility declarations remain pending; verified location context: ${challengeRules.eligibility.location}\n\n## Submission requirements\n\n${challengeRules.submissionRequirements.map((item) => `- ${item}`).join("\n")}\n\n## Source precedence and discrepancy\n\n${challengeRules.sourcePriority}\n\n${challengeRules.knownDiscrepancies.map((item) => `- ${item}`).join("\n")}\n\n## Official sources\n\n${challengeRules.sources.map((source) => `- ${source.title}: ${source.url} (${source.result})`).join("\n")}\n\nThe Devpost Hackathons plugin is optional and is not the source of truth.`,
 );
 write(
   submissionDirectory,
   "claim-audit.md",
-  `# Claim audit\n\n${draft}\n\n| Claim | Evidence | Allowed wording |\n|---|---|---|\n| 41 accepted reference cases | \`artifacts/evidence/verification-summary.json\` | Offline reference only |\n| 16 buggy-fixture corpus drifts | \`artifacts/evidence/drift-report-before.json\` | Reference expectation, not OPA |\n| ${verification.mutation.killed}/${verification.mutation.total} mutants killed | \`artifacts/evidence/mutation-report.json\` | Reference evaluator, not OPA |\n| Evaluation-only fixed fixture has zero drift | \`artifacts/evidence/drift-report-after.json\` | Never call post-repair |\n| Live GPT-5.6 interpretation | Missing | Must not claim |\n| Live Codex repair/review | Missing | Must not claim |\n| OPA execution | Missing | Must not claim |\n| Browser/deployment/submission | Missing | Must not claim |`,
+  `# Claim audit\n\n${draft}\n\n| Claim | Evidence | Allowed wording |\n|---|---|---|\n| 41 accepted policy cases | \`artifacts/evidence/opa-results.json\`, \`artifacts/evidence/verification-summary.json\` | Real local OPA 1.18.2 execution |\n| 16 buggy-fixture corpus drifts | \`artifacts/evidence/drift-report-before.json\` | OPA-backed expected decisions |\n| ${verification.mutation.killed}/${verification.mutation.total} mutants killed | \`artifacts/evidence/mutation-report.json\` | Reference evaluator, not OPA |\n| Evaluation-only fixed fixture has zero drift | \`artifacts/evidence/drift-report-after.json\` | Never call post-repair |\n| Live GPT-5.6 interpretation | Missing | Must not claim |\n| Live Codex repair/review | Missing | Must not claim |\n| Browser/deployment/submission | Missing | Must not claim |`,
 );
 write(
   submissionDirectory,
   "final-checklist.md",
-  `# Final checklist\n\n${draft}\n\n- [ ] Official rules verified recently\n- [ ] Owner-selected LICENSE present\n- [ ] \`pnpm verify\` passes\n- [ ] \`pnpm verify:live\` passes with fresh evidence\n- [ ] Browser screenshots complete\n- [ ] Live, repository, and video URLs verified signed out\n- [ ] Video satisfies official duration/format\n- [ ] Claim audit has no missing proof\n- [ ] Submission confirmation captured`,
+  `# Final checklist\n\n${draft}\n\n- [x] Official rules verified on ${challengeRules.checkedAt}\n- [ ] Owner-selected LICENSE present\n- [ ] \`pnpm verify\` passes\n- [ ] \`pnpm verify:live\` passes with fresh evidence\n- [ ] Browser screenshots complete\n- [ ] Live, repository, and video URLs verified signed out\n- [ ] Video satisfies official duration/format\n- [ ] Claim audit has no missing proof\n- [ ] Submission confirmation captured`,
 );
 write(
   submissionDirectory,
@@ -141,7 +142,7 @@ write(
     evidenceStatus: verification.status,
     staticSecurityStatus: security.status,
     cleanCopyStatus: clean.status,
-    rulesStatus: "NOT_RUN",
+    rulesStatus: challengeRules.status,
     confirmation: null,
   }),
 );
@@ -171,7 +172,7 @@ write(
 write(
   demoDirectory,
   "captions.srt",
-  `1\n00:00:00,000 --> 00:00:20,000\n[DRAFT — not recorded] This policy includes day 14, exactly 20 percent usage, and final-sale precedence.\n\n2\n00:00:20,000 --> 00:00:50,000\nPolicyTwin is intended to use GPT-5.6 to create a strict, traceable policy model. Live call not yet verified.\n\n3\n00:00:50,000 --> 00:01:15,000\nMaterial ambiguity becomes an explicit versioned decision instead of a hidden guess.\n\n4\n00:01:15,000 --> 00:01:40,000\nA deterministic compiler and generated cases create executable evidence. OPA is not yet run.\n\n5\n00:01:40,000 --> 00:02:00,000\nThe offline reference comparison exposes the three seeded defects.\n\n6\n00:02:00,000 --> 00:02:30,000\nThe intended Codex repair path is not yet verified and must be replaced with a real run before recording.\n\n7\n00:02:30,000 --> 00:02:50,000\nPost-repair proof is not yet available; the evaluation-only fixed fixture cannot substitute.\n\n8\n00:02:50,000 --> 00:03:00,000\nA 14-to-30-day change updates rules and cases, while a contradictory golden case blocks verification.`,
+  `1\n00:00:00,000 --> 00:00:20,000\n[DRAFT — not recorded] This policy includes day 14, exactly 20 percent usage, and final-sale precedence.\n\n2\n00:00:20,000 --> 00:00:50,000\nPolicyTwin is intended to use GPT-5.6 to create a strict, traceable policy model. Live call not yet verified.\n\n3\n00:00:50,000 --> 00:01:15,000\nMaterial ambiguity becomes an explicit versioned decision instead of a hidden guess.\n\n4\n00:01:15,000 --> 00:01:40,000\nA deterministic compiler and OPA 1.18.2 verify 41 accepted policy cases.\n\n5\n00:01:40,000 --> 00:02:00,000\nThe OPA-backed comparison exposes the three seeded defects.\n\n6\n00:02:00,000 --> 00:02:30,000\nThe intended Codex repair path is not yet verified and must be replaced with a real run before recording.\n\n7\n00:02:30,000 --> 00:02:50,000\nPost-repair proof is not yet available; the evaluation-only fixed fixture cannot substitute.\n\n8\n00:02:50,000 --> 00:03:00,000\nA 14-to-30-day change updates rules and cases, while a contradictory golden case blocks verification.`,
 );
 write(
   demoDirectory,

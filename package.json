@@ -9,6 +9,24 @@
     "node": ">=22.0.0",
     "pnpm": ">=11.7.0"
   },
+  "dependencies": {
+    "@openai/codex-sdk": "0.144.3",
+    "next": "16.2.10",
+    "openai": "6.46.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.10",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  },
   "scripts": {
     "dev": "node scripts/gate.mjs dev",
     "lint": "node scripts/lint.mjs",
@@ -22,6 +40,7 @@
     "verify:live": "node scripts/live-gate.mjs",
     "demo:reset": "node scripts/demo-reset.mjs",
     "demo:run": "node scripts/demo-run.mjs",
+    "opa:install": "node scripts/opa-install.mjs",
     "evidence:offline": "node scripts/generate-offline-evidence.mjs",
     "security:check": "node scripts/security-check.mjs",
     "license:check": "node scripts/license-check.mjs",

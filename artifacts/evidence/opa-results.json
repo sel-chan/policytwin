@@ -1,7 +1,428 @@
 {
   "schemaVersion": "1",
-  "status": "NOT_RUN",
-  "executionMode": "NOT_RUN",
-  "reason": "OPA is not installed; reference evaluation is stored separately and is not OPA evidence.",
-  "policyVersion": 4
+  "executionMode": "OPA_CLI",
+  "opaVersion": "1.18.2",
+  "executableSha256": "b9022224ee660c87cc35ce957c21c352fa57b267d71fb4e1ce779a38e107c9df",
+  "policyHash": "ee4c1f7356b1db56e60190a83199b79897d651c3a3b89c617d3890415c8f0117",
+  "query": "data.policytwin.refund.decision",
+  "compileCommand": "opa check --strict <policy.rego>",
+  "evalCommand": "opa eval --format json --stdin-input --data <policy.rego> <query>",
+  "results": [
+    {
+      "caseId": "G01",
+      "inputHash": "a3697109ed1ef2c05fbde214a98fc2f6d4ba04635b6ff199fd8c08c4554ddbbc",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "G02",
+      "inputHash": "7a19032d3942b2a2ffbc3f9f5fea64fb3c396d157d772763e471e2f774796e5a",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "G03",
+      "inputHash": "ddb1409dfecccad0cd20401776759dcec2843a83001838941256c578739af108",
+      "result": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "G04",
+      "inputHash": "42df91fdac550bbecfd70e9c4653a5bc88fa5cdd19c9f7ebcef69e8609088ae6",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "promotion-approved",
+        "explanation": "The eligible promotional request has manager approval.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "G05",
+      "inputHash": "a7a1d32a5d71ace1bc42ca9658e7e9cab302e73168cde0924800992016644a1f",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "G06",
+      "inputHash": "f946beb9676925f7d75d75c4414d96eefba20817a166401d3666acee101f38cb",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "D01",
+      "inputHash": "eec53bd1d5cc1fac4d9fdde7d4cd4348cc2e951cb34238be5d505b4a679ef717",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "D02",
+      "inputHash": "b15ff10732fdb08949831f62d2052783b18e2ac37764786389e2f4593d563ec9",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "D03",
+      "inputHash": "9ada881adb163b8d8872e0a35f43eff1a158b585ccce7ebfc0d278742b60ac61",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-abce7966",
+      "inputHash": "5e282dc5d71d999ea4c0697e3fecb6c9c29dc9adb887b4261a53e338d85d9702",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-44e23079",
+      "inputHash": "f306fdc248758976154048022de29624cc80817bc7cd08ff60688b4c71a271eb",
+      "result": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-1894e746",
+      "inputHash": "92e470785cf5e765639d9446b44d8b18bdc5e2aaffb5454b33eaf036014cef59",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "promotion-approved",
+        "explanation": "The eligible promotional request has manager approval.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-f810e650",
+      "inputHash": "7ae82d7ba4d143b3cc9b79cb33f27f56dc5c38d0900465dd9ca2a06c287cb017",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-100e174b",
+      "inputHash": "ffa46ce28a406c285795e1af7f14c6fa4aaa55a544427352cbd064ba0a069486",
+      "result": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-5c4a82b0",
+      "inputHash": "5af1eb4a46256d3c95ece371d53733405d41119a77109acceedda5e6f92b3477",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "promotion-approved",
+        "explanation": "The eligible promotional request has manager approval.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-e1dd5ebb",
+      "inputHash": "ccb37692c9737da678c5fc7772cfa362104470f04471ec5c60a3730f5ba3c4d0",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-f026bb80",
+      "inputHash": "3fecdfbce6503f5c2510f681fbcd40986b4c5e5e79df71c11d9c2ff72e22e503",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-ac95135b",
+      "inputHash": "1cab76865096532e8420b8c580e334987954d7b0f4d322bcc3b26a60c982b278",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-101ed55d",
+      "inputHash": "811efca64e479f30e52f59f0fd5a8391802efc5c7dd1f431c7af127fde153139",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-9be5639a",
+      "inputHash": "00a1c6b8c39d38181c302e68085cd74871d15c53631e59388bcc82d83cde3800",
+      "result": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-ea8e309d",
+      "inputHash": "121ec90595f107257c28939cdef7a9338cce28fcebc57c7279e121d4cc7d9cfd",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "promotion-approved",
+        "explanation": "The eligible promotional request has manager approval.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-1089c17b",
+      "inputHash": "f90caf639638d26a867c77b4c26f9b150dbf3d235781fe8cc2693bfd422fc0d2",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "refund-eligible",
+        "explanation": "The request is within the inclusive refund thresholds.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-c9c2f540",
+      "inputHash": "a2cadbfcda7058787731005e6a78c53f0917e2e4706afc3f96affbb0dac68802",
+      "result": {
+        "decision": "REVIEW",
+        "matchedRuleId": "promotion-review",
+        "explanation": "The eligible promotional request awaits a manager decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-24372e1b",
+      "inputHash": "a3ab18936817bd9a32ead9fbbe10e5a092316169619a4cfe24136af936cd68f1",
+      "result": {
+        "decision": "ALLOW",
+        "matchedRuleId": "promotion-approved",
+        "explanation": "The eligible promotional request has manager approval.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-dae2f310",
+      "inputHash": "b75b4ac214174a9abf559a8195bc71f79ce61605fd9506e88654cd53e13bb1f1",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-dcc1890b",
+      "inputHash": "54d0aaf7a1419a6e149bc375a6abad8b75c3ad7c5ba537a5ae31b57c75eb527d",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-98443570",
+      "inputHash": "d58dd4df42932a6ec2e1d9e88d6fcfbb34148a372c411958034c01232bd98088",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-e3ae81f0",
+      "inputHash": "fccbe07cf395e179044bafa93b3fb62e6e6c504f29c54206eba871a57e5d0222",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-15545d6b",
+      "inputHash": "c6c9c70a2ecb518e7127c1c54a0b6127a029005a1735a7be2577faea50f5232c",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-4ee64850",
+      "inputHash": "7ac24b114551a6a61e8d0b676736d3a1d68ada65f0eb7b32a8479228fe4bd3cc",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-b1f5224e",
+      "inputHash": "a520c575fd621ffa9754a3b8c66d4dda522ee6838e09f46368a3eeebb3dc592a",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-0f19e261",
+      "inputHash": "6c5861572d39e10137207358c39d7a6fe0f5ba18febc5fe804498e6e274360e1",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-d24b1a0e",
+      "inputHash": "db0b607da966c0b79feec43af25f97925b07b2b0ba99f60f34f3f063d250e132",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-BOUNDARY-c2c18019",
+      "inputHash": "b8918b4319945087049965cf7718e4077167cebe03412912c7e87219f430c15b",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-d9e1f506",
+      "inputHash": "036331649fd6d2a835bb10362a1dfeed9ec28724aac7633e3a37d325411d2118",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-MINIMAL_CONTRAST-cbd08539",
+      "inputHash": "ae4d55639580f9ddc42f1660e560dd0516c9bd20cb3a78d72803b08d8252975f",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-CONFLICT-16766370",
+      "inputHash": "d38f0b60306e3f349ef014331be384a6093ab52cb610cf462e0dc0e90be848de",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-CONFLICT-5af3b70b",
+      "inputHash": "32403e03f386514f663e728f042f6581323e0159baf8d94aaae8c66e0fe40b96",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-CONFLICT-506a318b",
+      "inputHash": "dc2d07e5c2bd9f0778dd80e3b480fd58747cf06709ba55d71197a9e0efa13585",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-CONFLICT-0becddf0",
+      "inputHash": "dd0b8aaf78889f12edec7b88072c9ea737c186d9e22f1b986cf52f4bd1779b26",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": "final-sale-deny",
+        "explanation": "Final-sale purchases are not refundable.",
+        "policyVersion": 4
+      }
+    },
+    {
+      "caseId": "C-GENERATED-fed86770",
+      "inputHash": "648e1712e24e862aff99625cd29aa3bcf509aae3daf1c3eee2adad6dc6e735e4",
+      "result": {
+        "decision": "DENY",
+        "matchedRuleId": null,
+        "explanation": "No explicit rule matched; applied the accepted default decision.",
+        "policyVersion": 4
+      }
+    }
+  ],
+  "status": "PASS",
+  "policyVersion": 4,
+  "acceptedCaseAgreement": {
+    "passed": 41,
+    "total": 41
+  }
 }

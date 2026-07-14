@@ -34,7 +34,8 @@ test("license and container remain fail-closed for explicit owner/external work"
   assert.equal(license.failures.some((failure) => failure.includes("OWNER_DECISION_REQUIRED")), true);
   assert.equal(container.status, "FAIL");
   assert.equal(container.daemonAvailable, false);
-  assert.equal(container.opaVersion, "UNVERIFIED");
+  assert.equal(container.opaVersion, "1.18.2");
+  assert.equal(container.contractStatus, "NOT_READY");
 });
 
 test("threat and limitation documents preserve the hosted trust boundary", () => {

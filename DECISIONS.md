@@ -233,10 +233,10 @@ Add new entries below this line with the template above.
   1. assume MIT and build a placeholder Node health server;
   2. omit all license/container work until the end;
   3. prepare inventories and strict prerequisite checks while keeping both gates failed.
-- Decision: Record the zero-production-dependency inventory and recommendation without granting a license. Keep `license:check` failed until the owner selects a license. Define container prerequisites and report each missing item, but do not add a Dockerfile or fake health server until the actual Next.js/OPA application exists and image versions can be verified.
+- Decision: Record the resolved production-dependency inventory and recommendation without granting a license. Keep `license:check` failed until the owner selects a license. Define container prerequisites and report each missing item, but do not add a Dockerfile or fake health server until the actual Next.js/OPA application exists and image versions can be verified.
 - Evidence: `docs/license-review.md`, `NOTICE.md`, `scripts/license-check.mjs`, `container-contract.json`, `scripts/container-check.mjs`, and `artifacts/security/`.
 - Consequences: `pnpm verify` now truthfully includes license and container failures in addition to browser/submission gaps.
-- Risks: Owner license selection and Docker Desktop startup remain unavoidable later actions; current official base image and OPA facts still require approved network lookup.
+- Risks: Owner license selection and Docker Desktop startup remain unavoidable later actions; final browser/container artifacts require a release-platform license refresh.
 - Reversal or migration path: Add the accepted `LICENSE`, resolved dependency notices, verified image digest, pinned OPA checksum, production health route, and real Docker build/health evidence, then allow both checks to pass.
 - Related files/commits: `PROGRESS.md`, `docs/threat-model.md`, `docs/limitations.md`.
 
@@ -273,3 +273,36 @@ Add new entries below this line with the template above.
 - Risks: The built-in API is experimental and may differ from the final supported deployment contract.
 - Reversal or migration path: Preserve the repository behavior and replace only the adapter with a current supported Node SQLite binding or stable built-in implementation after approved official-document and dependency review.
 - Related files/commits: `src/persistence/sqlite.ts`, `src/node-sqlite.d.ts`, `tests/unit/policy-persistence.test.mjs`, `tests/integration/policy-persistence.integration.test.mjs`.
+
+### D-016 — Submit PolicyTwin in the Developer Tools track
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M0/M10
+- Context: The verified Build Week rules offer Apps for Your Life, Work and Productivity, Developer Tools, and Education. PolicyTwin is an evidence-first testing and agentic verification product whose primary users include application engineers.
+- Options considered:
+  1. Work and Productivity because policy owners and operations teams also benefit;
+  2. Developer Tools because the core demonstrated value is compiler, OPA, test generation, differential execution, mutation testing, and Codex-assisted code repair.
+- Decision: Use the `Developer Tools` track. Preserve operations impact in the narrative without changing the primary category.
+- Evidence: `https://openai.devpost.com/`, `https://openai.devpost.com/rules`, and `PLAN.md` sections 2, 3, and 5.
+- Consequences: Submission materials must include installation instructions, supported platforms, and a judge-ready test path that does not require rebuilding from scratch.
+- Risks: The policy-owner UX must remain understandable so the project is not presented as an engineer-only tool.
+- Reversal or migration path: Re-evaluate only if the official categories change or the implemented product materially shifts before submission.
+- Related files/commits: `config/build-week-rules.v1.json`, `SUBMISSION.md`, `PROGRESS.md`.
+
+### D-017 — Pin the application stack and run OPA from a checksum-verified local tool boundary
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M0/M4/M9
+- Context: The workspace is on an exFAT drive that cannot create pnpm's normal symlinks, the approved network scope permits exact package installation and official OPA acquisition, and proof must identify the executable policy engine rather than depend on an unversioned global command.
+- Options considered:
+  1. rely on globally installed or latest packages and a PATH-resolved OPA command;
+  2. use pnpm's hoisted linker on exFAT, exact locked package versions, and a checksum-pinned official OPA binary outside Git;
+  3. replace OPA with the existing TypeScript reference evaluator.
+- Decision: Use `nodeLinker: hoisted` in `pnpm-workspace.yaml`, exact dependency versions in the lockfile, and only explicitly reviewed package build scripts. Acquire OPA 1.18.2 from the official release, verify the published SHA-256 checksum, keep the executable in ignored `.tools/opa/1.18.2`, and invoke it through a fixed-query, no-shell runner with strict input, timeout, compile check, version, and content hashes.
+- Evidence: `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `container-contract.json`, `scripts/opa-install.mjs`, `src/opa/runner.ts`, `tests/integration/opa-runner.integration.test.mjs`, and `artifacts/evidence/opa-results.json`.
+- Consequences: Local and clean-copy verification can reproduce real OPA policy evaluation without committing a platform binary; package installation works on the workspace filesystem.
+- Risks: A fresh machine still needs the approved installer or an explicit `OPA_PATH`; Linux container acquisition must verify its separate recorded checksum; the shared pnpm store may remain marked mutated after interrupted installation attempts.
+- Reversal or migration path: Move to pnpm's isolated linker on a symlink-capable filesystem, or provide OPA through a digest-pinned container while preserving the runner contract and evidence fields.
+- Related files/commits: `package.json`, `pnpm-workspace.yaml`, `container-contract.json`, `src/opa/`, `PROGRESS.md`.

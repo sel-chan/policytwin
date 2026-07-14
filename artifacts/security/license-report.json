@@ -3,7 +3,14 @@
   "status": "FAIL",
   "projectLicensePresent": false,
   "noticePresent": true,
-  "productionDependencies": [],
+  "productionDependencies": [
+    "@openai/codex-sdk",
+    "next",
+    "openai",
+    "react",
+    "react-dom",
+    "zod"
+  ],
   "failures": [
     "OWNER_DECISION_REQUIRED: project LICENSE is absent."
   ]

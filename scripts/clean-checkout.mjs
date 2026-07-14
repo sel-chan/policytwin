@@ -1,15 +1,24 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, relative, resolve } from "node:path";
 import { ROOT, executable } from "./process.mjs";
 
-const cleanRoot = resolve(ROOT, ".tmp", "clean-checkout");
+const cleanBase = resolve(tmpdir());
+const cleanRoot = resolve(cleanBase, "policytwin-clean-checkout");
 const reportDirectory = resolve(ROOT, "artifacts", "security");
-if (dirname(cleanRoot) !== resolve(ROOT, ".tmp") || relative(ROOT, cleanRoot).startsWith("..")) {
+if (dirname(cleanRoot) !== cleanBase || relative(cleanBase, cleanRoot).startsWith("..")) {
   throw new Error(`Refusing to replace unexpected clean-copy path: ${cleanRoot}`);
 }
 
 function safeEnvironment() {
+  const localOpaPath = resolve(
+    ROOT,
+    ".tools",
+    "opa",
+    "1.18.2",
+    process.platform === "win32" ? "opa.exe" : "opa",
+  );
   return {
     ...Object.fromEntries(
     Object.entries(process.env).filter(
@@ -18,6 +27,7 @@ function safeEnvironment() {
     ),
     ),
     POLICYTWIN_CLEAN_CHECK: "1",
+    ...(existsSync(localOpaPath) ? { OPA_PATH: localOpaPath } : {}),
   };
 }
 
