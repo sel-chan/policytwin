@@ -8,8 +8,8 @@
 - Current milestone: `M3/M8 — persisted decisions, reference-bound proof, and blocked change impact`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 21:24:02 +09:00`
-- Latest checkpoint commit: `eae20ed5d92358361c449764ade91c74d7f2d4ba`
+- Last updated: `2026-07-14 21:25:58 +09:00`
+- Latest checkpoint commit: `16c06fc28f7948c3aa3d9748873b77ed3dbf81f6`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -89,13 +89,13 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | `1d7261d` | Docker daemon remains unavailable but is outside the M0 gate |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | strict server-only Responses adapter, provider-compatible structured schema, exact request/source/golden validation, bounded cancellation/retry controls, and unit tests pass | pending | credentials and a fresh GPT-5.6 response/evidence remain; live provider acceptance is not claimed |
-| M3 Decision Queue and versioning | PASS | anonymous-session-isolated SQLite v1-v5, closed replay-safe HTTP writes, one-card Decision Queue, revisit, golden contradiction, restart, expiry, and production Chrome checks pass | pending | authenticated multi-user identity and distributed coordination remain M9 release work, not an M3 gate |
+| M3 Decision Queue and versioning | PASS | anonymous-session-isolated SQLite v1-v5, closed replay-safe HTTP writes, one-card Decision Queue, revisit, golden contradiction, restart, expiry, and production Chrome checks pass | `16c06fc` | authenticated multi-user identity and distributed coordination remain M9 release work, not an M3 gate |
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | offline safety contracts verified; current official SDK docs checked and `@openai/codex-sdk` 0.144.3 installed server-side | `0c6fb85` | SDK adapter, credentials/login, real patch/diff, zero post-repair drift, and live review evidence remain |
-| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | pending | deterministic downloadable archive, live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation plus isolated 24-hour/128-session bounds, exact production origin, CSRF, bounded streaming bodies, safe reset, static scan, and clean-copy replay | pending | owner license choice, shared auth/quotas, app container, Docker daemon, provider selection, and deployment remain |
+| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | `16c06fc` | deterministic downloadable archive, live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation plus isolated 24-hour/128-session bounds, exact production origin, CSRF, bounded streaming bodies, safe reset, static scan, and clean-copy replay | `16c06fc` | owner license choice, shared auth/quotas, app container, Docker daemon, provider selection, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -120,7 +120,7 @@ The deterministic impact artifact already proved that 14-to-30 changes three rul
 - [x] Add Change Impact navigation, read-only deterministic preview, persisted v5 draft action, Proof download, responsive styles, and screenshot 06.
 - [x] Extend unit, integration, restart, concurrency, browser, reset, security, documentation, and evidence checks.
 - [x] Run the full verification gate, inspect desktop/mobile captures, and perform an independent diff review.
-- [ ] Commit the verified checkpoint on `main` after the final fix-only review.
+- [x] Commit the verified checkpoint on `main` after the final fix-only review.
 
 Resumed-session hardening checklist:
 
@@ -140,7 +140,7 @@ Resumed-session hardening checklist:
 - Independent review: two P1 truth/security findings were reproduced, fixed, and added to browser/unit coverage; no P0 was reported
 - Full gate: `pnpm verify` completed every local gate and failed only the owner license, unavailable Docker/container, and non-final submission checks
 - Final local evidence: 264-file clean-copy replay; 264-file/239-text-file static security scan; 21/21 eval; production build; submission checker reports 30 truthful unmet requirements
-- Commit: pending final fix-only review and checkpoint commit
+- Commit: `16c06fc28f7948c3aa3d9748873b77ed3dbf81f6`
 
 ## Quality gates
 
@@ -196,7 +196,7 @@ Never fill from estimates.
 - Verified: lint; strict typecheck; 63 unit; 22 integration; 21 eval; 3 production Chrome E2E; production build; deterministic evidence hash; 264-file clean-copy replay; 264-file/239-text-file security scan
 - Full gate: `pnpm verify` fails only `license:check`, `container:check`, and `submission:check`; the submission checker reports 30 truthful unmet requirements
 - Evidence hash: `99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9`
-- Commit: pending final fix-only review and checkpoint commit
+- Commit: `16c06fc28f7948c3aa3d9748873b77ed3dbf81f6`
 - Next: implement the remaining offline-safe Codex SDK adapter/container/archive prerequisites before requesting owner-only credentials, license acceptance, deployment, and submission actions
 
 ### 2026-07-14 19:13 +09:00 — Five-view workspace and authenticated evidence boundary verified
@@ -397,18 +397,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Commit the verified M3/M8 checkpoint, then continue the remaining offline-safe Codex SDK adapter, evidence archive, and container prerequisites before owner-only live/license/deployment actions.`
+`Continue the remaining offline-safe Codex SDK adapter, evidence archive, and container prerequisites before owner-only live/license/deployment actions.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; final fix-only review and checkpoint commit are in progress`
+- Why paused: `not paused; the verified M3/M8 implementation is committed and the next offline checkpoint is starting`
 - Exact current state: `six-view workspace, isolated SQLite writes, reference-bound proof/impact, local OPA/browser/build/security/clean-copy gates verified; live work remains fail-closed`
 - Last successful command: `pnpm verify completed all local gates; only license:check, container:check, and submission:check failed as expected`
 - Current failing command: `pnpm verify, only for the three documented incomplete release gates`
-- Uncommitted files: `verified M3/M8 implementation, tests, screenshots, generated reports, and documentation awaiting checkpoint commit`
-- Safe resume command/action: `review git diff, commit the verified checkpoint on main, and continue M7/M8/M9`
+- Uncommitted files: `PROGRESS.md ledger-only follow-up awaiting verification and commit`
+- Safe resume command/action: `verify and commit the ledger follow-up, then continue M7/M8/M9`
 - One owner action, if any: `none`
 
 ## Final completion record
