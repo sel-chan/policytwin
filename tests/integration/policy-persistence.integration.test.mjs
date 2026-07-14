@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { resolvePolicyAmbiguity } from "../../dist/index.js";
+import { PolicyWorkspaceService } from "../../dist/index.js";
 import { SQLitePolicyRepository } from "../../dist/persistence/sqlite.js";
 
 const recorded = JSON.parse(
@@ -21,7 +21,8 @@ test("restores policy text, cases, versions, decisions, and state after process-
   const directory = await mkdtemp(join(tmpdir(), "policytwin-persistence-integration-"));
   const databasePath = join(directory, "policytwin.sqlite");
   let repository = new SQLitePolicyRepository(databasePath);
-  repository.createProject({
+  let service = new PolicyWorkspaceService(repository);
+  service.createProject({
     id: recorded.policyId,
     title: "Seeded refund policy",
     sourceText,
@@ -30,7 +31,6 @@ test("restores policy text, cases, versions, decisions, and state after process-
     createdAt: "2026-07-14T03:00:00.000Z",
   });
 
-  let policy = recorded;
   const choices = [
     ["ambiguity-purchase-day-index", "purchase-day-zero"],
     ["ambiguity-usage-measurement-time", "usage-at-request"],
@@ -38,23 +38,13 @@ test("restores policy text, cases, versions, decisions, and state after process-
   ];
   for (const [index, [ambiguityId, optionId]] of choices.entries()) {
     const decidedAt = `2026-07-14T03:0${index + 1}:00.000Z`;
-    const resolution = resolvePolicyAmbiguity(
-      policy,
-      ambiguityId,
-      optionId,
-      goldenCases,
-      decidedAt,
-    );
-    repository.appendVersion({
+    service.resolveAmbiguity({
       policyId: recorded.policyId,
-      expectedParentVersion: policy.version,
-      sourceText,
-      goldenCases,
-      policyIR: resolution.policy,
-      decisionRecord: resolution.decisionRecord,
-      createdAt: decidedAt,
+      expectedVersion: index + 1,
+      ambiguityId,
+      selectedOptionId: optionId,
+      decidedAt,
     });
-    policy = resolution.policy;
   }
   repository.transitionState(
     recorded.policyId,
@@ -66,13 +56,15 @@ test("restores policy text, cases, versions, decisions, and state after process-
   repository.close();
 
   repository = new SQLitePolicyRepository(databasePath);
+  service = new PolicyWorkspaceService(repository);
   testContext.after(async () => {
     repository.close();
     await rm(directory, { recursive: true, force: true });
   });
-  const project = repository.getProject(recorded.policyId);
+  const workspace = service.getWorkspace(recorded.policyId);
+  const project = workspace.project;
   const versions = repository.listVersions(recorded.policyId);
-  const decisions = repository.listDecisionRecords(recorded.policyId);
+  const decisions = workspace.decisionRecords;
   assert.equal(project.currentVersion, 4);
   assert.equal(project.updatedAt, "2026-07-14T03:04:00.000Z");
   assert.deepEqual(versions.map((item) => item.version), [1, 2, 3, 4]);

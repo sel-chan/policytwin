@@ -34,6 +34,7 @@ Implemented offline:
 - guarded repair-worker contracts and isolated trusted copies;
 - change impact, traceability, and fail-closed evidence manifests.
 - SQLite-backed policy, version, lifecycle, golden-case, and decision persistence with restart recovery.
+- framework-independent workspace orchestration for current-state reads, immutable text versions, and atomic ambiguity resolution.
 
 Not yet authoritative:
 

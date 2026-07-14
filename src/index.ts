@@ -43,3 +43,4 @@ export * from "./impact/types.js";
 export * from "./impact/analyze.js";
 export * from "./traceability/report.js";
 export * from "./evidence/validate.js";
+export * from "./workspace/service.js";

@@ -15,7 +15,7 @@ Generated validation summary for the PolicyTwin Codex Goal Pack.
 | `DECISIONS.md` | 19876 | 276 | `ed8f674399fdea393ccad2f5fe21d6307c63665ead3add1cecab9e86570c0061` |
 | `GOAL_PROMPT.md` | 6548 | 82 | `6a8ac93abf3232d2853d732577f63401fd9a9383bff4578a6cdb5713663632a3` |
 | `PLAN.md` | 49274 | 1712 | `51116d4f11ccc83258ac65d773b24e9ec3c6d7c87febbad5f9f9cbbbb82cc926` |
-| `PROGRESS.md` | 30095 | 358 | `7720b119ba0dac67adbd8c1a2e781b942c56ebedb7ecfee833d7ab9326558182` |
+| `PROGRESS.md` | 31223 | 369 | `288dfa79ae4a988d8a660c76c65199a277e83b5e78ec0e9ea0a50b311b7997c3` |
 | `START_HERE.md` | 5099 | 120 | `2671af37c7e07a6f07920747713210ac23e68f761e4a90e1001e31d59c983399` |
 | `START_HERE_KO.md` | 3713 | 81 | `663c7ba86be6b43f638012e6ac1fb1e029deff72bb7bdafede4d28fabd41983d` |
 | `SUBMISSION.md` | 18852 | 516 | `09ad25cf7e65cf31889f3afa248d2650eae7a24c994ff741810daf7ae08e80b7` |

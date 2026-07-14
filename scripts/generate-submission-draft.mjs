@@ -62,7 +62,7 @@ write(
 write(
   submissionDirectory,
   "how-we-built-it.md",
-  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, dependency-free runtime validation, deterministic clause segmentation and Rego generation, reference case/differential/mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, impact/traceability reports, SHA-256 evidence manifests, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: OpenAI Responses API with GPT-5.6 Structured Outputs, real OPA, server-side Codex SDK, Next.js/Playwright integration, production SQLite volume behavior, a pinned Docker image, and live deployment.`,
+  `# How we built it\n\n${draft}\n\nImplemented: strict TypeScript contracts, dependency-free runtime validation, deterministic clause segmentation and Rego generation, reference case/differential/mutation execution, trusted fixture isolation, closed repair command IDs, SQLite-backed immutable policy/version persistence with restart recovery, framework-independent workspace orchestration, impact/traceability reports, SHA-256 evidence manifests, security/history scans, and clean-copy replay.\n\nPlanned but not yet verified: OpenAI Responses API with GPT-5.6 Structured Outputs, real OPA, server-side Codex SDK, Next.js/Playwright integration, production SQLite volume behavior, a pinned Docker image, and live deployment.`,
 );
 write(
   submissionDirectory,
