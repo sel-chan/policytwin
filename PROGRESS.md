@@ -8,8 +8,8 @@
 - Current milestone: `M2/M3/M8/M9 — live wiring, decision writes, authenticated proof, and release flow`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 19:07:28 +09:00`
-- Latest checkpoint commit: `1d7261d0f41201e8501558d8b59368605d258db1`
+- Last updated: `2026-07-14 19:13:32 +09:00`
+- Latest checkpoint commit: `eae20ed5d92358361c449764ade91c74d7f2d4ba`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -122,7 +122,7 @@ An independent adversarial review then reproduced a P0 proof bypass: rewriting e
 - [x] Reproduce and fix the clean-copy fixture emission failure; refresh README, decisions, security evidence, and fail-closed submission drafts.
 - [x] Reproduce the self-rehashed live-proof bypass; add semantic-forgery tests, structured proof receipts, and trusted Ed25519 attestation verification.
 - [x] Re-run the complete local gate and confirm only the three explicit owner/external release checks fail.
-- [ ] Perform independent final diff review and commit the checkpoint on `main`.
+- [x] Perform independent final diff review and commit the checkpoint on `main`.
 
 ### Completion evidence
 
@@ -131,7 +131,7 @@ An independent adversarial review then reproduced a P0 proof bypass: rewriting e
 - Expected full-gate failures only: `license:check`, `container:check`, and `submission:check`
 - Evidence hash: `99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9`
 - Screenshots: `artifacts/screenshots/01`, `02`, `03`, `04-integration`, `05`, and `07-mobile`; live Codex, change-impact, and architecture submission captures remain missing
-- Commit: pending final review
+- Commit: `eae20ed5d92358361c449764ade91c74d7f2d4ba`
 
 ## Quality gates
 
@@ -141,21 +141,21 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | static checks include `.tsx` and CSS while excluding generated Next output | 2026-07-14 18:40 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-14 18:40 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | static checks include `.tsx` and CSS while excluding generated Next output | 2026-07-14 19:12 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-14 19:12 +09:00 |
 | Unit tests | PASS | `pnpm test` via `pnpm verify` | 56/56 passed, including streaming body-limit and single-run reservation tests | 2026-07-14 19:07 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 21/21 passed, including real OPA 1.18.2, complete differential evidence, re-signed semantic-forgery rejection, and Ed25519 verification | 2026-07-14 18:40 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` via `pnpm verify` | 2/2 Chrome tests; five views, APIs, keyboard focus, and 390px layout; six screenshots inspected | 2026-07-14 18:40 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-14 18:40 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build and all dynamic routes pass | 2026-07-14 18:40 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | exact expected failures only: owner license, Docker/container, and non-final submission | 2026-07-14 18:40 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 21/21 passed, including real OPA 1.18.2, complete differential evidence, re-signed semantic-forgery rejection, and Ed25519 verification | 2026-07-14 19:12 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` via `pnpm verify` | 2/2 Chrome tests; five views, APIs, keyboard focus, and 390px layout; six screenshots inspected | 2026-07-14 19:12 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 21/21 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-14 19:12 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build and all dynamic routes pass | 2026-07-14 19:12 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | exact expected failures only: owner license, Docker/container, and non-final submission | 2026-07-14 19:12 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Clean-copy reproduction | PASS | `pnpm clean:check` | 247 source files; frozen offline install and 11 command groups including Chrome E2E pass | 2026-07-14 19:07 +09:00 |
-| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA and health route exist; Dockerfile and daemon remain unavailable | 2026-07-14 18:40 +09:00 |
+| Container health | FAIL | `pnpm container:check` via `pnpm verify`; `docker info` | OPA and health route exist; Dockerfile and daemon remain unavailable | 2026-07-14 19:12 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
 | Dependency/license review | FAIL | `pnpm license:check`; `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-14 15:46 +09:00 |
 | Security review | PASS | `pnpm security:check` | 247 files/228 text files plus Git history; no static critical/high finding; live release review still required | 2026-07-14 19:07 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 31 unmet requirements; live proof, 3 required captures, license, media, URLs, and confirmation remain | 2026-07-14 18:40 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | 31 unmet requirements; live proof, 3 required captures, license, media, URLs, and confirmation remain | 2026-07-14 19:12 +09:00 |
 
 ## Product proof metrics
 
@@ -178,16 +178,17 @@ Never fill from estimates.
 
 ## Checkpoint log
 
-### 2026-07-14 18:40 +09:00 — Five-view workspace and authenticated evidence boundary verified
+### 2026-07-14 19:13 +09:00 — Five-view workspace and authenticated evidence boundary verified
 
 - Milestones: M4, M5, and M6 gates pass; M2, M3, and M8 advance but remain incomplete pending live/write/impact flows
 - Change: added a strict GPT-5.6 Responses adapter contract and protected route; complete drift-report validation; five evidence-backed Next.js views and APIs; manifest-verified downloads; explicit error/loading/not-found states; Chrome E2E; six screenshots; responsive navigation; social preview; structured external proof receipts; semantic evidence recomputation; and a trusted Ed25519 live-attestation boundary
 - Security boundary: live interpretation requires a server token, 128 KB body limit, one active run, 60-second cancellation, no SDK retries, two bounded schema attempts, generic external errors, exact request/source identity, and golden-case agreement
 - Recovered failures: clean-copy replay found incremental fixture compilation could report success after deleting emitted JavaScript; fixture builds are now non-incremental and assert both outputs exist. Adversarial review then proved a self-rehashed package could forge live PASS; the exact attack and semantic variants are now regression tests and fail closed.
 - Verified: lint; strict typecheck; 56 unit; 21 integration; 21 eval; 2 Chrome E2E; production build; deterministic evidence generation; 247-file clean-copy replay; 247-file/228-text-file static security scan
+- Independent review: no unresolved P0/P1 remained after moving the one-run reservation before body reads, enforcing streamed byte limits, and regenerating all hash-bound artifacts.
 - Full gate: `pnpm verify` fails only `license:check`, `container:check`, and `submission:check`, each for an explicit owner/external/incomplete condition
 - Evidence hash: `99f8da5a9c28356d0b6eef4a92e0ae5f8460de14a9f35a80197a98f1c3f588b9`
-- Commit: pending final diff review
+- Commit: `eae20ed5d92358361c449764ade91c74d7f2d4ba`
 - Next: checkpoint the verified changes, then implement remaining independent M3/M8 write and impact surfaces before requesting owner-only live/license/deployment actions
 
 ### 2026-07-14 15:47 +09:00 — M0 official preflight and real OPA gate verified
@@ -375,18 +376,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Complete the final diff/adversarial review and checkpoint commit on main, then continue the independent M3 persisted write flow and M8 change-impact UI before owner-only live/license/deployment actions.`
+`Continue the independent M3 persisted write flow and M8 change-impact UI, then implement every remaining offline-safe release prerequisite before owner-only live/license/deployment actions.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; final review and checkpoint commit are in progress`
-- Exact current state: `five-view workspace, local OPA/browser/build gates, and hardened offline evidence pass; live work remains fail-closed`
+- Why paused: `not paused; the verified workspace/evidence checkpoint is committed and the next independent slice is starting`
+- Exact current state: `five-view workspace, local OPA/browser/build gates, and hardened offline evidence pass at eae20ed; live work remains fail-closed`
 - Last successful command: `pnpm verify completed all local gates; only license:check, container:check, and submission:check failed as expected`
 - Current failing command: `pnpm verify, only for the three documented incomplete release gates`
-- Uncommitted files: `current workspace/UI/interpreter/evidence checkpoint changes`
-- Safe resume command/action: `review git diff/status, commit on main, then continue M3/M8`
+- Uncommitted files: `PROGRESS.md checkpoint record only`
+- Safe resume command/action: `commit the checkpoint record, then continue M3/M8`
 - One owner action, if any: `none`
 
 ## Final completion record
