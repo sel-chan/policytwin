@@ -6,7 +6,13 @@ import type { PolicyIR } from "../policy-ir/types.js";
 import { parsePolicyIR } from "../policy-ir/validate.js";
 
 export class CaseGenerationError extends Error {
-  constructor(readonly code: "GOLDEN_CONTRADICTION" | "DUPLICATE_GOLDEN_CONFLICT", message: string) {
+  constructor(
+    readonly code:
+      | "GOLDEN_CONTRADICTION"
+      | "REQUIRED_CASE_CONTRADICTION"
+      | "DUPLICATE_GOLDEN_CONFLICT",
+    message: string,
+  ) {
     super(message);
     this.name = "CaseGenerationError";
   }
@@ -110,6 +116,7 @@ function generatedCandidates(): CaseCandidate[] {
 export function generateAcceptedCaseCorpus(
   policyValue: unknown,
   goldenCases: readonly PolicyCase[],
+  requiredCases: readonly PolicyCase[] = [],
 ): PolicyCase[] {
   const policy = parsePolicyIR(policyValue);
   assertPolicyReadyToCompile(policy);
@@ -137,6 +144,23 @@ export function generateAcceptedCaseCorpus(
       const acceptedGolden = { ...structuredClone(golden), input };
       cases.push(acceptedGolden);
       byInput.set(key, acceptedGolden);
+    }
+  }
+
+  const requiredContradictions = findGoldenContradictions(policy, requiredCases);
+  if (requiredContradictions.length > 0) {
+    throw new CaseGenerationError(
+      "REQUIRED_CASE_CONTRADICTION",
+      `Accepted policy contradicts ${requiredContradictions.length} required case(s).`,
+    );
+  }
+  for (const requiredCase of requiredCases) {
+    const input = parseRefundPolicyInput(requiredCase.input);
+    const key = canonicalRefundInputKey(input);
+    if (!byInput.has(key)) {
+      const acceptedCase = { ...structuredClone(requiredCase), input };
+      cases.push(acceptedCase);
+      byInput.set(key, acceptedCase);
     }
   }
 

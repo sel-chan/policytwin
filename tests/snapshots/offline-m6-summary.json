@@ -1,0 +1,81 @@
+{
+  "executionMode": "REFERENCE_EXPECTATION_NOT_OPA",
+  "caseCount": 41,
+  "before": {
+    "matches": 25,
+    "drifts": 16,
+    "errors": 0,
+    "clusters": [
+      {
+        "defectId": "DAY_14_INCLUSIVE",
+        "recordCount": 5,
+        "witnessCaseIds": [
+          "D01",
+          "C-BOUNDARY-101ed55d",
+          "C-MINIMAL_CONTRAST-9be5639a",
+          "C-BOUNDARY-1089c17b",
+          "C-MINIMAL_CONTRAST-c9c2f540"
+        ]
+      },
+      {
+        "defectId": "USAGE_2000_INCLUSIVE",
+        "recordCount": 5,
+        "witnessCaseIds": [
+          "D02",
+          "C-BOUNDARY-f810e650",
+          "C-MINIMAL_CONTRAST-100e174b",
+          "C-BOUNDARY-1089c17b",
+          "C-MINIMAL_CONTRAST-c9c2f540"
+        ]
+      },
+      {
+        "defectId": "FINAL_SALE_PRECEDENCE",
+        "recordCount": 3,
+        "witnessCaseIds": [
+          "G06",
+          "D03",
+          "C-CONFLICT-0becddf0"
+        ]
+      },
+      {
+        "defectId": "PROMOTION_ELIGIBILITY_BYPASS",
+        "recordCount": 5,
+        "witnessCaseIds": [
+          "C-MINIMAL_CONTRAST-ac95135b",
+          "C-MINIMAL_CONTRAST-98443570",
+          "C-MINIMAL_CONTRAST-4ee64850",
+          "C-MINIMAL_CONTRAST-d24b1a0e",
+          "C-MINIMAL_CONTRAST-cbd08539"
+        ]
+      }
+    ],
+    "seededWitnesses": [
+      {
+        "caseId": "D01",
+        "expected": "ALLOW",
+        "actual": "DENY",
+        "status": "DRIFT",
+        "defectIds": ["DAY_14_INCLUSIVE"]
+      },
+      {
+        "caseId": "D02",
+        "expected": "ALLOW",
+        "actual": "DENY",
+        "status": "DRIFT",
+        "defectIds": ["USAGE_2000_INCLUSIVE"]
+      },
+      {
+        "caseId": "D03",
+        "expected": "DENY",
+        "actual": "ALLOW",
+        "status": "DRIFT",
+        "defectIds": ["FINAL_SALE_PRECEDENCE"]
+      }
+    ]
+  },
+  "after": {
+    "matches": 41,
+    "drifts": 0,
+    "errors": 0
+  }
+}

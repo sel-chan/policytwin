@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policytwin.local/schemas/differential-report.v1.schema.json",
+  "title": "PolicyTwin differential report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "executionMode", "adapterId", "total", "matches", "drifts", "errors", "records", "defectClusters"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "executionMode": { "enum": ["REFERENCE_EXPECTATION_NOT_OPA", "OPA_EXPECTATION"] },
+    "adapterId": { "type": "string", "minLength": 1 },
+    "total": { "type": "integer", "minimum": 0 },
+    "matches": { "type": "integer", "minimum": 0 },
+    "drifts": { "type": "integer", "minimum": 0 },
+    "errors": { "type": "integer", "minimum": 0 },
+    "records": { "type": "array", "items": { "$ref": "#/$defs/record" } },
+    "defectClusters": { "type": "array", "items": { "$ref": "#/$defs/cluster" } }
+  },
+  "$defs": {
+    "decision": { "enum": ["ALLOW", "DENY", "REVIEW"] },
+    "defectId": { "enum": ["DAY_14_INCLUSIVE", "USAGE_2000_INCLUSIVE", "FINAL_SALE_PRECEDENCE", "PROMOTION_ELIGIBILITY_BYPASS", "UNCLASSIFIED"] },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["daysSincePurchase", "usageBasisPoints", "promotionalPurchase", "finalSale", "managerApproved", "planType"],
+      "properties": {
+        "daysSincePurchase": { "type": "integer", "minimum": 0 },
+        "usageBasisPoints": { "type": "integer", "minimum": 0 },
+        "promotionalPurchase": { "type": "boolean" },
+        "finalSale": { "type": "boolean" },
+        "managerApproved": { "type": "boolean" },
+        "planType": { "enum": ["MONTHLY", "ANNUAL", "ENTERPRISE"] }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "matchedRuleId", "explanation", "policyVersion"],
+      "properties": {
+        "decision": { "$ref": "#/$defs/decision" },
+        "matchedRuleId": { "type": ["string", "null"] },
+        "explanation": { "type": "string" },
+        "policyVersion": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "actual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "matchedRuleId", "explanation"],
+      "properties": {
+        "decision": { "$ref": "#/$defs/decision" },
+        "matchedRuleId": { "type": ["string", "null"] },
+        "explanation": { "type": "string" }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "input", "expected", "actual", "relatedClauseIds", "relatedRuleIds", "status", "defectIds"],
+      "properties": {
+        "caseId": { "type": "string", "minLength": 1 },
+        "input": { "$ref": "#/$defs/input" },
+        "expected": { "$ref": "#/$defs/expected" },
+        "actual": { "oneOf": [{ "$ref": "#/$defs/actual" }, { "type": "null" }] },
+        "relatedClauseIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "relatedRuleIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "status": { "enum": ["MATCH", "DRIFT", "ERROR"] },
+        "defectIds": { "type": "array", "items": { "$ref": "#/$defs/defectId" }, "uniqueItems": true },
+        "error": { "type": "string", "minLength": 1 }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["defectId", "recordCount", "witnessCaseIds"],
+      "properties": {
+        "defectId": { "$ref": "#/$defs/defectId" },
+        "recordCount": { "type": "integer", "minimum": 1 },
+        "witnessCaseIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    }
+  }
+}

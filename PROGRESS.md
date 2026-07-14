@@ -8,7 +8,7 @@
 - Current milestone: `M6 — Differential runner and drift UX (offline fixture runner)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 09:49:33 +09:00`
+- Last updated: `2026-07-14 10:02:56 +09:00`
 - Latest checkpoint commit: `66431fc9b8dabb93438fd8ab8d51336c0169eb87`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -84,8 +84,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
 | M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts committed; 20 unit tests pass for all operations and guards | `506a818` | SQLite persistence and Decision Queue UI require the pinned application stack |
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
-| M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; snapshot has 38 unique cases, 3 conflicts, 35 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
-| M6 Differential runner and drift UX | IN_PROGRESS | milestone contract reviewed; offline fixture differential implementation starting |  | OPA results and web drift UX remain unavailable |
+| M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
+| M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | pending current commit | OPA results and web drift UX remain unavailable |
 | M7 Codex repair and review | NOT_STARTED |  |  |  |
 | M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
 | M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
@@ -99,23 +99,23 @@ Run the accepted corpus and required D01–D03 witnesses against canonical buggy
 
 ### Failing or missing condition
 
-The generated corpus does not yet preserve D01–D03 IDs. There is no reusable fixture adapter, differential record shape, error isolation, defect clustering, before/after report, zero-drift fixed-reference proof, or drift evidence snapshot.
+The offline implementation is complete, but the authoritative expectation source is still the clearly labeled reference evaluator rather than OPA. The web drift view and persisted downloadable evidence remain unimplemented.
 
 ### Planned actions
 
 - [x] Re-read the M6 gate and inspect the canonical/fixed fixture, D01–D03, accepted corpus, and result contracts.
-- [ ] Include the required seeded drift cases in the canonical deduplicated corpus.
-- [ ] Implement typed app adapters and per-case `MATCH`/`DRIFT`/`ERROR` isolation.
-- [ ] Cluster each mismatch into day-boundary, usage-boundary, or final-sale precedence defects.
-- [ ] Prove canonical baseline exposes all three defect clusters and fixed fixture has zero drift.
-- [ ] Add deterministic before/after snapshots, schemas, focused integration tests, and report CLI.
-- [ ] Run broader regressions, update evidence/docs, review the diff, and commit the offline M6 checkpoint.
+- [x] Include the required seeded drift cases in the canonical deduplicated corpus.
+- [x] Implement typed app adapters and per-case `MATCH`/`DRIFT`/`ERROR` isolation.
+- [x] Cluster each mismatch into the three required defects plus the observed promotional eligibility bypass.
+- [x] Prove the canonical baseline exposes D01–D03 and the fixed fixture has zero drift.
+- [x] Add deterministic before/after snapshots, schemas, focused integration tests, and report CLI.
+- [ ] Review the final diff and commit the offline M6 checkpoint.
 
 ### Completion evidence
 
-- Commands: pending M6 implementation
-- Exit codes: pending M6 implementation
-- Artifacts: pending M6 implementation
+- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm demo:reset`; `pnpm demo:run`; `pnpm build`; `pnpm verify`
+- Exit codes: focused implemented gates all 0; `pnpm verify` is 1 only because `test:e2e` and `submission:check` remain intentionally fail-closed
+- Artifacts: `tests/snapshots/offline-m6-summary.json`; `tests/snapshots/offline-m5-summary.json`; `schemas/differential-report.v1.schema.json`
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -127,14 +127,14 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/goal/milestone validator | `PACK_MANIFEST.md` | 2026-07-14 08:20 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
-| Lint | PASS | `pnpm lint` | repository static checks | 2026-07-14 08:48 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | domain, PolicyIR, and both fixture variants pass strict TypeScript | 2026-07-14 09:10 +09:00 |
-| Unit tests | PASS | `pnpm test` | 32/32 passed | 2026-07-14 09:45 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 5/5 passed; exactly 3 reset-copy drifts | 2026-07-14 08:49 +09:00 |
-| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 08:42 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 9/9 offline/recorded evals pass; live model/OPA eval remains unverified | 2026-07-14 09:45 +09:00 |
-| Production build | PASS | `pnpm build` | `dist/` generated and ignored | 2026-07-14 09:11 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented M0–M5 offline steps pass; expected remaining failures are browser and submission gates | 2026-07-14 09:46 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 10:02 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain, PolicyIR, compiler, cases, mutation, differential runner, and both fixture variants pass strict TypeScript | 2026-07-14 10:02 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 32/32 passed | 2026-07-14 10:02 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 9/9 passed; 16 classified baseline drifts, zero fixed-reference drift, and exactly 3 reset-copy seeded drifts | 2026-07-14 10:02 +09:00 |
+| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 10:02 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 11/11 offline/recorded evals pass; live model/OPA eval remains unverified | 2026-07-14 10:02 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 10:02 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented M0–M6 offline steps pass; only browser and submission gates fail as designed | 2026-07-14 10:02 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -152,9 +152,9 @@ Never fill from estimates.
 | Required ambiguity labels found | 100% | UNSET |  |
 | Explicit seeded semantics mislabeled as ambiguity | 0 | UNSET |  |
 | Golden cases passed | 100% | UNSET |  |
-| Accepted corpus size | ≥30 | 38 (offline reference corpus) | `tests/snapshots/offline-m5-summary.json` |
+| Accepted corpus size | ≥30 | 41 (offline reference corpus including D01–D03) | `tests/snapshots/offline-m5-summary.json` |
 | Seeded app bugs detected | 3/3 | 3/3 | `pnpm demo:run`; `tests/integration/refund-fixture.integration.test.mjs` |
-| Post-repair drift | 0 | UNSET |  |
+| Post-repair drift | 0 | 0 (evaluation-only fixed fixture; no Codex/OPA claim) | `tests/snapshots/offline-m6-summary.json` |
 | Mutation kill rate | ≥90% | 93.62% (offline reference; OPA unverified) | `tests/snapshots/offline-m5-summary.json` |
 | Rule-to-clause traceability | 100% | UNSET |  |
 | Rule-to-case traceability | 100% | UNSET |  |
@@ -164,6 +164,15 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 10:02 +09:00 — M6 offline differential runner verified, commit pending
+
+- Milestone: M6 (offline subset; milestone remains in progress)
+- Change: preserved D01–D03 in the 41-case corpus; added typed differential records, per-case error isolation, deterministic defect clustering, strict schema, report CLI, integration/eval coverage, and before/after snapshot
+- Verified: unit 32/32; integration 9/9; eval 11/11; baseline 25 matches, 16 drifts, 0 errors; fixed reference 41 matches, 0 drifts, 0 errors; full offline gate fails only browser/submission
+- Diagnostic correction: the first run exposed five previously unclassified promotional approvals outside basic eligibility; these are now truthfully reported as `PROMOTION_ELIGIBILITY_BYPASS`
+- Expected gap: execution mode is `REFERENCE_EXPECTATION_NOT_OPA`; no Codex repair claim or web drift UX exists
+- Commit: pending current checkpoint
 
 ### 2026-07-14 09:49 +09:00 — M5 offline case/conflict/mutation engines committed
 
@@ -267,7 +276,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Build the offline M6 differential adapter, seeded defect clustering, and before/after snapshots while keeping reference expectations distinct from future OPA output.`
+`Review and commit the offline M6 checkpoint, then obtain one approved network scope for official documentation, pinned application dependencies, and OPA before continuing the authoritative integration path.`
 
 ## Pause handoff
 

@@ -13,6 +13,9 @@ const recorded = JSON.parse(
 const goldenCases = JSON.parse(
   await readFile(new URL("../fixtures/refund-demo/cases/golden-cases.json", import.meta.url)),
 );
+const driftCases = JSON.parse(
+  await readFile(new URL("../fixtures/refund-demo/cases/seeded-drift-cases.json", import.meta.url)),
+);
 let policy = recorded;
 for (const [ambiguityId, optionId] of [
   ["ambiguity-purchase-day-index", "purchase-day-zero"],
@@ -22,7 +25,7 @@ for (const [ambiguityId, optionId] of [
   policy = resolvePolicyAmbiguity(policy, ambiguityId, optionId, goldenCases).policy;
 }
 
-const cases = generateAcceptedCaseCorpus(policy, goldenCases);
+const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
 const conflicts = findRuleConflictWitnesses(policy, cases);
 const contrasts = findMinimalContrasts(cases);
 const mutation = runOfflineMutationSuite(policy, cases);

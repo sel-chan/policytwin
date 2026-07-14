@@ -16,6 +16,9 @@ const recorded = JSON.parse(
 const goldenCases = JSON.parse(
   await readFile(new URL("../../fixtures/refund-demo/cases/golden-cases.json", import.meta.url)),
 );
+const driftCases = JSON.parse(
+  await readFile(new URL("../../fixtures/refund-demo/cases/seeded-drift-cases.json", import.meta.url)),
+);
 const summarySnapshot = JSON.parse(
   await readFile(new URL("../snapshots/offline-m5-summary.json", import.meta.url)),
 );
@@ -34,7 +37,7 @@ function acceptedPolicy() {
 
 test("executes real mutants and exceeds the 90 percent offline reference threshold", () => {
   const policy = acceptedPolicy();
-  const cases = generateAcceptedCaseCorpus(policy, goldenCases);
+  const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
   const report = runOfflineMutationSuite(policy, cases);
   assert.equal(report.executionMode, "REFERENCE_EVALUATOR_NOT_OPA");
   assert.equal(report.total > 0, true);
@@ -46,7 +49,7 @@ test("executes real mutants and exceeds the 90 percent offline reference thresho
 
 test("covers every required seeded mutation operator and supports gte to gt generically", () => {
   const policy = acceptedPolicy();
-  const cases = generateAcceptedCaseCorpus(policy, goldenCases);
+  const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
   const report = runOfflineMutationSuite(policy, cases);
   for (const operator of [
     "LTE_TO_LT",
@@ -73,14 +76,14 @@ test("covers every required seeded mutation operator and supports gte to gt gene
 test("does not mutate the accepted source policy while generating mutants", () => {
   const policy = acceptedPolicy();
   const before = JSON.stringify(policy);
-  const cases = generateAcceptedCaseCorpus(policy, goldenCases);
+  const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
   generatePolicyMutants(policy, cases);
   assert.equal(JSON.stringify(policy), before);
 });
 
 test("matches the reviewable offline M5 score snapshot", () => {
   const policy = acceptedPolicy();
-  const cases = generateAcceptedCaseCorpus(policy, goldenCases);
+  const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
   const report = runOfflineMutationSuite(policy, cases);
   const sourceCounts = Object.fromEntries(
     [...new Set(cases.map((item) => item.source))]

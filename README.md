@@ -6,7 +6,7 @@ PolicyTwin is an evidence-first policy engineering product for the OpenAI Build 
 
 ## Current implementation status
 
-The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2–M5** have offline checkpoints covering strict `PolicyIR`, deterministic clauses, immutable ambiguity resolution, state transitions, a byte-stable Rego compiler, 38 traceable cases, conflict/minimal-contrast analysis, and 47 executed mutants with a 93.62% reference-evaluator kill rate. The recorded fixture is not a live GPT-5.6 response, generated Rego has not been compiled by OPA, and the mutation score is explicitly not OPA evidence. Persistence, product UI, OPA execution, live interpretation, and Codex repair are not yet implemented.
+The offline **M1 — Domain core and seeded fixture** slice is implemented. **M2–M6** have offline checkpoints covering strict `PolicyIR`, deterministic clauses, immutable ambiguity resolution, state transitions, a byte-stable Rego compiler, 41 traceable cases, conflict/minimal-contrast analysis, 47 executed mutants with a 93.62% reference-evaluator kill rate, and deterministic before/after differential reports. The buggy fixture produces 16 classified drifts across the accepted corpus while the evaluation-only fixed fixture produces zero drift. The recorded fixture is not a live GPT-5.6 response, generated Rego has not been compiled by OPA, and neither the mutation nor differential result is OPA evidence. Persistence, product UI, OPA execution, live interpretation, and Codex repair are not yet implemented.
 
 ## Local baseline
 

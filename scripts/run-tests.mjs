@@ -15,11 +15,13 @@ const suites = {
   integration: [
     "tests/integration/scaffold.integration.test.mjs",
     "tests/integration/refund-fixture.integration.test.mjs",
+    "tests/integration/differential-runner.integration.test.mjs",
   ],
   eval: [
     "evals/scaffold.eval.test.mjs",
     "evals/interpreter/recorded-interpreter.eval.test.mjs",
     "evals/cases/offline-m5.eval.test.mjs",
+    "evals/differential/offline-m6.eval.test.mjs",
   ],
 };
 

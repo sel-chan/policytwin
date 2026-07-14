@@ -32,3 +32,5 @@ export * from "./cases/generate.js";
 export * from "./cases/analyze.js";
 export * from "./mutation/mutate.js";
 export * from "./mutation/report.js";
+export * from "./differential/types.js";
+export * from "./differential/run.js";

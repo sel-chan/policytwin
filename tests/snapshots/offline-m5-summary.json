@@ -1,15 +1,15 @@
 {
   "executionMode": "REFERENCE_EVALUATOR_NOT_OPA",
-  "caseCount": 38,
+  "caseCount": 41,
   "sourceCounts": {
-    "BOUNDARY": 9,
-    "CONFLICT": 4,
+    "BOUNDARY": 11,
+    "CONFLICT": 5,
     "GENERATED": 1,
     "MINIMAL_CONTRAST": 18,
     "USER_GOLDEN": 6
   },
   "conflictCount": 3,
-  "contrastCount": 35,
+  "contrastCount": 36,
   "mutation": {
     "killed": 44,
     "total": 47,

@@ -16,6 +16,9 @@ const recorded = JSON.parse(
 const goldenCases = JSON.parse(
   await readFile(new URL("../../fixtures/refund-demo/cases/golden-cases.json", import.meta.url)),
 );
+const driftCases = JSON.parse(
+  await readFile(new URL("../../fixtures/refund-demo/cases/seeded-drift-cases.json", import.meta.url)),
+);
 
 function acceptedPolicy() {
   let policy = structuredClone(recorded);
@@ -31,18 +34,19 @@ function acceptedPolicy() {
 
 test("generates at least 30 unique accepted and traceable cases deterministically", () => {
   const policy = acceptedPolicy();
-  const first = generateAcceptedCaseCorpus(policy, goldenCases);
-  const second = generateAcceptedCaseCorpus(structuredClone(policy), goldenCases);
+  const first = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
+  const second = generateAcceptedCaseCorpus(structuredClone(policy), goldenCases, driftCases);
   assert.deepEqual(first, second);
   assert.equal(first.length >= 30, true);
   assert.equal(new Set(first.map((item) => canonicalRefundInputKey(item.input))).size, first.length);
   assert.equal(first.filter((item) => item.source === "USER_GOLDEN").length, 6);
+  assert.deepEqual(first.filter((item) => item.id.startsWith("D")).map((item) => item.id), ["D01", "D02", "D03"]);
   assert.equal(first.every((item) => item.rationale.length > 0), true);
   assert.equal(first.every((item) => item.relatedClauseIds.length > 0), true);
 });
 
 test("contains exact day, usage, promotion, final-sale, and default witnesses", () => {
-  const cases = generateAcceptedCaseCorpus(acceptedPolicy(), goldenCases);
+  const cases = generateAcceptedCaseCorpus(acceptedPolicy(), goldenCases, driftCases);
   for (const days of [13, 14, 15]) {
     assert.equal(cases.some((item) => item.input.daysSincePurchase === days), true);
   }
@@ -65,7 +69,7 @@ test("contains exact day, usage, promotion, final-sale, and default witnesses", 
 
 test("reports seeded overlaps, one-field contrasts, and no unreached rule", () => {
   const policy = acceptedPolicy();
-  const cases = generateAcceptedCaseCorpus(policy, goldenCases);
+  const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
   const conflicts = findRuleConflictWitnesses(policy, cases);
   assert.equal(
     conflicts.some(
