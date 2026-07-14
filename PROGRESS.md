@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M6 — Differential runner and drift UX (offline fixture runner)`
+- Current milestone: `M7 — Codex cartography, repair, and review (offline worker contracts)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 10:06:52 +09:00`
+- Last updated: `2026-07-14 10:33:03 +09:00`
 - Latest checkpoint commit: `866bb205455945e0ee14afc8f776c1f5efe5b782`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -86,7 +86,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
 | M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; canonical corpus now has 41 unique cases including D01–D03, 3 conflicts, 36 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
 | M6 Differential runner and drift UX | IN_PROGRESS | offline runner verified: 41 cases, 16 classified baseline drifts, 0 execution errors, D01–D03 preserved, and 0 fixed-reference drift | `866bb20` | OPA results and web drift UX remain unavailable |
-| M7 Codex repair and review | NOT_STARTED |  |  |  |
+| M7 Codex repair and review | IN_PROGRESS | offline foundation verified: fresh trusted copies, strict input/results, closed commands, credential-stripped environment, 2-attempt bound, independent review blocking; explicitly no live Codex claim | pending current commit | Current Codex SDK integration, real patch/diff, zero post-repair drift, and live review evidence require approved documentation/install/network scope |
 | M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
 | M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
 | M10 Submission package | NOT_STARTED |  |  |  |
@@ -95,29 +95,29 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Run the accepted corpus and required D01–D03 witnesses against canonical buggy and fixed fixture adapters, keep execution errors distinct from drift, cluster mismatches by seeded defect, and produce deterministic before/after differential snapshots.
+Build the dependency-free M7 worker foundation: immutable trusted-fixture copying, closed command policy, strict cartography/repair/review result contracts, deterministic orchestration with injected backends, and explicit separation between offline test doubles and future live Codex evidence.
 
 ### Failing or missing condition
 
-The offline implementation is complete, but the authoritative expectation source is still the clearly labeled reference evaluator rather than OPA. The web drift view and persisted downloadable evidence remain unimplemented.
+There is no repair-worker contract, safe fresh-copy lifecycle, command allowlist, cartography/review schema, injected Codex backend boundary, or recoverable failure model. The SDK is not installed and current official SDK behavior has not been verified, so this checkpoint must not claim a Codex run.
 
 ### Planned actions
 
-- [x] Re-read the M6 gate and inspect the canonical/fixed fixture, D01–D03, accepted corpus, and result contracts.
-- [x] Include the required seeded drift cases in the canonical deduplicated corpus.
-- [x] Implement typed app adapters and per-case `MATCH`/`DRIFT`/`ERROR` isolation.
-- [x] Cluster each mismatch into the three required defects plus the observed promotional eligibility bypass.
-- [x] Prove the canonical baseline exposes D01–D03 and the fixed fixture has zero drift.
-- [x] Add deterministic before/after snapshots, schemas, focused integration tests, and report CLI.
-- [x] Review the final diff and commit the offline M6 checkpoint.
+- [x] Re-read the M7 gate and inspect fixture reset/build/test and current process boundaries.
+- [x] Implement a fresh trusted-fixture copy manager with canonical-source hash protection and contained paths.
+- [x] Define a closed command allowlist with argument validation, timeouts, output bounds, and secret redaction.
+- [x] Define strict versioned cartography, repair, command-evidence, and independent-review contracts.
+- [x] Implement an orchestration boundary using injected offline backends without impersonating Codex.
+- [x] Test success, malformed backend output, command rejection, canonical immutability, and bounded failure recovery.
+- [ ] Review the final diff and commit the M7 offline checkpoint.
 
 ### Completion evidence
 
-- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `pnpm demo:reset`; `pnpm demo:run`; `pnpm build`; `pnpm verify`
+- Commands: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm test:integration`; `pnpm eval`; `node scripts/report-offline-m7.mjs`; `pnpm verify`
 - Exit codes: focused implemented gates all 0; `pnpm verify` is 1 only because `test:e2e` and `submission:check` remain intentionally fail-closed
-- Artifacts: `tests/snapshots/offline-m6-summary.json`; `tests/snapshots/offline-m5-summary.json`; `schemas/differential-report.v1.schema.json`
+- Artifacts: `tests/snapshots/offline-m7-summary.json`; `schemas/codex-results.v1.schema.json`; `prompts/cartographer.v1.md`; `prompts/repair.v1.md`; `prompts/reviewer.v1.md`
 - Screenshots: not applicable; no UI implementation exists
-- Commit: `866bb205455945e0ee14afc8f776c1f5efe5b782`
+- Commit: pending current checkpoint
 
 ## Quality gates
 
@@ -127,14 +127,14 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/goal/milestone validator | `PACK_MANIFEST.md` | 2026-07-14 08:20 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline` | `pnpm-lock.yaml` | 2026-07-14 08:39 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 10:02 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain, PolicyIR, compiler, cases, mutation, differential runner, and both fixture variants pass strict TypeScript | 2026-07-14 10:02 +09:00 |
-| Unit tests | PASS | `pnpm test` via `pnpm verify` | 32/32 passed | 2026-07-14 10:02 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 9/9 passed; 16 classified baseline drifts, zero fixed-reference drift, and exactly 3 reset-copy seeded drifts | 2026-07-14 10:02 +09:00 |
-| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 10:02 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 11/11 offline/recorded evals pass; live model/OPA eval remains unverified | 2026-07-14 10:02 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 10:02 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | implemented M0–M6 offline steps pass; only browser and submission gates fail as designed | 2026-07-14 10:02 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | repository static checks | 2026-07-14 10:33 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | domain, PolicyIR, compiler, cases, mutation, differential runner, worker contracts, and both fixture variants pass strict TypeScript | 2026-07-14 10:33 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 37/37 passed | 2026-07-14 10:33 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 12/12 passed; fresh copy isolation, command environment, fixture tests, drift runner, and reset replay verified | 2026-07-14 10:33 +09:00 |
+| Browser tests | FAIL | `pnpm test:e2e` via `pnpm verify` | fail-closed: no web app or Playwright suite | 2026-07-14 10:33 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 14/14 offline/recorded evals pass; live model/Codex/OPA eval remains unverified | 2026-07-14 10:33 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | `dist/` generated and ignored | 2026-07-14 10:33 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | implemented M0–M7 offline steps pass; only browser and submission gates fail as designed | 2026-07-14 10:33 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed: credentials and live integration absent | 2026-07-14 08:42 +09:00 |
 | Container health | NOT_RUN |  |  |  |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
@@ -164,6 +164,15 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 10:33 +09:00 — M7 offline repair-worker foundation verified, commit pending
+
+- Milestone: M7 (offline contracts only; milestone remains in progress)
+- Change: added strict worker inputs/results, mode-tagged injected backend, fresh trusted-copy lifecycle, canonical hash guard, closed command IDs, sanitized child environment, time/output limits, bounded retry, independent review rules, three prompts, schema, and snapshot
+- Verified: unit 37/37; integration 12/12; eval 14/14; real fresh-copy fixture test command passes; canonical baseline remains unchanged; full offline gate fails only browser/submission
+- Safety evidence: traversal/absolute paths and unknown commands are rejected; `OPENAI_API_KEY`/`CODEX_API_KEY` are absent from child environments; output secrets and personal home paths are redacted; high/critical review blocks proof
+- Truth boundary: snapshot execution mode is `OFFLINE_TEST_DOUBLE` with `liveCodexClaim: false`; no SDK call, Codex patch, or live review is claimed
+- Commit: pending current checkpoint
 
 ### 2026-07-14 10:06 +09:00 — M6 offline differential runner committed
 
@@ -272,11 +281,11 @@ A blocker is valid only when the task cannot continue safely without external in
 
 Link to IDs in `DECISIONS.md`.
 
-- None. Preflight contract choices are accepted as D-005 through D-009.
+- None. Current contract choices are accepted through D-011.
 
 ## Next action
 
-`Review and commit the offline M6 checkpoint, then obtain one approved network scope for official documentation, pinned application dependencies, and OPA before continuing the authoritative integration path.`
+`Review and commit the M7 offline worker foundation, then continue independent M8 evidence and impact foundations while live SDK/OPA/UI integration remains approval-gated.`
 
 ## Pause handoff
 

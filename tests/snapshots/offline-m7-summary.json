@@ -1,0 +1,12 @@
+{
+  "executionMode": "OFFLINE_TEST_DOUBLE",
+  "liveCodexClaim": false,
+  "status": "PASS",
+  "attempts": 2,
+  "cartographyFiles": ["src/refund.ts", "tests/refund.test.mjs"],
+  "repairAttemptCount": 2,
+  "finalCommandIds": ["fixture-typecheck", "fixture-test"],
+  "finalCommandsPassed": true,
+  "reviewVerdict": "APPROVE",
+  "failure": null
+}

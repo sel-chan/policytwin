@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policytwin.local/schemas/codex-results.v1.schema.json",
+  "title": "PolicyTwin Codex worker contracts v1",
+  "oneOf": [
+    { "$ref": "#/$defs/cartography" },
+    { "$ref": "#/$defs/repairInput" },
+    { "$ref": "#/$defs/repair" },
+    { "$ref": "#/$defs/review" },
+    { "$ref": "#/$defs/commandEvidence" },
+    { "$ref": "#/$defs/workerReport" }
+  ],
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "executionMode": { "enum": ["OFFLINE_TEST_DOUBLE", "LIVE_CODEX_SDK"] },
+    "commandId": { "enum": ["fixture-typecheck", "fixture-test"] },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executionMode", "backendId", "runId", "startedAt", "completedAt"],
+      "properties": {
+        "executionMode": { "$ref": "#/$defs/executionMode" },
+        "backendId": { "type": "string", "minLength": 1 },
+        "runId": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "lineStart", "lineEnd", "symbol", "reason"],
+      "properties": {
+        "file": { "$ref": "#/$defs/relativePath" },
+        "lineStart": { "type": "integer", "minimum": 1 },
+        "lineEnd": { "type": "integer", "minimum": 1 },
+        "symbol": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pathArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/relativePath" }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "commandArray": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/commandId" }
+    },
+    "repairInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policyId", "policyVersion", "fixtureId", "policySummary", "failingCaseIds", "allowedCommandIds", "maxRepairAttempts"],
+      "properties": {
+        "policyId": { "type": "string", "minLength": 1 },
+        "policyVersion": { "type": "integer", "minimum": 1 },
+        "fixtureId": { "const": "seeded-refund-demo" },
+        "policySummary": { "type": "string", "minLength": 1 },
+        "failingCaseIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "allowedCommandIds": { "$ref": "#/$defs/commandArray" },
+        "maxRepairAttempts": { "type": "integer", "minimum": 1, "maximum": 2 }
+      }
+    },
+    "cartography": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "phase", "metadata", "relevantFiles", "entryPoints", "policyLogicLocations", "testFiles", "risks", "proposedFilesToChange", "verificationCommandIds"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "phase": { "const": "CARTOGRAPHY" },
+        "metadata": { "$ref": "#/$defs/metadata" },
+        "relevantFiles": { "$ref": "#/$defs/pathArray" },
+        "entryPoints": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/location" } },
+        "policyLogicLocations": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/location" } },
+        "testFiles": { "allOf": [{ "$ref": "#/$defs/pathArray" }, { "minItems": 1 }] },
+        "risks": { "$ref": "#/$defs/stringArray" },
+        "proposedFilesToChange": { "$ref": "#/$defs/pathArray" },
+        "verificationCommandIds": { "$ref": "#/$defs/commandArray" }
+      }
+    },
+    "repair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "phase", "metadata", "changedFiles", "summary", "rationale", "addedTests", "remainingRisks", "verificationCommandIds"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "phase": { "const": "REPAIR" },
+        "metadata": { "$ref": "#/$defs/metadata" },
+        "changedFiles": { "allOf": [{ "$ref": "#/$defs/pathArray" }, { "minItems": 1 }] },
+        "summary": { "type": "string", "minLength": 1 },
+        "rationale": { "$ref": "#/$defs/stringArray" },
+        "addedTests": { "allOf": [{ "$ref": "#/$defs/pathArray" }, { "minItems": 1 }] },
+        "remainingRisks": { "$ref": "#/$defs/stringArray" },
+        "verificationCommandIds": { "$ref": "#/$defs/commandArray" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "title", "description", "relatedFiles"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "relatedFiles": { "$ref": "#/$defs/pathArray" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "phase", "metadata", "verdict", "summary", "findings"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "phase": { "const": "REVIEW" },
+        "metadata": { "$ref": "#/$defs/metadata" },
+        "verdict": { "enum": ["APPROVE", "BLOCK"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "commandEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "commandId", "exitCode", "timedOut", "durationMs", "stdout", "stderr", "outputTruncated"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "commandId": { "$ref": "#/$defs/commandId" },
+        "exitCode": { "type": "integer", "minimum": 0 },
+        "timedOut": { "type": "boolean" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "stdout": { "type": "string" },
+        "stderr": { "type": "string" },
+        "outputTruncated": { "type": "boolean" }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "enum": ["CARTOGRAPHY_INVALID", "REPAIR_INVALID", "COMMAND_FAILED", "REVIEW_INVALID", "REVIEW_BLOCKED"] },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "workerReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "executionMode", "status", "attempts", "cartography", "repairAttempts", "commandEvidence", "review", "failure"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "executionMode": { "$ref": "#/$defs/executionMode" },
+        "status": { "enum": ["PASS", "FAIL"] },
+        "attempts": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "cartography": { "oneOf": [{ "$ref": "#/$defs/cartography" }, { "type": "null" }] },
+        "repairAttempts": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/repair" } },
+        "commandEvidence": { "type": "array", "items": { "$ref": "#/$defs/commandEvidence" } },
+        "review": { "oneOf": [{ "$ref": "#/$defs/review" }, { "type": "null" }] },
+        "failure": { "oneOf": [{ "$ref": "#/$defs/failure" }, { "type": "null" }] }
+      }
+    }
+  }
+}

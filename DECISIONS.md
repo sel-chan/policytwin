@@ -188,3 +188,20 @@ Add new entries below this line with the template above.
 - Risks: The dependency-free validator duplicates some later Zod constraints and must be cross-checked when Zod is introduced.
 - Reversal or migration path: Make Zod/JSON Schema the shared authoritative runtime contract while retaining the deterministic semantic checks for cross-reference, priority, and patch-target invariants.
 - Related files/commits: `src/policy-ir/`, `schemas/policy-ir.v1.schema.json`, `prompts/interpreter.v1.md`, `PROGRESS.md`.
+
+### D-011 — Separate repair orchestration contracts from live Codex evidence
+
+- Date: 2026-07-14
+- Status: `ACCEPTED`
+- Milestone: M7
+- Context: Current Codex SDK documentation and packages cannot be fetched without approved network scope, but trusted-copy isolation, command safety, result validation, retry bounds, and review policy can be implemented and tested independently. An untagged fake backend could otherwise be mistaken for a real in-product Codex repair.
+- Options considered:
+  1. postpone every M7 component until live SDK access is available;
+  2. implement a mode-tagged injected backend contract with strict offline test doubles and require separate live evidence;
+  3. use local scripted edits and label them as Codex repair.
+- Decision: Build the worker boundary now with mandatory `OFFLINE_TEST_DOUBLE` or `LIVE_CODEX_SDK` provenance, strict schemas, a two-command allowlist, at most two repair attempts, and a distinct independent-review run identity. Offline snapshots must set `liveCodexClaim` to false and cannot satisfy `verify:live` or the M7 gate. Only a future adapter verified against current official SDK documentation may emit `LIVE_CODEX_SDK` evidence.
+- Evidence: `src/codex/`, `scripts/repair-workspace.mjs`, `scripts/repair-command.mjs`, `schemas/codex-results.v1.schema.json`, and `tests/snapshots/offline-m7-summary.json`.
+- Consequences: Most safety and orchestration behavior is deterministic and testable before credentials exist, while live repair claims remain fail-closed.
+- Risks: The eventual SDK adapter may require contract mapping changes after official documentation review.
+- Reversal or migration path: Keep the domain contracts and replace only the injected backend adapter when the current SDK interface is verified.
+- Related files/commits: `src/codex/`, `prompts/cartographer.v1.md`, `prompts/repair.v1.md`, `prompts/reviewer.v1.md`, `PROGRESS.md`.
