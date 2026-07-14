@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M5 — Case generation, conflicts, and mutation (offline reference execution)`
+- Current milestone: `M6 — Differential runner and drift UX (offline fixture runner)`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-14 09:46:53 +09:00`
-- Latest checkpoint commit: `27a2b924d44bd900c28cb393e58e5413bb857445`
+- Last updated: `2026-07-14 09:49:33 +09:00`
+- Latest checkpoint commit: `66431fc9b8dabb93438fd8ab8d51336c0169eb87`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -84,8 +84,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M2 PolicyIR and interpretation | IN_PROGRESS | offline contracts committed; 11 unit and 7 eval tests pass for strict IR validation, stable clauses, prompt safety, recorded semantics, and 9-case reference agreement | `e535209` | Project-pinned Zod/OpenAI integration and fresh GPT-5.6 evidence require approved network scope |
 | M3 Decision Queue and versioning | IN_PROGRESS | offline patch/version/state contracts committed; 20 unit tests pass for all operations and guards | `506a818` | SQLite persistence and Decision Queue UI require the pinned application stack |
 | M4 Compiler and OPA | IN_PROGRESS | offline compiler committed; 25 unit tests and byte-stable 3,008-byte Rego/manifest snapshots cover all predicate types and exact mappings | `27a2b92` | OPA binary/version and real compile/evaluation evidence require approved installation scope |
-| M5 Case generation/conflict/mutation | IN_PROGRESS | 32 unit and 9 eval tests pass; snapshot has 38 unique cases, 3 conflicts, 35 contrasts, and 44/47 killed mutants (93.62%) with all 3 survivors reported |  | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
-| M6 Differential runner and drift UX | NOT_STARTED |  |  |  |
+| M5 Case generation/conflict/mutation | IN_PROGRESS | offline engines committed; snapshot has 38 unique cases, 3 conflicts, 35 contrasts, and 44/47 killed mutants (93.62%) with all survivors reported | `66431fc` | OPA-backed agreement, Case Lab UI, and final evidence remain unavailable until earlier external/app gates |
+| M6 Differential runner and drift UX | IN_PROGRESS | milestone contract reviewed; offline fixture differential implementation starting |  | OPA results and web drift UX remain unavailable |
 | M7 Codex repair and review | NOT_STARTED |  |  |  |
 | M8 Proof, impact, and polish | NOT_STARTED |  |  |  |
 | M9 Security, reproducibility, deployment | NOT_STARTED |  |  |  |
@@ -95,37 +95,27 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Generate at least 30 unique traceable cases with required boundaries, overlaps, and minimal contrasts; detect conflicts with witnesses; execute required mutation operators; and compute a truthful offline reference kill rate with survivors and deterministic exclusions.
+Run the accepted corpus and required D01–D03 witnesses against canonical buggy and fixed fixture adapters, keep execution errors distinct from drift, cluster mismatches by seeded defect, and produce deterministic before/after differential snapshots.
 
 ### Failing or missing condition
 
-Only six golden and three seeded drift examples exist. There is no deterministic corpus generator, canonical input deduplication, minimal-contrast analysis, overlap witness report, mutation generator, actual mutation execution, or score calculation.
+The generated corpus does not yet preserve D01–D03 IDs. There is no reusable fixture adapter, differential record shape, error isolation, defect clustering, before/after report, zero-drift fixed-reference proof, or drift evidence snapshot.
 
 ### Planned actions
 
-- [x] Re-read the M5 gate and inspect accepted policy, golden cases, predicate evaluator, and boundary contract.
-- [x] Generate and deduplicate numeric boundary, promotion-state, final-sale conflict, default, and minimal-contrast cases.
-- [x] Attach expected decisions and rule/clause traceability from the accepted policy reference evaluator.
-- [x] Detect overlapping different-decision rules and minimal one-field contrasts with witnesses.
-- [x] Implement all required mutation operators and execute every non-excluded mutant against the corpus.
-- [x] Enforce at least 90% kill rate, report survivors, and justify only deterministically equivalent exclusions.
-- [ ] Add case/mutation schemas, focused tests, broader regressions, diff review, and an offline M5 checkpoint.
+- [x] Re-read the M6 gate and inspect the canonical/fixed fixture, D01–D03, accepted corpus, and result contracts.
+- [ ] Include the required seeded drift cases in the canonical deduplicated corpus.
+- [ ] Implement typed app adapters and per-case `MATCH`/`DRIFT`/`ERROR` isolation.
+- [ ] Cluster each mismatch into day-boundary, usage-boundary, or final-sale precedence defects.
+- [ ] Prove canonical baseline exposes all three defect clusters and fixed fixture has zero drift.
+- [ ] Add deterministic before/after snapshots, schemas, focused integration tests, and report CLI.
+- [ ] Run broader regressions, update evidence/docs, review the diff, and commit the offline M6 checkpoint.
 
 ### Completion evidence
 
-- Commands:
-  - `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm eval`; `pnpm verify`
-  - `node scripts/report-offline-m5.mjs`
-- Exit codes:
-  - first M5 typecheck: `2` because numeric narrowing was lost inside mutation callbacks; captured validated local values and retry passed
-  - first M5 unit run: `1` because final-sale candidates differed in both plan and final-sale fields; aligned plan type and retry passed
-  - final lint, typecheck, unit (32/32), eval (9/9), integration (5/5), demo replay, and build: `0`
-  - final `pnpm verify`: `1` only for expected unimplemented browser and submission gates
-- Actual offline metrics:
-  - cases: `38` (6 golden, 9 boundary, 18 minimal-contrast, 4 conflict, 1 generated default)
-  - conflicts: `3`; one-field contrasts: `35`; unreached rules: `0`
-  - mutation: `44/47` killed, `93.61702127659575%`, `0` equivalent exclusions, `3` reported survivors
-- Artifacts: `src/cases/`, `src/mutation/`, case/mutation schemas, M5 report script, tests, and `tests/snapshots/offline-m5-summary.json`
+- Commands: pending M6 implementation
+- Exit codes: pending M6 implementation
+- Artifacts: pending M6 implementation
 - Screenshots: not applicable; no UI implementation exists
 - Commit: pending current checkpoint
 
@@ -174,6 +164,16 @@ Never fill from estimates.
 ## Checkpoint log
 
 Append newest entries at the top. Keep entries compact and evidence-oriented.
+
+### 2026-07-14 09:49 +09:00 — M5 offline case/conflict/mutation engines committed
+
+- Milestone: M5 (offline subset; milestone remains in progress)
+- Change: added 38-case deterministic corpus, conflict/minimal-contrast analysis, 10 mutation operators, actual reference execution, strict schemas, and reviewable score snapshot
+- Verified: unit 32/32; eval 9/9; 3 conflicts; 35 one-field contrasts; all rules reached; 44/47 mutants killed (93.62%); all 3 survivors listed; full offline gate fails only browser/submission
+- Commands: lint, typecheck, unit, eval, M5 report, fail-closed full verification, manifest/diff/secret checks
+- Commit: `66431fc9b8dabb93438fd8ab8d51336c0169eb87`
+- Expected gap: execution mode is `REFERENCE_EVALUATOR_NOT_OPA`; Case Lab and OPA evidence are not implemented
+- Next: include D01–D03 in the canonical corpus and build before/after fixture differential reports
 
 ### 2026-07-14 09:36 +09:00 — M4 deterministic Rego compiler committed
 
@@ -267,7 +267,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Review and commit the offline M5 checkpoint, then build the differential fixture runner and drift clustering while preserving the distinction between reference expectations and future OPA evidence.`
+`Build the offline M6 differential adapter, seeded defect clustering, and before/after snapshots while keeping reference expectations distinct from future OPA output.`
 
 ## Pause handoff
 
