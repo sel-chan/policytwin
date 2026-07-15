@@ -309,7 +309,7 @@ async function verifyWorkspaceDecision(baseUrl, session) {
 
 try {
   if (
-    contract.schemaVersion !== "2" ||
+    contract.schemaVersion !== "3" ||
     typeof contract.nodeBaseImage !== "string" ||
     !/^node:22\.22\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/u.test(
       contract.nodeBaseImage,
@@ -388,7 +388,7 @@ try {
 }
 
 const report = {
-  schemaVersion: "2",
+  schemaVersion: "3",
   status: failures.length === 0 ? "PASS" : "FAIL",
   scope: "DYNAMIC_WEB_CONTAINER",
   workerContainerVerified: false,

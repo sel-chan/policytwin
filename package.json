@@ -53,6 +53,7 @@
     "clean:check": "node scripts/clean-checkout.mjs",
     "container:check": "node scripts/container-check.mjs",
     "container:verify": "node scripts/container-verify.mjs",
+    "worker:verify": "node scripts/worker-container-verify.mjs",
     "submission:draft": "node scripts/generate-submission-draft.mjs",
     "submission:check": "node scripts/submission-check.mjs"
   }

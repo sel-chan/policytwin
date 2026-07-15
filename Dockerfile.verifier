@@ -1,0 +1,32 @@
+ARG NODE_BASE_IMAGE
+
+FROM ${NODE_BASE_IMAGE} AS build
+
+ARG NODE_BASE_IMAGE
+RUN node -e "const image=process.env.NODE_BASE_IMAGE??'';if(!/^node:22\\.22\\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/.test(image)){console.error('NODE_BASE_IMAGE must be an immutable Node 22.22.2 digest.');process.exit(64)}"
+
+WORKDIR /opt/policytwin
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN corepack enable
+RUN corepack prepare pnpm@11.7.0 --activate
+RUN pnpm install --frozen-lockfile
+RUN node -e "const fs=require('node:fs');fs.cpSync(fs.realpathSync('node_modules/typescript'),'/tmp/policytwin-typescript',{recursive:true})"
+
+FROM ${NODE_BASE_IMAGE} AS runtime
+
+ARG NODE_BASE_IMAGE
+RUN node -e "const image=process.env.NODE_BASE_IMAGE??'';if(!/^node:22\\.22\\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/.test(image)){console.error('NODE_BASE_IMAGE must be an immutable Node 22.22.2 digest.');process.exit(64)}"
+
+ENV NODE_ENV=production
+ENV PATH=/opt/policytwin/bin:/usr/local/bin:/usr/bin:/bin
+WORKDIR /opt/policytwin
+
+COPY --from=build --chown=10002:10002 /tmp/policytwin-typescript ./typescript
+COPY --chown=10002:10002 scripts/verifier-preflight.mjs ./scripts/verifier-preflight.mjs
+
+RUN mkdir -p /opt/policytwin/bin /fixture
+RUN chown -R 10002:10002 /opt/policytwin/bin /fixture
+
+USER 10002:10002
+ENTRYPOINT ["node", "scripts/verifier-preflight.mjs"]
+CMD ["--static-preflight"]

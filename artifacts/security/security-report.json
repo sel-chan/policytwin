@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 286,
-  "scannedTextFiles": 261,
+  "scannedFiles": 295,
+  "scannedTextFiles": 268,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [
@@ -14,6 +14,8 @@
     "scripts/process.mjs",
     "scripts/repair-command.mjs",
     "scripts/security-check.mjs",
+    "scripts/verifier-preflight.mjs",
+    "scripts/worker-container-verify.mjs",
     "src/opa/runner.ts",
     "tests/helpers/worker-rpc-tls-certificates.mjs",
     "tests/integration/refund-fixture.integration.test.mjs"

@@ -1,0 +1,42 @@
+ARG NODE_BASE_IMAGE
+
+FROM ${NODE_BASE_IMAGE} AS build
+
+ARG NODE_BASE_IMAGE
+RUN node -e "const image=process.env.NODE_BASE_IMAGE??'';if(!/^node:22\\.22\\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/.test(image)){console.error('NODE_BASE_IMAGE must be an immutable Node 22.22.2 digest.');process.exit(64)}"
+
+ENV NEXT_TELEMETRY_DISABLED=1
+WORKDIR /opt/policytwin
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN corepack enable
+RUN corepack prepare pnpm@11.7.0 --activate
+RUN pnpm install --frozen-lockfile
+
+COPY src ./src
+COPY prompts ./prompts
+COPY scripts/build-core.mjs scripts/process.mjs ./scripts/
+COPY tsconfig.json tsconfig.build.json ./
+RUN node scripts/build-core.mjs
+RUN pnpm prune --prod
+
+FROM ${NODE_BASE_IMAGE} AS runtime
+
+ARG NODE_BASE_IMAGE
+RUN node -e "const image=process.env.NODE_BASE_IMAGE??'';if(!/^node:22\\.22\\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/.test(image)){console.error('NODE_BASE_IMAGE must be an immutable Node 22.22.2 digest.');process.exit(64)}"
+
+ENV NODE_ENV=production
+WORKDIR /opt/policytwin
+
+COPY --from=build --chown=10001:10001 /opt/policytwin/dist ./dist
+COPY --from=build --chown=10001:10001 /opt/policytwin/node_modules ./node_modules
+COPY --from=build --chown=10001:10001 /opt/policytwin/prompts ./prompts
+COPY --from=build --chown=10001:10001 /opt/policytwin/package.json ./package.json
+COPY --chown=10001:10001 scripts/worker-preflight.mjs ./scripts/worker-preflight.mjs
+
+RUN mkdir -p /run/policytwin /run/secrets /worker-home
+RUN chown -R 10001:10001 /run/policytwin /run/secrets /worker-home
+
+USER 10001:10001
+ENTRYPOINT ["node", "scripts/worker-preflight.mjs"]
+CMD ["--static-preflight"]

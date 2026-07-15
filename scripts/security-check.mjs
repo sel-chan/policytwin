@@ -28,6 +28,8 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "scripts/process.mjs",
   "scripts/repair-command.mjs",
   "scripts/security-check.mjs",
+  "scripts/verifier-preflight.mjs",
+  "scripts/worker-container-verify.mjs",
   "src/opa/runner.ts",
   "tests/helpers/worker-rpc-tls-certificates.mjs",
   "tests/integration/refund-fixture.integration.test.mjs",

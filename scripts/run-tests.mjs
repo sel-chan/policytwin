@@ -17,6 +17,7 @@ const suites = {
     "tests/unit/codex-worker-contract.test.mjs",
     "tests/unit/codex-sdk-adapter.test.mjs",
     "tests/unit/worker-rpc.test.mjs",
+    "tests/unit/worker-runtime-contract.test.mjs",
     "tests/unit/impact-traceability.test.mjs",
     "tests/unit/submission-validation.test.mjs",
     "tests/unit/openai-interpreter.test.mjs",

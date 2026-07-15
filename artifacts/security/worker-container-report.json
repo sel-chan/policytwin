@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1",
+  "status": "FAIL",
+  "scope": "DYNAMIC_WORKER_VERIFIER_SMOKE_NOT_LIVE_CODEX",
+  "dockerInvoked": false,
+  "facts": {
+    "dockerServerVersion": null,
+    "nodeBaseImagePresent": false,
+    "workerImageBuilt": false,
+    "workerImageId": null,
+    "workerBuildInputSha256": "b19694b91a07344e19ec7075e187a97f28792493cdb288617c234ae33280c52f",
+    "verifierImageBuilt": false,
+    "verifierImageId": null,
+    "verifierBuildInputSha256": "83d806fe056c6ef335fe2e7e8f6fa092cbb545eb342abee185977ac9e35e5b9c",
+    "workerNetworkInternal": false,
+    "workerStaticPreflight": false,
+    "verificationReconstructed": false,
+    "reconstructedPaths": [],
+    "baselineContentSha256": null,
+    "repairOverlaySha256": null,
+    "verificationContentSha256": null,
+    "verifierCommandsPassed": false,
+    "cleanupPassed": false,
+    "egressProxyVerified": false,
+    "dynamicIsolationVerified": false,
+    "liveCodexExecuted": false
+  },
+  "releaseReady": false,
+  "failures": [
+    "immutable Node base image is unset"
+  ]
+}
