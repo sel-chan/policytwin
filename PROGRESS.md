@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7 — authenticated external worker transport and supervisor runtime`
+- Current milestone: `M7/M9 — OS-isolated worker runtime and live execution boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-15 13:46:07 +09:00`
-- Latest checkpoint commit: `146b0ed`
+- Last updated: `2026-07-15 14:24:47 +09:00`
+- Latest checkpoint commit: `b7b3cf94b722a7bc267d0565b43522d73b1527f9`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -119,7 +119,7 @@ At checkpoint start, the signed RPC contract and validating client were covered 
 - [x] Persist replay state transactionally in SQLite across supervisor restart and reject reuse of either request ID or nonce.
 - [x] Document the proven transport boundary separately from the still-unproven OS worker/container, OpenAI-only egress, fixture no-network execution, and fresh live evidence.
 - [x] Run focused tests, lint, typecheck, full offline verification, fail-closed live/container probes, and independent final review.
-- [ ] Commit the coherent checkpoint and record its hash.
+- [x] Commit the coherent checkpoint and record its hash.
 
 ### Completion evidence
 
@@ -135,7 +135,7 @@ At checkpoint start, the signed RPC contract and validating client were covered 
 - Full verification: lint, strict typecheck, 105/105 unit assertions, 46/46 integration assertions, 22/22 eval assertions, 3/3 Chrome E2E tests, 286-file clean-copy replay, 261-text-file plus Git-history security scan, demo reset/run, static container contract, and production build pass. `pnpm verify` fails only owner-selected `LICENSE` and the exact 30-item non-final `submission:check`.
 - Fail-closed external probes: `pnpm verify:live` fails only at missing `OPENAI_API_KEY` and `CODEX_MODEL`; `pnpm container:verify` fails before build because the immutable Node 22.22.2 image is unset.
 - Independent final audit: no new P0/P1 was found after pre-handshake socket tracking, close-versus-admission rejection, executor settlement waiting, persistent request-ID/nonce replay rejection, and documentation truth-boundary updates. The audit confirms that OS worker/runtime and live evidence remain unimplemented.
-- Current checkpoint results: `IMPLEMENTED_AND_VERIFIED_OFFLINE`; commit remains.
+- Current checkpoint results: `IMPLEMENTED_AND_VERIFIED_OFFLINE` at `b7b3cf94b722a7bc267d0565b43522d73b1527f9`.
 
 ## Quality gates
 
@@ -182,6 +182,21 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-15 13:51 +09:00 — Real mTLS supervisor transport and durable replay boundary verified offline
+
+- Milestones: M7 and M9 remain `IN_PROGRESS`; this checkpoint completes real authenticated transport and supervisor admission/lifecycle controls, not the OS-isolated Codex worker, live repair, dynamic container, deployment, or submission
+- Transport change: added TLS 1.3-only mutual authentication with configured CA material, standard server-name verification, exact client/server SHA-256 certificate pins, fixed `policytwin-worker-rpc/1` ALPN, and one bounded `PTQ1`/`PTS1` canonical frame per connection
+- Supervisor change: added pre-body 1 MiB/4 MiB declarations, canonical UTF-8/JSON parsing, one active repair, deadline/disconnect/shutdown cancellation, pre-handshake socket tracking, executor-settlement waiting, close-versus-replay-admission rejection, server-owned Ed25519 response construction, and generic diagnostics
+- Replay change: added transactional SQLite replay state with absolute non-memory paths, `BEGIN IMMEDIATE`, unique request-ID and nonce constraints, capacity/expiry pruning, full synchronous durability, and reopen verification; the bounded in-memory store is explicitly ephemeral
+- Test change: added ephemeral OpenSSL certificate generation with no committed private keys; 15 focused mTLS/replay assertions cover trusted success-to-signed-FAIL, missing/wrong/untrusted identity, name/pin/ALPN, oversized/partial/trailing frames, replay, concurrency, timeout, shutdown, pre-handshake sockets, admission races, durable reopen, path rejection, capacity, and expiry
+- Harness recovery: integration tests now run serially because evidence-package tests intentionally rebuild shared `dist`/fixture/evidence outputs; the pre-existing live-attestation test now uses its fixed clock for the missing-trust assertion
+- Verified: lint; strict typecheck; 105/105 unit; 46/46 integration; 22/22 eval; 3/3 production Chrome E2E; 286-file clean-copy replay; 261-text-file plus Git-history security scan; demo reset/run; static container contract; production build; truthful fail-closed submission drafts
+- Full gate: `pnpm verify` passes every implemented code/static gate and fails only owner-selected `LICENSE` plus the exact 30-item non-final `submission:check`; `pnpm verify:live` fails at missing `OPENAI_API_KEY` and `CODEX_MODEL`; `pnpm container:verify` fails at the unset immutable Node image digest
+- Independent audit: no P0/P1 remains in the mTLS/replay checkpoint; it explicitly confirms that worker image, fixture-only mounts, egress proxy, immutable verifier, kernel resource/process-tree enforcement, certificate operations, and live SDK evidence are still missing
+- Evidence: partial evidence hash remains `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`); local integration certificates and signing keys are test-only and temporary
+- Commit: `b7b3cf94b722a7bc267d0565b43522d73b1527f9`
+- Next: implement a separately built non-privileged worker runtime, fixture-only repair mount, OpenAI-only egress proxy contract, and credential-free `--network=none` immutable verification compartment without enabling host live execution
 
 ### 2026-07-15 08:14 +09:00 — External worker RPC and static web-container boundaries verified offline
 
@@ -439,12 +454,12 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the external-worker RPC/static-container checkpoint is at final commit handoff`
-- Exact current state: `the host RPC client and static web-container boundaries are verified offline; host live construction/commands remain disabled, actual transport/supervisor/worker/live Codex and dynamic container/deployment remain absent`
-- Last successful command: `pnpm verify completed 105 unit assertions, 31 integration, 22 eval, 3 browser, 281-file clean-copy, 256-file security, static container, and production build checks`
+- Why paused: `not paused; the authenticated transport checkpoint and its verification ledger are committed`
+- Exact current state: `real mTLS transport, bounded supervisor, and durable replay are verified offline; host live construction/commands remain disabled, while the OS worker/image, egress proxy, immutable verifier, live Codex, dynamic container, and deployment remain absent`
+- Last successful command: `pnpm verify completed 105 unit assertions, 46 integration, 22 eval, 3 browser, 286-file clean-copy, 261-file plus Git-history security, static container, and production build checks`
 - Current failing command: `pnpm verify retains only owner LICENSE and 30-item non-final submission failures; pnpm container:verify fails at the unset immutable Node digest; pnpm verify:live fails at missing OPENAI_API_KEY and CODEX_MODEL before the unimplemented worker path`
-- Uncommitted files: `none after the ledger follow-up commit`
-- Safe resume command/action: `start the actual authentication-enforcing transport/supervisor implementation from the clean checkpoint after commit`
+- Uncommitted files: `none after the verification-ledger commit`
+- Safe resume command/action: `start the separately built non-privileged OS worker/proxy/immutable-verifier boundary from b7b3cf9`
 - One owner action, if any: `none`
 
 ## Final completion record
@@ -453,7 +468,7 @@ Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
 - `pnpm verify`: `FAIL_EXPECTED — all implemented gates pass; owner LICENSE and non-final submission only`
-- `pnpm verify:live`: `FAIL — host credentials plus authentication-enforcing transport/supervisor/worker/fresh GPT/Codex evidence absent`
+- `pnpm verify:live`: `FAIL — host credentials plus OS worker/fresh GPT/Codex evidence absent; mTLS transport/supervisor/replay exist offline`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`
 - Demo video: `NOT_VERIFIED`
