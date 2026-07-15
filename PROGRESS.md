@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M10 — truthful offline architecture submission asset`
+- Current milestone: `M7/M9 — next independently verifiable live-boundary gap`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-15 23:58:55 +09:00`
-- Latest checkpoint commit: `5d9182ca96da7cb093efe1d8c03fd28eb2f8d1fb`
+- Last updated: `2026-07-16 00:08:44 +09:00`
+- Latest checkpoint commit: `058047b89536e820f4bfa197dcf06555cdb55793`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -116,7 +116,7 @@ The Docker supervisor implementation was committed at `5d9182c` and its ledger a
 - [x] Render the SVG to the required PNG at a submission-safe desktop size and inspect it directly.
 - [x] Update submission drafts/checks so only the genuinely missing Codex-repair capture remains.
 - [x] Run relevant static, submission, security, clean-copy, browser/build, and full offline gates.
-- [ ] Finish final diff review and current-branch checkpoint commit after independent truth/visual reviews.
+- [x] Finish final diff review and current-branch checkpoint commit after independent truth/visual reviews.
 
 ### Completion evidence
 
@@ -195,7 +195,7 @@ Never fill from estimates.
 - Build-input hashes after the package-script addition: worker `415d05e68486d56b875d4693c649558d66393b1d9877038fa2a840730f19aedf`; verifier `ecfd6e9ac299c5a65b6dcbfc3fbc67e6f6840284f91d76341f60d1716946c949`; egress `43652e083c3b43132a4548c9c8e4e48ca3f86481902c3533fb381122822fb644`.
 - Independent review: two read-only reviewers found no remaining P0/P1 after correcting drift provenance, PNG freshness, status color, evidence direction, return-path wording, and small-text sizing. The final 1800x1200 render has no clipping or overlap.
 - Evidence: partial evidence hash remains `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`); no live evidence was promoted.
-- Commit: pending final diff review.
+- Commit: `058047b89536e820f4bfa197dcf06555cdb55793`.
 - Next: checkpoint this asset, then continue independent submission preparation while the live repair capture, immutable Docker images/daemon evidence, credentials, license, deployment, video, URLs, and owner submission actions remain open.
 
 ### 2026-07-15 22:11 +09:00 — Concrete Docker supervisor and non-live dynamic gates verified offline
@@ -513,18 +513,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Inspect the final architecture/submission diff and commit the independently reviewed asset checkpoint without promoting dynamic or live evidence.`
+`Inspect remaining M7/M9 gaps and select the highest-priority independently verifiable live-boundary slice without requiring Docker, credentials, or unsupported claims.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the truthful architecture asset and its regression/submission updates passed final verification and independent review and are awaiting diff review and commit`
+- Why paused: `not paused; the truthful architecture asset checkpoint is committed and the next independent M7/M9 slice is being selected`
 - Exact current state: `the verified offline product now includes a reproducible 1800x1200 architecture asset; the image and generated claims distinguish OPA from reference-expectation drift and keep all real-Docker, GPT-5.6, live Codex, upstream, attestation, deployment, and submission work unavailable`
 - Last successful command: `the 23:58 final pnpm verify sequence passed 167 unit assertions, 49 integration assertions, 22 evals, 3 browser tests, 325-file clean-copy replay, 325-file/296-text-file plus Git-history security, static schema-v5 container contract, and production build; only LICENSE and the exact 29-item submission gate remain`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `architecture SVG/PNG, local renderer, reproducibility tests, refreshed reports/drafts, exact container hashes, and ledger updates pending final diff review and commit`
-- Safe resume command/action: `finish diff review and checkpoint commit without promoting dynamic or live evidence`
+- Uncommitted files: `only this post-checkpoint ledger update before its documentation commit`
+- Safe resume command/action: `inspect the remaining M7/M9 acceptance gaps and implement the safest offline-verifiable prerequisite`
 - One owner action, if any: `none`
 
 ## Final completion record
