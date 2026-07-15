@@ -9,7 +9,7 @@
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
 - Last updated: `2026-07-15 22:26:09 +09:00`
-- Latest checkpoint commit: `535ce87f7f5dc9f7173d8c73ad96ea1c77781046`
+- Latest checkpoint commit: `5d9182ca96da7cb093efe1d8c03fd28eb2f8d1fb`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -119,7 +119,7 @@ The static supervisor lifecycle and Responses-only reverse-broker boundary were 
 - [x] Add negative tests for command/daemon substitution, name preemption, foreign or ambiguous IDs, partial creation, entrypoint/environment/namespace/device/security/tmpfs/bind/port drift, procfs-only teardown, and false dynamic/live promotion.
 - [x] Keep host live construction, signed live results, evidence promotion, cumulative CPU claims, and all dynamic/live facts disabled until actual immutable images, Docker observations, credentials, and a fresh SDK run exist.
 - [x] Update decisions, architecture, threat model, limitations, runbook, generated reports, and submission drafts with only observed facts.
-- [x] Run the final full offline verification after the resource-cap fixes; only the independent fix re-review, diff review, and checkpoint commit remain.
+- [x] Run the final full offline verification, independent fix re-review, diff review, and checkpoint commit.
 
 ### Completion evidence
 
@@ -192,8 +192,8 @@ Never fill from estimates.
 - Independent review: plan injection, PATH/remote-daemon substitution, foreign resource deletion, incomplete inspect fields, init-PID-only teardown, lifecycle deadline wording, proxy-outbound overclaim, stale submission copy, unbounded swap/file/log surfaces, and unsealed worker image/maxima were corrected and regression-tested. Post-fix code/security and truthfulness reviews report no remaining P0/P1/P2.
 - Build-input hashes: worker `2cd3596faf26e299eb65384731b73725823e3431793c36fd9a1ac7cc9aca61dd`; verifier `90ecd378704730365b6ef1a54032cd016d1d637dab3c89a876f2b53f34d773c9`; egress `9a84ece274bb7d5518fca27423c62f23f88c436178ee25fedacf0ba3d4c3ed96`.
 - Evidence: partial evidence hash remains `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`); no live proof was generated.
-- Commit: `PENDING`.
-- Next: complete the post-fix read-only review and diff review, then commit this checkpoint on `main` without promoting dynamic or live evidence.
+- Commit: `5d9182ca96da7cb093efe1d8c03fd28eb2f8d1fb`.
+- Next: continue the remaining independent M7/M9 work from the committed static/fake-daemon boundary; real-Docker and live evidence remain blocked by immutable images, cumulative CPU enforcement, and credentials.
 
 ### 2026-07-15 18:20 +09:00 — Static supervisor lifecycle and Responses-only egress boundary verified offline
 
