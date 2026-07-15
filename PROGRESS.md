@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — OS-isolated worker runtime and live execution boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-15 16:43:34 +09:00`
-- Latest checkpoint commit: `9fb24f2559e1e4900101cf6dc71cc317f8dcf567`
+- Last updated: `2026-07-15 16:47:40 +09:00`
+- Latest checkpoint commit: `702fd1654cb33ccc42da9c4ebdcbb6ee47c5ff72`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -120,7 +120,7 @@ At checkpoint start, the authenticated transport and supervisor were committed, 
 - [x] Preserve the signed supervisor test executor and fail-closed live gate until the real worker executor, egress proxy, dynamic isolation, and fresh Codex evidence exist.
 - [x] Update decisions, threat model, architecture/setup documentation, and generated truth boundaries.
 - [x] Run focused checks, lint, typecheck, all deterministic tests, full offline verification, fail-closed live/container probes, and independent final review.
-- [ ] Commit the coherent checkpoint and record its hash.
+- [x] Commit the coherent checkpoint and record its hash.
 
 ### Completion evidence
 
@@ -192,7 +192,7 @@ Never fill from estimates.
 - Full gate: `pnpm verify` passes every implemented code/static gate and fails only owner-selected `LICENSE` plus the exact 30-item non-final `submission:check`; `pnpm worker:verify` and `pnpm container:verify` fail before Docker at the unset immutable Node base; `pnpm verify:live` fails before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`
 - Independent review: the final linked-parent P1 and cleanup-test P2 were corrected; post-fix read-only review reports no remaining P0/P1/P2
 - Evidence: worker build-input SHA-256 `b19694b91a07344e19ec7075e187a97f28792493cdb288617c234ae33280c52f`; verifier build-input SHA-256 `83d806fe056c6ef335fe2e7e8f6fa092cbb545eb342abee185977ac9e35e5b9c`; partial evidence hash remains `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`)
-- Commit: `pending`
+- Commit: `702fd1654cb33ccc42da9c4ebdcbb6ee47c5ff72`
 - Next: commit this checkpoint, then implement the supervisor-owned OS executor and OpenAI-only egress proxy boundary without enabling host-process live SDK work; immutable base acquisition requires a separately approved registry scope
 
 ### 2026-07-15 13:51 +09:00 — Real mTLS supervisor transport and durable replay boundary verified offline
@@ -466,12 +466,12 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the verified static worker/verifier checkpoint is ready for commit`
+- Why paused: `not paused; the verified static worker/verifier checkpoint and its implementation commit are complete`
 - Exact current state: `real mTLS transport, bounded supervisor, durable replay, and exact static worker/verifier container plans are verified offline; host live construction/commands remain disabled, while the OS executor, egress proxy, immutable images, dynamic Docker proof, live Codex, and deployment remain absent`
 - Last successful command: `pnpm verify completed 113 unit assertions, 46 integration, 22 eval, 3 browser, 295-file clean-copy, 295-file/268-text-file plus Git-history security, static split-container, and production build checks; only LICENSE and 30-item submission failures remain`
 - Current failing command: `pnpm worker:verify and pnpm container:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `verified worker/verifier checkpoint pending commit`
-- Safe resume command/action: `commit this checkpoint, then implement the supervisor-owned OS executor and egress proxy contract from the resulting commit`
+- Uncommitted files: `none after the verification-ledger commit`
+- Safe resume command/action: `implement the supervisor-owned OS executor and egress proxy contract from 702fd16`
 - One owner action, if any: `none`
 
 ## Final completion record
