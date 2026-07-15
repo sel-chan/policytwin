@@ -6,10 +6,25 @@ const SAFE_ENVIRONMENT = {
   PATH: "/opt/policytwin/bin:/usr/local/bin:/usr/bin:/bin",
 };
 const FORBIDDEN_ENVIRONMENT = /^(?:OPENAI_|AZURE_OPENAI_|CODEX_|HTTP_PROXY$|HTTPS_PROXY$|ALL_PROXY$)/iu;
+const OBSERVATION_HOLD_ARGUMENT = "--observation-hold-ms=5000";
 
 function fail(message) {
   console.error(`Verifier failed: ${message}`);
   process.exit(1);
+}
+
+const observationHoldArgument = process.argv[3];
+if (
+  process.argv.length > 4 ||
+  (observationHoldArgument !== undefined && observationHoldArgument !== OBSERVATION_HOLD_ARGUMENT)
+) {
+  fail("the observation hold argument is invalid.");
+}
+
+async function holdForSupervisorObservation() {
+  if (observationHoldArgument === OBSERVATION_HOLD_ARGUMENT) {
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+  }
 }
 
 function assertReal(path, kind, maximumBytes = Number.POSITIVE_INFINITY) {
@@ -82,3 +97,4 @@ console.log(
     liveCodexExecuted: false,
   }),
 );
+await holdForSupervisorObservation();

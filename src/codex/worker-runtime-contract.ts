@@ -13,12 +13,15 @@ export const WORKER_WRITABLE_PATHS = [
   "src/refund.ts",
   "tests/refund.test.mjs",
 ] as const;
+export const OBSERVED_WORKER_NETWORK_ID = "__POLICYTWIN_WORKER_NETWORK_ID__" as const;
 
-const WORKER_NETWORK = "policytwin-worker-internal";
 const WORKER_PROXY_AUTHORITY = "policytwin-egress:8443";
 const WORKER_USER = "10001:10001";
 const VERIFIER_USER = "10002:10002";
 const RUN_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{7,63}$/u;
+const OWNERSHIP_NONCE = /^[0-9a-f]{32}$/u;
+const WORKER_NETWORK = /^policytwin-worker-[0-9a-f]{32}$/u;
+const SHA256 = /^[0-9a-f]{64}$/u;
 const IMMUTABLE_IMAGE = /^sha256:[0-9a-f]{64}$/u;
 const MAX_LAYOUT_ENTRIES = 128;
 const BASELINE_TREE = [
@@ -51,13 +54,44 @@ export interface WorkerRuntimeMount {
   readOnly: boolean;
 }
 
+export interface WorkerRuntimeTmpfsMount {
+  target: string;
+  sizeBytes: number;
+}
+
+export interface WorkerRuntimeResourceLimits {
+  wallTimeMs: number;
+  cpuTimeMs: number;
+  memoryBytes: number;
+  pids: number;
+  outputBytes: number;
+}
+
 export interface WorkerContainerInvocation {
   image: string;
   name: string;
   user: string;
+  entrypoint: readonly string[];
+  workingDirectory: string;
   network: string;
+  creationNetwork: "worker" | "none";
+  labels: Readonly<Record<string, string>>;
   environment: Readonly<Record<string, string>>;
+  imageEnvironment: Readonly<Record<string, string>>;
   mounts: readonly WorkerRuntimeMount[];
+  tmpfsMounts: readonly WorkerRuntimeTmpfsMount[];
+  pidsLimit: number;
+  memoryBytes: number;
+  memorySwapBytes: number;
+  nanoCpus: number;
+  fileSizeLimitBytes: number;
+  logDriver: "local";
+  logOptions: Readonly<Record<string, string>>;
+  wallTimeMs: number;
+  cpuTimeMs: number;
+  outputBytes: number;
+  cpuTimeEnforcement: "UNAVAILABLE_STATIC_DRIVER";
+  commandArgs: readonly string[];
   dockerArgs: readonly string[];
 }
 
@@ -75,10 +109,45 @@ export interface WorkerRuntimePlanOptions {
   runId: string;
   workerImage: string;
   verifierImage: string;
+  workerNetwork: string;
+  ownershipNonce: string;
+  requestSha256: string;
+  limits: WorkerRuntimeResourceLimits;
 }
 
 function runtimeLayoutError(): Error {
   return new Error("Worker runtime layout is absent, unsafe, or incomplete.");
+}
+
+export function deriveSupervisorDockerResourceSuffix(
+  requestSha256: string,
+  runId: string,
+  ownershipNonce: string,
+): string {
+  return supervisorDockerBindingSha256(requestSha256, runId, ownershipNonce).slice(0, 32);
+}
+
+export function supervisorDockerBindingSha256(
+  requestSha256: string,
+  runId: string,
+  ownershipNonce: string,
+): string {
+  if (!SHA256.test(requestSha256)) {
+    throw new Error("Worker request SHA-256 is invalid.");
+  }
+  if (!RUN_ID.test(runId)) throw new Error("Worker run ID is invalid.");
+  if (!OWNERSHIP_NONCE.test(ownershipNonce)) {
+    throw new Error("Worker ownership nonce is invalid.");
+  }
+  return createHash("sha256")
+    .update("policytwin-docker-v2", "utf8")
+    .update("\0", "utf8")
+    .update(requestSha256, "utf8")
+    .update("\0", "utf8")
+    .update(runId, "utf8")
+    .update("\0", "utf8")
+    .update(ownershipNonce, "utf8")
+    .digest("hex");
 }
 
 function comparePath(left: string, right: string): boolean {
@@ -308,6 +377,36 @@ function workerEnvironment(): Readonly<Record<string, string>> {
   });
 }
 
+function nodeImageEnvironment(path: string): Readonly<Record<string, string>> {
+  return Object.freeze({
+    PATH: path,
+    NODE_VERSION: "22.22.2",
+    YARN_VERSION: "1.22.22",
+    NODE_ENV: "production",
+  });
+}
+
+function assertWorkerResourceLimits(limits: WorkerRuntimeResourceLimits): void {
+  const values = Object.values(limits);
+  if (values.some((value) => !Number.isSafeInteger(value))) {
+    throw new Error("Worker runtime resource limits are invalid.");
+  }
+  if (
+    limits.wallTimeMs < 1_000 ||
+    limits.wallTimeMs > 15 * 60_000 ||
+    limits.cpuTimeMs < 1_000 ||
+    limits.cpuTimeMs > 10 * 60_000 ||
+    limits.memoryBytes < 256 * 1024 * 1024 ||
+    limits.memoryBytes > 4 * 1024 * 1024 * 1024 ||
+    limits.pids < 8 ||
+    limits.pids > 128 ||
+    limits.outputBytes < 1024 * 1024 ||
+    limits.outputBytes > 4 * 1024 * 1024
+  ) {
+    throw new Error("Worker runtime resource limits are invalid.");
+  }
+}
+
 function mountArgument(mount: WorkerRuntimeMount): string {
   return `type=bind,source=${mount.source},target=${mount.target}${
     mount.readOnly ? ",readonly" : ""
@@ -323,8 +422,10 @@ function commonArguments(options: {
   user: string;
   pids: number;
   memoryBytes: number;
+  outputBytes: number;
   cpus: number;
   network: string;
+  labels: Readonly<Record<string, string>>;
 }): string[] {
   return [
     "run",
@@ -342,16 +443,38 @@ function commonArguments(options: {
     String(options.pids),
     "--memory",
     String(options.memoryBytes),
+    "--memory-swap",
+    String(options.memoryBytes),
+    "--ulimit",
+    `fsize=${options.outputBytes}:${options.outputBytes}`,
+    "--log-driver",
+    "local",
+    "--log-opt",
+    `max-size=${options.outputBytes}`,
+    "--log-opt",
+    "max-file=1",
     "--cpus",
     String(options.cpus),
     "--stop-timeout",
     "5",
     "--network",
     options.network,
+    ...Object.entries(options.labels)
+      .sort(([left], [right]) => compareText(left, right))
+      .flatMap(([key, value]) => ["--label", `${key}=${value}`]),
   ];
 }
 
 export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): WorkerRuntimePlan {
+  if (!WORKER_NETWORK.test(options.workerNetwork)) {
+    throw new Error("Worker network name is invalid.");
+  }
+  assertWorkerResourceLimits(options.limits);
+  const resourceSuffix = deriveSupervisorDockerResourceSuffix(
+    options.requestSha256,
+    options.runId,
+    options.ownershipNonce,
+  );
   const layout = createWorkerRuntimeLayout(options);
   assertWorkerRuntimeLayout(layout);
   const workerImage = immutableImage(options.workerImage, "Worker image");
@@ -386,14 +509,36 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
   ];
   const workerEnv = workerEnvironment();
   const verifierEnv = verifierEnvironment();
+  const workerImageEnv = nodeImageEnvironment(
+    "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+  );
+  const verifierImageEnv = nodeImageEnvironment(
+    "/opt/policytwin/bin:/usr/local/bin:/usr/bin:/bin",
+  );
+  const bindingSha256 = supervisorDockerBindingSha256(
+    options.requestSha256,
+    options.runId,
+    options.ownershipNonce,
+  );
+  const commonLabels = {
+    "com.policytwin.managed": "true",
+    "com.policytwin.contract-version": "2",
+    "com.policytwin.binding-sha256": bindingSha256,
+    "com.policytwin.request-sha256": options.requestSha256,
+    "com.policytwin.run-id": options.runId,
+  } as const;
+  const workerLabels = { ...commonLabels, "com.policytwin.role": "worker" } as const;
+  const verifierLabels = { ...commonLabels, "com.policytwin.role": "verifier" } as const;
   const workerArgs = [
     ...commonArguments({
-      name: `policytwin-worker-${options.runId}`,
+      name: `policytwin-worker-${resourceSuffix}`,
       user: WORKER_USER,
-      pids: 64,
-      memoryBytes: 1_073_741_824,
+      pids: options.limits.pids,
+      memoryBytes: options.limits.memoryBytes,
+      outputBytes: options.limits.outputBytes,
       cpus: 1,
-      network: WORKER_NETWORK,
+      network: OBSERVED_WORKER_NETWORK_ID,
+      labels: workerLabels,
     }),
     ...environmentArguments(workerEnv),
     "--tmpfs",
@@ -402,15 +547,18 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
     "/tmp:rw,noexec,nosuid,nodev,size=67108864",
     ...workerMounts.flatMap((mount) => ["--mount", mountArgument(mount)]),
     workerImage,
+    "--static-preflight",
   ];
   const verifierArgs = [
     ...commonArguments({
-      name: `policytwin-verifier-${options.runId}`,
+      name: `policytwin-verifier-${resourceSuffix}`,
       user: VERIFIER_USER,
       pids: 32,
       memoryBytes: 536_870_912,
+      outputBytes: options.limits.outputBytes,
       cpus: 1,
       network: "none",
+      labels: verifierLabels,
     }),
     ...environmentArguments(verifierEnv),
     "--tmpfs",
@@ -419,6 +567,7 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
     "/fixture/dist:rw,noexec,nosuid,nodev,size=67108864",
     ...verificationMounts.flatMap((mount) => ["--mount", mountArgument(mount)]),
     verifierImage,
+    "--verify",
   ];
   return {
     schemaVersion: "1",
@@ -427,20 +576,68 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
     liveCodexExecuted: false,
     worker: {
       image: workerImage,
-      name: `policytwin-worker-${options.runId}`,
+      name: `policytwin-worker-${resourceSuffix}`,
       user: WORKER_USER,
-      network: WORKER_NETWORK,
+      entrypoint: ["node", "scripts/worker-preflight.mjs"],
+      workingDirectory: "/opt/policytwin",
+      network: options.workerNetwork,
+      creationNetwork: "worker",
+      labels: workerLabels,
       environment: workerEnv,
+      imageEnvironment: workerImageEnv,
       mounts: workerMounts,
+      tmpfsMounts: [
+        { target: "/worker-home", sizeBytes: 67_108_864 },
+        { target: "/tmp", sizeBytes: 67_108_864 },
+      ],
+      pidsLimit: options.limits.pids,
+      memoryBytes: options.limits.memoryBytes,
+      memorySwapBytes: options.limits.memoryBytes,
+      nanoCpus: 1_000_000_000,
+      fileSizeLimitBytes: options.limits.outputBytes,
+      logDriver: "local",
+      logOptions: Object.freeze({
+        "max-size": String(options.limits.outputBytes),
+        "max-file": "1",
+      }),
+      wallTimeMs: options.limits.wallTimeMs,
+      cpuTimeMs: options.limits.cpuTimeMs,
+      outputBytes: options.limits.outputBytes,
+      cpuTimeEnforcement: "UNAVAILABLE_STATIC_DRIVER",
+      commandArgs: ["--static-preflight"],
       dockerArgs: workerArgs,
     },
     verifier: {
       image: verifierImage,
-      name: `policytwin-verifier-${options.runId}`,
+      name: `policytwin-verifier-${resourceSuffix}`,
       user: VERIFIER_USER,
+      entrypoint: ["node", "scripts/verifier-preflight.mjs"],
+      workingDirectory: "/opt/policytwin",
       network: "none",
+      creationNetwork: "none",
+      labels: verifierLabels,
       environment: verifierEnv,
+      imageEnvironment: verifierImageEnv,
       mounts: verificationMounts,
+      tmpfsMounts: [
+        { target: "/tmp", sizeBytes: 67_108_864 },
+        { target: "/fixture/dist", sizeBytes: 67_108_864 },
+      ],
+      pidsLimit: 32,
+      memoryBytes: 536_870_912,
+      memorySwapBytes: 536_870_912,
+      nanoCpus: 1_000_000_000,
+      fileSizeLimitBytes: options.limits.outputBytes,
+      logDriver: "local",
+      logOptions: Object.freeze({
+        "max-size": String(options.limits.outputBytes),
+        "max-file": "1",
+      }),
+      wallTimeMs: options.limits.wallTimeMs,
+      cpuTimeMs: options.limits.cpuTimeMs,
+      outputBytes: options.limits.outputBytes,
+      cpuTimeEnforcement: "UNAVAILABLE_STATIC_DRIVER",
+      commandArgs: ["--verify"],
       dockerArgs: verifierArgs,
     },
   };

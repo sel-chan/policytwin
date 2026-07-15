@@ -16,6 +16,7 @@ const ROLE_INPUTS = {
     "scripts/build-core.mjs",
     "scripts/process.mjs",
     "scripts/worker-preflight.mjs",
+    "scripts/egress-tls-probe.mjs",
     "scripts/worker-entrypoint.mjs",
     "scripts/proxy-token-helper.mjs",
     "src",

@@ -49,7 +49,12 @@ export function inspectStaticContainerContract(root = ROOT) {
   const proxyTokenHelperPath = resolve(root, "scripts", "proxy-token-helper.mjs");
   const egressProxyPath = resolve(root, "scripts", "openai-egress-proxy.mjs");
   const egressContractPath = resolve(root, "src", "codex", "openai-egress-contract.ts");
+  const dockerRunnerPath = resolve(root, "src", "codex", "docker-command-runner.ts");
+  const dockerObserverPath = resolve(root, "src", "codex", "docker-observer.ts");
+  const dockerDriverPath = resolve(root, "src", "codex", "supervisor-docker-driver.ts");
+  const pinnedDockerCliPath = resolve(root, "scripts", "pinned-docker-cli.mjs");
   const workerVerifyPath = resolve(root, "scripts", "worker-container-verify.mjs");
+  const egressVerifyPath = resolve(root, "scripts", "egress-container-verify.mjs");
   const contractBody = read(contractPath, failures, "Container contract");
   let contract = null;
   try {
@@ -69,7 +74,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "4" ||
+    contract.schemaVersion !== "5" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -104,14 +109,28 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.pidsLimit !== 64 ||
     contract.workerContainer?.memoryBytes !== 1_073_741_824 ||
     contract.workerContainer?.cpus !== 1 ||
+    contract.workerContainer?.memoryAndPidsRequestBound !== true ||
+    contract.workerContainer?.maximumOutputBytes !== 4_194_304 ||
+    contract.workerContainer?.memorySwapEqualsMemory !== true ||
+    contract.workerContainer?.fileSizeLimitRequestBound !== true ||
+    contract.workerContainer?.logDriver !== "local" ||
+    contract.workerContainer?.maximumLogFiles !== 1 ||
+    contract.workerContainer?.maximumLogBytesRequestBound !== true ||
+    contract.workerContainer?.wallTimeScope !==
+      "PREPARE_WORKER_VERIFIER_EXCLUDING_TEARDOWN_GRACE" ||
+    contract.workerContainer?.cumulativeCpuTimeEnforcement !==
+      "UNAVAILABLE_STATIC_DRIVER" ||
     contract.workerContainer?.fixtureRoot !== "/workspace" ||
     contract.workerContainer?.fixtureRootReadOnly !== true ||
     JSON.stringify(contract.workerContainer?.writablePaths) !==
       JSON.stringify(["src/refund.ts", "tests/refund.test.mjs"]) ||
     JSON.stringify(contract.workerContainer?.tmpfs) !==
       JSON.stringify(["/worker-home", "/tmp"]) ||
-    contract.workerContainer?.network !== "policytwin-worker-internal" ||
+    contract.workerContainer?.network !== "PER_RUN_OBSERVED_ID" ||
+    contract.workerContainer?.networkNamePattern !==
+      "policytwin-worker-<32-lowercase-hex>" ||
     contract.workerContainer?.networkInternalRequired !== true ||
+    contract.workerContainer?.creationNetworkReference !== "OBSERVED_ID_ONLY" ||
     contract.workerContainer?.proxyAuthority !== "policytwin-egress:8443" ||
     contract.workerContainer?.proxyTokenFile !== "/run/secrets/policytwin-proxy-token" ||
     contract.workerContainer?.proxyCaFile !== "/run/secrets/policytwin-egress-ca.pem" ||
@@ -139,7 +158,12 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.verifierContainer?.noNewPrivileges !== true ||
     contract.verifierContainer?.pidsLimit !== 32 ||
     contract.verifierContainer?.memoryBytes !== 536_870_912 ||
+    contract.verifierContainer?.memorySwapBytes !== 536_870_912 ||
     contract.verifierContainer?.cpus !== 1 ||
+    contract.verifierContainer?.maximumOutputBytes !== 4_194_304 ||
+    contract.verifierContainer?.fileSizeLimitRequestBound !== true ||
+    contract.verifierContainer?.logDriver !== "local" ||
+    contract.verifierContainer?.maximumLogFiles !== 1 ||
     contract.verifierContainer?.network !== "none" ||
     contract.verifierContainer?.fixtureRoot !== "/fixture" ||
     contract.verifierContainer?.fixtureRootReadOnly !== true ||
@@ -168,10 +192,21 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.egressProxy?.liveCodexExecuted !== false ||
     contract.egressProxy?.runtimeUser !== "10003:10003" ||
     contract.egressProxy?.readOnlyRootRequired !== true ||
+    contract.egressProxy?.memoryBytes !== 268_435_456 ||
+    contract.egressProxy?.memorySwapBytes !== 268_435_456 ||
+    contract.egressProxy?.fileSizeLimitBytes !== 8_388_608 ||
+    contract.egressProxy?.logDriver !== "local" ||
+    contract.egressProxy?.maximumLogFiles !== 1 ||
     JSON.stringify(contract.egressProxy?.capDrop) !== JSON.stringify(["ALL"]) ||
     JSON.stringify(contract.egressProxy?.capAdd) !== JSON.stringify([]) ||
     contract.egressProxy?.noNewPrivileges !== true ||
-    contract.egressProxy?.workerNetwork !== "policytwin-worker-internal" ||
+    contract.egressProxy?.workerNetwork !== "PER_RUN_OBSERVED_ID" ||
+    contract.egressProxy?.workerNetworkNamePattern !==
+      "policytwin-worker-<32-lowercase-hex>" ||
+    contract.egressProxy?.outboundNetwork !== "PER_RUN_OBSERVED_ID" ||
+    contract.egressProxy?.outboundNetworkNamePattern !==
+      "policytwin-egress-<32-lowercase-hex>" ||
+    contract.egressProxy?.creationNetworkReference !== "OBSERVED_ID_ONLY" ||
     contract.egressProxy?.listenAuthority !== "policytwin-egress:8443" ||
     contract.egressProxy?.allowedAuthority !== "api.openai.com:443" ||
     contract.egressProxy?.allowedMethod !== "POST" ||
@@ -189,6 +224,40 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.egressProxy?.redirectsAllowed !== false ||
     contract.egressProxy?.compressedResponsesAllowed !== false ||
     contract.egressProxy?.publicIpv4PinRequired !== true ||
+    contract.egressProxy?.tlsProbeOutboundObservation !== "NOT_MEASURED" ||
+    contract.supervisorDockerExecutor?.status !== "STATIC_FAKE_RUNNER_VERIFIED" ||
+    contract.supervisorDockerExecutor?.contractVersion !== "2" ||
+    contract.supervisorDockerExecutor?.bindingDomain !== "policytwin-docker-v2" ||
+    contract.supervisorDockerExecutor?.resourceSuffixHexLength !== 32 ||
+    contract.supervisorDockerExecutor?.shell !== false ||
+    contract.supervisorDockerExecutor?.adoptExistingResources !== false ||
+    contract.supervisorDockerExecutor?.operateByObservedIdOnly !== true ||
+    contract.supervisorDockerExecutor?.independentInspectRequired !== true ||
+    contract.supervisorDockerExecutor?.canonicalDockerExecutableRequired !== true ||
+    contract.supervisorDockerExecutor?.platformLocalDaemonRequired !== true ||
+    contract.supervisorDockerExecutor?.dynamicGateDockerCliEnvironmentVariable !==
+      "POLICYTWIN_DOCKER_CLI" ||
+    contract.supervisorDockerExecutor?.dynamicGatePathSearchAllowed !== false ||
+    contract.supervisorDockerExecutor?.dynamicGateRemoteDaemonAllowed !== false ||
+    contract.supervisorDockerExecutor?.sealedWorkerImageRequired !== true ||
+    contract.supervisorDockerExecutor?.requestLimitsBoundedBySupervisor !== true ||
+    contract.supervisorDockerExecutor?.memorySwapEqualsMemory !== true ||
+    contract.supervisorDockerExecutor?.fileSizeLimitRequired !== true ||
+    contract.supervisorDockerExecutor?.boundedLocalLogDriverRequired !== true ||
+    contract.supervisorDockerExecutor?.closedEnvironmentAndEntrypointInspection !== true ||
+    contract.supervisorDockerExecutor?.cgroupV2ProcessTreeRequiredForDynamicGate !== true ||
+    contract.supervisorDockerExecutor?.publishedPortsAllowed !== false ||
+    JSON.stringify(contract.supervisorDockerExecutor?.policytwinLabelKeys) !==
+      JSON.stringify([
+        "com.policytwin.managed",
+        "com.policytwin.contract-version",
+        "com.policytwin.binding-sha256",
+        "com.policytwin.request-sha256",
+        "com.policytwin.run-id",
+        "com.policytwin.role",
+      ]) ||
+    contract.supervisorDockerExecutor?.dynamicVerified !== false ||
+    contract.supervisorDockerExecutor?.liveCodexExecuted !== false ||
     contract.workerBuildInputSha256 !== workerBuildInput?.sha256 ||
     contract.verifierBuildInputSha256 !== verifierBuildInput?.sha256 ||
     contract.egressProxyBuildInputSha256 !== egressBuildInput?.sha256
@@ -414,6 +483,61 @@ export function inspectStaticContainerContract(root = ROOT) {
   ]) {
     requireText(egressContract, required, failures, "Egress admission contract");
   }
+  const dockerRunner = read(dockerRunnerPath, failures, "Supervisor Docker command runner");
+  for (const required of [
+    "spawn(dockerExecutablePath, [...args]",
+    "shell: false",
+    "assertSupervisorDockerArguments(args)",
+    'argument.startsWith("__POLICYTWIN_")',
+    '"--privileged"',
+    '"--publish"',
+    "dockerExecutableStat.isFile()",
+    "platform local daemon endpoint",
+  ]) {
+    requireText(dockerRunner, required, failures, "Supervisor Docker command runner");
+  }
+  const dockerObserver = read(dockerObserverPath, failures, "Supervisor Docker observer");
+  for (const required of [
+    "parseCreatedDockerId",
+    "parseDockerNetworkInspection",
+    "parseDockerContainerInspection",
+    "Docker network membership does not match the admitted run.",
+    "Docker bind mounts do not match the admitted plan.",
+    "Docker tmpfs mounts do not match the admitted plan.",
+    "Docker memory+swap limit",
+    "Docker file-size limit",
+    "Docker log limits",
+    "parseDockerContainerOwnershipInspection",
+    "Docker port bindings",
+  ]) {
+    requireText(dockerObserver, required, failures, "Supervisor Docker observer");
+  }
+  const dockerDriver = read(dockerDriverPath, failures, "Supervisor Docker lifecycle driver");
+  for (const required of [
+    "createPreparedSupervisorDockerLifecycle",
+    "parseCreatedDockerId(result.stdout",
+    '["network", "disconnect", "--force", network.id, container.id]',
+    '["rm", "--force", container.id]',
+    '["network", "rm", network.id]',
+    "com.policytwin.binding-sha256",
+    "processObserver.processTreeIsEmpty",
+    "listedById?.exitCode === 0",
+    "configuration.allowedWorkerImage !== request.policy.workerImageDigest",
+    "maximumWorkerLimits",
+  ]) {
+    requireText(dockerDriver, required, failures, "Supervisor Docker lifecycle driver");
+  }
+  const pinnedDockerCli = read(pinnedDockerCliPath, failures, "Pinned dynamic Docker CLI");
+  for (const required of [
+    "realpathSync.native(dockerExecutablePath) !== dockerExecutablePath",
+    "DOCKER_HOST: localDaemonHost",
+    'DOCKER_CLI_HINTS: "false"',
+    "spawnSync(dockerExecutablePath, args",
+    "shell: false",
+    'throw new Error("The dynamic Docker command is not allowlisted.")',
+  ]) {
+    requireText(pinnedDockerCli, required, failures, "Pinned dynamic Docker CLI");
+  }
   const verifierPreflight = read(verifierPreflightPath, failures, "Verifier preflight");
   for (const required of [
     'from "node:child_process"',
@@ -431,6 +555,8 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
+    'from "./pinned-docker-cli.mjs"',
+    "createPinnedDockerSync",
     '"Dockerfile.worker"',
     '"Dockerfile.verifier"',
     'computeContainerBuildInput("worker")',
@@ -438,11 +564,31 @@ export function inspectStaticContainerContract(root = ROOT) {
     '"build"',
     '"{{.Id}}"',
     "reconstructVerificationWorkspace",
-    'docker(["network", "inspect", contract.workerContainer.network])',
-    'docker(["image", "rm", "--force", tag]',
+    "supervisorDockerBindingSha256",
+    "requiredDockerId",
+    'docker(["network", "inspect", workerNetworkId])',
+    "parseDockerContainerInspection",
+    'docker(["rm", "--force", id]',
     "Worker run workspace cleanup failed.",
   ]) {
     requireText(workerVerify, required, failures, "Worker container verifier");
+  }
+  const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
+  for (const required of [
+    'from "./pinned-docker-cli.mjs"',
+    "createPinnedDockerSync",
+    'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',
+    "inspectEgressContainerPrerequisites",
+    "createTlsMaterial",
+    "OBSERVED_OUTBOUND_NETWORK_ID",
+    "parseDockerContainerInspection",
+    'docker(["network", "disconnect", "--force", networkId, containerId]',
+    "probeHttpRequestSent: false",
+    'proxyUpstreamTrafficObservation: "NOT_MEASURED"',
+    "probeModelInvocation: false",
+    "liveCodexExecuted: false",
+  ]) {
+    requireText(egressVerify, required, failures, "Egress container verifier");
   }
 
   const dockerignore = read(dockerignorePath, failures, ".dockerignore");

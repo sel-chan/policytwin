@@ -28,7 +28,7 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 - Every judge-facing draft remains marked `DRAFT_NOT_READY`; no generated file claims submission readiness.
 - `pnpm submission:check` currently fails with 30 explicit unmet requirements.
 - Owner declarations, live proof, project license, two required captures, video, public URLs, final form fields, and confirmation remain unverified or absent.
-- The worker/verifier/egress images, proxy-only capability authentication, and supervisor lifecycle are static/prepared contracts only; no Docker egress path or Codex SDK turn has run and no submission claim may describe them as deployed security evidence.
+- The worker/verifier/egress images, proxy-only capability authentication, request/nonce-bound ID-owned Docker driver, and TLS-only probe are prepared and fake-runner/static tested only. The probe writes no HTTP but does not measure proxy outbound traffic. All three dynamic reports—web health, worker/verifier isolation, and TLS-only egress—fail before Docker at the unset immutable base; no egress TLS path or Codex SDK turn has run, and no submission claim may describe them as deployed security evidence.
 
 These files are production scaffolding only. They must be regenerated from live verified evidence before publication or submission.
 
@@ -80,6 +80,8 @@ If current rules differ from this file, update this file and follow the current 
 
 ### Product name
 
+> **TARGET FINAL BEHAVIOR — NOT_RUN_LIVE.** This section is draft copy and must be rewritten from fresh verified evidence before submission.
+
 **PolicyTwin**
 
 ### Tagline
@@ -97,6 +99,8 @@ PolicyTwin turns policy text into verified software behavior. GPT-5.6 extracts e
 Do not finalize this copy until the implemented behavior has been verified.
 
 ## 3. Judge-facing story
+
+> **TARGET FINAL BEHAVIOR — NOT_RUN_LIVE.** GPT-5.6 interpretation, Codex repair/review, post-repair proof, and deployment statements below describe the intended final flow, not current evidence.
 
 ### Problem
 
@@ -127,6 +131,8 @@ Codex reads the trusted fixture copy, maps policy-related code and tests, repair
 ## 4. Draft long description
 
 Codex must rewrite this from actual implementation evidence before submission.
+
+> **TARGET FINAL BEHAVIOR — NOT_RUN_LIVE.** Current generated submission artifacts remain explicitly `DRAFT_NOT_READY` and are the truthful source for present claims.
 
 ### Inspiration
 
@@ -304,6 +310,8 @@ A clear video no longer than the current official limit. Aim for approximately t
 - [ ] playback verification in a signed-out browser
 
 ### Script draft
+
+> **TARGET VIDEO FLOW — NOT_RECORDED / NOT_RUN_LIVE.** GPT-5.6, Codex repair, post-repair zero drift, and final proof segments cannot be recorded as completed until fresh live evidence exists.
 
 #### 0:00–0:20 — Policy drift
 

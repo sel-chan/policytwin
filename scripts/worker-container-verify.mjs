@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
   cpSync,
   chmodSync,
@@ -15,7 +15,13 @@ import {
 import { isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeContainerBuildInput } from "./container-build-inputs.mjs";
+import {
+  assertLinuxCgroupProcessTreeEmpty,
+  observeLinuxCgroupV2,
+  readLinuxCgroupCpuUsageUsec,
+} from "./linux-cgroup-observer.mjs";
 import { ROOT } from "./process.mjs";
+import { createPinnedDockerSync } from "./pinned-docker-cli.mjs";
 
 const NODE_IMAGE = /^node:22\.22\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/u;
 const RUN_ID = /^runtime-[0-9a-f]{16}$/u;
@@ -29,7 +35,7 @@ export function inspectWorkerContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "4") failures.push("container schema v4 is required");
+  if (contract?.schemaVersion !== "5") failures.push("container schema v5 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }
@@ -71,18 +77,129 @@ export function inspectWorkerContainerPrerequisites(
   };
 }
 
+let pinnedDocker = null;
+
 function docker(args, timeoutMs = 60_000, allowFailure = false) {
-  const result = spawnSync("docker", args, {
-    cwd: ROOT,
-    encoding: "utf8",
-    timeout: timeoutMs,
-    maxBuffer: 4 * 1024 * 1024,
-    windowsHide: true,
-  });
-  if (!allowFailure && (result.error !== undefined || result.status !== 0)) {
-    throw new Error(`Docker ${args[0] ?? "command"} failed.`);
+  if (pinnedDocker === null) throw new Error("The pinned Docker CLI is not initialized.");
+  return pinnedDocker(args, timeoutMs, allowFailure);
+}
+
+function requiredDockerId(value, label) {
+  const id = value.trim();
+  if (!/^[0-9a-f]{64}$/u.test(id)) {
+    throw new Error(`${label} did not return one canonical Docker ID.`);
   }
-  return result;
+  return id;
+}
+
+function outputLines(value) {
+  return value.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
+}
+
+function containerRoleAbsent(id, bindingSha256, role) {
+  const inspected = id === null
+    ? null
+    : docker(["container", "inspect", id], 10_000, true);
+  const listed = docker(
+    [
+      "ps",
+      "--all",
+      "--no-trunc",
+      "--filter",
+      `label=com.policytwin.binding-sha256=${bindingSha256}`,
+      "--filter",
+      `label=com.policytwin.role=${role}`,
+      "--format",
+      "{{.ID}}",
+    ],
+    10_000,
+    true,
+  );
+  const listedById = id === null
+    ? null
+    : docker(
+        [
+          "ps",
+          "--all",
+          "--no-trunc",
+          "--filter",
+          `id=${id}`,
+          "--format",
+          "{{.ID}}",
+        ],
+        10_000,
+        true,
+      );
+  return (
+    (inspected === null || (inspected.error === undefined && inspected.status !== 0)) &&
+    (listedById === null ||
+      (listedById.error === undefined &&
+        listedById.status === 0 &&
+        outputLines(listedById.stdout).length === 0)) &&
+    listed.error === undefined &&
+    listed.status === 0 &&
+    outputLines(listed.stdout).length === 0
+  );
+}
+
+function networkRoleAbsent(id, bindingSha256, role) {
+  const inspected = id === null ? null : docker(["network", "inspect", id], 10_000, true);
+  const listed = docker(
+    [
+      "network",
+      "ls",
+      "--no-trunc",
+      "--filter",
+      `label=com.policytwin.binding-sha256=${bindingSha256}`,
+      "--filter",
+      `label=com.policytwin.role=${role}`,
+      "--format",
+      "{{.ID}}",
+    ],
+    10_000,
+    true,
+  );
+  const listedById = id === null
+    ? null
+    : docker(
+        [
+          "network",
+          "ls",
+          "--no-trunc",
+          "--filter",
+          `id=${id}`,
+          "--format",
+          "{{.ID}}",
+        ],
+        10_000,
+        true,
+      );
+  return (
+    (inspected === null || (inspected.error === undefined && inspected.status !== 0)) &&
+    (listedById === null ||
+      (listedById.error === undefined &&
+        listedById.status === 0 &&
+        outputLines(listedById.stdout).length === 0)) &&
+    listed.error === undefined &&
+    listed.status === 0 &&
+    outputLines(listed.stdout).length === 0
+  );
+}
+
+function imageTagAbsent(tag) {
+  const inspected = docker(["image", "inspect", tag], 10_000, true);
+  const listed = docker(
+    ["image", "ls", "--no-trunc", "--filter", `reference=${tag}`, "--format", "{{.ID}}"],
+    10_000,
+    true,
+  );
+  return (
+    inspected.error === undefined &&
+    inspected.status !== 0 &&
+    listed.error === undefined &&
+    listed.status === 0 &&
+    outputLines(listed.stdout).length === 0
+  );
 }
 
 function parsePreflight(stdout, expectedStatus) {
@@ -126,6 +243,14 @@ function ensureManagedDirectory(path, physicalParent, label) {
   const physicalPath = assertPlainDirectory(path, label);
   assertPhysicalChild(physicalParent, physicalPath, label);
   return physicalPath;
+}
+
+function assertExactMode(path, mode, label) {
+  if (process.platform !== "linux") return;
+  const stat = lstatSync(path);
+  if ((stat.mode & 0o777) !== mode) {
+    throw new Error(`${label} permissions are not exact.`);
+  }
 }
 
 export function assertSafeRunRoot(runRoot, repositoryRoot = ROOT) {
@@ -183,7 +308,9 @@ export function prepareWorkerRunRoot({ repositoryRoot = ROOT, runId }) {
   if (lstatSync(candidate, { throwIfNoEntry: false }) !== undefined) {
     throw new Error("Worker run directory already exists.");
   }
-  mkdirSync(candidate, { recursive: false });
+  mkdirSync(candidate, { recursive: false, mode: 0o700 });
+  chmodSync(candidate, 0o700);
+  assertExactMode(candidate, 0o700, "Worker run directory");
   return assertSafeRunRoot(candidate, root);
 }
 
@@ -205,6 +332,8 @@ async function main() {
   const readiness = inspectWorkerContainerPrerequisites(contract, buildInputs);
   const facts = {
     dockerServerVersion: null,
+    canonicalDockerCliVerified: false,
+    platformLocalDaemonSelected: false,
     nodeBaseImagePresent: false,
     workerImageBuilt: false,
     workerImageId: null,
@@ -213,6 +342,8 @@ async function main() {
     verifierImageId: null,
     verifierBuildInputSha256: buildInputs.verifier.sha256,
     egressProxyBuildInputSha256: buildInputs.egress.sha256,
+    workerNetworkId: null,
+    workerNetworkOwnershipVerified: false,
     workerNetworkInternal: false,
     workerStaticPreflight: false,
     verificationReconstructed: false,
@@ -221,6 +352,12 @@ async function main() {
     repairOverlaySha256: null,
     verificationContentSha256: null,
     verifierCommandsPassed: false,
+    requestLimitsBound: false,
+    workerCgroupObserved: false,
+    verifierCgroupObserved: false,
+    cpuBudgetsPosthocVerified: false,
+    cumulativeCpuTimeEnforced: false,
+    processTreesReaped: false,
     cleanupPassed: false,
     egressProxyVerified: false,
     dynamicIsolationVerified: false,
@@ -229,11 +366,18 @@ async function main() {
   const failures = [...readiness.failures];
   let dockerInvoked = false;
   let runRoot = null;
-  let workerName = null;
-  let verifierName = null;
+  let workerId = null;
+  let verifierId = null;
+  let workerNetworkId = null;
   let workerTag = null;
   let verifierTag = null;
   let cleanupFailed = false;
+  let plan = null;
+  let bindingSha256 = null;
+  let workerCgroup = null;
+  let verifierCgroup = null;
+  let workerCpuBudgetVerified = false;
+  let verifierCpuBudgetVerified = false;
 
   try {
     if (failures.length > 0) throw new Error("Worker container prerequisites are incomplete.");
@@ -246,6 +390,12 @@ async function main() {
     if (build.error !== undefined || build.status !== 0) {
       throw new Error("Worker runtime plan build failed.");
     }
+    pinnedDocker = createPinnedDockerSync({
+      repositoryRoot: ROOT,
+      dockerExecutablePath: process.env.POLICYTWIN_DOCKER_CLI,
+    });
+    facts.canonicalDockerCliVerified = true;
+    facts.platformLocalDaemonSelected = true;
     dockerInvoked = true;
     facts.dockerServerVersion = docker(["info", "--format", "{{.ServerVersion}}"], 10_000)
       .stdout.trim();
@@ -295,18 +445,88 @@ async function main() {
       verifierTag,
     ]).stdout.trim();
     facts.verifierImageBuilt = true;
-    const network = JSON.parse(
-      docker(["network", "inspect", contract.workerContainer.network]).stdout,
-    );
-    if (network?.[0]?.Internal !== true) {
-      throw new Error("Worker network is not internal-only.");
-    }
-    facts.workerNetworkInternal = true;
-
     const runId = `runtime-${suffix}`;
+    const ownershipNonce = randomBytes(16).toString("hex");
+    const requestSha256 = createHash("sha256")
+      .update("policytwin-worker-dynamic-smoke", "utf8")
+      .update("\0", "utf8")
+      .update(runId, "utf8")
+      .digest("hex");
+    const {
+      buildWorkerRuntimePlan,
+      createWorkerRuntimeLayout,
+      OBSERVED_WORKER_NETWORK_ID,
+      reconstructVerificationWorkspace,
+      supervisorDockerBindingSha256,
+    } = await import("../dist/codex/worker-runtime-contract.js");
+    const {
+      parseDockerContainerInspection,
+      parseDockerContainerOwnershipInspection,
+      parseDockerNetworkInspection,
+      parseDockerNetworkOwnershipInspection,
+    } = await import("../dist/codex/docker-observer.js");
+    bindingSha256 = supervisorDockerBindingSha256(
+      requestSha256,
+      runId,
+      ownershipNonce,
+    );
+    const workerNetwork = `policytwin-worker-${bindingSha256.slice(0, 32)}`;
+    const networkLabels = {
+      "com.policytwin.managed": "true",
+      "com.policytwin.contract-version": "2",
+      "com.policytwin.binding-sha256": bindingSha256,
+      "com.policytwin.request-sha256": requestSha256,
+      "com.policytwin.run-id": runId,
+      "com.policytwin.role": "worker-internal",
+    };
+    const existingNetwork = docker([
+      "network",
+      "ls",
+      "--no-trunc",
+      "--filter",
+      `name=^${workerNetwork}$`,
+      "--format",
+      "{{.ID}}",
+    ]).stdout.trim();
+    if (existingNetwork.length !== 0) {
+      throw new Error("Worker dynamic network name already exists.");
+    }
+    const workerNetworkCandidateId = requiredDockerId(
+      docker([
+        "network",
+        "create",
+        "--driver",
+        "bridge",
+        "--scope",
+        "local",
+        "--attachable=false",
+        "--internal",
+        ...Object.entries(networkLabels)
+          .sort(([left], [right]) => left.localeCompare(right))
+          .flatMap(([key, value]) => ["--label", `${key}=${value}`]),
+        workerNetwork,
+      ]).stdout,
+      "Worker network creation",
+    );
+    const workerNetworkOwnership = docker(["network", "inspect", workerNetworkCandidateId]);
+    parseDockerNetworkOwnershipInspection(workerNetworkOwnership.stdout, {
+      id: workerNetworkCandidateId,
+      name: workerNetwork,
+      labels: networkLabels,
+    });
+    parseDockerNetworkInspection(workerNetworkOwnership.stdout, {
+      id: workerNetworkCandidateId,
+      name: workerNetwork,
+      internal: true,
+      labels: networkLabels,
+      containerIds: [],
+    });
+    workerNetworkId = workerNetworkCandidateId;
+    facts.workerNetworkId = workerNetworkId;
+    facts.workerNetworkInternal = true;
+    facts.workerNetworkOwnershipVerified = true;
+
     runRoot = prepareWorkerRunRoot({ repositoryRoot: ROOT, runId });
-    workerName = `policytwin-worker-${runId}`;
-    verifierName = `policytwin-verifier-${runId}`;
     const baseline = resolve(ROOT, "fixtures", "refund-demo", "baseline");
     mkdirSync(resolve(runRoot, "repair", "src"), { recursive: true });
     mkdirSync(resolve(runRoot, "repair", "tests"), { recursive: true });
@@ -343,21 +563,129 @@ async function main() {
     chmodSync(responsePath, 0o666);
     chmodSync(tokenPath, 0o444);
     chmodSync(proxyCaPath, 0o444);
+    assertExactMode(runRoot, 0o700, "Worker run directory");
+    assertExactMode(requestPath, 0o444, "Worker request");
+    assertExactMode(tokenPath, 0o444, "Worker proxy capability");
+    assertExactMode(proxyCaPath, 0o444, "Worker proxy CA");
 
-    const {
-      buildWorkerRuntimePlan,
-      createWorkerRuntimeLayout,
-      reconstructVerificationWorkspace,
-    } = await import("../dist/codex/worker-runtime-contract.js");
     const runtimeLayout = createWorkerRuntimeLayout({ repositoryRoot: ROOT, runId });
-    const plan = buildWorkerRuntimePlan({
+    plan = buildWorkerRuntimePlan({
       repositoryRoot: ROOT,
       runId,
       workerImage: facts.workerImageId,
       verifierImage: facts.verifierImageId,
+      workerNetwork,
+      ownershipNonce,
+      requestSha256,
+      limits: {
+        wallTimeMs: 60_000,
+        cpuTimeMs: 30_000,
+        memoryBytes: 1_073_741_824,
+        pids: 64,
+        outputBytes: 4_194_304,
+      },
     });
-    const worker = docker([...plan.worker.dockerArgs], 60_000);
-    parsePreflight(worker.stdout, "STATIC_PREFLIGHT_PASS");
+    if (
+      plan.worker.memoryBytes !== 1_073_741_824 ||
+      plan.worker.pidsLimit !== 64 ||
+      plan.worker.wallTimeMs !== 60_000 ||
+      plan.worker.cpuTimeMs !== 30_000 ||
+      plan.worker.outputBytes !== 4_194_304 ||
+      plan.worker.cpuTimeEnforcement !== "UNAVAILABLE_STATIC_DRIVER"
+    ) {
+      throw new Error("Worker request limits are not bound to the runtime plan.");
+    }
+    facts.requestLimitsBound = true;
+    const workerCreateArgs = ["create", ...plan.worker.dockerArgs.slice(2)].map((argument) =>
+      argument === OBSERVED_WORKER_NETWORK_ID ? workerNetworkId : argument,
+    );
+    workerCreateArgs.push("--observation-hold-ms=5000");
+    const workerCandidateId = requiredDockerId(
+      docker(workerCreateArgs).stdout,
+      "Worker container creation",
+    );
+    const workerOwnership = docker(["container", "inspect", workerCandidateId]);
+    parseDockerContainerOwnershipInspection(workerOwnership.stdout, {
+      id: workerCandidateId,
+      name: plan.worker.name,
+      labels: plan.worker.labels,
+    });
+    workerId = workerCandidateId;
+    parseDockerNetworkInspection(docker(["network", "inspect", workerNetworkId]).stdout, {
+      id: workerNetworkId,
+      name: workerNetwork,
+      internal: true,
+      labels: networkLabels,
+      containerIds: [workerId],
+    });
+    const workerInspectionExpectation = {
+      id: workerId,
+      name: plan.worker.name,
+      image: plan.worker.image,
+      user: plan.worker.user,
+      entrypoint: plan.worker.entrypoint,
+      workingDirectory: plan.worker.workingDirectory,
+      labels: plan.worker.labels,
+      pidsLimit: plan.worker.pidsLimit,
+      memoryBytes: plan.worker.memoryBytes,
+      memorySwapBytes: plan.worker.memorySwapBytes,
+      nanoCpus: plan.worker.nanoCpus,
+      fileSizeLimitBytes: plan.worker.fileSizeLimitBytes,
+      logDriver: plan.worker.logDriver,
+      logOptions: plan.worker.logOptions,
+      creationNetwork: { name: workerNetwork, id: workerNetworkId },
+      requiredEnvironment: plan.worker.environment,
+      imageEnvironment: plan.worker.imageEnvironment,
+      commandArgs: [...plan.worker.commandArgs, "--observation-hold-ms=5000"],
+      bindMounts: plan.worker.mounts.map((mount) => ({
+        source: mount.source,
+        destination: mount.target,
+        readOnly: mount.readOnly,
+      })),
+      tmpfsMounts: plan.worker.tmpfsMounts.map((mount) => ({
+        destination: mount.target,
+        sizeBytes: mount.sizeBytes,
+      })),
+      networks: [{ name: workerNetwork, id: workerNetworkId, requiredAliases: [] }],
+    };
+    parseDockerContainerInspection(
+      docker(["container", "inspect", workerId]).stdout,
+      workerInspectionExpectation,
+    );
+    if (docker(["port", workerId]).stdout.trim().length !== 0) {
+      throw new Error("Worker container published a host port.");
+    }
+    docker(["start", workerId]);
+    const runningWorker = parseDockerContainerInspection(
+      docker(["container", "inspect", workerId]).stdout,
+      workerInspectionExpectation,
+    );
+    if (!runningWorker.running || runningWorker.pid < 1) {
+      throw new Error("Worker container did not remain running for supervisor observation.");
+    }
+    workerCgroup = observeLinuxCgroupV2(runningWorker.pid, workerId);
+    facts.workerCgroupObserved = true;
+    if (docker(["wait", workerId], 60_000).stdout.trim() !== "0") {
+      throw new Error("Worker static preflight exited unsuccessfully.");
+    }
+    try {
+      const finalCpuUsageUsec = readLinuxCgroupCpuUsageUsec(workerCgroup);
+      workerCpuBudgetVerified =
+        finalCpuUsageUsec - workerCgroup.initialCpuUsageUsec <= plan.worker.cpuTimeMs * 1_000;
+    } catch {
+      workerCpuBudgetVerified = false;
+    }
+    const workerLogs = docker(["logs", workerId]);
+    parsePreflight(workerLogs.stdout, "STATIC_PREFLIGHT_PASS");
+    docker(["network", "disconnect", "--force", workerNetworkId, workerId]);
+    docker(["rm", "--force", workerId]);
+    parseDockerNetworkInspection(docker(["network", "inspect", workerNetworkId]).stdout, {
+      id: workerNetworkId,
+      name: workerNetwork,
+      internal: true,
+      labels: networkLabels,
+      containerIds: [],
+    });
     const response = JSON.parse(readFileSync(responsePath, "utf8"));
     if (response?.schemaVersion !== "1" || response?.status !== "STATIC_PREFLIGHT_PASS") {
       throw new Error("Worker response overlay was not writable.");
@@ -369,11 +697,82 @@ async function main() {
     facts.baselineContentSha256 = reconstruction.baselineContentSha256;
     facts.repairOverlaySha256 = reconstruction.repairOverlaySha256;
     facts.verificationContentSha256 = reconstruction.verificationContentSha256;
-    const verifier = docker([...plan.verifier.dockerArgs, "--verify"], 60_000);
-    const verifierReceipt = parsePreflight(verifier.stdout, "FIXTURE_COMMANDS_PASS");
+    const verifierCreateArgs = ["create", ...plan.verifier.dockerArgs.slice(2)];
+    verifierCreateArgs.push("--observation-hold-ms=5000");
+    const verifierCandidateId = requiredDockerId(
+      docker(verifierCreateArgs).stdout,
+      "Verifier container creation",
+    );
+    const verifierOwnership = docker(["container", "inspect", verifierCandidateId]);
+    parseDockerContainerOwnershipInspection(verifierOwnership.stdout, {
+      id: verifierCandidateId,
+      name: plan.verifier.name,
+      labels: plan.verifier.labels,
+    });
+    verifierId = verifierCandidateId;
+    const verifierInspectionExpectation = {
+      id: verifierId,
+      name: plan.verifier.name,
+      image: plan.verifier.image,
+      user: plan.verifier.user,
+      entrypoint: plan.verifier.entrypoint,
+      workingDirectory: plan.verifier.workingDirectory,
+      labels: plan.verifier.labels,
+      pidsLimit: plan.verifier.pidsLimit,
+      memoryBytes: plan.verifier.memoryBytes,
+      memorySwapBytes: plan.verifier.memorySwapBytes,
+      nanoCpus: plan.verifier.nanoCpus,
+      fileSizeLimitBytes: plan.verifier.fileSizeLimitBytes,
+      logDriver: plan.verifier.logDriver,
+      logOptions: plan.verifier.logOptions,
+      creationNetwork: "none",
+      requiredEnvironment: plan.verifier.environment,
+      imageEnvironment: plan.verifier.imageEnvironment,
+      commandArgs: [...plan.verifier.commandArgs, "--observation-hold-ms=5000"],
+      bindMounts: plan.verifier.mounts.map((mount) => ({
+        source: mount.source,
+        destination: mount.target,
+        readOnly: mount.readOnly,
+      })),
+      tmpfsMounts: plan.verifier.tmpfsMounts.map((mount) => ({
+        destination: mount.target,
+        sizeBytes: mount.sizeBytes,
+      })),
+      networks: [],
+    };
+    parseDockerContainerInspection(
+      docker(["container", "inspect", verifierId]).stdout,
+      verifierInspectionExpectation,
+    );
+    if (docker(["port", verifierId]).stdout.trim().length !== 0) {
+      throw new Error("Verifier container published a host port.");
+    }
+    docker(["start", verifierId]);
+    const runningVerifier = parseDockerContainerInspection(
+      docker(["container", "inspect", verifierId]).stdout,
+      verifierInspectionExpectation,
+    );
+    if (!runningVerifier.running || runningVerifier.pid < 1) {
+      throw new Error("Verifier container did not remain running for supervisor observation.");
+    }
+    verifierCgroup = observeLinuxCgroupV2(runningVerifier.pid, verifierId);
+    facts.verifierCgroupObserved = true;
+    if (docker(["wait", verifierId], 60_000).stdout.trim() !== "0") {
+      throw new Error("Verifier exited unsuccessfully.");
+    }
+    try {
+      const finalCpuUsageUsec = readLinuxCgroupCpuUsageUsec(verifierCgroup);
+      verifierCpuBudgetVerified =
+        finalCpuUsageUsec - verifierCgroup.initialCpuUsageUsec <= plan.verifier.cpuTimeMs * 1_000;
+    } catch {
+      verifierCpuBudgetVerified = false;
+    }
+    const verifierLogs = docker(["logs", verifierId]);
+    const verifierReceipt = parsePreflight(verifierLogs.stdout, "FIXTURE_COMMANDS_PASS");
     if (verifierReceipt.credentialsPresent !== false) {
       throw new Error("Verifier reported credential exposure.");
     }
+    docker(["rm", "--force", verifierId]);
     facts.verifierCommandsPassed = true;
   } catch (error) {
     if (failures.length === 0) {
@@ -381,14 +780,39 @@ async function main() {
     }
   } finally {
     if (dockerInvoked) {
-      for (const name of [workerName, verifierName]) {
-        if (name === null) continue;
-        const inspect = docker(["container", "inspect", name], 10_000, true);
+      for (const id of [workerId, verifierId]) {
+        if (id === null) continue;
+        const inspect = docker(["container", "inspect", id], 10_000, true);
         if (inspect.status === 0) {
-          const removed = docker(["rm", "--force", name], 30_000, true);
+          docker(["stop", "--time", "5", id], 15_000, true);
+          if (workerNetworkId !== null) {
+            docker(["network", "disconnect", "--force", workerNetworkId, id], 15_000, true);
+          }
+          const removed = docker(["rm", "--force", id], 30_000, true);
           if (removed.status !== 0 || removed.error !== undefined) {
             cleanupFailed = true;
             failures.push("Worker container cleanup failed.");
+          }
+        }
+      }
+      if (workerNetworkId !== null) {
+        const inspected = docker(["network", "inspect", workerNetworkId], 10_000, true);
+        if (inspected.status === 0) {
+          try {
+            const network = JSON.parse(inspected.stdout)?.[0];
+            if (Object.keys(network?.Containers ?? {}).length !== 0) {
+              cleanupFailed = true;
+              failures.push("Worker network still has an unexpected endpoint.");
+            } else {
+              const removed = docker(["network", "rm", workerNetworkId], 30_000, true);
+              if (removed.status !== 0 || removed.error !== undefined) {
+                cleanupFailed = true;
+                failures.push("Worker network cleanup failed.");
+              }
+            }
+          } catch {
+            cleanupFailed = true;
+            failures.push("Worker network cleanup observation failed.");
           }
         }
       }
@@ -396,11 +820,15 @@ async function main() {
         if (tag === null) continue;
         const inspect = docker(["image", "inspect", tag], 10_000, true);
         if (inspect.status === 0) {
-          const removed = docker(["image", "rm", "--force", tag], 60_000, true);
+          const removed = docker(["image", "rm", tag], 60_000, true);
           if (removed.status !== 0 || removed.error !== undefined) {
             cleanupFailed = true;
             failures.push("Worker image cleanup failed.");
           }
+        }
+        if (!imageTagAbsent(tag)) {
+          cleanupFailed = true;
+          failures.push("Worker image tag cleanup was not independently observed.");
         }
       }
     }
@@ -412,13 +840,49 @@ async function main() {
         failures.push("Worker run workspace cleanup failed.");
       }
     }
+    if (bindingSha256 !== null) {
+      for (const [id, role] of [[workerId, "worker"], [verifierId, "verifier"]]) {
+        if (!containerRoleAbsent(id, bindingSha256, role)) {
+          cleanupFailed = true;
+          failures.push(`Docker ${role} absence was not independently observed.`);
+        }
+      }
+      if (!networkRoleAbsent(workerNetworkId, bindingSha256, "worker-internal")) {
+        cleanupFailed = true;
+        failures.push("Docker worker network absence was not independently observed.");
+      }
+    }
+    let processTreesReaped = workerCgroup !== null && verifierCgroup !== null;
+    for (const cgroup of [workerCgroup, verifierCgroup]) {
+      if (cgroup === null) continue;
+      try {
+        assertLinuxCgroupProcessTreeEmpty(cgroup);
+      } catch {
+        processTreesReaped = false;
+        cleanupFailed = true;
+        failures.push("A container cgroup still has an unobserved process tree.");
+      }
+    }
+    facts.processTreesReaped = processTreesReaped;
+    facts.cpuBudgetsPosthocVerified =
+      workerCpuBudgetVerified && verifierCpuBudgetVerified;
     facts.cleanupPassed = dockerInvoked && !cleanupFailed;
+    facts.dynamicIsolationVerified =
+      failures.length === 0 &&
+      facts.requestLimitsBound &&
+      facts.workerNetworkOwnershipVerified &&
+      facts.workerCgroupObserved &&
+      facts.verifierCgroupObserved &&
+      facts.processTreesReaped &&
+      facts.workerStaticPreflight &&
+      facts.verifierCommandsPassed &&
+      facts.cleanupPassed;
   }
 
   const report = {
     schemaVersion: "1",
     status: failures.length === 0 ? "PASS" : "FAIL",
-    scope: "DYNAMIC_WORKER_VERIFIER_SMOKE_NOT_LIVE_CODEX",
+    scope: "DYNAMIC_WORKER_VERIFIER_ISOLATION_SMOKE_CPU_TIME_UNAVAILABLE_NOT_LIVE_CODEX",
     dockerInvoked,
     facts,
     releaseReady: false,

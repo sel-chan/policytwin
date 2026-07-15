@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { computeContainerBuildInput } from "../../scripts/container-build-inputs.mjs";
 import { inspectStaticContainerContract } from "../../scripts/container-check.mjs";
+import { inspectEgressContainerPrerequisites } from "../../scripts/egress-container-verify.mjs";
 import {
   inspectWorkerContainerPrerequisites,
   prepareWorkerRunRoot,
@@ -44,6 +45,20 @@ test("worker dynamic verification rejects missing base and build-input tampering
   });
   assert.equal(tampered.dockerInvoked, false);
   assert.match(tampered.failures.join(" "), /worker build inputs do not match/u);
+});
+
+test("egress dynamic verification rejects missing base and build-input tampering before Docker", async () => {
+  const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
+  const report = inspectEgressContainerPrerequisites(contract);
+  assert.equal(report.status, "FAIL");
+  assert.deepEqual(report.failures, ["immutable Node base image is unset"]);
+  const worker = computeContainerBuildInput("worker");
+  const egress = computeContainerBuildInput("egress");
+  const tampered = inspectEgressContainerPrerequisites(contract, {
+    worker,
+    egress: { ...egress, sha256: "0".repeat(64) },
+  });
+  assert.match(tampered.failures.join(" "), /egress proxy build inputs do not match/u);
 });
 
 test("worker verification rejects linked managed roots before writes or cleanup", async (t) => {
@@ -118,11 +133,14 @@ async function copyStaticContainerInputs(target) {
     "scripts/build-core.mjs",
     "scripts/process.mjs",
     "scripts/worker-preflight.mjs",
+    "scripts/egress-tls-probe.mjs",
     "scripts/worker-entrypoint.mjs",
     "scripts/proxy-token-helper.mjs",
     "scripts/openai-egress-proxy.mjs",
     "scripts/verifier-preflight.mjs",
     "scripts/worker-container-verify.mjs",
+    "scripts/egress-container-verify.mjs",
+    "scripts/pinned-docker-cli.mjs",
   ]) {
     const destination = join(target, path);
     await mkdir(dirname(destination), { recursive: true });

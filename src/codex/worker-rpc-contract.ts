@@ -367,7 +367,7 @@ function parseLimits(value: unknown): WorkerRpcResourceLimits {
       result.outputBytes,
       "worker RPC output limit",
       1024 * 1024,
-      16 * 1024 * 1024,
+      WORKER_RPC_MAX_RESPONSE_BYTES,
     ),
   };
 }

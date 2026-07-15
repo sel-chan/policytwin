@@ -13,7 +13,7 @@ The repository now includes:
 - boundary, conflict, contrast, differential, and mutation checks that expose all three seeded TypeScript defects;
 - a server-only GPT-5.6 Responses adapter contract with strict structured output, full-source traceability, golden-case contradiction blocking, bounded retries, and a token-gated HTTP route;
 - a server-only Codex SDK 0.144.3 adapter contract plus a real Node TLS 1.3 mutual-authentication transport and bounded supervisor service, with CA/name/certificate-pin/ALPN checks, canonical length frames, durable SQLite replay rejection, trusted supervisor signatures, host-known baseline/final tree-manifest comparison, a fixed two-file write set, and host live execution still disabled;
-- static supervisor-owned worker/verifier/egress lifecycle plans and an OpenAI Responses-only reverse-broker contract that gives the worker only a short-lived capability, keeps the provider credential in an external proxy mount, and remains explicitly non-live until Docker, DNS, TLS, and SDK execution are observed;
+- static supervisor-owned worker/verifier/egress plans, a shell-free ID-owned Docker driver verified against a stateful fake daemon, and an OpenAI Responses-only reverse broker that gives the worker only a short-lived capability, keeps the provider credential in an external proxy mount, and remains explicitly non-live until the real Docker and SDK paths run;
 - Policy Studio, an anonymous-session-isolated SQLite Decision Queue, Case Lab, Integration/Drift, Proof, and blocked Change Impact views in Next.js;
 - Chrome E2E coverage for all six views, browser-session isolation, versioned decision/source writes, CSRF rejection, golden-conflict blocking, complete evidence downloads, keyboard navigation, and a 390px mobile layout;
 - a complete, hash-covered `PARTIAL_OFFLINE` evidence package, adversarial semantic validation, a byte-deterministic 38-file USTAR download, and fail-closed submission drafts.
@@ -24,19 +24,19 @@ The repository is **not submission-ready**. Fresh GPT-5.6 and Codex runs, actual
 
 ```mermaid
 flowchart LR
-  A["Refund policy + golden cases"] --> B["GPT-5.6 interpretation"]
+  A["Refund policy + golden cases"] -.-> B["GPT-5.6 interpretation (live disabled)"]
   B --> C["Validated PolicyIR"]
   C --> D["Versioned ambiguity decisions"]
   D --> E["Deterministic Rego compiler"]
   E --> F["OPA + generated cases"]
   F --> G["TypeScript differential runner"]
   G --> H["Authentication-required single-run RPC"]
-  H --> I["External Codex repair + immutable verification"]
-  I --> J["Hash-covered proof package"]
-  J --> K["Trusted live attestation"]
+  H -.-> I["External Codex repair (live disabled)"]
+  I -.-> J["Hash-covered live proof"]
+  J -.-> K["Trusted live attestation"]
 ```
 
-Model output never becomes the final executable policy. The validated IR is compiled deterministically, every rule traces to source clauses, and golden-case contradictions fail closed.
+Dashed edges are planned live execution and have not run. Model output never becomes the final executable policy. The validated IR is compiled deterministically, every rule traces to source clauses, and golden-case contradictions fail closed.
 
 ## Local setup
 
@@ -70,6 +70,7 @@ Copy `.env.example` to a local ignored environment file when exercising live int
 | `POLICYTWIN_PUBLIC_ORIGIN` | Exact browser-facing origin for workspace mutation checks; HTTPS is mandatory in production |
 | `OPA_PATH` | Optional verified OPA executable override |
 | `OPENSSL_PATH` | Optional OpenSSL executable override used only to generate temporary mTLS test certificates |
+| `POLICYTWIN_DOCKER_CLI` | Canonical absolute Docker CLI path required by the worker and TLS-only dynamic gates; those gates force the platform-local daemon and do not search `PATH` |
 | `POLICYTWIN_DATABASE_PATH` | Optional absolute SQLite file path; defaults to ignored `.data/policytwin.sqlite` |
 | `POLICYTWIN_CODEX_*_TIMEOUT_MS` | Reserved values for the future external worker; the current host does not consume them |
 
@@ -95,10 +96,11 @@ pnpm verify:live
 pnpm container:check
 pnpm container:verify
 pnpm worker:verify
+pnpm egress:verify
 pnpm submission:check
 ```
 
-`pnpm demo:reset` removes only the default ignored demo SQLite file and restores the trusted fixture; stop the development server first on Windows. It fails closed when `POLICYTWIN_DATABASE_PATH` points elsewhere and never deletes that custom file. Browser sessions receive separate seeded projects; new sessions require same-origin fetch metadata, expire after 24 hours, and are capped at 128 per process. This is bounded demo isolation, not user authentication or a multi-instance storage design. `pnpm demo:run` must report exactly three seeded drifts. `pnpm verify` is the deterministic offline gate and runs the daemon-free static web/worker/verifier/egress contract. `pnpm container:verify` is the separate dynamic web image/OPA/non-root/read-only-root/health gate; it initializes the named volume for the non-root runtime, persists an actual workspace decision through the API, restarts the container, and reads the same SQLite state back. `pnpm worker:verify` remains a distinct non-live worker/verifier smoke gate; it does not yet build or run the prepared egress image. The static contract additionally hashes that image's exact build inputs, fixes an external-secret-only launch plan, and tests the reverse-broker admission path with a local fake upstream. Both dynamic commands currently fail before Docker because the immutable Node base is unset. No gate has observed the egress container, real OpenAI DNS/TLS traffic, a Codex SDK turn, or process-tree teardown. `pnpm verify:live` must capture fresh GPT-5.6 and Codex evidence before completion.
+`pnpm demo:reset` removes only the default ignored demo SQLite file and restores the trusted fixture; stop the development server first on Windows. It fails closed when `POLICYTWIN_DATABASE_PATH` points elsewhere and never deletes that custom file. Browser sessions receive separate seeded projects; new sessions require same-origin fetch metadata, expire after 24 hours, and are capped at 128 per process. This is bounded demo isolation, not user authentication or a multi-instance storage design. `pnpm demo:run` must report exactly three seeded drifts. `pnpm verify` is the deterministic offline gate and runs the daemon-free static web/worker/verifier/egress contract. `pnpm container:verify` is the separate dynamic web image/OPA/non-root/read-only-root/health gate. `pnpm worker:verify` owns a fresh labeled internal network and worker/verifier containers only after returned Docker IDs pass identity inspection; its Linux dynamic path also requires Docker-ID-bound cgroup v2 teardown. `pnpm egress:verify` separately owns internal/outbound networks, the proxy, and a non-root TLS 1.3 probe. The probe closes after certificate verification without writing HTTP; the gate does not measure proxy outbound traffic and therefore does not claim upstream absence. All three dynamic gates currently fail before Docker because the immutable Node base is unset. Cumulative `cpuTimeMs` enforcement is explicitly unavailable in the static driver, so `pnpm verify:live` remains fail-closed even if the non-live Docker gates later pass; a fresh GPT-5.6/Codex repair and signed evidence are also still absent.
 
 Browser evidence is under `artifacts/screenshots/`. Machine-readable proof is under `artifacts/evidence/`; every unavailable live result is labeled `NOT_RUN` rather than simulated. The evidence API exposes every required artifact individually, and the Proof view builds `/api/evidence/archive` in memory from the exact 38-file allowlist, so transient files are never collected.
 
@@ -116,7 +118,7 @@ Codex phases use distinct SDK threads. Cartography and review are read-only and 
 
 The SDK sandbox is not treated as a host read jail. No web-process route invokes the live adapter, the host live-backend factory always rejects, and the local command runner rejects `LIVE_CODEX_SDK` outright. The repository now has a concrete Node TLS 1.3 client and supervisor service: both peers must chain to the configured CA, match pinned SHA-256 certificate fingerprints, negotiate the fixed ALPN, and the server certificate must match the fixed name. The wire protocol accepts exactly one bounded magic-plus-length canonical JSON request and response per connection. The supervisor rejects malformed, partial, oversized, trailing, replayed, expired, and concurrent requests before execution; a durable SQLite replay store rejects reuse of either request ID or nonce across restarts. Cancellation and supervisor shutdown abort the injected executor and wait for it to settle, while pre-handshake sockets are tracked and destroyed. The host then applies the existing 4 MiB/64 KiB/1,024-chunk, Ed25519, policy/image/corpus, tree-manifest, command, and teardown checks.
 
-This proves local contracts only. The integration executor returns an explicitly labeled signed `FAIL` test result and performs no SDK work. Separate non-root worker, verifier, and egress Dockerfiles now exist with immutable build-input hashes. A prepared entrypoint validates a canonical request and empty `CODEX_HOME` but can emit only `VALIDATED_REQUEST_LIVE_DISABLED`. The supervisor lifecycle plan converts worker/verifier runs to explicit create/start/wait/logs/stop/remove operations and fails when cleanup is incomplete. The reverse broker admits only bounded `POST /v1/responses`, consumes a run-bound capability, resolves the fixed upstream to public IPv4, pins the connection while preserving OpenAI SNI/certificate identity, and rejects redirects or compression. None of those Docker, DNS, TLS, cgroup, or live SDK facts has been observed; the host live factory still rejects and no live PASS response or Codex repair exists.
+This proves local contracts only. The integration executor returns an explicitly labeled signed `FAIL` test result and performs no SDK work. Separate non-root worker, verifier, and egress Dockerfiles exist with immutable build-input hashes. A prepared entrypoint validates a canonical request and empty `CODEX_HOME` but can emit only `VALIDATED_REQUEST_LIVE_DISABLED`. Docker v2 derives every resource name and exact PolicyTwin labels from the request plus an independent nonce; existing names are never adopted, and a returned 64-hex ID grants cleanup authority only after independent ID/name/label inspection. The runner pins a canonical Docker executable and the platform-local daemon; the observer closes entrypoint, working directory, environment, namespaces, devices, security controls, bind propagation, tmpfs, ports, and exact network membership. Stateful fake-daemon tests cover normal execution, name preemption, ambiguous/foreign IDs, partial creation, foreign endpoints, observer drift, published ports, swap/file/log limit drift, and sealed-image/maximum-limit admission. Init-PID-only procfs evidence is rejected; real dynamic teardown requires cgroup v2 plus initial-PID absence. The supervisor seals the worker image and maximum request limits. Runtime memory and swap are equal, regular-file writes inherit the request output ceiling, and the local Docker log uses the same maximum size with one file. One prepare/worker/verifier execution deadline is request-bound and teardown uses a separate bounded grace period, while cumulative CPU-time enforcement remains an explicit live blocker. The reverse broker still admits only bounded `POST /v1/responses`, consumes a run-bound capability, resolves the fixed upstream to public IPv4, pins the connection while preserving OpenAI SNI/certificate identity, and rejects redirects or compression. No immutable image or real Docker path has run here; the TLS-only report is fail-closed and explicitly marks proxy outbound traffic `NOT_MEASURED`, the host live factory still rejects, and no live PASS response or Codex repair exists.
 
 Self-rehashing an edited evidence package cannot promote it to `LIVE_VERIFIED`: live status requires both semantic consistency and a trusted detached signature. No private attestation key belongs in this repository.
 

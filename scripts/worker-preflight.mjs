@@ -10,10 +10,32 @@ const EXPECTED_ENVIRONMENT = {
   CODEX_CA_CERTIFICATE: "/run/secrets/policytwin-egress-ca.pem",
 };
 const FORBIDDEN_ENVIRONMENT = /^(?:OPENAI_|AZURE_OPENAI_|CODEX_(?!HOME$|CA_CERTIFICATE$)|HTTP_PROXY$|HTTPS_PROXY$|ALL_PROXY$)/iu;
+const OBSERVATION_HOLD_ARGUMENT = "--observation-hold-ms=5000";
 
 function fail(message) {
   console.error(`Worker static preflight failed: ${message}`);
   process.exit(1);
+}
+
+const observationHoldArgument = process.argv[3];
+if (
+  process.argv.length > 4 ||
+  (observationHoldArgument !== undefined && observationHoldArgument !== OBSERVATION_HOLD_ARGUMENT)
+) {
+  fail("the observation hold argument is invalid.");
+}
+
+async function holdForSupervisorObservation() {
+  if (observationHoldArgument === OBSERVATION_HOLD_ARGUMENT) {
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+  }
+}
+
+if (process.argv[2] === "--egress-tls-probe") {
+  const { runEgressTlsProbe } = await import("./egress-tls-probe.mjs");
+  console.log(JSON.stringify(await runEgressTlsProbe()));
+  await holdForSupervisorObservation();
+  process.exit(0);
 }
 
 function assertReal(path, kind, maximumBytes = Number.POSITIVE_INFINITY) {
@@ -109,3 +131,4 @@ console.log(
     liveCodexExecuted: false,
   }),
 );
+await holdForSupervisorObservation();

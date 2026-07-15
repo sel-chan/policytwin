@@ -16,6 +16,9 @@ export interface WorkerOsCleanupObservation {
   schemaVersion: "1";
   workerContainerRemoved: boolean;
   verifierContainerRemoved: boolean;
+  egressContainerRemoved: boolean;
+  workerNetworkReleased: boolean;
+  outboundNetworkReleased: boolean;
   repairWorkspaceDeleted: boolean;
   verificationWorkspaceDeleted: boolean;
   processTreeReaped: boolean;
@@ -82,6 +85,9 @@ function assertCleanup(value: WorkerOsCleanupObservation): void {
     value.schemaVersion !== "1" ||
     value.workerContainerRemoved !== true ||
     value.verifierContainerRemoved !== true ||
+    value.egressContainerRemoved !== true ||
+    value.workerNetworkReleased !== true ||
+    value.outboundNetworkReleased !== true ||
     value.repairWorkspaceDeleted !== true ||
     value.verificationWorkspaceDeleted !== true ||
     value.processTreeReaped !== true ||
@@ -109,78 +115,86 @@ export function createPreparedSupervisorWorkerLifecycle<Handle, WorkerOutput, Ve
       if (active) throw new Error("The worker lifecycle already has an active run.");
       active = true;
       try {
-      throwIfAborted(input.signal);
-      const request = deepFreeze(parseWorkerRpcRequest(value));
-      const requestSha256 = workerRpcSha256(request);
-      const stages: WorkerOsLifecycleStage[] = ["REQUEST_VALIDATED"];
-      let handle: Handle | undefined;
-      let failure: unknown = null;
-      let reason: "SUCCESS" | "FAILURE" | "ABORT" = "FAILURE";
-      try {
-        handle = driver.createHandle(request);
-        stages.push("HANDLE_CREATED");
         throwIfAborted(input.signal);
-        assertRequestBinding(request, requestSha256);
-        await driver.prepare(handle, request, input.signal);
-        stages.push("LAYOUT_PREPARED");
-        throwIfAborted(input.signal);
-        assertRequestBinding(request, requestSha256);
-        const workerOutput = await driver.runWorker(handle, request, input.signal);
-        throwIfAborted(input.signal);
-        driver.validateWorkerOutput(workerOutput, request);
-        stages.push("WORKER_RESULT_VALIDATED");
-        assertRequestBinding(request, requestSha256);
-        const verifierOutput = await driver.runVerifier(
-          handle,
-          workerOutput,
-          request,
-          input.signal,
-        );
-        throwIfAborted(input.signal);
-        driver.validateVerifierOutput(verifierOutput, request);
-        stages.push("VERIFIER_RESULT_VALIDATED");
-        assertRequestBinding(request, requestSha256);
-        reason = "SUCCESS";
-      } catch (error) {
-        failure = error;
-        reason = input.signal.aborted ? "ABORT" : "FAILURE";
-      }
-      if (handle === undefined) {
-        throw failure instanceof Error ? failure : new Error("The worker lifecycle failed.");
-      }
-      const cleanupController = new AbortController();
-      let timer: NodeJS.Timeout | undefined;
-      const cleanupDeadline = new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(() => {
-          const error = new Error("Supervisor cleanup timed out.");
-          cleanupController.abort(error);
-          reject(error);
-        }, cleanupTimeoutMs);
-      });
-      try {
-        const cleanup = await Promise.race([
-          driver.cleanup(handle, reason, cleanupController.signal),
-          cleanupDeadline,
-        ]);
-        assertCleanup(cleanup);
-        stages.push("SUPERVISOR_CLEANUP_VALIDATED");
-      } catch (cleanupError) {
-        poisoned = true;
-        throw new Error("Supervisor-owned worker cleanup failed.", { cause: cleanupError });
-      } finally {
-        if (timer !== undefined) clearTimeout(timer);
-      }
-      if (failure !== null) {
-        throw failure instanceof Error ? failure : new Error("The worker lifecycle failed.");
-      }
-      return {
-        schemaVersion: "1",
-        status: "STATIC_DRIVER_TEST_ONLY",
-        requestSha256,
-        stages,
-        dynamicIsolationVerified: false,
-        liveCodexExecuted: false,
-      };
+        const request = deepFreeze(parseWorkerRpcRequest(value));
+        const requestSha256 = workerRpcSha256(request);
+        const stages: WorkerOsLifecycleStage[] = ["REQUEST_VALIDATED"];
+        const wallController = new AbortController();
+        const wallTimer = setTimeout(() => {
+          wallController.abort(new Error("The worker lifecycle exceeded its total wall-time limit."));
+        }, request.policy.limits.wallTimeMs);
+        wallTimer.unref();
+        const executionSignal = AbortSignal.any([input.signal, wallController.signal]);
+        let handle: Handle | undefined;
+        let failure: unknown = null;
+        let reason: "SUCCESS" | "FAILURE" | "ABORT" = "FAILURE";
+        try {
+          handle = driver.createHandle(request);
+          stages.push("HANDLE_CREATED");
+          throwIfAborted(executionSignal);
+          assertRequestBinding(request, requestSha256);
+          await driver.prepare(handle, request, executionSignal);
+          stages.push("LAYOUT_PREPARED");
+          throwIfAborted(executionSignal);
+          assertRequestBinding(request, requestSha256);
+          const workerOutput = await driver.runWorker(handle, request, executionSignal);
+          throwIfAborted(executionSignal);
+          driver.validateWorkerOutput(workerOutput, request);
+          stages.push("WORKER_RESULT_VALIDATED");
+          assertRequestBinding(request, requestSha256);
+          const verifierOutput = await driver.runVerifier(
+            handle,
+            workerOutput,
+            request,
+            executionSignal,
+          );
+          throwIfAborted(executionSignal);
+          driver.validateVerifierOutput(verifierOutput, request);
+          stages.push("VERIFIER_RESULT_VALIDATED");
+          assertRequestBinding(request, requestSha256);
+          reason = "SUCCESS";
+        } catch (error) {
+          failure = error;
+          reason = executionSignal.aborted ? "ABORT" : "FAILURE";
+        } finally {
+          clearTimeout(wallTimer);
+        }
+        if (handle === undefined) {
+          throw failure instanceof Error ? failure : new Error("The worker lifecycle failed.");
+        }
+        const cleanupController = new AbortController();
+        let timer: NodeJS.Timeout | undefined;
+        const cleanupDeadline = new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(() => {
+            const error = new Error("Supervisor cleanup timed out.");
+            cleanupController.abort(error);
+            reject(error);
+          }, cleanupTimeoutMs);
+        });
+        try {
+          const cleanup = await Promise.race([
+            driver.cleanup(handle, reason, cleanupController.signal),
+            cleanupDeadline,
+          ]);
+          assertCleanup(cleanup);
+          stages.push("SUPERVISOR_CLEANUP_VALIDATED");
+        } catch (cleanupError) {
+          poisoned = true;
+          throw new Error("Supervisor-owned worker cleanup failed.", { cause: cleanupError });
+        } finally {
+          if (timer !== undefined) clearTimeout(timer);
+        }
+        if (failure !== null) {
+          throw failure instanceof Error ? failure : new Error("The worker lifecycle failed.");
+        }
+        return {
+          schemaVersion: "1",
+          status: "STATIC_DRIVER_TEST_ONLY",
+          requestSha256,
+          stages,
+          dynamicIsolationVerified: false,
+          liveCodexExecuted: false,
+        };
       } finally {
         active = false;
       }

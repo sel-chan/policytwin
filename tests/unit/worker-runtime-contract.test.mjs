@@ -6,15 +6,29 @@ import test from "node:test";
 import {
   buildWorkerRuntimePlan,
   createWorkerRuntimeLayout,
+  OBSERVED_WORKER_NETWORK_ID,
   reconstructVerificationWorkspace,
   verifierEnvironment,
   WORKER_WRITABLE_PATHS,
 } from "../../dist/codex/worker-runtime-contract.js";
 import { createOpenAiEgressLease } from "../../dist/codex/openai-egress-contract.js";
-import { buildSupervisorDockerLifecyclePlan } from "../../dist/codex/egress-runtime-contract.js";
+import {
+  buildSupervisorDockerLifecyclePlan,
+  OBSERVED_OUTBOUND_NETWORK_ID,
+} from "../../dist/codex/egress-runtime-contract.js";
 
 const DIGEST = "a".repeat(64);
 const PROXY_TOKEN = Buffer.alloc(32, 13).toString("base64url");
+const OWNERSHIP_NONCE = "b".repeat(32);
+const REQUEST_SHA256 = "d".repeat(64);
+const WORKER_NETWORK = `policytwin-worker-${"c".repeat(32)}`;
+const LIMITS = {
+  wallTimeMs: 60_000,
+  cpuTimeMs: 30_000,
+  memoryBytes: 1_073_741_824,
+  pids: 64,
+  outputBytes: 4_194_304,
+};
 
 function optionValues(args, option) {
   return args.flatMap((value, index) => (value === option ? [args[index + 1]] : []));
@@ -61,6 +75,10 @@ test("worker runtime plan fixes the two-file write set and credential-free verif
     runId: fixture.runId,
     workerImage: `sha256:${DIGEST}`,
     verifierImage: `sha256:${DIGEST}`,
+    workerNetwork: WORKER_NETWORK,
+    ownershipNonce: OWNERSHIP_NONCE,
+    requestSha256: REQUEST_SHA256,
+    limits: LIMITS,
   });
 
   assert.deepEqual(WORKER_WRITABLE_PATHS, ["src/refund.ts", "tests/refund.test.mjs"]);
@@ -68,7 +86,20 @@ test("worker runtime plan fixes the two-file write set and credential-free verif
   assert.equal(plan.status, "STATIC_PLAN_ONLY");
   assert.equal(plan.dynamicIsolationVerified, false);
   assert.equal(plan.liveCodexExecuted, false);
-  assert.equal(plan.worker.network, "policytwin-worker-internal");
+  assert.equal(plan.worker.network, WORKER_NETWORK);
+  assert.deepEqual(plan.worker.labels, {
+    "com.policytwin.managed": "true",
+    "com.policytwin.contract-version": "2",
+    "com.policytwin.binding-sha256": plan.worker.labels["com.policytwin.binding-sha256"],
+    "com.policytwin.request-sha256": REQUEST_SHA256,
+    "com.policytwin.run-id": fixture.runId,
+    "com.policytwin.role": "worker",
+  });
+  assert.match(plan.worker.labels["com.policytwin.binding-sha256"], /^[0-9a-f]{64}$/u);
+  assert.equal(optionValues(plan.worker.dockerArgs, "--label").length, 6);
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--network"), [
+    OBSERVED_WORKER_NETWORK_ID,
+  ]);
   assert.equal(plan.verifier.network, "none");
   assert.deepEqual(plan.verifier.environment, verifierEnvironment());
   assert.equal(plan.worker.mounts.filter((mount) => mount.readOnly === false).length, 3);
@@ -165,6 +196,54 @@ test("verification reconstruction copies only the approved repair overlays", asy
   );
 });
 
+test("worker runtime plan binds the admitted memory, PID, wall, CPU, and output limits", async (t) => {
+  const fixture = await createRuntimeFixture();
+  t.after(() => rm(fixture.repositoryRoot, { recursive: true, force: true }));
+  const limits = {
+    wallTimeMs: 12_000,
+    cpuTimeMs: 4_000,
+    memoryBytes: 256 * 1024 * 1024,
+    pids: 8,
+    outputBytes: 1024 * 1024,
+  };
+  const plan = buildWorkerRuntimePlan({
+    repositoryRoot: fixture.repositoryRoot,
+    runId: fixture.runId,
+    workerImage: `sha256:${DIGEST}`,
+    verifierImage: `sha256:${DIGEST}`,
+    workerNetwork: WORKER_NETWORK,
+    ownershipNonce: OWNERSHIP_NONCE,
+    requestSha256: REQUEST_SHA256,
+    limits,
+  });
+  assert.equal(plan.worker.memoryBytes, limits.memoryBytes);
+  assert.equal(plan.worker.memorySwapBytes, limits.memoryBytes);
+  assert.equal(plan.worker.pidsLimit, limits.pids);
+  assert.equal(plan.worker.wallTimeMs, limits.wallTimeMs);
+  assert.equal(plan.worker.cpuTimeMs, limits.cpuTimeMs);
+  assert.equal(plan.worker.outputBytes, limits.outputBytes);
+  assert.equal(plan.worker.fileSizeLimitBytes, limits.outputBytes);
+  assert.equal(plan.worker.logDriver, "local");
+  assert.deepEqual(plan.worker.logOptions, {
+    "max-size": String(limits.outputBytes),
+    "max-file": "1",
+  });
+  assert.equal(plan.worker.cpuTimeEnforcement, "UNAVAILABLE_STATIC_DRIVER");
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--memory"), [String(limits.memoryBytes)]);
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--memory-swap"), [
+    String(limits.memoryBytes),
+  ]);
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--ulimit"), [
+    `fsize=${limits.outputBytes}:${limits.outputBytes}`,
+  ]);
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--log-driver"), ["local"]);
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--log-opt"), [
+    `max-size=${limits.outputBytes}`,
+    "max-file=1",
+  ]);
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--pids-limit"), [String(limits.pids)]);
+});
+
 test("worker runtime plan rejects mutable images, path traversal, and incomplete layouts", async (t) => {
   const fixture = await createRuntimeFixture();
   t.after(() => rm(fixture.repositoryRoot, { recursive: true, force: true }));
@@ -175,6 +254,10 @@ test("worker runtime plan rejects mutable images, path traversal, and incomplete
         runId: fixture.runId,
         workerImage: "policytwin-worker:latest",
         verifierImage: `sha256:${DIGEST}`,
+        workerNetwork: WORKER_NETWORK,
+        ownershipNonce: OWNERSHIP_NONCE,
+        requestSha256: REQUEST_SHA256,
+        limits: LIMITS,
       }),
     /immutable/u,
   );
@@ -185,6 +268,10 @@ test("worker runtime plan rejects mutable images, path traversal, and incomplete
         runId: fixture.runId,
         workerImage: `https://registry.invalid/policytwin-worker@sha256:${DIGEST}`,
         verifierImage: `sha256:${DIGEST}`,
+        workerNetwork: WORKER_NETWORK,
+        ownershipNonce: OWNERSHIP_NONCE,
+        requestSha256: REQUEST_SHA256,
+        limits: LIMITS,
       }),
     /immutable/u,
   );
@@ -200,6 +287,10 @@ test("worker runtime plan rejects mutable images, path traversal, and incomplete
         runId: fixture.runId,
         workerImage: `sha256:${DIGEST}`,
         verifierImage: `sha256:${DIGEST}`,
+        workerNetwork: WORKER_NETWORK,
+        ownershipNonce: OWNERSHIP_NONCE,
+        requestSha256: REQUEST_SHA256,
+        limits: LIMITS,
       }),
     /runtime layout/u,
   );
@@ -229,6 +320,10 @@ test("worker runtime plan rejects a symlinked managed run root", async (t) => {
         runId,
         workerImage: `sha256:${DIGEST}`,
         verifierImage: `sha256:${DIGEST}`,
+        workerNetwork: WORKER_NETWORK,
+        ownershipNonce: OWNERSHIP_NONCE,
+        requestSha256: REQUEST_SHA256,
+        limits: LIMITS,
       }),
     /runtime layout/u,
   );
@@ -275,6 +370,9 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
     workerImage: `sha256:${DIGEST}`,
     verifierImage: `sha256:${DIGEST}`,
     egressProxyImage: `sha256:${DIGEST}`,
+    ownershipNonce: OWNERSHIP_NONCE,
+    requestSha256: REQUEST_SHA256,
+    limits: LIMITS,
     egressSecrets: {
       tlsCertificatePath,
       tlsPrivateKeyPath,
@@ -282,6 +380,7 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
       providerCredentialPath,
     },
   });
+  assert.equal(plan.schemaVersion, "2");
   assert.equal(plan.status, "STATIC_PLAN_ONLY");
   assert.equal(plan.dynamicIsolationVerified, false);
   assert.equal(plan.liveCodexExecuted, false);
@@ -294,31 +393,52 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
   assert.equal(plan.egress.createArgs.includes("--publish"), false);
   assert.equal(plan.egress.createArgs.includes("--privileged"), false);
   assert.equal(plan.egress.createArgs.includes("--env"), false);
-  assert.deepEqual(plan.egressConnectInternalArgs.slice(0, 5), [
-    "network",
-    "connect",
-    "--alias",
-    "policytwin-egress",
-    "policytwin-worker-internal",
+  assert.match(plan.workerNetwork, /^policytwin-worker-[0-9a-f]{32}$/u);
+  assert.match(plan.outboundNetwork, /^policytwin-egress-[0-9a-f]{32}$/u);
+  assert.notEqual(plan.workerNetwork, WORKER_NETWORK);
+  assert.equal(plan.ownership.requestSha256, REQUEST_SHA256);
+  assert.match(plan.ownership.bindingSha256, /^[0-9a-f]{64}$/u);
+  assert.equal(plan.networks.worker.operateByObservedId, true);
+  assert.equal(plan.networks.outbound.operateByObservedId, true);
+  assert.deepEqual(plan.egress.attachments, [
+    { network: "outbound", aliases: [] },
+    { network: "worker", aliases: ["policytwin-egress"] },
   ]);
-  assert.deepEqual(plan.networkInspectArgs, [
-    ["network", "inspect", "policytwin-worker-internal"],
-    ["network", "inspect", "policytwin-egress-outbound"],
+  assert.deepEqual(plan.worker.attachments, [{ network: "worker", aliases: [] }]);
+  assert.deepEqual(plan.verifier.attachments, []);
+  assert.equal(plan.egress.operateByObservedId, true);
+  assert.equal(plan.worker.operateByObservedId, true);
+  assert.equal(plan.verifier.operateByObservedId, true);
+  assert.deepEqual(optionValues(plan.egress.createArgs, "--network"), [
+    OBSERVED_OUTBOUND_NETWORK_ID,
   ]);
-  assert.deepEqual(plan.executionOrder.slice(0, 7), [
-    "EGRESS_CREATE",
-    "EGRESS_CONNECT_INTERNAL",
+  assert.deepEqual(optionValues(plan.worker.createArgs, "--network"), [
+    OBSERVED_WORKER_NETWORK_ID,
+  ]);
+  assert.equal(plan.networks.worker.internal, true);
+  assert.equal(plan.networks.outbound.internal, false);
+  assert.equal(plan.networks.worker.createArgs.includes("--internal"), true);
+  assert.equal(plan.networks.outbound.createArgs.includes("--internal"), false);
+  assert.deepEqual(plan.executionOrder.slice(0, 9), [
+    "ASSERT_RESOURCE_NAMES_ABSENT",
+    "WORKER_NETWORK_CREATE",
+    "OUTBOUND_NETWORK_CREATE",
+    "NETWORKS_INSPECT_EMPTY",
+    "EGRESS_CREATE_CAPTURE_ID",
+    "EGRESS_CONNECT_OUTBOUND_BY_ID",
+    "EGRESS_CONNECT_INTERNAL_BY_ID",
+    "EGRESS_INSPECT_BY_ID",
     "EGRESS_START",
-    "WORKER_CREATE",
-    "WORKER_START",
-    "WORKER_WAIT",
-    "WORKER_LOGS",
   ]);
   assert.equal(
-    plan.executionOrder.indexOf("EGRESS_STOP") < plan.executionOrder.indexOf("VERIFIER_CREATE"),
+    plan.executionOrder.indexOf("EGRESS_STOP") <
+      plan.executionOrder.indexOf("VERIFIER_CREATE_CAPTURE_ID"),
     true,
   );
-  assert.deepEqual(plan.cleanupOrder.slice(-3), [
+  assert.deepEqual(plan.cleanupOrder.slice(-6), [
+    "OUTBOUND_NETWORK_REMOVE_BY_ID",
+    "WORKER_NETWORK_REMOVE_BY_ID",
+    "NETWORKS_INSPECT_ABSENT",
     "DELETE_VERIFICATION_WORKSPACE",
     "DELETE_REPAIR_WORKSPACE",
     "OBSERVE_ZERO_REMAINING_PROCESSES",
@@ -328,8 +448,8 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
     optionValues(plan.egress.createArgs, "--mount").every((mount) => mount.endsWith(",readonly")),
     true,
   );
-  assert.deepEqual(plan.egress.removeArgs.slice(0, 2), ["rm", "--force"]);
-  assert.deepEqual(plan.worker.stopArgs.slice(0, 3), ["stop", "--time", "5"]);
+  assert.equal("removeArgs" in plan.egress, false);
+  assert.equal("stopArgs" in plan.worker, false);
   assert.doesNotMatch(JSON.stringify(plan), /provider-secret-material/u);
 
   const inRepositoryCredential = join(fixture.layout.runRoot, "provider-credential");
@@ -342,6 +462,9 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
         workerImage: `sha256:${DIGEST}`,
         verifierImage: `sha256:${DIGEST}`,
         egressProxyImage: `sha256:${DIGEST}`,
+        ownershipNonce: OWNERSHIP_NONCE,
+        requestSha256: REQUEST_SHA256,
+        limits: LIMITS,
         egressSecrets: {
           tlsCertificatePath,
           tlsPrivateKeyPath,

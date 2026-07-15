@@ -6,7 +6,7 @@ Status: partial offline implementation. Dashed responsibilities require approved
 flowchart LR
   U["Policy owner"] --> W["Web workspace"]
   W --> O["Policy orchestrator"]
-  O --> I["GPT-5.6 interpreter"]
+  O -.-> I["GPT-5.6 interpreter (live disabled)"]
   O --> P["Validated PolicyIR"]
   P --> C["Deterministic Rego compiler"]
   C --> R["OPA runner"]
@@ -14,20 +14,20 @@ flowchart LR
   G --> D["Differential runner"]
   R --> D
   D --> Q["Authentication-required single-run RPC"]
-  Q --> X["External Codex supervisor"]
+  Q -.-> X["External Codex supervisor (live disabled)"]
   X -.-> B["Run-capability Responses broker"]
   B -.-> API["api.openai.com /v1/responses"]
-  X --> W1["Disposable two-file repair workspace"]
-  X --> V["Immutable reconstructed verification workspace"]
+  X -.-> W1["Disposable two-file repair workspace"]
+  X -.-> V["Immutable reconstructed verification workspace"]
   E --> A["Evidence validator"]
   A --> T["Deterministic 38-file USTAR archive"]
-  A --> S["Live Ed25519 attestation"]
+  A -.-> S["Live Ed25519 attestation (not issued)"]
   O --> E["SQLite + evidence store"]
   P --> E
   C --> E
   G --> E
   D --> E
-  X --> E
+  X -.-> E
 ```
 
 Implemented offline:
@@ -44,7 +44,8 @@ Implemented offline:
 - checksum-pinned OPA 1.18.2 compile/evaluation over all 41 accepted cases;
 - a six-view Next.js workspace with real versioned decision/source writes, health/evidence/interpret/workspace routes, and local Chrome E2E coverage.
 - a fail-closed standalone web Dockerfile contract that excludes the live Codex worker and requires an immutable Node image digest before dynamic build;
-- separate static worker/verifier/egress Dockerfiles and deterministic lifecycle contracts that fix non-root users, read-only roots, dropped capabilities, resource ceilings, a read-only baseline plus exactly two writable file overlays, an internal worker network, a credential-free `network=none` verifier, explicit create/start/wait/logs/stop/remove operations, and external-only provider/TLS-key mounts;
+- separate static worker/verifier/egress Dockerfiles and deterministic lifecycle contracts that fix non-root users, read-only roots, dropped capabilities, resource ceilings, a read-only baseline plus exactly two writable file overlays, a credential-free `network=none` verifier, and external-only broker secrets;
+- a shell-free Docker driver that pins a canonical Docker executable and local daemon, derives per-run names and exact labels from the request plus a 128-bit supervisor nonce, promotes returned 64-hex IDs only after independent identity inspection, performs every later operation by ID, and closes container/network/port/mount/namespace/environment observations. The supervisor seals the worker image and request maxima. Memory and swap are equal; PID, per-file output, and one-file local-log limits plus one prepare/worker/verifier execution deadline are request-bound and independently inspected. Cleanup has a separate bounded grace period, and cumulative CPU time remains unavailable for live use. Stateful fake-daemon tests prove ordering and fail-closed cleanup, while `worker:verify` and the separate TLS-only `egress:verify` require Linux cgroup v2 process-tree teardown on a real daemon;
 - a prepared worker entrypoint that validates the canonical RPC request, empty fixed `CODEX_HOME`, proxy token, and CA mount but can emit only a non-live disabled receipt; command-backed Codex provider authentication reads a 256-bit per-run capability rather than a provider credential;
 - a Responses-only reverse-broker implementation and local fake-upstream integration test. It fixes method/path/authority, request and response byte limits, bounded lease use, header/framing rules, no redirects or compression, public-IPv4 DNS selection, a pinned IP connection, and OpenAI SNI/certificate/Host identity. This remains static/offline evidence until the prepared container and real upstream path run.
 
@@ -52,10 +53,10 @@ Proof and Change Impact are bound to the recorded reference policy by a determin
 
 Not yet authoritative:
 
-- GPT-5.6 and Codex nodes still require fresh credentialed execution and signed live evidence. The mTLS transport and bounded supervisor are verified on real loopback sockets with ephemeral certificates, but their injected integration executor emits only an explicit signed `FAIL` test result. Worker/verifier/egress image definitions, a generic supervisor-owned lifecycle coordinator, and fixed launch plans exist but have no immutable image digest or dynamic run. The Docker driver is not connected, the proxy has not made real DNS/TLS/OpenAI traffic, no SDK turn exists, and the host live-backend factory still rejects;
+- GPT-5.6 and Codex nodes still require fresh credentialed execution and signed live evidence. The mTLS transport and bounded supervisor are verified on real loopback sockets with ephemeral certificates, but their injected integration executor emits only an explicit signed `FAIL` test result. A concrete Docker driver now connects the generic lifecycle to fixed commands and supervisor observations, but only through fake-runner tests; it is not enabled as a signed live executor. The real worker/verifier gate and the TLS-only egress gate both fail before Docker at the unset immutable base. The probe writes no HTTP and performs no SDK turn, but proxy outbound traffic is not measured; the host live-backend factory still rejects;
 - the 14-to-30 impact candidate is a persisted text-only `DRAFT`; it is not accepted PolicyIR and remains blocked by G02;
 - mutation execution remains reference-based rather than OPA-backed;
-- the web, worker, verifier, and egress Dockerfiles and daemon-free static checks exist, but their image digests, dynamic container health/isolation, live proxy path, live browser run, and deployment do not.
+- the web, worker, verifier, and egress Dockerfiles and daemon-free static checks exist, but their image digests, dynamic container health/isolation, actual TLS probe, live OpenAI/Codex path, live browser run, and deployment do not.
 
 The offline persistence adapter uses Node.js 22's built-in experimental `node:sqlite` API behind `SQLitePolicyRepository`. Each anonymous browser session maps to a hashed internal project ID; only same-origin browser fetches may create a session, expired projects are removed after 24 hours, and a process stores at most 128 active anonymous projects. Public-origin and HTTPS configuration is validated before project creation, and every mutation rechecks server-side expiry before writing. Browser mutations accept only the public seeded policy ID, version path, and closed option/source body; an exact configured production origin, an HttpOnly SameSite session and CSRF cookie, a matching custom header, byte and ten-second body limits, and a single-process write gate protect the route. Production readiness remains unclaimed until authentication, shared quotas, the selected container runtime, backup behavior, distributed coordination, and deployment persistence volume are verified.
 

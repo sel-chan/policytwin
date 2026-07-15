@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1",
+  "status": "FAIL",
+  "scope": "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED",
+  "dockerInvoked": false,
+  "facts": {
+    "dockerServerVersion": null,
+    "canonicalDockerCliVerified": false,
+    "platformLocalDaemonSelected": false,
+    "workerImageId": null,
+    "egressProxyImageId": null,
+    "workerBuildInputSha256": "2cd3596faf26e299eb65384731b73725823e3431793c36fd9a1ac7cc9aca61dd",
+    "egressProxyBuildInputSha256": "9a84ece274bb7d5518fca27423c62f23f88c436178ee25fedacf0ba3d4c3ed96",
+    "workerNetworkId": null,
+    "outboundNetworkId": null,
+    "networkOwnershipVerified": false,
+    "egressMountsVerified": false,
+    "publishedPortsAbsent": false,
+    "tlsHandshakeVerified": false,
+    "tlsVersion": null,
+    "peerCertificateSha256": null,
+    "probeHttpRequestSent": false,
+    "proxyUpstreamTrafficObservation": "NOT_MEASURED",
+    "probeModelInvocation": false,
+    "egressCgroupObserved": false,
+    "probeCgroupObserved": false,
+    "processTreesReaped": false,
+    "secretMaterialDeleted": false,
+    "cleanupPassed": false,
+    "dynamicIsolationVerified": false,
+    "liveCodexExecuted": false
+  },
+  "releaseReady": false,
+  "failures": [
+    "immutable Node base image is unset"
+  ]
+}
