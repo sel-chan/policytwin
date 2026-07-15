@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — OS-isolated worker runtime and live execution boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-15 18:48:00 +09:00`
-- Latest checkpoint commit: `702fd1654cb33ccc42da9c4ebdcbb6ee47c5ff72`
+- Last updated: `2026-07-15 18:49:31 +09:00`
+- Latest checkpoint commit: `4eb2673dc68bd3c36842e90b99bae08c36ef3b8e`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -118,7 +118,7 @@ The split non-root worker/verifier definitions, exact two-file launch plan, dyna
 - [x] Add negative tests for destination/path/method/header/body bypasses, DNS/IP rebinding inputs, proxy-token misuse, extra environment, mutable images, Docker argument weakening, abort/timeout races, cleanup failure, response tampering, and any host live-construction path.
 - [x] Keep `container-contract.json`, dynamic reports, evidence, UI, and submission copy explicitly non-live; update decisions, architecture, threat model, limitations, and runbook with only proven facts.
 - [x] Run focused checks, lint, typecheck, deterministic suites, full offline verification, fail-closed live/container probes, and independent final diff/security/truth review.
-- [ ] Commit the coherent checkpoint and record its hash.
+- [x] Commit the coherent checkpoint and record its hash.
 
 ### Completion evidence
 
@@ -191,8 +191,8 @@ Never fill from estimates.
 - Remaining dynamic risks: no concrete Docker executor, internal-network inspection, exact two-network proxy membership, unpublished-port observation, CA/leaf/key binding, restart-persistent lease count, immutable role image, cgroup/process-tree observation, real Codex header compatibility, DNS/TLS/OpenAI call, or signed live result exists
 - Build-input hashes: worker `54038677448c74142cf3d2d9ac7d4b2a7ba984eef324b24b609ee4188df48ffd`; verifier `83d806fe056c6ef335fe2e7e8f6fa092cbb545eb342abee185977ac9e35e5b9c`; egress `0aabf75175b91fe9b5551d44ace5b66102bd2bee1743409a6f6f694de3300d1a`
 - Evidence: partial evidence hash remains `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`); no new live proof was generated
-- Commit: `PENDING`
-- Next: commit this static boundary, then implement the concrete supervisor-owned Docker executor and a separate dynamic egress gate without weakening host live rejection
+- Commit: `4eb2673dc68bd3c36842e90b99bae08c36ef3b8e`
+- Next: implement the concrete supervisor-owned Docker executor and a separate dynamic egress gate without weakening host live rejection
 
 ### 2026-07-15 16:43 +09:00 — Static split worker/verifier isolation boundary verified offline
 
@@ -474,18 +474,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Commit the verified static lifecycle/egress checkpoint, then implement a concrete supervisor-owned Docker executor and separate dynamic egress gate without enabling host live execution.`
+`Implement a concrete supervisor-owned Docker executor and separate dynamic egress gate without enabling host live execution.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the static lifecycle/egress checkpoint is verified and awaiting its implementation commit`
-- Exact current state: `real mTLS transport/replay plus static worker/verifier/egress images, validate-only worker entrypoint, capability-authenticated broker, and bounded lifecycle contracts are verified offline; host live construction remains disabled and no concrete Docker executor, dynamic egress, live Codex, or deployment exists`
+- Why paused: `not paused; the verified static lifecycle/egress implementation checkpoint is committed at 4eb2673`
+- Exact current state: `real mTLS transport/replay plus static worker/verifier/egress images, validate-only worker entrypoint, capability-authenticated broker, and bounded lifecycle contracts are verified offline and committed; host live construction remains disabled and no concrete Docker executor, dynamic egress, live Codex, or deployment exists`
 - Last successful command: `pnpm verify completed 126 unit assertions, 49 integration, 22 eval, 3 browser, 309-file clean-copy, 309-file/281-text-file plus Git-history security, static four-image contract, and production build checks; only LICENSE and 30-item submission failures remain`
 - Current failing command: `pnpm worker:verify and pnpm container:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `static lifecycle/egress implementation, tests, generated static/security reports, and documentation pending checkpoint commit`
-- Safe resume command/action: `review and commit the verified static lifecycle/egress checkpoint, then implement the concrete Docker executor seam`
+- Uncommitted files: `none after this verification-ledger commit`
+- Safe resume command/action: `implement the concrete Docker executor seam from 4eb2673 without promoting dynamic or live evidence`
 - One owner action, if any: `none`
 
 ## Final completion record
