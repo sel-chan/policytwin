@@ -113,6 +113,7 @@ export function createSqliteWorkerRpcReplayStore(
   let closed = false;
 
   return {
+    durability: "DURABLE_SQLITE",
     async consume(capability, now): Promise<boolean> {
       if (closed) throw new Error("Worker replay store is closed.");
       const current = now.getTime();

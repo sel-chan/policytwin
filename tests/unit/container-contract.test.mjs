@@ -17,6 +17,11 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.deepEqual(report.failures, []);
   assert.equal(report.status, "PASS");
   assert.equal(report.scope, "STATIC_WEB_WORKER_VERIFIER_EGRESS_CONTAINERS");
+  assert.equal(
+    report.sourceInspectionMethod,
+    "STRUCTURAL_JSON_AND_REQUIRED_SOURCE_MARKERS",
+  );
+  assert.equal(report.behavioralVerification, "SEPARATE_UNIT_AND_INTEGRATION_TESTS");
   assert.equal(report.baseImagePinned, false);
   assert.equal(report.workerImagePinned, false);
   assert.equal(report.verifierImagePinned, false);
@@ -125,6 +130,7 @@ async function copyStaticContainerInputs(target) {
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
     "prompts",
+    "schemas/live-linux-cgroup-cpu-proof.v1.schema.json",
     "src",
     "tsconfig.build.json",
     "tsconfig.json",
@@ -159,6 +165,27 @@ test("static container inspection detects weakened verifier networking and fixtu
   let report = inspectStaticContainerContract(target);
   assert.deepEqual(report.failures, []);
   assert.equal(report.status, "PASS");
+
+  contract.workerContainer.liveRpcV2PassSigningEnabled = true;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /static web\/worker split/u);
+  contract.workerContainer.liveRpcV2PassSigningEnabled = false;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+
+  const liveCpuSchemaPath = join(
+    target,
+    "schemas/live-linux-cgroup-cpu-proof.v1.schema.json",
+  );
+  const liveCpuSchema = JSON.parse(await readFile(liveCpuSchemaPath, "utf8"));
+  liveCpuSchema.additionalProperties = true;
+  await writeFile(liveCpuSchemaPath, `${JSON.stringify(liveCpuSchema, null, 2)}\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /structurally weakened/u);
+  liveCpuSchema.additionalProperties = false;
+  await writeFile(liveCpuSchemaPath, `${JSON.stringify(liveCpuSchema, null, 2)}\n`, "utf8");
 
   contract.verifierContainer.network = "bridge";
   await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");

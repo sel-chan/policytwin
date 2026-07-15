@@ -47,6 +47,7 @@ export * from "./codex/worker-rpc-client.js";
 export * from "./codex/worker-rpc-mtls.js";
 export * from "./codex/worker-rpc-replay-sqlite.js";
 export * from "./codex/cpu-budget-contract.js";
+export * from "./codex/live-linux-cgroup-cpu-proof.js";
 export * from "./impact/types.js";
 export * from "./impact/analyze.js";
 export * from "./traceability/report.js";

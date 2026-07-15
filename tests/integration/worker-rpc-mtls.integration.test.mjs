@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { connect as connectTcp } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { after, test } from "node:test";
 import { connect as connectTls, createServer as createTlsServer } from "node:tls";
 import {
@@ -12,11 +14,18 @@ import {
   WORKER_RPC_MTLS_ALPN,
   WORKER_RPC_MTLS_REQUEST_MAGIC,
   WORKER_RPC_MTLS_RESPONSE_MAGIC,
+  WORKER_RPC_V2_MTLS_ALPN,
+  WORKER_RPC_V2_MTLS_REQUEST_MAGIC,
   createEd25519WorkerRpcSigner,
   createEphemeralWorkerRpcReplayStore,
   createExternalWorkerRpcClient,
+  createExternalWorkerRpcV2Client,
   createMutualTlsWorkerRpcSupervisor,
   createMutualTlsWorkerRpcTransport,
+  createMutualTlsWorkerRpcV2Supervisor,
+  createMutualTlsWorkerRpcV2Transport,
+  createSqliteWorkerRpcReplayStore,
+  createWorkerRpcTrustBundle,
   workerRpcExecutionTreeSha256,
 } from "../../dist/index.js";
 import { createEphemeralWorkerRpcTlsCertificates } from "../helpers/worker-rpc-tls-certificates.mjs";
@@ -123,12 +132,31 @@ const baselineTreeSha256 = workerRpcExecutionTreeSha256(baselineManifest);
 const imageDigest = `sha256:${"d".repeat(64)}`;
 const baselineContentSha256 = "e".repeat(64);
 const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+const { privateKey: v2PrivateKey, publicKey: v2PublicKey } = generateKeyPairSync("ed25519");
 const signer = createEd25519WorkerRpcSigner({
   keyId: "worker-test-key-v1",
   supervisorId: "policytwin-test-supervisor",
+  purpose: "GENERAL_WORKER_RPC_V1",
   privateKey: privateKey.export({ type: "pkcs8", format: "pem" }),
 });
+const v2Signer = createEd25519WorkerRpcSigner({
+  keyId: "live-cpu-test-key-v2",
+  supervisorId: "policytwin-test-supervisor",
+  purpose: "LIVE_LINUX_CGROUP_RPC_V2",
+  privateKey: v2PrivateKey.export({ type: "pkcs8", format: "pem" }),
+});
 const publicKeyPem = publicKey.export({ type: "spki", format: "pem" });
+const v2PublicKeyPem = v2PublicKey.export({ type: "spki", format: "pem" });
+const trustBundle = createWorkerRpcTrustBundle({
+  generalWorkerPublicKeys: { "worker-test-key-v1": publicKeyPem },
+  liveSupervisorPublicKeys: {
+    "live-cpu-test-key-v2": {
+      publicKeyPem: v2PublicKeyPem,
+      supervisorId: "policytwin-test-supervisor",
+      purpose: "LIVE_LINUX_CGROUP_RPC_V2",
+    },
+  },
+});
 
 function deterministicRandom(seed) {
   let counter = seed;
@@ -151,6 +179,33 @@ function failureResult(request, runNumber) {
       finalExecutionTreeManifest: request.policy.baselineExecutionTreeManifest,
       acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
       executionMode: "LIVE_CODEX_SDK",
+      repairWorkspaceDeleted: true,
+      verificationWorkspaceDeleted: true,
+      processTreeReaped: true,
+      remainingProcessCount: 0,
+    },
+  };
+}
+
+function v2FailureResult(request, runNumber) {
+  return {
+    status: "FAIL",
+    report: null,
+    error: "OFFLINE_TEST_DOUBLE_NO_LIVE_LINUX_CPU_PROOF",
+    receipt: {
+      supervisorRunId: `tls-v2-test-supervisor-run-${String(runNumber).padStart(4, "0")}`,
+      workerImageDigest: request.policy.workerImageDigest,
+      workerPolicySha256: request.policySha256,
+      fixtureId: request.policy.fixtureId,
+      baselineContentSha256: request.policy.baselineContentSha256,
+      baselineExecutionTreeSha256: request.policy.baselineExecutionTreeSha256,
+      finalExecutionTreeSha256: request.policy.baselineExecutionTreeSha256,
+      finalExecutionTreeManifest: request.policy.baselineExecutionTreeManifest,
+      acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
+      executionMode: "LIVE_CODEX_SDK",
+      executionBindingSha256: request.executionBindingSha256,
+      dockerBindingSha256: "9".repeat(64),
+      cpuProof: null,
       repairWorkspaceDeleted: true,
       verificationWorkspaceDeleted: true,
       processTreeReaped: true,
@@ -188,7 +243,62 @@ async function startSupervisor(t, options = {}) {
       },
     },
     signer,
+    trustBundle: options.trustBundle ?? trustBundle,
     requestReadTimeoutMs: options.requestReadTimeoutMs ?? 1_000,
+    onAuditEvent(event) {
+      events.push(event.type);
+    },
+  });
+  const address = await supervisor.listen();
+  t.after(async () => supervisor.close());
+  return {
+    supervisor,
+    address,
+    events,
+    get executorCalls() {
+      return executorCalls;
+    },
+  };
+}
+
+async function startV2Supervisor(t, options = {}) {
+  let runNumber = 0;
+  let executorCalls = 0;
+  const events = [];
+  const executor =
+    options.executor ??
+    {
+      async execute(request) {
+        executorCalls += 1;
+        runNumber += 1;
+        return v2FailureResult(request, runNumber);
+      },
+    };
+  const replayRoot = await mkdtemp(join(tmpdir(), "policytwin-v2-replay-"));
+  const replayStore =
+    options.replayStore ??
+    createSqliteWorkerRpcReplayStore({ databasePath: join(replayRoot, "replay.sqlite") });
+  t.after(async () => {
+    replayStore.close?.();
+    await rm(replayRoot, { recursive: true, force: true });
+  });
+  const supervisor = createMutualTlsWorkerRpcV2Supervisor({
+    host: "127.0.0.1",
+    port: 0,
+    ca: certificates.ca,
+    cert: certificates.server.cert,
+    key: certificates.server.key,
+    expectedClientCertificateSha256: certificates.client.fingerprintSha256,
+    replayStore,
+    executor: {
+      async execute(request, context) {
+        executorCalls += options.executor === undefined ? 0 : 1;
+        return executor.execute(request, context);
+      },
+    },
+    signer: options.signer ?? v2Signer,
+    trustBundle: options.trustBundle ?? trustBundle,
+    requestReadTimeoutMs: 1_000,
     onAuditEvent(event) {
       events.push(event.type);
     },
@@ -221,10 +331,49 @@ function transportFor(address, options = {}) {
   });
 }
 
+function v2TransportFor(address, options = {}) {
+  const clientCertificate = options.clientCertificate ?? certificates.client;
+  return createMutualTlsWorkerRpcV2Transport({
+    id: options.id ?? "loopback-worker-mtls-v2",
+    host: address.host,
+    port: address.port,
+    servername: "worker.policytwin.test",
+    ca: certificates.ca,
+    cert: clientCertificate.cert,
+    key: clientCertificate.key,
+    expectedServerCertificateSha256: certificates.server.fingerprintSha256,
+    handshakeTimeoutMs: 2_000,
+  });
+}
+
 function clientFor(transport, seed = 1, overrides = {}) {
   return createExternalWorkerRpcClient({
     transport,
-    trustedWorkerPublicKeys: { "worker-test-key-v1": publicKeyPem },
+    trustBundle,
+    expectedSupervisorId: "policytwin-test-supervisor",
+    expectedBackendId: "policytwin-external-worker",
+    workerImageDigest: imageDigest,
+    baselineContentSha256,
+    baselineExecutionTreeSha256: baselineTreeSha256,
+    baselineExecutionTreeManifest: baselineManifest,
+    model: "gpt-codex-test",
+    limits: {
+      wallTimeMs: 4_000,
+      cpuTimeMs: 2_000,
+      memoryBytes: 256 * 1024 * 1024,
+      pids: 8,
+      outputBytes: 1024 * 1024,
+    },
+    rpcTimeoutMs: 5_000,
+    randomBytes: deterministicRandom(seed),
+    ...overrides,
+  });
+}
+
+function v2ClientFor(transport, seed = 1, overrides = {}) {
+  return createExternalWorkerRpcV2Client({
+    transport,
+    trustBundle,
     expectedSupervisorId: "policytwin-test-supervisor",
     expectedBackendId: "policytwin-external-worker",
     workerImageDigest: imageDigest,
@@ -290,6 +439,103 @@ test("real mTLS transport authenticates both peers and verifies a signed fail-cl
   assert.equal(service.events.includes("TLS_CLIENT_AUTHENTICATED"), true);
   assert.equal(service.events.includes("REQUEST_ACCEPTED"), true);
   assert.equal(service.events.includes("RESPONSE_SENT"), true);
+});
+
+test("real mTLS v2 profile signs only a fail-closed no-CPU-proof response", async (t) => {
+  const service = await startV2Supervisor(t);
+  const client = v2ClientFor(v2TransportFor(service.address));
+  await assert.rejects(client.runRepair(input), /External worker v2 rejected the repair/u);
+  assert.equal(service.executorCalls, 1);
+  assert.equal(service.events.includes("TLS_CLIENT_AUTHENTICATED"), true);
+  assert.equal(service.events.includes("REQUEST_ACCEPTED"), true);
+  assert.equal(service.events.includes("RESPONSE_SENT"), true);
+});
+
+test("mTLS v1 and v2 ALPN/frame profiles reject downgrade in both directions", async (t) => {
+  const v1Service = await startSupervisor(t);
+  const v2Service = await startV2Supervisor(t);
+  await assert.rejects(
+    v2ClientFor(transportFor(v1Service.address), 31).runRepair(input),
+    /transport failed|TLS|closed|handshake|frame/u,
+  );
+  await assert.rejects(
+    clientFor(v2TransportFor(v2Service.address), 32).runRepair(input),
+    /transport failed|TLS|closed|handshake|frame/u,
+  );
+  assert.equal(v1Service.executorCalls, 0);
+  assert.equal(v2Service.executorCalls, 0);
+});
+
+test("mTLS v2 supervisor rejects a v1-purpose signing key before listen", async (t) => {
+  await assert.rejects(
+    startV2Supervisor(t, { signer }),
+    /lacks the live CPU proof purpose/u,
+  );
+});
+
+test("mTLS v2 supervisor rejects reused key material and ephemeral replay storage", async (t) => {
+  const reusedSigner = createEd25519WorkerRpcSigner({
+    keyId: "live-cpu-reused-v1-material",
+    supervisorId: "policytwin-test-supervisor",
+    purpose: "LIVE_LINUX_CGROUP_RPC_V2",
+    privateKey: privateKey.export({ type: "pkcs8", format: "pem" }),
+  });
+  await assert.rejects(
+    startV2Supervisor(t, { signer: reusedSigner }),
+    /not registered for its exact key purpose/u,
+  );
+  await assert.rejects(
+    startV2Supervisor(t, { replayStore: createEphemeralWorkerRpcReplayStore() }),
+    /requires a durable SQLite replay store/u,
+  );
+
+  const unrelated = generateKeyPairSync("ed25519");
+  const misboundTrustBundle = createWorkerRpcTrustBundle({
+    generalWorkerPublicKeys: {
+      "worker-unrelated-key-v1": unrelated.publicKey.export({ type: "spki", format: "pem" }),
+    },
+    liveSupervisorPublicKeys: trustBundle.liveSupervisorPublicKeys,
+  });
+  await assert.rejects(
+    startSupervisor(t, { trustBundle: misboundTrustBundle }),
+    /not registered for its exact key purpose/u,
+  );
+});
+
+test("mTLS v2 supervisor cannot sign PASS or executor-injected signer identity", async (t) => {
+  const passService = await startV2Supervisor(t, {
+    executor: {
+      async execute(request) {
+        return {
+          ...v2FailureResult(request, 1),
+          status: "PASS",
+          report: {},
+          error: null,
+        };
+      },
+    },
+  });
+  await assert.rejects(
+    v2ClientFor(v2TransportFor(passService.address), 41).runRepair(input),
+    /transport failed/u,
+  );
+  assert.equal(passService.events.includes("RESPONSE_SENT"), false);
+
+  const injectedService = await startV2Supervisor(t, {
+    executor: {
+      async execute(request) {
+        const result = v2FailureResult(request, 1);
+        result.receipt.keyId = "live-cpu-injected-key";
+        result.receipt.supervisorId = "injected-supervisor";
+        return result;
+      },
+    },
+  });
+  await assert.rejects(
+    v2ClientFor(v2TransportFor(injectedService.address), 42).runRepair(input),
+    /transport failed/u,
+  );
+  assert.equal(injectedService.events.includes("RESPONSE_SENT"), false);
 });
 
 test("mTLS rejects wrong, untrusted, and missing client identity before execution", async (t) => {
@@ -403,6 +649,30 @@ test("supervisor rejects wrong magic and trailing bytes before execution", async
   );
   await waitForSocketClose(trailing);
   assert.equal(service.executorCalls, 0);
+});
+
+test("v1 and v2 supervisors reject the opposite protocol magic before execution", async (t) => {
+  const v1Service = await startSupervisor(t);
+  const v2Service = await startV2Supervisor(t);
+
+  const v2MagicToV1 = await connectRawClient(v1Service.address);
+  v2MagicToV1.write(
+    Buffer.concat([frameHeader(WORKER_RPC_V2_MTLS_REQUEST_MAGIC, 2), Buffer.from("{}")]),
+  );
+  await waitForSocketClose(v2MagicToV1);
+
+  const v1MagicToV2 = await connectRawClient(
+    v2Service.address,
+    certificates.client,
+    WORKER_RPC_V2_MTLS_ALPN,
+  );
+  v1MagicToV2.write(
+    Buffer.concat([frameHeader(WORKER_RPC_MTLS_REQUEST_MAGIC, 2), Buffer.from("{}")]),
+  );
+  await waitForSocketClose(v1MagicToV2);
+
+  assert.equal(v1Service.executorCalls, 0);
+  assert.equal(v2Service.executorCalls, 0);
 });
 
 test("supervisor consumes request capabilities once across independent clients", async (t) => {

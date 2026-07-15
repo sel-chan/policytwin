@@ -14,11 +14,20 @@ import type {
   RepairWorkerInput,
   RepairWorkerReport,
 } from "./types.js";
+import {
+  parseLiveLinuxCgroupCpuProof,
+  type LiveLinuxCgroupCpuProof,
+} from "./live-linux-cgroup-cpu-proof.js";
 
 export const WORKER_RPC_PROTOCOL = "policytwin.codex.repair.v1" as const;
 export const WORKER_RPC_REQUEST_ACTION = "RUN_REPAIR" as const;
 export const WORKER_RPC_RESPONSE_ACTION = "RUN_REPAIR_RESULT" as const;
 export const WORKER_RPC_SIGNATURE_DOMAIN = "PolicyTwin-External-Worker-RPC-v1" as const;
+export const WORKER_RPC_V2_PROTOCOL = "policytwin.codex.repair.v2" as const;
+export const WORKER_RPC_V2_SIGNATURE_DOMAIN =
+  "PolicyTwin-External-Worker-RPC-v2-Live-Linux-Cgroup" as const;
+export const WORKER_RPC_V2_EXECUTION_BINDING_DOMAIN =
+  "PolicyTwin-External-Worker-Execution-Binding-v2" as const;
 export const WORKER_RPC_MAX_REQUEST_BYTES = 1024 * 1024;
 export const WORKER_RPC_MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
 export const WORKER_RPC_MAX_RESPONSE_CHUNK_BYTES = 64 * 1024;
@@ -121,6 +130,74 @@ export interface WorkerRpcResponse {
   receipt: WorkerRpcSupervisorReceipt;
 }
 
+export interface WorkerRpcV2ExecutionBindingInput {
+  requestId: string;
+  runNonce: string;
+  model: string;
+  inputSha256: string;
+  policySha256: string;
+}
+
+export interface WorkerRpcV2Request {
+  schemaVersion: "2";
+  protocol: typeof WORKER_RPC_V2_PROTOCOL;
+  action: typeof WORKER_RPC_REQUEST_ACTION;
+  requestId: string;
+  runNonce: string;
+  sequence: 1;
+  issuedAt: string;
+  expiresAt: string;
+  model: string;
+  modelReasoningEffort: "high";
+  inputSha256: string;
+  policySha256: string;
+  executionBindingSha256: string;
+  policy: WorkerRpcPolicy;
+  input: RepairWorkerInput;
+}
+
+export interface WorkerRpcV2SupervisorReceipt {
+  schemaVersion: "2";
+  algorithm: "Ed25519";
+  keyId: string;
+  supervisorId: string;
+  supervisorRunId: string;
+  workerImageDigest: string;
+  workerPolicySha256: string;
+  fixtureId: "seeded-refund-demo";
+  baselineContentSha256: string;
+  baselineExecutionTreeSha256: string;
+  finalExecutionTreeSha256: string;
+  finalExecutionTreeManifest: WorkerRpcExecutionTreeManifest;
+  acceptedCorpusSha256: string;
+  executionMode: "LIVE_CODEX_SDK";
+  executionBindingSha256: string;
+  dockerBindingSha256: string;
+  cpuProof: LiveLinuxCgroupCpuProof | null;
+  repairWorkspaceDeleted: true;
+  verificationWorkspaceDeleted: true;
+  processTreeReaped: true;
+  remainingProcessCount: 0;
+  signature: string;
+}
+
+export interface WorkerRpcV2Response {
+  schemaVersion: "2";
+  protocol: typeof WORKER_RPC_V2_PROTOCOL;
+  action: typeof WORKER_RPC_RESPONSE_ACTION;
+  requestId: string;
+  runNonce: string;
+  sequence: 1;
+  requestSha256: string;
+  executionBindingSha256: string;
+  status: "PASS" | "FAIL";
+  completedAt: string;
+  resultSha256: string;
+  report: RepairWorkerReport | null;
+  error: string | null;
+  receipt: WorkerRpcV2SupervisorReceipt;
+}
+
 interface CanonicalState {
   nodes: number;
 }
@@ -165,6 +242,30 @@ export function canonicalWorkerRpcJson(value: unknown): string {
 
 export function workerRpcSha256(value: unknown): string {
   return createHash("sha256").update(canonicalWorkerRpcJson(value), "utf8").digest("hex");
+}
+
+export function workerRpcV2ExecutionBindingSha256(
+  value: WorkerRpcV2ExecutionBindingInput,
+): string {
+  if (
+    !/^[0-9a-f]{32}$/u.test(value.requestId) ||
+    !/^[A-Za-z0-9_-]{43}$/u.test(value.runNonce) ||
+    Buffer.from(value.runNonce, "base64url").byteLength !== 32 ||
+    Buffer.from(value.runNonce, "base64url").toString("base64url") !== value.runNonce ||
+    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(value.model) ||
+    !/^[0-9a-f]{64}$/u.test(value.inputSha256) ||
+    !/^[0-9a-f]{64}$/u.test(value.policySha256)
+  ) {
+    throw new Error("Worker RPC v2 execution binding input is invalid.");
+  }
+  return workerRpcSha256({
+    domain: WORKER_RPC_V2_EXECUTION_BINDING_DOMAIN,
+    requestId: value.requestId,
+    runNonce: value.runNonce,
+    model: value.model,
+    inputSha256: value.inputSha256,
+    policySha256: value.policySha256,
+  });
 }
 
 export function acceptedCorpusSha256(input: RepairWorkerInput): string {
@@ -787,6 +888,366 @@ export function workerRpcSignaturePayload(response: WorkerRpcResponse): string {
   const { signature: _signature, ...receipt } = response.receipt;
   return canonicalWorkerRpcJson({
     domain: WORKER_RPC_SIGNATURE_DOMAIN,
+    response: {
+      ...response,
+      receipt,
+    },
+  });
+}
+
+export function parseWorkerRpcV2Request(value: unknown): WorkerRpcV2Request {
+  const result = record(value, "worker RPC v2 request");
+  exactKeys(
+    result,
+    [
+      "schemaVersion",
+      "protocol",
+      "action",
+      "requestId",
+      "runNonce",
+      "sequence",
+      "issuedAt",
+      "expiresAt",
+      "model",
+      "modelReasoningEffort",
+      "inputSha256",
+      "policySha256",
+      "executionBindingSha256",
+      "policy",
+      "input",
+    ],
+    "worker RPC v2 request",
+  );
+  if (
+    result.schemaVersion !== "2" ||
+    result.protocol !== WORKER_RPC_V2_PROTOCOL ||
+    result.action !== WORKER_RPC_REQUEST_ACTION ||
+    result.sequence !== 1 ||
+    result.modelReasoningEffort !== "high"
+  ) {
+    throw new Error("Worker RPC v2 request protocol metadata is invalid.");
+  }
+  const parsedRequestId = safeId(result.requestId, "worker RPC v2 request ID", 16, 64);
+  if (!/^[0-9a-f]{32}$/u.test(parsedRequestId)) {
+    throw new Error("Worker RPC v2 request ID must be a 128-bit lowercase hex value.");
+  }
+  if (
+    typeof result.runNonce !== "string" ||
+    !/^[A-Za-z0-9_-]{43}$/u.test(result.runNonce) ||
+    Buffer.from(result.runNonce, "base64url").byteLength !== 32 ||
+    Buffer.from(result.runNonce, "base64url").toString("base64url") !== result.runNonce
+  ) {
+    throw new Error("Worker RPC v2 run nonce must be canonical 256-bit base64url.");
+  }
+  if (
+    typeof result.model !== "string" ||
+    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(result.model)
+  ) {
+    throw new Error("Worker RPC v2 model must be an explicit safe identifier.");
+  }
+  const issuedAt = canonicalIso(result.issuedAt, "worker RPC v2 issuedAt");
+  const expiresAt = canonicalIso(result.expiresAt, "worker RPC v2 expiresAt");
+  const validityMs = Date.parse(expiresAt) - Date.parse(issuedAt);
+  if (validityMs < 1_000 || validityMs > 15 * 60_000) {
+    throw new Error("Worker RPC v2 request validity window is invalid.");
+  }
+  const policy = parseWorkerRpcPolicy(result.policy);
+  const input = parseRepairWorkerInput(result.input);
+  const inputSha256 = sha256(result.inputSha256, "worker RPC v2 input digest");
+  const policySha256 = sha256(result.policySha256, "worker RPC v2 policy digest");
+  if (
+    inputSha256 !== workerRpcSha256(input) ||
+    policySha256 !== workerRpcSha256(policy) ||
+    policy.acceptedCorpusSha256 !== acceptedCorpusSha256(input)
+  ) {
+    throw new Error("Worker RPC v2 request hashes are inconsistent with validated input.");
+  }
+  const executionBindingSha256 = sha256(
+    result.executionBindingSha256,
+    "worker RPC v2 execution binding",
+  );
+  if (
+    executionBindingSha256 !==
+    workerRpcV2ExecutionBindingSha256({
+      requestId: parsedRequestId,
+      runNonce: result.runNonce,
+      model: result.model,
+      inputSha256,
+      policySha256,
+    })
+  ) {
+    throw new Error("Worker RPC v2 execution binding is inconsistent with the request.");
+  }
+  const parsed: WorkerRpcV2Request = {
+    schemaVersion: "2",
+    protocol: WORKER_RPC_V2_PROTOCOL,
+    action: WORKER_RPC_REQUEST_ACTION,
+    requestId: parsedRequestId,
+    runNonce: result.runNonce,
+    sequence: 1,
+    issuedAt,
+    expiresAt,
+    model: result.model,
+    modelReasoningEffort: "high",
+    inputSha256,
+    policySha256,
+    executionBindingSha256,
+    policy,
+    input,
+  };
+  const encoded = canonicalWorkerRpcJson(parsed);
+  if (Buffer.byteLength(encoded, "utf8") > WORKER_RPC_MAX_REQUEST_BYTES) {
+    throw new Error("Worker RPC v2 request exceeds the byte limit.");
+  }
+  assertSafeRpcText(encoded, "worker RPC v2 request", WORKER_RPC_MAX_REQUEST_BYTES);
+  return parsed;
+}
+
+function parseV2Receipt(
+  value: unknown,
+  expected: {
+    status: "PASS" | "FAIL";
+    requestId: string;
+    runNonce: string;
+    requestSha256: string;
+    executionBindingSha256: string;
+  },
+): WorkerRpcV2SupervisorReceipt {
+  const result = record(value, "worker RPC v2 supervisor receipt");
+  exactKeys(
+    result,
+    [
+      "schemaVersion",
+      "algorithm",
+      "keyId",
+      "supervisorId",
+      "supervisorRunId",
+      "workerImageDigest",
+      "workerPolicySha256",
+      "fixtureId",
+      "baselineContentSha256",
+      "baselineExecutionTreeSha256",
+      "finalExecutionTreeSha256",
+      "finalExecutionTreeManifest",
+      "acceptedCorpusSha256",
+      "executionMode",
+      "executionBindingSha256",
+      "dockerBindingSha256",
+      "cpuProof",
+      "repairWorkspaceDeleted",
+      "verificationWorkspaceDeleted",
+      "processTreeReaped",
+      "remainingProcessCount",
+      "signature",
+    ],
+    "worker RPC v2 supervisor receipt",
+  );
+  if (
+    result.schemaVersion !== "2" ||
+    result.algorithm !== "Ed25519" ||
+    result.fixtureId !== "seeded-refund-demo" ||
+    result.executionMode !== "LIVE_CODEX_SDK" ||
+    result.repairWorkspaceDeleted !== true ||
+    result.verificationWorkspaceDeleted !== true ||
+    result.processTreeReaped !== true ||
+    result.remainingProcessCount !== 0
+  ) {
+    throw new Error("Worker RPC v2 receipt does not prove mandatory teardown.");
+  }
+  if (
+    typeof result.signature !== "string" ||
+    !/^[A-Za-z0-9_-]{86}$/u.test(result.signature) ||
+    Buffer.from(result.signature, "base64url").byteLength !== 64 ||
+    Buffer.from(result.signature, "base64url").toString("base64url") !== result.signature
+  ) {
+    throw new Error("Worker RPC v2 supervisor signature encoding is invalid.");
+  }
+  const supervisorRunId = safeId(
+    result.supervisorRunId,
+    "worker RPC v2 supervisor run ID",
+    16,
+    128,
+  );
+  const parsedWorkerImageDigest = imageDigest(result.workerImageDigest);
+  const workerPolicySha256 = sha256(
+    result.workerPolicySha256,
+    "worker RPC v2 worker policy digest",
+  );
+  const acceptedCorpusSha256 = sha256(
+    result.acceptedCorpusSha256,
+    "worker RPC v2 accepted corpus digest",
+  );
+  const executionBindingSha256 = sha256(
+    result.executionBindingSha256,
+    "worker RPC v2 receipt execution binding",
+  );
+  if (executionBindingSha256 !== expected.executionBindingSha256) {
+    throw new Error("Worker RPC v2 receipt execution binding is inconsistent.");
+  }
+  const dockerBindingSha256 = sha256(
+    result.dockerBindingSha256,
+    "worker RPC v2 Docker binding",
+  );
+  let cpuProof: LiveLinuxCgroupCpuProof | null;
+  if (expected.status === "PASS") {
+    cpuProof = parseLiveLinuxCgroupCpuProof(result.cpuProof, {
+      requestId: expected.requestId,
+      runNonce: expected.runNonce,
+      requestSha256: expected.requestSha256,
+      executionBindingSha256,
+      supervisorRunId,
+      dockerBindingSha256,
+      workerImageDigest: parsedWorkerImageDigest,
+      workerPolicySha256,
+      acceptedCorpusSha256,
+    });
+  } else {
+    if (result.cpuProof !== null) {
+      throw new Error("Worker RPC v2 FAIL receipt cannot carry a success CPU proof.");
+    }
+    cpuProof = null;
+  }
+  const finalExecutionTreeManifest = parseWorkerRpcExecutionTreeManifest(
+    result.finalExecutionTreeManifest,
+  );
+  const finalExecutionTreeSha256 = sha256(
+    result.finalExecutionTreeSha256,
+    "worker RPC v2 final execution tree digest",
+  );
+  if (finalExecutionTreeSha256 !== workerRpcExecutionTreeSha256(finalExecutionTreeManifest)) {
+    throw new Error("Worker RPC v2 final tree digest does not match its manifest.");
+  }
+  return {
+    schemaVersion: "2",
+    algorithm: "Ed25519",
+    keyId: safeId(result.keyId, "worker RPC v2 key ID", 3, 128),
+    supervisorId: safeId(result.supervisorId, "worker RPC v2 supervisor ID", 3, 128),
+    supervisorRunId,
+    workerImageDigest: parsedWorkerImageDigest,
+    workerPolicySha256,
+    fixtureId: "seeded-refund-demo",
+    baselineContentSha256: sha256(
+      result.baselineContentSha256,
+      "worker RPC v2 baseline content digest",
+    ),
+    baselineExecutionTreeSha256: sha256(
+      result.baselineExecutionTreeSha256,
+      "worker RPC v2 baseline execution tree digest",
+    ),
+    finalExecutionTreeSha256,
+    finalExecutionTreeManifest,
+    acceptedCorpusSha256,
+    executionMode: "LIVE_CODEX_SDK",
+    executionBindingSha256,
+    dockerBindingSha256,
+    cpuProof,
+    repairWorkspaceDeleted: true,
+    verificationWorkspaceDeleted: true,
+    processTreeReaped: true,
+    remainingProcessCount: 0,
+    signature: result.signature,
+  };
+}
+
+export function parseWorkerRpcV2Response(value: unknown): WorkerRpcV2Response {
+  const result = record(value, "worker RPC v2 response");
+  exactKeys(
+    result,
+    [
+      "schemaVersion",
+      "protocol",
+      "action",
+      "requestId",
+      "runNonce",
+      "sequence",
+      "requestSha256",
+      "executionBindingSha256",
+      "status",
+      "completedAt",
+      "resultSha256",
+      "report",
+      "error",
+      "receipt",
+    ],
+    "worker RPC v2 response",
+  );
+  if (
+    result.schemaVersion !== "2" ||
+    result.protocol !== WORKER_RPC_V2_PROTOCOL ||
+    result.action !== WORKER_RPC_RESPONSE_ACTION ||
+    result.sequence !== 1 ||
+    (result.status !== "PASS" && result.status !== "FAIL")
+  ) {
+    throw new Error("Worker RPC v2 response protocol metadata is invalid.");
+  }
+  const parsedRequestId = safeId(result.requestId, "worker RPC v2 response request ID", 16, 64);
+  if (!/^[0-9a-f]{32}$/u.test(parsedRequestId)) {
+    throw new Error("Worker RPC v2 response request ID is invalid.");
+  }
+  if (
+    typeof result.runNonce !== "string" ||
+    !/^[A-Za-z0-9_-]{43}$/u.test(result.runNonce) ||
+    Buffer.from(result.runNonce, "base64url").byteLength !== 32 ||
+    Buffer.from(result.runNonce, "base64url").toString("base64url") !== result.runNonce
+  ) {
+    throw new Error("Worker RPC v2 response nonce is invalid.");
+  }
+  const status = result.status as "PASS" | "FAIL";
+  let report: RepairWorkerReport | null;
+  let error: string | null;
+  if (status === "PASS") {
+    report = parseLivePassReport(result.report);
+    if (result.error !== null) {
+      throw new Error("Worker RPC v2 PASS response must not include an error.");
+    }
+    error = null;
+  } else {
+    if (result.report !== null || typeof result.error !== "string" || result.error.length === 0) {
+      throw new Error("Worker RPC v2 FAIL response must contain only a bounded error.");
+    }
+    error = assertSafeRpcText(result.error, "worker RPC v2 error", 4_096);
+    report = null;
+  }
+  const expectedResultHash = workerRpcSha256(report ?? { error });
+  if (sha256(result.resultSha256, "worker RPC v2 result digest") !== expectedResultHash) {
+    throw new Error("Worker RPC v2 result digest does not match its body.");
+  }
+  const parsedRequestSha256 = sha256(
+    result.requestSha256,
+    "worker RPC v2 request digest",
+  );
+  const executionBindingSha256 = sha256(
+    result.executionBindingSha256,
+    "worker RPC v2 execution binding",
+  );
+  return {
+    schemaVersion: "2",
+    protocol: WORKER_RPC_V2_PROTOCOL,
+    action: WORKER_RPC_RESPONSE_ACTION,
+    requestId: parsedRequestId,
+    runNonce: result.runNonce,
+    sequence: 1,
+    requestSha256: parsedRequestSha256,
+    executionBindingSha256,
+    status,
+    completedAt: canonicalIso(result.completedAt, "worker RPC v2 completedAt"),
+    resultSha256: result.resultSha256 as string,
+    report,
+    error,
+    receipt: parseV2Receipt(result.receipt, {
+      status,
+      requestId: parsedRequestId,
+      runNonce: result.runNonce,
+      requestSha256: parsedRequestSha256,
+      executionBindingSha256,
+    }),
+  };
+}
+
+export function workerRpcV2SignaturePayload(response: WorkerRpcV2Response): string {
+  const { signature: _signature, ...receipt } = response.receipt;
+  return canonicalWorkerRpcJson({
+    domain: WORKER_RPC_V2_SIGNATURE_DOMAIN,
     response: {
       ...response,
       receipt,

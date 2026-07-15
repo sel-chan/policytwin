@@ -20,6 +20,7 @@ const suites = {
     "tests/unit/worker-rpc.test.mjs",
     "tests/unit/worker-runtime-contract.test.mjs",
     "tests/unit/cpu-budget-contract.test.mjs",
+    "tests/unit/live-linux-cgroup-cpu-proof.test.mjs",
     "tests/unit/worker-os-lifecycle.test.mjs",
     "tests/unit/supervisor-docker-driver.test.mjs",
     "tests/unit/pinned-docker-cli.test.mjs",

@@ -8,10 +8,16 @@ import {
   WORKER_RPC_MAX_RESPONSE_BYTES,
   canonicalWorkerRpcJson,
   createExternalWorkerRpcClient,
+  createExternalWorkerRpcV2Client,
+  createWorkerRpcTrustBundle,
+  liveLinuxCgroupDockerBindingSha256,
+  liveLinuxCgroupCpuSampleTranscriptSha256,
   parseWorkerRpcRequest,
+  parseWorkerRpcV2Request,
   workerRpcExecutionTreeSha256,
   workerRpcSha256,
   workerRpcSignaturePayload,
+  workerRpcV2SignaturePayload,
 } from "../../dist/index.js";
 
 const sourcePolicy = await readFile(
@@ -66,6 +72,7 @@ const input = {
 const BACKEND_ID = "policytwin-external-worker";
 const SUPERVISOR_ID = "policytwin-supervisor";
 const KEY_ID = "worker-key-v1";
+const V2_KEY_ID = "live-cpu-key-v2";
 const IMAGE_DIGEST = `sha256:${"d".repeat(64)}`;
 const BASELINE_DIGEST = "e".repeat(64);
 const BASELINE_TREE_MANIFEST = {
@@ -117,6 +124,8 @@ const MTIME_ONLY_TREE_DIGEST = workerRpcExecutionTreeSha256(MTIME_ONLY_TREE_MANI
 const MODEL = "gpt-codex-test";
 const { privateKey, publicKey } = generateKeyPairSync("ed25519");
 const publicKeyPem = publicKey.export({ type: "spki", format: "pem" });
+const { privateKey: v2PrivateKey, publicKey: v2PublicKey } = generateKeyPairSync("ed25519");
+const v2PublicKeyPem = v2PublicKey.export({ type: "spki", format: "pem" });
 
 function metadata(request, runId) {
   const started = new Date(Date.parse(request.issuedAt) + 100).toISOString();
@@ -310,6 +319,129 @@ function signedResponse(request, options = {}) {
   return canonicalWorkerRpcJson(response);
 }
 
+function cpuRole(roleName, index, samplesUsec) {
+  return {
+    role: roleName,
+    containerId: index.toString(16).repeat(64),
+    pid: 2_000 + index,
+    startedAt: `2026-07-15T00:00:0${index}.000000000Z`,
+    cgroupIdentitySha256: (index + 8).toString(16).repeat(64),
+    baselineUsageUsec: samplesUsec[0],
+    finalUsageUsec: samplesUsec.at(-1),
+    deltaUsageUsec: String(BigInt(samplesUsec.at(-1)) - BigInt(samplesUsec[0])),
+    sampleCount: samplesUsec.length,
+    samplesUsec,
+    sampleTranscriptSha256: liveLinuxCgroupCpuSampleTranscriptSha256(samplesUsec),
+    released: true,
+  };
+}
+
+function liveCpuProof(request, overrides = {}) {
+  const supervisorRunId = overrides.supervisorRunId ?? "live-supervisor-run-0001";
+  const roles = [
+    cpuRole("egress", 1, ["10", "20", "30"]),
+    cpuRole("worker", 2, ["20", "60"]),
+    cpuRole("verifier", 3, ["100", "140"]),
+  ];
+  const dockerBindingSha256 = liveLinuxCgroupDockerBindingSha256({
+    requestSha256: workerRpcSha256(request),
+    executionBindingSha256: request.executionBindingSha256,
+    supervisorRunId,
+    workerImageDigest: request.policy.workerImageDigest,
+    roles,
+  });
+  return {
+    schemaVersion: "1",
+    proofType: "LIVE_LINUX_CGROUP_V2_THREE_ROLE",
+    status: "OBSERVED_WITHIN_BUDGET",
+    requestId: request.requestId,
+    runNonce: request.runNonce,
+    requestSha256: workerRpcSha256(request),
+    executionBindingSha256: request.executionBindingSha256,
+    supervisorRunId,
+    dockerBindingSha256,
+    workerImageDigest: request.policy.workerImageDigest,
+    workerPolicySha256: request.policySha256,
+    acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
+    budgetUsec: String(BigInt(request.policy.limits.cpuTimeMs) * 1_000n),
+    aggregateUsageUsec: "100",
+    accountingScope: "POST_BASELINE_THREE_ROLE_AGGREGATE",
+    samplingMode: "LINUX_CGROUP_V2_EMBEDDED_ROLE_SAMPLES",
+    cumulativeAccountingVerified: true,
+    failStopEnforcementArmed: true,
+    hardLimitEnforced: false,
+    overshootBounded: false,
+    containmentTriggered: false,
+    controllerStopped: true,
+    allRoleCgroupsReleased: true,
+    roles,
+    ...overrides,
+  };
+}
+
+function signedV2Response(request, options = {}) {
+  const status = options.status ?? "PASS";
+  const report = status === "PASS" ? liveReport(request, options.reportOverrides) : null;
+  const error = status === "FAIL" ? (options.error ?? "worker failed safely") : null;
+  const supervisorRunId = options.supervisorRunId ?? "live-supervisor-run-0001";
+  const cpuProof =
+    options.cpuProof === undefined
+      ? status === "PASS"
+        ? liveCpuProof(request, { supervisorRunId })
+        : null
+      : options.cpuProof;
+  const dockerBindingSha256 =
+    options.dockerBindingSha256 ?? cpuProof?.dockerBindingSha256 ?? "8".repeat(64);
+  const response = {
+    schemaVersion: "2",
+    protocol: "policytwin.codex.repair.v2",
+    action: "RUN_REPAIR_RESULT",
+    requestId: request.requestId,
+    runNonce: request.runNonce,
+    sequence: 1,
+    requestSha256: workerRpcSha256(request),
+    executionBindingSha256: request.executionBindingSha256,
+    status,
+    completedAt: new Date(Date.parse(request.issuedAt) + 1_000).toISOString(),
+    resultSha256: workerRpcSha256(report ?? { error }),
+    report,
+    error,
+    receipt: {
+      schemaVersion: "2",
+      algorithm: "Ed25519",
+      keyId: options.keyId ?? V2_KEY_ID,
+      supervisorId: SUPERVISOR_ID,
+      supervisorRunId,
+      workerImageDigest: request.policy.workerImageDigest,
+      workerPolicySha256: request.policySha256,
+      fixtureId: "seeded-refund-demo",
+      baselineContentSha256: request.policy.baselineContentSha256,
+      baselineExecutionTreeSha256: request.policy.baselineExecutionTreeSha256,
+      finalExecutionTreeSha256: FINAL_TREE_DIGEST,
+      finalExecutionTreeManifest: FINAL_TREE_MANIFEST,
+      acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
+      executionMode: "LIVE_CODEX_SDK",
+      executionBindingSha256: request.executionBindingSha256,
+      dockerBindingSha256,
+      cpuProof,
+      repairWorkspaceDeleted: true,
+      verificationWorkspaceDeleted: true,
+      processTreeReaped: true,
+      remainingProcessCount: 0,
+      signature: Buffer.alloc(64).toString("base64url"),
+      ...options.receiptOverrides,
+    },
+  };
+  options.mutateBeforeSign?.(response);
+  response.receipt.signature = sign(
+    null,
+    Buffer.from(workerRpcV2SignaturePayload(response), "utf8"),
+    options.privateKey ?? v2PrivateKey,
+  ).toString("base64url");
+  options.mutateAfterSign?.(response);
+  return canonicalWorkerRpcJson(response);
+}
+
 function deterministicRandom() {
   let counter = 0;
   return (size) => Buffer.alloc(size, (counter += 1));
@@ -333,7 +465,16 @@ function streamedResponse(body, options = {}) {
 function clientOptions(transport, overrides = {}) {
   return {
     transport,
-    trustedWorkerPublicKeys: { [KEY_ID]: publicKeyPem },
+    trustBundle: createWorkerRpcTrustBundle({
+      generalWorkerPublicKeys: { [KEY_ID]: publicKeyPem },
+      liveSupervisorPublicKeys: {
+        [V2_KEY_ID]: {
+          publicKeyPem: v2PublicKeyPem,
+          supervisorId: SUPERVISOR_ID,
+          purpose: "LIVE_LINUX_CGROUP_RPC_V2",
+        },
+      },
+    }),
     expectedSupervisorId: SUPERVISOR_ID,
     expectedBackendId: BACKEND_ID,
     workerImageDigest: IMAGE_DIGEST,
@@ -355,12 +496,19 @@ function clientOptions(transport, overrides = {}) {
   };
 }
 
+function v2ClientOptions(transport, overrides = {}) {
+  return {
+    ...clientOptions(transport),
+    ...overrides,
+  };
+}
+
 test("signed external-worker RPC binds one validated repair run without secrets or host paths", async () => {
   let observedRequest;
   let observedOptions;
   const transport = {
     id: "signed-test-transport",
-    authenticationMode: "LOCAL_SOCKET_ACL",
+    authenticationMode: "MUTUAL_TLS",
     async call(canonicalRequest, callOptions) {
       observedRequest = parseWorkerRpcRequest(JSON.parse(canonicalRequest));
       observedOptions = callOptions;
@@ -530,7 +678,7 @@ test("RPC rejects tampering, untrusted keys, weakened teardown, and phase metada
     await t.test(item.name, async () => {
       const transport = {
         id: `negative-${item.name.replaceAll(" ", "-")}`,
-        authenticationMode: "LOCAL_SOCKET_ACL",
+        authenticationMode: "MUTUAL_TLS",
         async call(canonicalRequest) {
           const request = parseWorkerRpcRequest(JSON.parse(canonicalRequest));
           const body = item.customizeResponse?.(request, item.responseOptions) ??
@@ -761,4 +909,204 @@ test("RPC permits only one in-flight run and aborts an unresponsive transport", 
   const first = client.runRepair(input);
   await assert.rejects(client.runRepair(input), /only one active run/u);
   await assert.rejects(first, /timed out|aborted/u);
+});
+
+test("Worker RPC v2 accepts one signed live-purpose CPU-bound repair result", async () => {
+  let observedRequest;
+  const transport = {
+    id: "signed-v2-test-transport",
+    authenticationMode: "MUTUAL_TLS",
+    async call(canonicalRequest) {
+      observedRequest = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
+      return streamedResponse(signedV2Response(observedRequest));
+    },
+  };
+  const result = await createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(
+    input,
+  );
+  assert.equal(observedRequest.schemaVersion, "2");
+  assert.equal(observedRequest.protocol, "policytwin.codex.repair.v2");
+  assert.equal(result.executionBindingSha256, observedRequest.executionBindingSha256);
+  assert.equal(result.receipt.cpuProof.status, "OBSERVED_WITHIN_BUDGET");
+  assert.equal(result.receipt.cpuProof.aggregateUsageUsec, "100");
+  assert.equal(result.receipt.cpuProof.hardLimitEnforced, false);
+  assert.equal(result.receipt.cpuProof.overshootBounded, false);
+});
+
+test("Worker RPC v2 rejects local-socket transport and reused v1 key material at construction", () => {
+  const localTransport = {
+    id: "v2-local-socket-rejected",
+    authenticationMode: "LOCAL_SOCKET_ACL",
+    async call() {
+      throw new Error("must not run");
+    },
+  };
+  assert.throws(
+    () => createExternalWorkerRpcV2Client(v2ClientOptions(localTransport)),
+    /must use mutual TLS/u,
+  );
+
+  const mtlsTransport = { ...localTransport, authenticationMode: "MUTUAL_TLS" };
+  assert.throws(
+    () =>
+      createWorkerRpcTrustBundle({
+        generalWorkerPublicKeys: { [KEY_ID]: publicKeyPem },
+        liveSupervisorPublicKeys: {
+          [V2_KEY_ID]: {
+            publicKeyPem,
+            supervisorId: SUPERVISOR_ID,
+            purpose: "LIVE_LINUX_CGROUP_RPC_V2",
+          },
+        },
+      }),
+    /reuses Ed25519 key material/u,
+  );
+});
+
+test("Worker RPC v2 rejects v1 downgrade, static proof, and proof-less PASS", async (t) => {
+  for (const scenario of [
+    {
+      name: "v1 downgrade",
+      body(request) {
+        return signedResponse(request);
+      },
+      pattern: /v2 response protocol|v2 response must contain exactly|unknown or missing/u,
+    },
+    {
+      name: "static fake proof",
+      body(request) {
+        return signedV2Response(request, {
+          cpuProof: {
+            schemaVersion: "1",
+            status: "STATIC_FAKE_CONTROLLER_VERIFIED",
+            samplingMode: "SERIAL_SUPERVISOR_FAKE",
+          },
+        });
+      },
+      pattern: /live Linux cgroup CPU proof|unknown or missing/u,
+    },
+    {
+      name: "proof-less PASS",
+      body(request) {
+        return signedV2Response(request, { cpuProof: null });
+      },
+      pattern: /live Linux cgroup CPU proof/u,
+    },
+  ]) {
+    await t.test(scenario.name, async () => {
+      const transport = {
+        id: `v2-${scenario.name.replaceAll(" ", "-")}`,
+        authenticationMode: "MUTUAL_TLS",
+        async call(canonicalRequest) {
+          const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
+          return streamedResponse(scenario.body(request));
+        },
+      };
+      await assert.rejects(
+        createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+        scenario.pattern,
+      );
+    });
+  }
+});
+
+test("Worker RPC v2 rejects proof replay, request-budget drift, and key-purpose confusion", async (t) => {
+  for (const scenario of [
+    {
+      name: "proof request replay",
+      responseOptions: {
+        mutateBeforeSign(response) {
+          response.receipt.cpuProof.requestId = "f".repeat(32);
+        },
+      },
+      options: {},
+      pattern: /request ID binding/u,
+    },
+    {
+      name: "request budget drift",
+      responseOptions: {
+        mutateBeforeSign(response) {
+          response.receipt.cpuProof.budgetUsec = String(
+            BigInt(response.receipt.cpuProof.budgetUsec) + 1n,
+          );
+        },
+      },
+      options: {},
+      pattern: /request budget/u,
+    },
+    {
+      name: "v1 key purpose",
+      responseOptions: { keyId: KEY_ID },
+      options: {},
+      pattern: /lacks the live CPU proof purpose/u,
+    },
+  ]) {
+    await t.test(scenario.name, async () => {
+      const transport = {
+        id: `v2-${scenario.name.replaceAll(" ", "-")}`,
+        authenticationMode: "MUTUAL_TLS",
+        async call(canonicalRequest) {
+          const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
+          return streamedResponse(signedV2Response(request, scenario.responseOptions));
+        },
+      };
+      await assert.rejects(
+        async () =>
+          createExternalWorkerRpcV2Client(
+            v2ClientOptions(transport, scenario.options),
+          ).runRepair(input),
+        scenario.pattern,
+      );
+    });
+  }
+});
+
+test("Worker RPC v2 signature covers Docker and CPU proof bindings", async () => {
+  const transport = {
+    id: "v2-proof-signature-tamper",
+    authenticationMode: "MUTUAL_TLS",
+    async call(canonicalRequest) {
+      const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
+      return streamedResponse(
+        signedV2Response(request, {
+          mutateAfterSign(response) {
+            response.receipt.cpuProof.roles[0].containerId = "a".repeat(64);
+            const changed = liveLinuxCgroupDockerBindingSha256({
+              requestSha256: response.requestSha256,
+              executionBindingSha256: response.executionBindingSha256,
+              supervisorRunId: response.receipt.supervisorRunId,
+              workerImageDigest: response.receipt.workerImageDigest,
+              roles: response.receipt.cpuProof.roles,
+            });
+            response.receipt.dockerBindingSha256 = changed;
+            response.receipt.cpuProof.dockerBindingSha256 = changed;
+          },
+        }),
+      );
+    },
+  };
+  await assert.rejects(
+    createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+    /v2 supervisor signature is invalid/u,
+  );
+});
+
+test("Worker RPC v2 FAIL cannot carry a success CPU proof", async () => {
+  const transport = {
+    id: "v2-fail-proof-confusion",
+    authenticationMode: "MUTUAL_TLS",
+    async call(canonicalRequest) {
+      const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
+      return streamedResponse(
+        signedV2Response(request, {
+          status: "FAIL",
+          cpuProof: liveCpuProof(request),
+        }),
+      );
+    },
+  };
+  await assert.rejects(
+    createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+    /FAIL receipt cannot carry a success CPU proof/u,
+  );
 });

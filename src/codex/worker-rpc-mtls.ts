@@ -1,5 +1,7 @@
 import {
+  createHash,
   createPrivateKey,
+  createPublicKey,
   sign as signPayload,
 } from "node:crypto";
 import { isIP, type Socket } from "node:net";
@@ -18,25 +20,37 @@ import {
   canonicalWorkerRpcJson,
   parseWorkerRpcRequest,
   parseWorkerRpcResponse,
+  parseWorkerRpcV2Request,
+  parseWorkerRpcV2Response,
   workerRpcSha256,
   workerRpcSignaturePayload,
+  workerRpcV2SignaturePayload,
   type WorkerRpcRequest,
   type WorkerRpcResponse,
   type WorkerRpcSupervisorReceipt,
+  type WorkerRpcV2Request,
+  type WorkerRpcV2Response,
+  type WorkerRpcV2SupervisorReceipt,
 } from "./worker-rpc-contract.js";
+import { assertWorkerRpcTrustBundleSigner } from "./worker-rpc-client.js";
 import type {
   ExternalWorkerRpcResponseStream,
   ExternalWorkerRpcTransport,
+  WorkerRpcTrustBundle,
 } from "./worker-rpc-client.js";
 import type { RepairWorkerReport } from "./types.js";
 
 export const WORKER_RPC_MTLS_ALPN = "policytwin-worker-rpc/1" as const;
 export const WORKER_RPC_MTLS_REQUEST_MAGIC = "PTQ1" as const;
 export const WORKER_RPC_MTLS_RESPONSE_MAGIC = "PTS1" as const;
+export const WORKER_RPC_V2_MTLS_ALPN = "policytwin-worker-rpc/2" as const;
+export const WORKER_RPC_V2_MTLS_REQUEST_MAGIC = "PTQ2" as const;
+export const WORKER_RPC_V2_MTLS_RESPONSE_MAGIC = "PTS2" as const;
 export const WORKER_RPC_MTLS_HEADER_BYTES = 8;
 
 const TLS_RECORD_CHUNK_BYTES = 64 * 1024;
 const EMPTY_SIGNATURE = Buffer.alloc(64).toString("base64url");
+const POLICYTWIN_SIGNERS = new WeakSet<object>();
 
 type TlsCa = string | Buffer | Array<string | Buffer>;
 type TlsCertificate = string | Buffer;
@@ -64,6 +78,7 @@ export interface WorkerRpcReplayCapability {
 }
 
 export interface WorkerRpcReplayStore {
+  readonly durability: "EPHEMERAL" | "DURABLE_SQLITE";
   consume(capability: WorkerRpcReplayCapability, now: Date): Promise<boolean>;
 }
 
@@ -83,6 +98,18 @@ export interface WorkerRpcSupervisorExecutionResult {
   receipt: SupervisorReceiptBody;
 }
 
+type V2SupervisorReceiptBody = Omit<
+  WorkerRpcV2SupervisorReceipt,
+  "schemaVersion" | "algorithm" | "keyId" | "supervisorId" | "signature"
+>;
+
+export interface WorkerRpcV2SupervisorExecutionResult {
+  status: "PASS" | "FAIL";
+  report: RepairWorkerReport | null;
+  error: string | null;
+  receipt: V2SupervisorReceiptBody;
+}
+
 export interface WorkerRpcSupervisorExecutor {
   execute(
     request: WorkerRpcRequest,
@@ -90,15 +117,25 @@ export interface WorkerRpcSupervisorExecutor {
   ): Promise<WorkerRpcSupervisorExecutionResult>;
 }
 
+export interface WorkerRpcV2SupervisorExecutor {
+  execute(
+    request: WorkerRpcV2Request,
+    context: { signal: AbortSignal; peerCertificateSha256: string },
+  ): Promise<WorkerRpcV2SupervisorExecutionResult>;
+}
+
 export interface WorkerRpcSupervisorSigner {
-  keyId: string;
-  supervisorId: string;
+  readonly keyId: string;
+  readonly supervisorId: string;
+  readonly purpose: "GENERAL_WORKER_RPC_V1" | "LIVE_LINUX_CGROUP_RPC_V2";
+  readonly publicKeySpkiSha256: string;
   sign(payload: string): Promise<Uint8Array>;
 }
 
 export interface Ed25519WorkerRpcSignerOptions {
   keyId: string;
   supervisorId: string;
+  purpose: WorkerRpcSupervisorSigner["purpose"];
   privateKey: string | Buffer;
   passphrase?: string;
 }
@@ -118,6 +155,27 @@ export interface MutualTlsWorkerRpcSupervisorOptions extends MutualTlsMaterial {
   replayStore: WorkerRpcReplayStore;
   executor: WorkerRpcSupervisorExecutor;
   signer: WorkerRpcSupervisorSigner;
+  trustBundle: WorkerRpcTrustBundle;
+  handshakeTimeoutMs?: number;
+  requestReadTimeoutMs?: number;
+  clockSkewMs?: number;
+  maxConnections?: number;
+  executorShutdownTimeoutMs?: number;
+  now?: () => Date;
+  onAuditEvent?: (event: {
+    type: WorkerRpcSupervisorAuditEvent;
+    at: string;
+  }) => void;
+}
+
+export interface MutualTlsWorkerRpcV2SupervisorOptions extends MutualTlsMaterial {
+  host: string;
+  port: number;
+  expectedClientCertificateSha256: string;
+  replayStore: WorkerRpcReplayStore;
+  executor: WorkerRpcV2SupervisorExecutor;
+  signer: WorkerRpcSupervisorSigner;
+  trustBundle: WorkerRpcTrustBundle;
   handshakeTimeoutMs?: number;
   requestReadTimeoutMs?: number;
   clockSkewMs?: number;
@@ -206,11 +264,11 @@ function peerFingerprint(socket: TLSSocket, label: string): string {
   return fingerprintSha256(certificate.fingerprint256, `${label} fingerprint`);
 }
 
-function assertTlsProtocol(socket: TLSSocket, label: string): void {
+function assertTlsProtocol(socket: TLSSocket, label: string, expectedAlpn: string): void {
   if (
     socket.authorized !== true ||
     socket.getProtocol() !== "TLSv1.3" ||
-    socket.alpnProtocol !== WORKER_RPC_MTLS_ALPN
+    socket.alpnProtocol !== expectedAlpn
   ) {
     throw new Error(`${label} did not satisfy the required TLS 1.3 mutual-authentication profile.`);
   }
@@ -400,11 +458,38 @@ function decodeCanonicalRequest(value: Uint8Array): {
   return { text, request };
 }
 
+function decodeCanonicalV2Request(value: Uint8Array): {
+  text: string;
+  request: WorkerRpcV2Request;
+} {
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(value);
+  } catch {
+    throw new Error("External worker TLS v2 request is not valid UTF-8.");
+  }
+  if (!Buffer.from(text, "utf8").equals(value) || text.includes("\0")) {
+    throw new Error("External worker TLS v2 request is not canonical NUL-free UTF-8.");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("External worker TLS v2 request is not JSON.");
+  }
+  const request = parseWorkerRpcV2Request(parsed);
+  if (canonicalWorkerRpcJson(request) !== text) {
+    throw new Error("External worker TLS v2 request must use canonical JSON.");
+  }
+  return { text, request };
+}
+
 async function connectAuthenticatedTls(
   options: MutualTlsWorkerRpcTransportOptions,
   signal: AbortSignal,
   handshakeTimeoutMs: number,
   expectedFingerprint: string,
+  expectedAlpn: string,
 ): Promise<TLSSocket> {
   if (signal.aborted) throw abortError();
   return new Promise((resolve, reject) => {
@@ -420,7 +505,7 @@ async function connectAuthenticatedTls(
       rejectUnauthorized: true,
       minVersion: "TLSv1.3",
       maxVersion: "TLSv1.3",
-      ALPNProtocols: [WORKER_RPC_MTLS_ALPN],
+      ALPNProtocols: [expectedAlpn],
       checkServerIdentity: (_hostname, certificate) =>
         checkServerIdentity(options.servername, certificate),
     });
@@ -446,7 +531,7 @@ async function connectAuthenticatedTls(
     socket.once("error", onError);
     socket.once("secureConnect", () => {
       try {
-        assertTlsProtocol(socket, "External worker supervisor");
+        assertTlsProtocol(socket, "External worker supervisor", expectedAlpn);
         const certificate = socket.getPeerCertificate(true) as PeerCertificate;
         const identityError = checkServerIdentity(options.servername, certificate);
         if (identityError !== undefined) throw identityError;
@@ -467,8 +552,27 @@ async function connectAuthenticatedTls(
   });
 }
 
-export function createMutualTlsWorkerRpcTransport(
+interface WorkerRpcMtlsProfile {
+  alpn: string;
+  requestMagic: string;
+  responseMagic: string;
+}
+
+const V1_MTLS_PROFILE: WorkerRpcMtlsProfile = {
+  alpn: WORKER_RPC_MTLS_ALPN,
+  requestMagic: WORKER_RPC_MTLS_REQUEST_MAGIC,
+  responseMagic: WORKER_RPC_MTLS_RESPONSE_MAGIC,
+};
+
+const V2_MTLS_PROFILE: WorkerRpcMtlsProfile = {
+  alpn: WORKER_RPC_V2_MTLS_ALPN,
+  requestMagic: WORKER_RPC_V2_MTLS_REQUEST_MAGIC,
+  responseMagic: WORKER_RPC_V2_MTLS_RESPONSE_MAGIC,
+};
+
+function createMutualTlsWorkerRpcTransportForProfile(
   options: MutualTlsWorkerRpcTransportOptions,
+  profile: WorkerRpcMtlsProfile,
 ): ExternalWorkerRpcTransport {
   const id = safeIdentifier(options.id, "External worker TLS transport ID");
   safeHost(options.host, "External worker TLS host");
@@ -530,13 +634,14 @@ export function createMutualTlsWorkerRpcTransport(
         callOptions.signal,
         handshakeTimeoutMs,
         expectedFingerprint,
+        profile.alpn,
       );
       const onAbort = () => socket.destroy(abortError());
       callOptions.signal.addEventListener("abort", onAbort, { once: true });
       try {
         await writeFrame(
           socket,
-          WORKER_RPC_MTLS_REQUEST_MAGIC,
+          profile.requestMagic,
           requestBytes,
           WORKER_RPC_MAX_REQUEST_BYTES,
           callOptions.signal,
@@ -548,7 +653,7 @@ export function createMutualTlsWorkerRpcTransport(
         );
         const declaredLength = parseFrameHeader(
           header,
-          WORKER_RPC_MTLS_RESPONSE_MAGIC,
+          profile.responseMagic,
           maxResponseBytes,
         );
         if (Math.ceil(declaredLength / maxChunkBytes) > maxChunks) {
@@ -583,6 +688,18 @@ export function createMutualTlsWorkerRpcTransport(
   };
 }
 
+export function createMutualTlsWorkerRpcTransport(
+  options: MutualTlsWorkerRpcTransportOptions,
+): ExternalWorkerRpcTransport {
+  return createMutualTlsWorkerRpcTransportForProfile(options, V1_MTLS_PROFILE);
+}
+
+export function createMutualTlsWorkerRpcV2Transport(
+  options: MutualTlsWorkerRpcTransportOptions,
+): ExternalWorkerRpcTransport {
+  return createMutualTlsWorkerRpcTransportForProfile(options, V2_MTLS_PROFILE);
+}
+
 export function createEphemeralWorkerRpcReplayStore(
   options: EphemeralWorkerRpcReplayStoreOptions = {},
 ): WorkerRpcReplayStore {
@@ -595,6 +712,7 @@ export function createEphemeralWorkerRpcReplayStore(
   const capabilities = new Map<string, { runNonce: string; expiresAt: number }>();
   const nonceOwners = new Map<string, string>();
   return {
+    durability: "EPHEMERAL",
     async consume(capability, now): Promise<boolean> {
       if (!Number.isFinite(now.getTime())) {
         throw new Error("Worker replay-store clock is invalid.");
@@ -637,16 +755,60 @@ export function createEd25519WorkerRpcSigner(
   if (privateKey.asymmetricKeyType !== "ed25519") {
     throw new Error("Worker supervisor signing key must be Ed25519.");
   }
-  return {
+  const publicKeySpkiSha256 = createHash("sha256")
+    .update(
+      createPublicKey(privateKey.export({ type: "pkcs8", format: "pem" })).export({
+        type: "spki",
+        format: "der",
+      }),
+    )
+    .digest("hex");
+  const signer = {
     keyId,
     supervisorId,
-    async sign(payload): Promise<Uint8Array> {
+    purpose: options.purpose,
+    publicKeySpkiSha256,
+    async sign(payload: string): Promise<Uint8Array> {
       return signPayload(null, Buffer.from(payload, "utf8"), privateKey);
     },
-  };
+  } satisfies WorkerRpcSupervisorSigner;
+  POLICYTWIN_SIGNERS.add(signer);
+  return Object.freeze(signer);
 }
 
-function validateRequestWindow(request: WorkerRpcRequest, now: Date, clockSkewMs: number): void {
+function assertPolicyTwinSigner(value: WorkerRpcSupervisorSigner): void {
+  if (!POLICYTWIN_SIGNERS.has(value)) {
+    throw new Error("Worker TLS supervisor requires a PolicyTwin-created Ed25519 signer.");
+  }
+}
+
+function assertExactReceiptBodyKeys(
+  value: unknown,
+  expectedKeys: readonly string[],
+  label: string,
+): void {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`${label} must be a plain object.`);
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    throw new Error(`${label} must be a plain object.`);
+  }
+  const actual = Object.keys(value).sort();
+  const expected = [...expectedKeys].sort();
+  if (
+    actual.length !== expected.length ||
+    actual.some((key, index) => key !== expected[index])
+  ) {
+    throw new Error(`${label} contains unknown or missing fields.`);
+  }
+}
+
+function validateRequestWindow(
+  request: WorkerRpcRequest | WorkerRpcV2Request,
+  now: Date,
+  clockSkewMs: number,
+): void {
   const current = now.getTime();
   if (
     !Number.isFinite(current) ||
@@ -680,6 +842,26 @@ async function buildSignedResponse(
   signer: WorkerRpcSupervisorSigner,
   now: Date,
 ): Promise<WorkerRpcResponse> {
+  assertExactReceiptBodyKeys(
+    result.receipt,
+    [
+      "supervisorRunId",
+      "workerImageDigest",
+      "workerPolicySha256",
+      "fixtureId",
+      "baselineContentSha256",
+      "baselineExecutionTreeSha256",
+      "finalExecutionTreeSha256",
+      "finalExecutionTreeManifest",
+      "acceptedCorpusSha256",
+      "executionMode",
+      "repairWorkspaceDeleted",
+      "verificationWorkspaceDeleted",
+      "processTreeReaped",
+      "remainingProcessCount",
+    ],
+    "Worker supervisor execution receipt",
+  );
   if (
     (result.status === "PASS" && (result.report === null || result.error !== null)) ||
     (result.status === "FAIL" &&
@@ -711,9 +893,9 @@ async function buildSignedResponse(
     receipt: {
       schemaVersion: "1",
       algorithm: "Ed25519",
+      ...result.receipt,
       keyId: signer.keyId,
       supervisorId: signer.supervisorId,
-      ...result.receipt,
       signature: EMPTY_SIGNATURE,
     },
   });
@@ -730,6 +912,116 @@ async function buildSignedResponse(
   });
 }
 
+function validateV2ExecutionReceiptBindings(
+  result: WorkerRpcV2SupervisorExecutionResult,
+  request: WorkerRpcV2Request,
+): void {
+  const expectedCpuBudgetUsec = BigInt(request.policy.limits.cpuTimeMs) * 1_000n;
+  if (
+    result.receipt.workerImageDigest !== request.policy.workerImageDigest ||
+    result.receipt.workerPolicySha256 !== request.policySha256 ||
+    result.receipt.fixtureId !== request.policy.fixtureId ||
+    result.receipt.baselineContentSha256 !== request.policy.baselineContentSha256 ||
+    result.receipt.baselineExecutionTreeSha256 !==
+      request.policy.baselineExecutionTreeSha256 ||
+    result.receipt.acceptedCorpusSha256 !== request.policy.acceptedCorpusSha256 ||
+    result.receipt.executionBindingSha256 !== request.executionBindingSha256 ||
+    (result.status === "PASS" && result.receipt.cpuProof === null) ||
+    (result.receipt.cpuProof !== null &&
+      BigInt(result.receipt.cpuProof.budgetUsec) !== expectedCpuBudgetUsec) ||
+    (result.status === "FAIL" && result.receipt.cpuProof !== null)
+  ) {
+    throw new Error("Worker supervisor v2 execution receipt is not bound to its request.");
+  }
+}
+
+async function buildSignedV2Response(
+  request: WorkerRpcV2Request,
+  result: WorkerRpcV2SupervisorExecutionResult,
+  signer: WorkerRpcSupervisorSigner,
+  now: Date,
+): Promise<WorkerRpcV2Response> {
+  if (
+    !signer.keyId.startsWith("live-cpu-") ||
+    signer.purpose !== "LIVE_LINUX_CGROUP_RPC_V2"
+  ) {
+    throw new Error("Worker supervisor v2 signer lacks the live CPU proof purpose.");
+  }
+  if (result.status !== "FAIL") {
+    throw new Error(
+      "Worker supervisor v2 PASS signing is disabled until the live Linux controller is wired.",
+    );
+  }
+  assertExactReceiptBodyKeys(
+    result.receipt,
+    [
+      "supervisorRunId",
+      "workerImageDigest",
+      "workerPolicySha256",
+      "fixtureId",
+      "baselineContentSha256",
+      "baselineExecutionTreeSha256",
+      "finalExecutionTreeSha256",
+      "finalExecutionTreeManifest",
+      "acceptedCorpusSha256",
+      "executionMode",
+      "executionBindingSha256",
+      "dockerBindingSha256",
+      "cpuProof",
+      "repairWorkspaceDeleted",
+      "verificationWorkspaceDeleted",
+      "processTreeReaped",
+      "remainingProcessCount",
+    ],
+    "Worker supervisor v2 execution receipt",
+  );
+  if (result.report !== null || typeof result.error !== "string" || result.error.length === 0) {
+    throw new Error("Worker supervisor v2 execution result status is inconsistent.");
+  }
+  validateV2ExecutionReceiptBindings(result, request);
+  const completedAt = now.toISOString();
+  if (
+    Date.parse(completedAt) < Date.parse(request.issuedAt) ||
+    Date.parse(completedAt) > Date.parse(request.expiresAt)
+  ) {
+    throw new Error("Worker supervisor v2 completion is outside the request window.");
+  }
+  const responseWithPlaceholder = parseWorkerRpcV2Response({
+    schemaVersion: "2",
+    protocol: request.protocol,
+    action: "RUN_REPAIR_RESULT",
+    requestId: request.requestId,
+    runNonce: request.runNonce,
+    sequence: 1,
+    requestSha256: workerRpcSha256(request),
+    executionBindingSha256: request.executionBindingSha256,
+    status: result.status,
+    completedAt,
+    resultSha256: workerRpcSha256(result.report ?? { error: result.error }),
+    report: result.report,
+    error: result.error,
+    receipt: {
+      schemaVersion: "2",
+      algorithm: "Ed25519",
+      ...result.receipt,
+      keyId: signer.keyId,
+      supervisorId: signer.supervisorId,
+      signature: EMPTY_SIGNATURE,
+    },
+  });
+  const signature = await signer.sign(workerRpcV2SignaturePayload(responseWithPlaceholder));
+  if (!(signature instanceof Uint8Array) || signature.byteLength !== 64) {
+    throw new Error("Worker supervisor v2 signer returned an invalid Ed25519 signature.");
+  }
+  return parseWorkerRpcV2Response({
+    ...responseWithPlaceholder,
+    receipt: {
+      ...responseWithPlaceholder.receipt,
+      signature: Buffer.from(signature).toString("base64url"),
+    },
+  });
+}
+
 function serverAddress(server: TlsServer, requestedHost: string): { host: string; port: number } {
   const address = server.address();
   if (address === null || typeof address === "string") {
@@ -738,8 +1030,39 @@ function serverAddress(server: TlsServer, requestedHost: string): { host: string
   return { host: requestedHost, port: address.port };
 }
 
-export function createMutualTlsWorkerRpcSupervisor(
-  options: MutualTlsWorkerRpcSupervisorOptions,
+type GenericSupervisorOptions<
+  Request extends WorkerRpcRequest | WorkerRpcV2Request,
+  Result,
+> = Omit<MutualTlsWorkerRpcSupervisorOptions, "executor"> & {
+  executor: {
+    execute(
+      request: Request,
+      context: { signal: AbortSignal; peerCertificateSha256: string },
+    ): Promise<Result>;
+  };
+};
+
+interface SupervisorProtocolProfile<
+  Request extends WorkerRpcRequest | WorkerRpcV2Request,
+  Result,
+  Response,
+> extends WorkerRpcMtlsProfile {
+  decodeRequest(value: Uint8Array): { text: string; request: Request };
+  buildSignedResponse(
+    request: Request,
+    result: Result,
+    signer: WorkerRpcSupervisorSigner,
+    now: Date,
+  ): Promise<Response>;
+}
+
+function createMutualTlsWorkerRpcSupervisorForProfile<
+  Request extends WorkerRpcRequest | WorkerRpcV2Request,
+  Result,
+  Response,
+>(
+  options: GenericSupervisorOptions<Request, Result>,
+  profile: SupervisorProtocolProfile<Request, Result, Response>,
 ): MutualTlsWorkerRpcSupervisor {
   safeHost(options.host, "Worker TLS supervisor host");
   integer(options.port, "Worker TLS supervisor port", 0, 65_535);
@@ -818,7 +1141,7 @@ export function createMutualTlsWorkerRpcSupervisor(
     rejectUnauthorized: true,
     minVersion: "TLSv1.3",
     maxVersion: "TLSv1.3",
-    ALPNProtocols: [WORKER_RPC_MTLS_ALPN],
+    ALPNProtocols: [profile.alpn],
     handshakeTimeout: handshakeTimeoutMs,
   });
   server.maxConnections = maxConnections;
@@ -840,10 +1163,10 @@ export function createMutualTlsWorkerRpcSupervisor(
         socket.destroy();
       }, requestReadTimeoutMs);
       let ownsRepairSlot = false;
-      let executorPromise: Promise<WorkerRpcSupervisorExecutionResult> | null = null;
+      let executorPromise: Promise<Result> | null = null;
       let executionController: AbortController | null = null;
       try {
-        assertTlsProtocol(socket, "Worker RPC client");
+        assertTlsProtocol(socket, "Worker RPC client", profile.alpn);
         const fingerprint = peerFingerprint(socket, "Worker RPC client");
         if (fingerprint !== expectedClientFingerprint) {
           throw new Error("Worker RPC client certificate pin does not match.");
@@ -856,7 +1179,7 @@ export function createMutualTlsWorkerRpcSupervisor(
         );
         const declaredLength = parseFrameHeader(
           header,
-          WORKER_RPC_MTLS_REQUEST_MAGIC,
+          profile.requestMagic,
           WORKER_RPC_MAX_REQUEST_BYTES,
         );
         const requestBytes = await reader.readExactly(
@@ -866,7 +1189,7 @@ export function createMutualTlsWorkerRpcSupervisor(
         if (reader.pendingBytes !== 0) {
           throw new Error("Worker RPC TLS request contains trailing bytes.");
         }
-        const { request } = decodeCanonicalRequest(requestBytes);
+        const { request } = profile.decodeRequest(requestBytes);
         clearTimeout(requestReadTimer);
         requestReadController = null;
         const now = (options.now ?? (() => new Date()))();
@@ -933,7 +1256,7 @@ export function createMutualTlsWorkerRpcSupervisor(
         );
         executorSettlements.add(executorSettlement);
         void executorSettlement.then(() => executorSettlements.delete(executorSettlement));
-        let result: WorkerRpcSupervisorExecutionResult;
+        let result: Result;
         try {
           result = await Promise.race([executorPromise, connectionMonitor]);
           if (executionController.signal.aborted) throw abortError();
@@ -951,7 +1274,7 @@ export function createMutualTlsWorkerRpcSupervisor(
           clearTimeout(executionTimer);
           executionControllers.delete(executionController);
         }
-        const response = await buildSignedResponse(
+        const response = await profile.buildSignedResponse(
           request,
           result,
           options.signer,
@@ -977,7 +1300,7 @@ export function createMutualTlsWorkerRpcSupervisor(
         try {
           await writeFrame(
             socket,
-            WORKER_RPC_MTLS_RESPONSE_MAGIC,
+            profile.responseMagic,
             responseBytes,
             WORKER_RPC_MAX_RESPONSE_BYTES,
             responseController.signal,
@@ -1069,4 +1392,40 @@ export function createMutualTlsWorkerRpcSupervisor(
       return rawConnections.size;
     },
   };
+}
+
+export function createMutualTlsWorkerRpcSupervisor(
+  options: MutualTlsWorkerRpcSupervisorOptions,
+): MutualTlsWorkerRpcSupervisor {
+  assertPolicyTwinSigner(options.signer);
+  assertWorkerRpcTrustBundleSigner(options.trustBundle, options.signer);
+  if (options.signer.purpose !== "GENERAL_WORKER_RPC_V1") {
+    throw new Error("Worker TLS v1 supervisor signer lacks the general worker purpose.");
+  }
+  return createMutualTlsWorkerRpcSupervisorForProfile(options, {
+    ...V1_MTLS_PROFILE,
+    decodeRequest: decodeCanonicalRequest,
+    buildSignedResponse,
+  });
+}
+
+export function createMutualTlsWorkerRpcV2Supervisor(
+  options: MutualTlsWorkerRpcV2SupervisorOptions,
+): MutualTlsWorkerRpcSupervisor {
+  assertPolicyTwinSigner(options.signer);
+  assertWorkerRpcTrustBundleSigner(options.trustBundle, options.signer);
+  if (
+    !options.signer.keyId.startsWith("live-cpu-") ||
+    options.signer.purpose !== "LIVE_LINUX_CGROUP_RPC_V2"
+  ) {
+    throw new Error("Worker TLS v2 supervisor signer lacks the live CPU proof purpose.");
+  }
+  if (options.replayStore.durability !== "DURABLE_SQLITE") {
+    throw new Error("Worker TLS v2 supervisor requires a durable SQLite replay store.");
+  }
+  return createMutualTlsWorkerRpcSupervisorForProfile(options, {
+    ...V2_MTLS_PROFILE,
+    decodeRequest: decodeCanonicalV2Request,
+    buildSignedResponse: buildSignedV2Response,
+  });
 }

@@ -109,3 +109,20 @@ test("live gate does not admit an unverified structured CPU object", () => {
   assert.equal(verdict.code, "CUMULATIVE_CPU_PROOF_UNAVAILABLE");
   assert.equal(verdict.ready, false);
 });
+
+test("live gate does not admit an unsigned Worker RPC v2-shaped CPU proof", () => {
+  const verdict = evaluateLiveGateReadiness({
+    missingHostConfiguration: [],
+    workerReport: worker({
+      cumulativeCpuTimeEnforced: false,
+      signedWorkerRpcV2: {
+        protocol: "policytwin.codex.repair.v2",
+        proofType: "LIVE_LINUX_CGROUP_V2_THREE_ROLE",
+        status: "OBSERVED_WITHIN_BUDGET",
+      },
+    }),
+    egressReport: egress(),
+  });
+  assert.equal(verdict.code, "CUMULATIVE_CPU_PROOF_UNAVAILABLE");
+  assert.equal(verdict.ready, false);
+});
