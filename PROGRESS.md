@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — factory-only Worker RPC v2 mTLS transport capability`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 06:47 +09:00`
-- Latest checkpoint commit: `dc4ff8a38382ad1c355e68e4e92f3f96e2a5104b`
+- Last updated: `2026-07-16 06:59 +09:00`
+- Latest checkpoint commit: `e736ccc5693ad607c0a4572cf207b9e40c4ce94d`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -121,7 +121,8 @@ The fail-only v2 CPU evidence envelope was committed at `c366246` with ledger co
 - [x] Add real TLS regressions for scalar mutation and CA/certificate/key Buffer/array mutation.
 - [x] Rerun focused and authoritative offline gates after the snapshot fix.
 - [x] Complete final truth re-review and diff review against the current ledger.
-- [ ] Create current-branch implementation and ledger checkpoint commits, then confirm a clean worktree.
+- [x] Create the current-branch implementation checkpoint commit.
+- [ ] Verify and commit this post-checkpoint ledger update, then confirm a clean worktree.
 
 ### Completion evidence
 
@@ -136,6 +137,7 @@ The fail-only v2 CPU evidence envelope was committed at `c366246` with ledger co
 - Recovered environment failure: an earlier overlapping E2E invocation briefly failed to overwrite `03-case-lab-drift.png` with Windows `UNKNOWN: open`. The file was writable and unlocked afterward; the failed case passed 1/1 in isolation, the full suite passed 3/3, and a fresh serial authoritative verify passed E2E 3/3. No code change or suppressed assertion was used.
 - Dynamic/live truth: web, worker/verifier, and egress gates each failed before Docker because the immutable Node base is unset. `pnpm verify:live` failed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`. No Docker, Linux cgroup, model, Codex, deployment, or live proof execution occurred.
 - Truth boundary: closing a host-process nominal capability does not prove Docker, Linux cgroups, CPU enforcement, OpenAI traffic, Codex repair, deployment, or live evidence.
+- Implementation commit: `e736ccc5693ad607c0a4572cf207b9e40c4ce94d` (`fix: require immutable v2 mTLS transport`).
 
 ## Quality gates
 
@@ -184,6 +186,17 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-16 06:59 +09:00 — Factory-only Worker RPC v2 mTLS transport verified offline
+
+- Milestones: M7 and M9 remain `IN_PROGRESS`; this checkpoint closes host-process transport self-declaration and caller-mutation gaps without enabling a live run.
+- Admission boundary: the v2 client accepts only the exact frozen object recorded by the concrete v2 TLS factory's private `WeakSet`. V1 results, fake declarations, copies, wrappers, root/subpath access, and arbitrary registrar paths fail before request construction.
+- Input boundary: the factory reads each option once, validates it, stores scalars in a frozen private snapshot, and defensively copies CA/certificate/key Buffers plus the CA array. Mutating the caller-owned object or material after construction cannot redirect or corrupt the admitted connection.
+- Regression evidence: the self-declared-object test first failed with `Missing expected exception`; scalar and Buffer/array mutation tests then failed with the expected handshake and PEM errors. After correction, focused RPC unit 36/36, mTLS integration 20/20, container contract 5/5, strict typecheck, and static container checks pass.
+- Full verification: post-snapshot `pnpm verify` passes lint, typecheck, 217/217 unit, 57/57 integration, 22/22 eval, 3/3 production Chrome, build, schema-v7 static container checks, 332-file clean-copy replay, and 332-file/303-text-file plus Git-history security. It exits 1 only for owner-selected `LICENSE` and the exact 29-item non-final submission gate.
+- Review: final independent read-only review found no remaining P0/P1/P2 and confirmed role hashes `ef656bc847e4bb02900d5eeb8fa574bfe8f63cd399b5f62f7d1ad02af4932057`, `ecfd6e9ac299c5a65b6dcbfc3fbc67e6f6840284f91d76341f60d1716946c949`, and `9760d2599be2ca47e35d8bcd538718be1bc49479af4b5b0c7e5cd0199309813c` across the contract and reports.
+- Dynamic/live truth: all three dynamic gates fail before Docker at the unset immutable Node base; `verify:live` fails before network at missing `OPENAI_API_KEY`/`CODEX_MODEL`. No Docker, Linux CPU observation, OpenAI request, Codex repair, deployment, or live proof occurred.
+- Commit: `e736ccc5693ad607c0a4572cf207b9e40c4ce94d` (`fix: require immutable v2 mTLS transport`).
 
 ### 2026-07-16 05:05 +09:00 — Fail-only Worker RPC v2 CPU evidence envelope verified offline
 
@@ -552,18 +565,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Commit the factory-only v2 transport checkpoint, then version the candidate CPU proof with the missing global event transcript and failure/containment evidence without enabling PASS or a live claim.`
+`Verify and commit this ledger update, then version the candidate CPU proof with the missing global event transcript and failure/containment evidence without enabling PASS or a live claim.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the factory-only Worker RPC v2 transport capability and private TLS-input snapshot are implemented, serially verified, and independently reviewed; checkpoint commits remain`
+- Why paused: `not paused; the factory-only Worker RPC v2 transport capability and private TLS-input snapshot are implemented, serially verified, independently reviewed, and committed; only the post-checkpoint ledger commit remains`
 - Exact current state: `the concrete v2 TLS factory alone can create a frozen WeakSet-admitted transport; no arbitrary registrar exists; the generic supervisor still refuses PASS and the live gate remains closed because global event and failure/containment evidence plus a real Linux controller are absent`
 - Last successful command: `the 06:47 post-snapshot pnpm verify sequence passed every implemented offline gate, including 217 unit, 57 integration, 22 eval, 3 browser, 332-file clean-copy, 332-file/303-text-file security, schema-v7 static container checks, and production build; only LICENSE and the exact 29-item submission gate failed as expected`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `factory-only v2 transport implementation, regressions, generated reports/copy, and this current checkpoint ledger before its commits`
-- Safe resume command/action: `finish the current checkpoint commits, then implement the versioned global event transcript and failure/containment evidence contract while preserving FAIL-only admission`
+- Uncommitted files: `only this post-checkpoint PROGRESS.md ledger update before its documentation commit`
+- Safe resume command/action: `verify and commit this ledger update, then implement the versioned global event transcript and failure/containment evidence contract while preserving FAIL-only admission`
 - One owner action, if any: `none`
 
 ## Final completion record
