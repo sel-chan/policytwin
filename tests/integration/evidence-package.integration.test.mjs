@@ -1019,10 +1019,13 @@ test("LIVE_VERIFIED evidence requires a valid trusted Ed25519 attestation", asyn
   );
 
   assert.throws(
-    () => validateEvidencePackage(files, hashText),
+    () => validateEvidencePackage(files, hashText, { now: options.now }),
     /not trusted/u,
   );
-  assert.throws(() => createEvidenceArchive(files, hashText), /not trusted/u);
+  assert.throws(
+    () => createEvidenceArchive(files, hashText, { now: options.now }),
+    /not trusted/u,
+  );
   const invalidSignature = new Map(files);
   const invalidManifest = JSON.parse(invalidSignature.get("evidence-manifest.json"));
   invalidManifest.liveAttestation.signature = `${invalidManifest.liveAttestation.signature[0] === "A" ? "B" : "A"}${invalidManifest.liveAttestation.signature.slice(1)}`;

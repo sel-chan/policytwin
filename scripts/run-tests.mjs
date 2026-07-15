@@ -27,6 +27,8 @@ const suites = {
     "tests/integration/refund-fixture.integration.test.mjs",
     "tests/integration/differential-runner.integration.test.mjs",
     "tests/integration/repair-workspace.integration.test.mjs",
+    "tests/integration/worker-rpc-mtls.integration.test.mjs",
+    "tests/integration/worker-rpc-replay.integration.test.mjs",
     "tests/integration/evidence-package.integration.test.mjs",
     "tests/integration/policy-persistence.integration.test.mjs",
     "tests/integration/opa-runner.integration.test.mjs",
@@ -55,4 +57,10 @@ runOrExit(process.execPath, ["scripts/build-core.mjs"]);
 if (suite === "integration") {
   runOrExit(process.execPath, ["scripts/build-fixtures.mjs"]);
 }
-runOrExit(process.execPath, ["--test", ...testFiles]);
+const testArguments = ["--test"];
+if (suite === "integration") {
+  // Integration tests intentionally rebuild shared dist/fixture/evidence outputs.
+  // Serial execution prevents one test from replacing those outputs while another imports them.
+  testArguments.push("--test-concurrency=1", "--test-reporter=spec");
+}
+runOrExit(process.execPath, [...testArguments, ...testFiles]);

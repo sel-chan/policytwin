@@ -44,6 +44,8 @@ export * from "./codex/validate.js";
 export * from "./codex/orchestrate.js";
 export * from "./codex/worker-rpc-contract.js";
 export * from "./codex/worker-rpc-client.js";
+export * from "./codex/worker-rpc-mtls.js";
+export * from "./codex/worker-rpc-replay-sqlite.js";
 export * from "./impact/types.js";
 export * from "./impact/analyze.js";
 export * from "./traceability/report.js";

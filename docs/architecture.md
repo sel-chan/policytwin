@@ -35,7 +35,7 @@ Implemented offline:
 - deterministic Rego source generation;
 - policy-derived cases, conflicts, contrasts, and mutation execution;
 - reference differential reports for canonical and evaluation-only fixtures;
-- guarded repair-worker contracts, isolated trusted copies, a pinned server-side Codex SDK-compatible adapter contract, and a transport-injected single-run RPC client contract with declared-length streaming limits, an authentication precondition, one-use request nonce, immutable image/baseline/corpus bindings, baseline/final tree-manifest delta validation, trusted Ed25519 supervisor receipts, separate repair/verification workspaces, and mandatory process-tree/workspace teardown;
+- guarded repair-worker contracts, isolated trusted copies, a pinned server-side Codex SDK-compatible adapter contract, and a Node TLS 1.3 mutual-authentication client/supervisor with fixed CA/name/certificate pins/ALPN, one bounded canonical request/response frame, a durable SQLite request-ID/nonce replay store, single-active-run cancellation, immutable image/baseline/corpus bindings, baseline/final tree-manifest delta validation, and trusted Ed25519 supervisor receipts;
 - change impact, traceability, aggregate evidence hashes, semantic cross-checks, a closed byte-deterministic 38-file USTAR download, and a trusted live-attestation boundary;
 - SQLite-backed policy, version, lifecycle, golden-case, and decision persistence with restart recovery;
 - framework-independent workspace orchestration for current-state reads, immutable text versions, and atomic ambiguity resolution;
@@ -47,7 +47,7 @@ Proof and Change Impact are bound to the recorded reference policy by a determin
 
 Not yet authoritative:
 
-- GPT-5.6 and Codex nodes still require fresh credentialed execution and signed live evidence; the SDK-compatible adapter and signed RPC client controls are verified offline, but the transport's authentication mode is only a tested interface precondition until an actual mTLS/socket-ACL implementation exists; no supervisor, worker image, or SDK turn exists and the host live-backend factory still rejects;
+- GPT-5.6 and Codex nodes still require fresh credentialed execution and signed live evidence. The mTLS transport and bounded supervisor are verified on real loopback sockets with ephemeral certificates, but their injected integration executor emits only an explicit signed `FAIL` test result. No OS-isolated worker image, OpenAI-only egress proxy, immutable verification container, or SDK turn exists, and the host live-backend factory still rejects;
 - the 14-to-30 impact candidate is a persisted text-only `DRAFT`; it is not accepted PolicyIR and remains blocked by G02;
 - mutation execution remains reference-based rather than OPA-backed;
 - the web Dockerfile and daemon-free static checks exist, but its base-image digest, dynamic container health, separate worker container, live browser run, and deployment do not.

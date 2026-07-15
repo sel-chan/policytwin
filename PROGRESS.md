@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7/M9 — external worker RPC and static container prerequisites`
+- Current milestone: `M7 — authenticated external worker transport and supervisor runtime`
 - Goal state: `IN_PROGRESS`
 - Submission state: `NOT_STARTED`
-- Last updated: `2026-07-15 08:26:44 +09:00`
-- Latest checkpoint commit: `24a524629424f2480c6793861c3bcc0ce99f660e`
+- Last updated: `2026-07-15 13:46:07 +09:00`
+- Latest checkpoint commit: `146b0ed`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,44 +93,49 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter plus a single-run streamed RPC request/response/client contract; exact policy/image/corpus/baseline/final tree-manifest, nonce, signature, command, teardown, replay, and two-file delta checks pass with generated-key test doubles | `24a5246` | host live construction and live commands remain disabled; actual authentication-enforcing transport, external supervisor/worker image, credentials, fresh SDK repair, zero post-repair drift, live review, and signed evidence remain |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed single-run RPC client, real TLS 1.3 mutually authenticated transport, bounded supervisor, and durable SQLite request-ID/nonce replay rejection pass; exact policy/image/corpus/tree/command/teardown bindings remain enforced | pending | host live construction and commands remain disabled; OS-isolated worker image, OpenAI-only egress, no-network verifier, credentials, fresh SDK repair, zero post-repair drift, live review, and signed evidence remain |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected screenshots, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and architecture/Codex submission captures remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, safe reset, static scan, clean-copy replay, digest-required split web Dockerfile, static container contract, and a prepared dynamic OPA/non-root/read-only-root/SQLite-restart verifier | `24a5246` | immutable Node base digest, running Docker daemon, actual dynamic web-container PASS, separate worker container, owner license, shared auth/quotas, provider selection, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, safe reset, real mTLS peer authentication/framing/cancellation, durable replay state, static scan, clean-copy replay, digest-required split web Dockerfile, static container contract, and prepared dynamic verifier | pending | certificate lifecycle/edge limits, immutable Node base digest, running Docker daemon, dynamic web-container PASS, OS worker/proxy/verifier containers, owner license, shared auth/quotas, provider selection, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified and generated rules-check updated; draft remains fail-closed | `130c355` | owner declarations, license, UI/screenshots, live/repo/video URLs, form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
 ### Objective
 
-Define and verify the fail-closed external-worker RPC boundary for one complete Codex repair run, add the independently safe web-container prerequisites, and keep every host-process live SDK/command path disabled. This checkpoint is contract and static-container work only; it must not claim a live Codex call, a running container, or deployment.
+Implement and verify a real mutually authenticated TLS transport and bounded external supervisor service for the existing single-run Codex repair RPC while keeping every host-process live SDK/command path disabled. This checkpoint may prove peer authentication, frame handling, replay rejection, and supervisor lifecycle with local test certificates; it must not claim an OS-isolated worker, live Codex call, fresh evidence, running production container, or deployment.
 
 ### Starting failing condition
 
-At checkpoint start, the host correctly rejected `createIsolatedWorkerCodexSdkBackend()` and live command execution, but had no RPC request/response schema, replay defense, trusted worker identity, signed result receipt, preallocation byte cap, teardown binding, or transport client. The web application had standalone output and a health route but no Dockerfile or `.dockerignore`; the Docker daemon was unavailable and the immutable Node base-image digest had not been verified within the approved network scope.
+At checkpoint start, the signed RPC contract and validating client were covered by test doubles, but `ExternalWorkerRpcTransport.authenticationMode` was only a declarative string. There was no socket implementation, certificate validation, framed request/response I/O, supervisor listener, connection/request concurrency limit, transport-level deadline, or integration proof that an unauthenticated peer and oversized frame are rejected before allocation. The worktree was clean at `146b0ed`; Node 22.22.2 and pnpm 11.7.0 were available, credentials were unset, and no system `openssl` command was on `PATH`.
 
 ### Planned actions
 
-- [x] Re-read the repository contract and current ledger, inspect the clean `main` worktree, and refresh the official Codex SDK/sandbox manual.
-- [x] Complete independent read-only RPC, container, and adversarial security gap reviews.
-- [x] Define a strict single-run RPC request/response and supervisor receipt with exact keys, bounded canonical JSON, nonce/request/result hashes, expiry, sequence, and Ed25519 verification.
-- [x] Reject secrets, personal/absolute paths, arbitrary commands, unknown protocol fields, replayed/mismatched responses, untrusted keys, oversized frames, and incomplete isolation/teardown claims before any result reaches orchestration or evidence.
-- [x] Provide a transport-injected host client contract that can validate an external worker result but cannot construct the SDK, run live fixture commands, or self-assert OS isolation in the host process.
-- [x] Add unit and integration coverage for valid signed test-double receipts, streamed receive limits, exact baseline/final tree-manifest deltas, and security-negative cases while retaining host-live rejection tests.
-- [x] Add `.dockerignore`, a digest-required web Dockerfile contract, static container validation, and separate daemon-backed verification without representing the future Codex worker as part of the web image.
-- [x] Correct architecture/threat/limitations/runbook truth boundaries, record D-028, and regenerate truthful submission drafts.
-- [x] Run focused tests, lint, typecheck, full offline verification, dynamic fail-closed probes, and independent final reviews; commit remains the final checkpoint action.
+- [x] Re-read all required control documents, inspect the clean `main` worktree, environment, local SDK/manual cache, and current RPC boundary.
+- [x] Complete independent read-only mTLS, worker-SDK reuse, and worker-container threat reviews.
+- [x] Add a Node built-in TLS client transport with strict server identity, CA trust, exact certificate fingerprint pinning, bounded fixed-width frame headers, and abort-aware socket teardown.
+- [x] Add a mutually authenticated supervisor listener with exact client identity, pre-parse request caps, one in-flight repair, request-ID/nonce replay protection, deadline enforcement, and bounded canonical response frames.
+- [x] Keep the supervisor executor injectable so offline integration tests use an explicit signed `FAIL` test double while the host remains unable to construct the live SDK.
+- [x] Add negative integration coverage for missing/untrusted/incorrect certificates, identity mismatch, malformed/oversized/partial/trailing frames, replay, concurrency, timeout, shutdown, pre-handshake sockets, and close-versus-admission races.
+- [x] Persist replay state transactionally in SQLite across supervisor restart and reject reuse of either request ID or nonce.
+- [x] Document the proven transport boundary separately from the still-unproven OS worker/container, OpenAI-only egress, fixture no-network execution, and fresh live evidence.
+- [x] Run focused tests, lint, typecheck, full offline verification, fail-closed live/container probes, and independent final review.
+- [ ] Commit the coherent checkpoint and record its hash.
 
 ### Completion evidence
 
-- Starting HEAD: `6213f1c`; clean `main` worktree.
-- Starting local gate: lint, strict typecheck, 80/80 unit, 31/31 integration, 21/21 eval, 3/3 production Chrome E2E, security, clean-copy replay, and production build pass from the prior checkpoint.
-- Current expected failures: owner-selected project license, immutable base-image digest/dynamic container verification, 30-item non-final submission gate, and the separate fresh live gate.
-- Official source refresh: current Codex manual confirms server-side SDK use, per-thread sandbox modes, disabled network controls, dedicated `CODEX_HOME`, and that sandbox enforcement applies to spawned commands; these SDK controls supplement but do not prove the required external OS boundary.
-- RPC result: declared-length asynchronous raw frames are rejected before body access above 4 MiB; 64 KiB/chunk and 1,024-chunk limits, exact UTF-8/JSON, request/nonce/expiry/replay/signature, fixed command/corpus, cleanup, and host-known path/kind/mode/mtime/file-hash baseline/final manifest checks are covered by 24 focused assertions within the 105-test unit suite.
-- Container result: `.dockerignore`, a two-stage standalone web Dockerfile, daemon-free static validation, and a daemon-backed verifier exist. The dynamic verifier rejects mutable image references, prepares volume ownership, requires non-root/read-only-root/resource/OPA/health controls, verifies a real API SQLite mutation across restart, and fails if tracked resource cleanup fails. `container:check` is `PASS`; `container:verify` is truthfully `FAIL` before build because `nodeBaseImage` is unset.
-- Full verification: lint, typecheck, 105/105 unit, 31/31 integration, 22/22 eval, 3/3 Chrome E2E, 281-file clean-copy replay, 256-text-file plus Git-history security scan, demo reset/run, static container contract, and production build pass. `pnpm verify` fails only `license:check` and the 30-item `submission:check`.
-- Live verification: `pnpm verify:live` fails closed for missing host `OPENAI_API_KEY` and `CODEX_MODEL`; no authentication-enforcing transport, supervisor/worker, live SDK turn, or live evidence promotion exists.
-- Independent final reviews: RPC, container, and cross-document reviewers found no remaining P0/P1 after streamed receive limits, tree-manifest mtime binding, mutable image rejection, actual SQLite restart verification, and cleanup-failure propagation were corrected.
+- Starting HEAD: `146b0ed`; clean `main` worktree.
+- Prior verified baseline: lint, strict typecheck, 105 unit assertions, 31 integration assertions, 22 eval assertions, 3 production Chrome E2E tests, static container checks, security, clean-copy replay, and production build passed. `pnpm verify` retained only the owner-selected project license and 30-item non-final submission failures.
+- Current expected failures: OS-isolated worker, worker image, OpenAI-only egress proxy, immutable no-network verification compartment, immutable Node base digest, daemon-backed container verification, live GPT/Codex evidence, owner-selected license, deployment, media/public URLs, and submission remain absent.
+- Environment evidence: Node 22.22.2, pnpm 11.7.0, Docker CLI present with prior daemon failure, no system `openssl` on `PATH`, all host OpenAI/worker credential variables unset, and the same-day official Codex manual cache available.
+- Transport result: real loopback TLS 1.3 requires the configured CA, server-name verification, exact SHA-256 peer certificate pins, and fixed `policytwin-worker-rpc/1` ALPN. One `PTQ1` request and `PTS1` response use an eight-byte magic/length header with 1 MiB/4 MiB pre-body caps and canonical UTF-8/JSON.
+- Supervisor result: one active repair, deadline/disconnect/shutdown cancellation, executor-settlement wait, pre-handshake socket cleanup, close-versus-replay-admission rejection, exact signed response construction, and bounded diagnostics are implemented. The integration executor returns only `OFFLINE_TEST_DOUBLE_NO_LIVE_WORKER` as a signed `FAIL`; no live claim is possible.
+- Replay result: the production-oriented SQLite store uses `BEGIN IMMEDIATE`, unique request ID and nonce constraints, expiry pruning, capacity limits, full synchronous durability, absolute non-memory paths, and survives close/reopen. The in-memory store remains explicitly ephemeral.
+- Focused verification: 15/15 real mTLS/replay integration assertions pass. Test certificates are generated temporarily with local OpenSSL and deleted; no private TLS key is committed.
+- Harness recovery: integration tests now run serially because evidence tests intentionally rebuild shared `dist`/fixture/evidence outputs. This removed the Windows process/file race. A pre-existing attestation test now supplies its fixed verification clock for the missing-trust assertion instead of depending on wall time.
+- Full verification: lint, strict typecheck, 105/105 unit assertions, 46/46 integration assertions, 22/22 eval assertions, 3/3 Chrome E2E tests, 286-file clean-copy replay, 261-text-file plus Git-history security scan, demo reset/run, static container contract, and production build pass. `pnpm verify` fails only owner-selected `LICENSE` and the exact 30-item non-final `submission:check`.
+- Fail-closed external probes: `pnpm verify:live` fails only at missing `OPENAI_API_KEY` and `CODEX_MODEL`; `pnpm container:verify` fails before build because the immutable Node 22.22.2 image is unset.
+- Independent final audit: no new P0/P1 was found after pre-handshake socket tracking, close-versus-admission rejection, executor settlement waiting, persistent request-ID/nonce replay rejection, and documentation truth-boundary updates. The audit confirms that OS worker/runtime and live evidence remain unimplemented.
+- Current checkpoint results: `IMPLEMENTED_AND_VERIFIED_OFFLINE`; commit remains.
 
 ## Quality gates
 
@@ -140,22 +145,22 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` via `pnpm verify` | static checks include `.tsx`, CSS, RPC, and container scripts while excluding generated Next output | 2026-07-15 08:14 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-15 08:14 +09:00 |
-| Unit tests | PASS | `pnpm test` via `pnpm verify` | 105/105 assertions passed, including streamed RPC frames, signature/replay/teardown, exact tree-manifest delta/mtime/content binding, static container contract, SDK phase isolation, and host-live rejection | 2026-07-15 08:18 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 31/31 passed, including real OPA 1.18.2, exact corpus, canonical diff/fixture receipt binding, semantic forgeries, live attestation, deterministic USTAR, trusted commands, and safe reset | 2026-07-15 08:14 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` via `pnpm verify` | 3/3 production standalone Chrome tests; native archive download, identical bytes, all 38 individual artifacts, six views, v1-v5 writes, isolation/capacity/expiry, focus, and 390px cards | 2026-07-15 08:14 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 22/22 offline/recorded evals pass, including the external-worker precondition boundary; live model/Codex work remains unverified | 2026-07-15 08:14 +09:00 |
-| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-15 08:14 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | all implemented code/static gates pass; exact expected failures are owner-selected project LICENSE and the 30-item non-final submission gate | 2026-07-15 08:14 +09:00 |
-| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed at missing host `OPENAI_API_KEY` and `CODEX_MODEL`; authentication-enforcing transport, supervisor/worker, worker credential, and fresh evidence are also not implemented | 2026-07-15 08:14 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 281 source files; frozen offline install and all 11 command groups including production Chrome E2E pass | 2026-07-15 08:14 +09:00 |
-| Static container contract | PASS | `pnpm container:check` via `pnpm verify` | `artifacts/security/container-static-report.json`: `STATIC_WEB_CONTAINER/PASS`, no worker, no base digest, no dynamic/release claim | 2026-07-15 08:14 +09:00 |
-| Dynamic container health | FAIL | `pnpm container:verify` | `artifacts/security/container-report.json`: `DYNAMIC_WEB_CONTAINER/FAIL`; immutable Node digest is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-15 08:06 +09:00 |
+| Lint | PASS | `pnpm lint` via `pnpm verify` | static checks include `.tsx`, CSS, RPC, TLS/replay, and container scripts while excluding generated Next output | 2026-07-15 13:46 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` via `pnpm verify` | strict TypeScript 6.0.3 across NodeNext core and Next.js web boundary | 2026-07-15 13:46 +09:00 |
+| Unit tests | PASS | `pnpm test` via `pnpm verify` | 105/105 assertions passed, including streamed RPC frames, signature/replay/teardown, exact tree-manifest delta/mtime/content binding, static container contract, SDK phase isolation, and host-live rejection | 2026-07-15 13:46 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` via `pnpm verify` | 46/46 passed serially, including real mTLS peer authentication/framing/cancellation, durable replay across reopen, real OPA 1.18.2, exact corpus, semantic forgeries, live attestation, deterministic USTAR, trusted commands, and safe reset | 2026-07-15 13:46 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` via `pnpm verify` | 3/3 production standalone Chrome tests; native archive download, identical bytes, all 38 individual artifacts, six views, v1-v5 writes, isolation/capacity/expiry, focus, and 390px cards | 2026-07-15 13:46 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` via `pnpm verify` | 22/22 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-15 13:46 +09:00 |
+| Production build | PASS | `pnpm build` via `pnpm verify` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-15 13:46 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | every implemented code/static gate passes; exact expected failures are owner-selected project `LICENSE` and the 30-item non-final submission gate | 2026-07-15 13:46 +09:00 |
+| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed at missing host `OPENAI_API_KEY` and `CODEX_MODEL`; OS worker, worker credential, live SDK work, and fresh evidence remain absent | 2026-07-15 13:46 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` via `pnpm verify` | 286 source files; frozen offline install and all 11 command groups including mTLS/replay integration and production Chrome E2E pass | 2026-07-15 13:46 +09:00 |
+| Static container contract | PASS | `pnpm container:check` via `pnpm verify` | `artifacts/security/container-static-report.json`: `STATIC_WEB_CONTAINER/PASS`, no worker, no base digest, no dynamic/release claim | 2026-07-15 13:46 +09:00 |
+| Dynamic container health | FAIL | `pnpm container:verify` | `artifacts/security/container-report.json`: `DYNAMIC_WEB_CONTAINER/FAIL`; immutable Node digest is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-15 13:46 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
 | Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-15 08:14 +09:00 |
-| Security review | PASS | `pnpm security:check` via `pnpm verify` | 256 text files plus Git history; RPC/container/consistency final reviews report no remaining P0/P1; live release review remains required | 2026-07-15 08:14 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | exactly 30 unmet requirements: partial proof, dynamic container/license, two required captures, media/HTTPS URLs, drafts, and confirmation | 2026-07-15 08:14 +09:00 |
+| Security review | PASS | `pnpm security:check` via `pnpm verify` | 261 text files plus Git history; fixed OpenSSL child-process allowlist, TLS/replay threat review, and static checks pass; live release review remains required | 2026-07-15 13:46 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` via `pnpm verify` | exactly 30 unmet requirements: partial proof, dynamic container/license, two required captures, media/HTTPS URLs, drafts, and confirmation | 2026-07-15 13:46 +09:00 |
 
 ## Product proof metrics
 

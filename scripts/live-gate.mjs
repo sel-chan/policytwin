@@ -8,7 +8,7 @@ if (missingHostConfiguration.length > 0) {
   );
 } else {
   console.error(
-    "verify:live is fail-closed: the Responses adapter and signed external-worker RPC client contract exist, but the authentication-enforcing transport, supervisor/worker image, worker-only Codex credential, immutable verification workspace, fresh end-to-end runner, live attestation, and evidence promotion are not implemented yet.",
+    "verify:live is fail-closed: the Responses adapter, signed RPC client, real mTLS transport, bounded supervisor, and durable replay store exist, but the OS-isolated worker image, worker-only Codex credential, OpenAI-only egress proxy, immutable no-network verification workspace, fresh end-to-end runner, live attestation, and evidence promotion are not implemented yet.",
   );
 }
 
