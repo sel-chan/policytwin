@@ -79,6 +79,19 @@ export function inspectStaticContainerContract(root = ROOT) {
   const workerRpcContractPath = resolve(root, "src", "codex", "worker-rpc-contract.ts");
   const workerRpcClientPath = resolve(root, "src", "codex", "worker-rpc-client.ts");
   const workerRpcMtlsPath = resolve(root, "src", "codex", "worker-rpc-mtls.ts");
+  const workerRpcMtlsTransportPath = resolve(
+    root,
+    "src",
+    "codex",
+    "worker-rpc-mtls-transport.ts",
+  );
+  const workerRpcTransportCapabilityPath = resolve(
+    root,
+    "src",
+    "codex",
+    "worker-rpc-transport-capability.ts",
+  );
+  const rootIndexPath = resolve(root, "src", "index.ts");
   const liveGateContractPath = resolve(root, "scripts", "live-gate-contract.mjs");
   const pinnedDockerCliPath = resolve(root, "scripts", "pinned-docker-cli.mjs");
   const containerVerifyPath = resolve(root, "scripts", "container-verify.mjs");
@@ -139,6 +152,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveCpuKeyPurposePrefix !== "live-cpu-" ||
     contract.workerContainer?.liveCpuDedicatedKeyMaterialRequired !== true ||
     contract.workerContainer?.liveCpuUnifiedTrustBundleRequired !== true ||
+    contract.workerContainer?.liveCpuV2TransportFactoryCapabilityRequired !== true ||
+    contract.workerContainer?.liveCpuV2TransportInputsSnapshotted !== true ||
     contract.workerContainer?.liveCpuDurableReplayRequired !== true ||
     contract.workerContainer?.liveCpuMtlsAlpn !== "policytwin-worker-rpc/2" ||
     contract.workerContainer?.liveCpuMtlsRequestMagic !== "PTQ2" ||
@@ -724,6 +739,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     "createExternalWorkerRpcV2Client",
     "createWorkerRpcTrustBundle",
     "assertWorkerRpcTrustBundleSigner",
+    "assertMutualTlsWorkerRpcV2Transport",
     "LIVE_LINUX_CGROUP_RPC_V2",
     "reuses Ed25519 key material",
     'startsWith("live-cpu-")',
@@ -735,9 +751,6 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerRpcMtls = read(workerRpcMtlsPath, failures, "Worker RPC mTLS transport");
   for (const required of [
-    'WORKER_RPC_V2_MTLS_ALPN = "policytwin-worker-rpc/2"',
-    'WORKER_RPC_V2_MTLS_REQUEST_MAGIC = "PTQ2"',
-    'WORKER_RPC_V2_MTLS_RESPONSE_MAGIC = "PTS2"',
     "createMutualTlsWorkerRpcV2Transport",
     "createMutualTlsWorkerRpcV2Supervisor",
     "buildSignedV2Response",
@@ -749,6 +762,68 @@ export function inspectStaticContainerContract(root = ROOT) {
     "lacks the live CPU proof purpose",
   ]) {
     requireText(workerRpcMtls, required, failures, "Worker RPC mTLS transport");
+  }
+  const workerRpcMtlsTransport = read(
+    workerRpcMtlsTransportPath,
+    failures,
+    "Worker RPC concrete mTLS client transport",
+  );
+  for (const required of [
+    'WORKER_RPC_V2_MTLS_ALPN = "policytwin-worker-rpc/2"',
+    'WORKER_RPC_V2_MTLS_REQUEST_MAGIC = "PTQ2"',
+    'WORKER_RPC_V2_MTLS_RESPONSE_MAGIC = "PTS2"',
+    "const MUTUAL_TLS_WORKER_RPC_V2_TRANSPORTS = new WeakSet<object>()",
+    "createMutualTlsWorkerRpcV2Transport",
+    "snapshotMutualTlsWorkerRpcTransportOptions",
+    "Buffer.from(value)",
+    "Object.freeze(copied)",
+    "const snapshot = snapshotMutualTlsWorkerRpcTransportOptions(options)",
+    "Object.freeze(",
+    "MUTUAL_TLS_WORKER_RPC_V2_TRANSPORTS.add(transport)",
+    "assertMutualTlsWorkerRpcV2Transport",
+    "MUTUAL_TLS_WORKER_RPC_V2_TRANSPORTS.has(transport)",
+    "must be created by the concrete mutual TLS v2 transport factory",
+  ]) {
+    requireText(
+      workerRpcMtlsTransport,
+      required,
+      failures,
+      "Worker RPC concrete mTLS client transport",
+    );
+  }
+  const workerRpcTransportCapability = read(
+    workerRpcTransportCapabilityPath,
+    failures,
+    "Worker RPC v2 transport capability",
+  );
+  for (const required of [
+    "interface MutualTlsWorkerRpcV2Transport",
+    "declare const MUTUAL_TLS_WORKER_RPC_V2_TRANSPORT: unique symbol",
+    "readonly [MUTUAL_TLS_WORKER_RPC_V2_TRANSPORT]: true",
+  ]) {
+    requireText(
+      workerRpcTransportCapability,
+      required,
+      failures,
+      "Worker RPC v2 transport capability",
+    );
+  }
+  if (
+    workerRpcMtls.includes("registerMutualTls") ||
+    workerRpcMtlsTransport.includes("registerMutualTls") ||
+    workerRpcTransportCapability.includes("registerMutualTls") ||
+    workerRpcClient.includes("registerMutualTls")
+  ) {
+    failures.push("Worker RPC v2 must not expose an arbitrary transport registrar.");
+  }
+  const rootIndex = read(rootIndexPath, failures, "Root package index");
+  if (
+    rootIndex.includes("worker-rpc-transport-capability") ||
+    rootIndex.includes("worker-rpc-mtls-transport") ||
+    rootIndex.includes("registerMutualTlsWorkerRpcV2TransportInternal") ||
+    rootIndex.includes("assertMutualTlsWorkerRpcV2Transport")
+  ) {
+    failures.push("Root package index must not expose Worker RPC v2 capability internals.");
   }
   const liveGateContract = read(liveGateContractPath, failures, "Live gate contract");
   for (const required of [

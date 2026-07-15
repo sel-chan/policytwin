@@ -32,6 +32,8 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 
 Worker RPC v2 and a candidate live-Linux CPU success schema are now prepared offline with separate signature and mTLS downgrade domains, client execution binding, a request-and-role-derived Docker binding, distinct live-purpose key material, durable replay, exact three-role arithmetic, fail-only supervisor signing, and adversarial tests. This does not add a current live proof: the loopback v2 integration signs only an explicit `FAIL` with `cpuProof:null`, while any within-budget proof in unit tests is synthetic. A signed global timestamped event transcript and CPU-failure/containment union are not implemented and block PASS signing. No Linux controller, Docker execution, `cpu.stat` observation, hard cap, bounded overshoot, model call, or Codex repair may be claimed from this checkpoint.
 
+The v2 client now rejects transport self-declaration: the concrete v2 mTLS client module owns a private capability set, snapshots validated scalar inputs plus defensive copies of CA/certificate/key buffers and arrays, only its actual factory can add a frozen transport, and no arbitrary registrar exists. V1 results, copies, wrappers, and later caller option mutations cannot alter an admitted connection profile, while the internal assertion module is absent from the package root. This is local contract evidence only and does not change the live status.
+
 These files are production scaffolding only. They must be regenerated from live verified evidence before publication or submission.
 
 ## 1. Official challenge baseline

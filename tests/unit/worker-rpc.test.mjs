@@ -1,14 +1,22 @@
 import assert from "node:assert/strict";
 import { createHash, generateKeyPairSync, sign } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import test from "node:test";
+import { after, test } from "node:test";
+import { createServer as createTlsServer } from "node:tls";
+import * as policyTwin from "../../dist/index.js";
 import {
+  WORKER_RPC_MAX_REQUEST_BYTES,
   WORKER_RPC_MAX_RESPONSE_CHUNK_BYTES,
   WORKER_RPC_MAX_RESPONSE_CHUNKS,
   WORKER_RPC_MAX_RESPONSE_BYTES,
+  WORKER_RPC_V2_MTLS_ALPN,
+  WORKER_RPC_V2_MTLS_REQUEST_MAGIC,
+  WORKER_RPC_V2_MTLS_RESPONSE_MAGIC,
   canonicalWorkerRpcJson,
   createExternalWorkerRpcClient,
   createExternalWorkerRpcV2Client,
+  createMutualTlsWorkerRpcTransport,
+  createMutualTlsWorkerRpcV2Transport,
   createWorkerRpcTrustBundle,
   liveLinuxCgroupDockerBindingSha256,
   liveLinuxCgroupCpuSampleTranscriptSha256,
@@ -19,6 +27,10 @@ import {
   workerRpcSignaturePayload,
   workerRpcV2SignaturePayload,
 } from "../../dist/index.js";
+import { createEphemeralWorkerRpcTlsCertificates } from "../helpers/worker-rpc-tls-certificates.mjs";
+
+const tlsCertificates = await createEphemeralWorkerRpcTlsCertificates();
+after(async () => tlsCertificates.cleanup());
 
 const sourcePolicy = await readFile(
   new URL("../../fixtures/interpreter/seeded-refund-policy.txt", import.meta.url),
@@ -460,6 +472,132 @@ function streamedResponse(body, options = {}) {
         }
       })(),
   };
+}
+
+function testFrameHeader(magic, length) {
+  const header = Buffer.alloc(8);
+  header.write(magic, 0, 4, "ascii");
+  header.writeUInt32BE(length, 4);
+  return header;
+}
+
+function readScriptedV2Request(socket) {
+  return new Promise((resolve, reject) => {
+    let bytes = Buffer.alloc(0);
+    let declaredLength = null;
+    const cleanup = () => {
+      clearTimeout(timer);
+      socket.removeListener("data", onData);
+      socket.removeListener("error", onError);
+      socket.removeListener("close", onClose);
+    };
+    const fail = (error) => {
+      cleanup();
+      reject(error);
+    };
+    const onError = () => fail(new Error("Scripted v2 TLS peer read failed."));
+    const onClose = () => fail(new Error("Scripted v2 TLS peer closed before one request."));
+    const onData = (chunk) => {
+      bytes = Buffer.concat([bytes, chunk]);
+      if (bytes.byteLength > WORKER_RPC_MAX_REQUEST_BYTES + 8) {
+        fail(new Error("Scripted v2 TLS request exceeded its byte limit."));
+        return;
+      }
+      if (declaredLength === null && bytes.byteLength >= 8) {
+        if (bytes.toString("ascii", 0, 4) !== WORKER_RPC_V2_MTLS_REQUEST_MAGIC) {
+          fail(new Error("Scripted v2 TLS request used the wrong magic."));
+          return;
+        }
+        declaredLength = bytes.readUInt32BE(4);
+        if (declaredLength < 1 || declaredLength > WORKER_RPC_MAX_REQUEST_BYTES) {
+          fail(new Error("Scripted v2 TLS request declared an invalid length."));
+          return;
+        }
+      }
+      if (declaredLength !== null && bytes.byteLength >= declaredLength + 8) {
+        if (bytes.byteLength !== declaredLength + 8) {
+          fail(new Error("Scripted v2 TLS request contained trailing bytes."));
+          return;
+        }
+        cleanup();
+        try {
+          const text = bytes.subarray(8).toString("utf8");
+          resolve(parseWorkerRpcV2Request(JSON.parse(text)));
+        } catch (error) {
+          reject(error);
+        }
+      }
+    };
+    const timer = setTimeout(
+      () => fail(new Error("Scripted v2 TLS request timed out.")),
+      2_000,
+    );
+    socket.on("data", onData);
+    socket.once("error", onError);
+    socket.once("close", onClose);
+  });
+}
+
+async function createScriptedV2Transport(t, responder, id) {
+  const sockets = new Set();
+  const server = createTlsServer(
+    {
+      ca: tlsCertificates.ca,
+      cert: tlsCertificates.server.cert,
+      key: tlsCertificates.server.key,
+      requestCert: true,
+      rejectUnauthorized: true,
+      minVersion: "TLSv1.3",
+      maxVersion: "TLSv1.3",
+      ALPNProtocols: [WORKER_RPC_V2_MTLS_ALPN],
+    },
+    (socket) => {
+      sockets.add(socket);
+      socket.once("close", () => sockets.delete(socket));
+      void (async () => {
+        try {
+          assert.equal(socket.authorized, true);
+          assert.equal(socket.alpnProtocol, WORKER_RPC_V2_MTLS_ALPN);
+          const request = await readScriptedV2Request(socket);
+          const response = Buffer.from(await responder(request), "utf8");
+          if (response.byteLength < 1 || response.byteLength > WORKER_RPC_MAX_RESPONSE_BYTES) {
+            throw new Error("Scripted v2 TLS response exceeded its byte limit.");
+          }
+          socket.end(
+            Buffer.concat([
+              testFrameHeader(WORKER_RPC_V2_MTLS_RESPONSE_MAGIC, response.byteLength),
+              response,
+            ]),
+          );
+        } catch {
+          socket.destroy();
+        }
+      })();
+    },
+  );
+  server.on("tlsClientError", () => undefined);
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen({ host: "127.0.0.1", port: 0 }, resolve);
+  });
+  t.after(async () => {
+    for (const socket of sockets) socket.destroy();
+    await new Promise((resolve) => server.close(() => resolve()));
+  });
+  const address = server.address();
+  assert.notEqual(address, null);
+  assert.equal(typeof address, "object");
+  return createMutualTlsWorkerRpcV2Transport({
+    id,
+    host: address.address,
+    port: address.port,
+    servername: "worker.policytwin.test",
+    ca: tlsCertificates.ca,
+    cert: tlsCertificates.client.cert,
+    key: tlsCertificates.client.key,
+    expectedServerCertificateSha256: tlsCertificates.server.fingerprintSha256,
+    handshakeTimeoutMs: 2_000,
+  });
 }
 
 function clientOptions(transport, overrides = {}) {
@@ -911,16 +1049,16 @@ test("RPC permits only one in-flight run and aborts an unresponsive transport", 
   await assert.rejects(first, /timed out|aborted/u);
 });
 
-test("Worker RPC v2 accepts one signed live-purpose CPU-bound repair result", async () => {
+test("Worker RPC v2 accepts one signed live-purpose CPU-bound repair result", async (t) => {
   let observedRequest;
-  const transport = {
-    id: "signed-v2-test-transport",
-    authenticationMode: "MUTUAL_TLS",
-    async call(canonicalRequest) {
-      observedRequest = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
-      return streamedResponse(signedV2Response(observedRequest));
+  const transport = await createScriptedV2Transport(
+    t,
+    async (request) => {
+      observedRequest = request;
+      return signedV2Response(request);
     },
-  };
+    "signed-v2-test-transport",
+  );
   const result = await createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(
     input,
   );
@@ -933,7 +1071,19 @@ test("Worker RPC v2 accepts one signed live-purpose CPU-bound repair result", as
   assert.equal(result.receipt.cpuProof.overshootBounded, false);
 });
 
-test("Worker RPC v2 rejects local-socket transport and reused v1 key material at construction", () => {
+test("Worker RPC v2 rejects local-socket transport and reused v1 key material at construction", async () => {
+  const selfDeclaredTransport = {
+    id: "v2-self-declared-mtls-rejected",
+    authenticationMode: "MUTUAL_TLS",
+    async call() {
+      throw new Error("must not run");
+    },
+  };
+  assert.throws(
+    () => createExternalWorkerRpcV2Client(v2ClientOptions(selfDeclaredTransport)),
+    /must be created by the concrete mutual TLS v2 transport factory/u,
+  );
+
   const localTransport = {
     id: "v2-local-socket-rejected",
     authenticationMode: "LOCAL_SOCKET_ACL",
@@ -946,7 +1096,48 @@ test("Worker RPC v2 rejects local-socket transport and reused v1 key material at
     /must use mutual TLS/u,
   );
 
-  const mtlsTransport = { ...localTransport, authenticationMode: "MUTUAL_TLS" };
+  const transportOptions = {
+    id: "factory-capability-test",
+    host: "127.0.0.1",
+    port: 1,
+    servername: "worker.policytwin.test",
+    ca: "test-ca",
+    cert: "test-client-cert",
+    key: "test-client-key",
+    expectedServerCertificateSha256: "0".repeat(64),
+  };
+  const v1Transport = createMutualTlsWorkerRpcTransport(transportOptions);
+  assert.throws(
+    () => createExternalWorkerRpcV2Client(v2ClientOptions(v1Transport)),
+    /must be created by the concrete mutual TLS v2 transport factory/u,
+  );
+
+  const v2Transport = createMutualTlsWorkerRpcV2Transport({
+    ...transportOptions,
+    id: "factory-capability-test-v2",
+  });
+  assert.doesNotThrow(() => createExternalWorkerRpcV2Client(v2ClientOptions(v2Transport)));
+  assert.equal(Object.isFrozen(v2Transport), true);
+  for (const forged of [
+    { ...v2Transport },
+    {
+      id: v2Transport.id,
+      authenticationMode: v2Transport.authenticationMode,
+      call: (...args) => v2Transport.call(...args),
+    },
+  ]) {
+    assert.throws(
+      () => createExternalWorkerRpcV2Client(v2ClientOptions(forged)),
+      /must be created by the concrete mutual TLS v2 transport factory/u,
+    );
+  }
+  assert.equal("registerMutualTlsWorkerRpcV2TransportInternal" in policyTwin, false);
+  assert.equal("assertMutualTlsWorkerRpcV2Transport" in policyTwin, false);
+  await assert.rejects(
+    import("policytwin/dist/codex/worker-rpc-transport-capability.js"),
+    /Package subpath .* is not defined by "exports"/u,
+  );
+
   assert.throws(
     () =>
       createWorkerRpcTrustBundle({
@@ -993,15 +1184,12 @@ test("Worker RPC v2 rejects v1 downgrade, static proof, and proof-less PASS", as
       pattern: /live Linux cgroup CPU proof/u,
     },
   ]) {
-    await t.test(scenario.name, async () => {
-      const transport = {
-        id: `v2-${scenario.name.replaceAll(" ", "-")}`,
-        authenticationMode: "MUTUAL_TLS",
-        async call(canonicalRequest) {
-          const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
-          return streamedResponse(scenario.body(request));
-        },
-      };
+    await t.test(scenario.name, async (scenarioTest) => {
+      const transport = await createScriptedV2Transport(
+        scenarioTest,
+        async (request) => scenario.body(request),
+        `v2-${scenario.name.replaceAll(" ", "-")}`,
+      );
       await assert.rejects(
         createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
         scenario.pattern,
@@ -1041,15 +1229,12 @@ test("Worker RPC v2 rejects proof replay, request-budget drift, and key-purpose 
       pattern: /lacks the live CPU proof purpose/u,
     },
   ]) {
-    await t.test(scenario.name, async () => {
-      const transport = {
-        id: `v2-${scenario.name.replaceAll(" ", "-")}`,
-        authenticationMode: "MUTUAL_TLS",
-        async call(canonicalRequest) {
-          const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
-          return streamedResponse(signedV2Response(request, scenario.responseOptions));
-        },
-      };
+    await t.test(scenario.name, async (scenarioTest) => {
+      const transport = await createScriptedV2Transport(
+        scenarioTest,
+        async (request) => signedV2Response(request, scenario.responseOptions),
+        `v2-${scenario.name.replaceAll(" ", "-")}`,
+      );
       await assert.rejects(
         async () =>
           createExternalWorkerRpcV2Client(
@@ -1061,50 +1246,42 @@ test("Worker RPC v2 rejects proof replay, request-budget drift, and key-purpose 
   }
 });
 
-test("Worker RPC v2 signature covers Docker and CPU proof bindings", async () => {
-  const transport = {
-    id: "v2-proof-signature-tamper",
-    authenticationMode: "MUTUAL_TLS",
-    async call(canonicalRequest) {
-      const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
-      return streamedResponse(
-        signedV2Response(request, {
-          mutateAfterSign(response) {
-            response.receipt.cpuProof.roles[0].containerId = "a".repeat(64);
-            const changed = liveLinuxCgroupDockerBindingSha256({
-              requestSha256: response.requestSha256,
-              executionBindingSha256: response.executionBindingSha256,
-              supervisorRunId: response.receipt.supervisorRunId,
-              workerImageDigest: response.receipt.workerImageDigest,
-              roles: response.receipt.cpuProof.roles,
-            });
-            response.receipt.dockerBindingSha256 = changed;
-            response.receipt.cpuProof.dockerBindingSha256 = changed;
-          },
-        }),
-      );
-    },
-  };
+test("Worker RPC v2 signature covers Docker and CPU proof bindings", async (t) => {
+  const transport = await createScriptedV2Transport(
+    t,
+    async (request) =>
+      signedV2Response(request, {
+        mutateAfterSign(response) {
+          response.receipt.cpuProof.roles[0].containerId = "a".repeat(64);
+          const changed = liveLinuxCgroupDockerBindingSha256({
+            requestSha256: response.requestSha256,
+            executionBindingSha256: response.executionBindingSha256,
+            supervisorRunId: response.receipt.supervisorRunId,
+            workerImageDigest: response.receipt.workerImageDigest,
+            roles: response.receipt.cpuProof.roles,
+          });
+          response.receipt.dockerBindingSha256 = changed;
+          response.receipt.cpuProof.dockerBindingSha256 = changed;
+        },
+      }),
+    "v2-proof-signature-tamper",
+  );
   await assert.rejects(
     createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
     /v2 supervisor signature is invalid/u,
   );
 });
 
-test("Worker RPC v2 FAIL cannot carry a success CPU proof", async () => {
-  const transport = {
-    id: "v2-fail-proof-confusion",
-    authenticationMode: "MUTUAL_TLS",
-    async call(canonicalRequest) {
-      const request = parseWorkerRpcV2Request(JSON.parse(canonicalRequest));
-      return streamedResponse(
-        signedV2Response(request, {
-          status: "FAIL",
-          cpuProof: liveCpuProof(request),
-        }),
-      );
-    },
-  };
+test("Worker RPC v2 FAIL cannot carry a success CPU proof", async (t) => {
+  const transport = await createScriptedV2Transport(
+    t,
+    async (request) =>
+      signedV2Response(request, {
+        status: "FAIL",
+        cpuProof: liveCpuProof(request),
+      }),
+    "v2-fail-proof-confusion",
+  );
   await assert.rejects(
     createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
     /FAIL receipt cannot carry a success CPU proof/u,

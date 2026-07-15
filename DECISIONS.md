@@ -614,6 +614,23 @@ Add new entries below this line with the template above.
 - Reversal or migration path: A durable external lease store may later replace fail-stop restart handling, but it must atomically bind run ID/token hash/request count, survive process restart without reuse, and preserve the same owned-container and cleanup proofs.
 - Related files/commits: `container-contract.json`, `README.md`, `docs/architecture.md`, `docs/threat-model.md`, `docs/limitations.md`, `docs/demo-runbook.md`, `PROGRESS.md`.
 
+### D-038 — Admit Worker RPC v2 transports by factory identity rather than self-declaration
+
+- Date: 2026-07-16
+- Status: `ACCEPTED`
+- Milestone: M7/M9
+- Context: Worker RPC v2 required `authenticationMode:"MUTUAL_TLS"`, but that field belonged to a public structural interface. A fake object, shallow copy, or wrapper could claim the string and reach request construction. An admitted Ed25519 live-purpose key was still required to forge PASS and PASS signing remained disabled, so this was a P2 hardening gap rather than a live-promotion path.
+- Options considered:
+  1. retain the string check and rely only on response signatures;
+  2. add a copyable symbol/property brand to the public transport object;
+  3. co-locate the actual v2 TLS factory with a private `WeakSet`, expose no arbitrary registrar, freeze factory results, and require object-identity membership at v2 client construction.
+- Decision: Use option 3. The v2 mTLS client module privately records only the exact object created and frozen by its actual factory. Before closing over connection state, the factory reads every option once, validates it, stores scalar values in a frozen snapshot, defensively copies every Buffer and the CA array, and exposes no arbitrary registration function. The v2 client requires the opaque type and runtime assertion before it creates a request. V1 factory results, self-declared objects, shallow copies, and wrappers fail construction. The assertion module is outside the root package exports, while the public v2 factory and opaque transport type remain available through their intended API. Synthetic response-validation tests use scripted real TLS 1.3 peers and the actual factory instead of an internal registration seam.
+- Evidence: `src/codex/worker-rpc-mtls-transport.ts`, `src/codex/worker-rpc-transport-capability.ts`, v2 client/factory integration, root/subpath export assertions, fake/v1/copy/wrapper rejection tests, scalar/Buffer/array post-construction mutation tests, factory-backed scripted TLS response tests, and loopback mTLS v2 FAIL integration.
+- Consequences: Public callers cannot opt into the v2 security profile by setting a string or copying fields. The returned transport cannot be monkey-patched after creation, and later mutation of the caller-owned options object or in-memory TLS buffers cannot change its private connection snapshot.
+- Risks: This is a trusted host-process/package boundary, not protection against arbitrary code already executing inside the repository or a compromised process. Security still depends on TLS peer validation, certificate pins, the dedicated Ed25519 trust bundle, and disabled PASS/live admission.
+- Reversal or migration path: A future runtime can replace the private factory capability with a private-class or native transport handle, but it must preserve identity-only admission, immutability, absence of arbitrary registration, and rejection of copied/wrapped transports.
+- Related files/commits: `container-contract.json`, `README.md`, `START_HERE.md`, `SUBMISSION.md`, `docs/architecture.md`, `docs/threat-model.md`, `docs/limitations.md`, `PROGRESS.md`.
+
 ### D-037 — Separate signed live CPU evidence into Worker RPC v2 without admitting a live run
 
 - Date: 2026-07-16

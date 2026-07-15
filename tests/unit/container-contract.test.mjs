@@ -174,6 +174,22 @@ test("static container inspection detects weakened verifier networking and fixtu
   contract.workerContainer.liveRpcV2PassSigningEnabled = false;
   await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
 
+  contract.workerContainer.liveCpuV2TransportFactoryCapabilityRequired = false;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /static web\/worker split/u);
+  contract.workerContainer.liveCpuV2TransportFactoryCapabilityRequired = true;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+
+  contract.workerContainer.liveCpuV2TransportInputsSnapshotted = false;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /static web\/worker split/u);
+  contract.workerContainer.liveCpuV2TransportInputsSnapshotted = true;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+
   const liveCpuSchemaPath = join(
     target,
     "schemas/live-linux-cgroup-cpu-proof.v1.schema.json",

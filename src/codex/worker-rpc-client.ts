@@ -36,30 +36,22 @@ import {
   type WorkerRpcV2Response,
   type WorkerRpcV2SupervisorReceipt,
 } from "./worker-rpc-contract.js";
+import { assertMutualTlsWorkerRpcV2Transport } from "./worker-rpc-mtls-transport.js";
+import {
+  type ExternalWorkerRpcResponseStream,
+  type ExternalWorkerRpcTransport,
+  type MutualTlsWorkerRpcV2Transport,
+} from "./worker-rpc-transport-capability.js";
 import { parseRepairWorkerInput } from "./validate.js";
 import type { RepairWorkerInput, RepairWorkerReport } from "./types.js";
 
-export interface ExternalWorkerRpcResponseStream {
-  readonly declaredLength: number;
-  readonly chunks: AsyncIterable<Uint8Array>;
-}
-
-export interface ExternalWorkerRpcTransport {
-  readonly id: string;
-  readonly authenticationMode: "MUTUAL_TLS" | "LOCAL_SOCKET_ACL";
-  call(
-    canonicalRequest: string,
-    options: {
-      signal: AbortSignal;
-      maxResponseBytes: number;
-      maxChunkBytes: number;
-      maxChunks: number;
-    },
-  ): Promise<ExternalWorkerRpcResponseStream>;
-}
+export type {
+  ExternalWorkerRpcResponseStream,
+  ExternalWorkerRpcTransport,
+  MutualTlsWorkerRpcV2Transport,
+} from "./worker-rpc-transport-capability.js";
 
 interface ExternalWorkerRpcBaseOptions {
-  transport: ExternalWorkerRpcTransport;
   expectedSupervisorId: string;
   expectedBackendId: string;
   workerImageDigest: string;
@@ -74,10 +66,12 @@ interface ExternalWorkerRpcBaseOptions {
 }
 
 export interface ExternalWorkerRpcClientOptions extends ExternalWorkerRpcBaseOptions {
+  transport: ExternalWorkerRpcTransport;
   trustBundle: WorkerRpcTrustBundle;
 }
 
 export interface ExternalWorkerRpcV2ClientOptions extends ExternalWorkerRpcBaseOptions {
+  transport: MutualTlsWorkerRpcV2Transport;
   trustBundle: WorkerRpcTrustBundle;
 }
 
@@ -917,10 +911,8 @@ export function createExternalWorkerRpcClient(options: ExternalWorkerRpcClientOp
 export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2ClientOptions): {
   runRepair(input: unknown): Promise<ValidatedExternalWorkerV2Run>;
 } {
+  assertMutualTlsWorkerRpcV2Transport(options.transport);
   safeIdentifier(options.transport.id, "external worker v2 transport ID");
-  if (options.transport.authenticationMode !== "MUTUAL_TLS") {
-    throw new Error("External worker v2 transport must use mutual TLS.");
-  }
   safeIdentifier(options.expectedSupervisorId, "external worker v2 supervisor ID");
   safeIdentifier(options.expectedBackendId, "external worker v2 backend ID");
   assertWorkerRpcTrustBundle(options.trustBundle);

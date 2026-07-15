@@ -451,12 +451,69 @@ test("real mTLS v2 profile signs only a fail-closed no-CPU-proof response", asyn
   assert.equal(service.events.includes("RESPONSE_SENT"), true);
 });
 
-test("mTLS v1 and v2 ALPN/frame profiles reject downgrade in both directions", async (t) => {
+test("v2 transport snapshots scalar TLS options before caller mutation", async (t) => {
+  const service = await startV2Supervisor(t);
+  const options = {
+    id: "loopback-worker-mtls-v2-scalar-snapshot",
+    host: service.address.host,
+    port: service.address.port,
+    servername: "worker.policytwin.test",
+    ca: certificates.ca,
+    cert: certificates.client.cert,
+    key: certificates.client.key,
+    expectedServerCertificateSha256: certificates.server.fingerprintSha256,
+    handshakeTimeoutMs: 2_000,
+  };
+  const transport = createMutualTlsWorkerRpcV2Transport(options);
+  options.id = "mutated-transport-id";
+  options.host = "127.0.0.2";
+  options.port = 1;
+  options.servername = "mutated.invalid";
+  options.expectedServerCertificateSha256 = "0".repeat(64);
+  options.handshakeTimeoutMs = 250;
+  options.keyPassphrase = "mutated-passphrase";
+
+  await assert.rejects(
+    v2ClientFor(transport, 41).runRepair(input),
+    /External worker v2 rejected the repair/u,
+  );
+  assert.equal(service.executorCalls, 1);
+});
+
+test("v2 transport snapshots CA, certificate, and key buffers before mutation", async (t) => {
+  const service = await startV2Supervisor(t);
+  const ca = [Buffer.from(certificates.ca)];
+  const cert = Buffer.from(certificates.client.cert);
+  const key = Buffer.from(certificates.client.key);
+  const transport = createMutualTlsWorkerRpcV2Transport({
+    id: "loopback-worker-mtls-v2-material-snapshot",
+    host: service.address.host,
+    port: service.address.port,
+    servername: "worker.policytwin.test",
+    ca,
+    cert,
+    key,
+    expectedServerCertificateSha256: certificates.server.fingerprintSha256,
+    handshakeTimeoutMs: 2_000,
+  });
+  ca[0].fill(0);
+  ca.push(Buffer.from("invalid-ca"));
+  cert.fill(0);
+  key.fill(0);
+
+  await assert.rejects(
+    v2ClientFor(transport, 42).runRepair(input),
+    /External worker v2 rejected the repair/u,
+  );
+  assert.equal(service.executorCalls, 1);
+});
+
+test("v2 factory capability and ALPN profiles reject downgrade in both directions", async (t) => {
   const v1Service = await startSupervisor(t);
   const v2Service = await startV2Supervisor(t);
-  await assert.rejects(
-    v2ClientFor(transportFor(v1Service.address), 31).runRepair(input),
-    /transport failed|TLS|closed|handshake|frame/u,
+  assert.throws(
+    () => v2ClientFor(transportFor(v1Service.address), 31),
+    /must be created by the concrete mutual TLS v2 transport factory/u,
   );
   await assert.rejects(
     clientFor(v2TransportFor(v2Service.address), 32).runRepair(input),

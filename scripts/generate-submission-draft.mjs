@@ -21,6 +21,12 @@ function write(directory, name, content) {
   writeFileSync(join(directory, name), content.endsWith("\n") ? content : `${content}\n`, "utf8");
 }
 
+function append(directory, name, content) {
+  const path = join(directory, name);
+  const existing = readFileSync(path, "utf8").trimEnd();
+  writeFileSync(path, `${existing}\n\n${content}\n`, "utf8");
+}
+
 function json(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
@@ -158,6 +164,17 @@ write(
     failures: ["Submission checker has not run after draft generation."],
   }),
 );
+
+const v2TransportCapabilityNote =
+  "Worker RPC v2 transport admission is factory-identity-bound: the concrete v2 mTLS client module owns a private WeakSet, snapshots validated scalar options plus defensive copies of CA/certificate/key buffers and arrays, only its actual factory freezes and adds an admissible object, and no arbitrary registrar exists. The client rejects self-declared, v1, copied, or wrapped transports, while later caller mutation cannot redirect or corrupt the admitted connection profile; scripted response and option-mutation tests use the concrete factory over TLS 1.3 loopback. This is offline host-boundary evidence only; the supervisor remains FAIL-only and no live transport, Linux CPU proof, model call, or Codex repair is claimed.";
+for (const name of [
+  "how-we-built-it.md",
+  "openai-and-codex-usage.md",
+  "technologies.txt",
+  "claim-audit.md",
+]) {
+  append(submissionDirectory, name, v2TransportCapabilityNote);
+}
 
 write(
   demoDirectory,

@@ -6,10 +6,7 @@ import {
 } from "node:crypto";
 import { isIP, type Socket } from "node:net";
 import {
-  checkServerIdentity,
-  connect as connectTls,
   createServer as createTlsServer,
-  type PeerCertificate,
   type Server as TlsServer,
   type TLSSocket,
 } from "node:tls";
@@ -33,20 +30,30 @@ import {
   type WorkerRpcV2SupervisorReceipt,
 } from "./worker-rpc-contract.js";
 import { assertWorkerRpcTrustBundleSigner } from "./worker-rpc-client.js";
-import type {
-  ExternalWorkerRpcResponseStream,
-  ExternalWorkerRpcTransport,
-  WorkerRpcTrustBundle,
-} from "./worker-rpc-client.js";
+import type { WorkerRpcTrustBundle } from "./worker-rpc-client.js";
+import {
+  WORKER_RPC_MTLS_ALPN,
+  WORKER_RPC_MTLS_HEADER_BYTES,
+  WORKER_RPC_MTLS_REQUEST_MAGIC,
+  WORKER_RPC_MTLS_RESPONSE_MAGIC,
+  WORKER_RPC_V2_MTLS_ALPN,
+  WORKER_RPC_V2_MTLS_REQUEST_MAGIC,
+  WORKER_RPC_V2_MTLS_RESPONSE_MAGIC,
+} from "./worker-rpc-mtls-transport.js";
 import type { RepairWorkerReport } from "./types.js";
 
-export const WORKER_RPC_MTLS_ALPN = "policytwin-worker-rpc/1" as const;
-export const WORKER_RPC_MTLS_REQUEST_MAGIC = "PTQ1" as const;
-export const WORKER_RPC_MTLS_RESPONSE_MAGIC = "PTS1" as const;
-export const WORKER_RPC_V2_MTLS_ALPN = "policytwin-worker-rpc/2" as const;
-export const WORKER_RPC_V2_MTLS_REQUEST_MAGIC = "PTQ2" as const;
-export const WORKER_RPC_V2_MTLS_RESPONSE_MAGIC = "PTS2" as const;
-export const WORKER_RPC_MTLS_HEADER_BYTES = 8;
+export {
+  WORKER_RPC_MTLS_ALPN,
+  WORKER_RPC_MTLS_HEADER_BYTES,
+  WORKER_RPC_MTLS_REQUEST_MAGIC,
+  WORKER_RPC_MTLS_RESPONSE_MAGIC,
+  WORKER_RPC_V2_MTLS_ALPN,
+  WORKER_RPC_V2_MTLS_REQUEST_MAGIC,
+  WORKER_RPC_V2_MTLS_RESPONSE_MAGIC,
+  createMutualTlsWorkerRpcTransport,
+  createMutualTlsWorkerRpcV2Transport,
+  type MutualTlsWorkerRpcTransportOptions,
+} from "./worker-rpc-mtls-transport.js";
 
 const TLS_RECORD_CHUNK_BYTES = 64 * 1024;
 const EMPTY_SIGNATURE = Buffer.alloc(64).toString("base64url");
@@ -60,15 +67,6 @@ interface MutualTlsMaterial {
   cert: TlsCertificate;
   key: TlsCertificate;
   keyPassphrase?: string;
-}
-
-export interface MutualTlsWorkerRpcTransportOptions extends MutualTlsMaterial {
-  id: string;
-  host: string;
-  port: number;
-  servername: string;
-  expectedServerCertificateSha256: string;
-  handshakeTimeoutMs?: number;
 }
 
 export interface WorkerRpcReplayCapability {
@@ -210,19 +208,6 @@ function safeHost(value: string, label: string): string {
     /[\s/\\:@]/u.test(value) && isIP(value) === 0
   ) {
     throw new Error(`${label} is invalid.`);
-  }
-  return value;
-}
-
-function safeServername(value: string): string {
-  if (
-    value.length < 1 ||
-    value.length > 253 ||
-    !/^[A-Za-z0-9.-]+$/u.test(value) ||
-    value.startsWith(".") ||
-    value.endsWith(".")
-  ) {
-    throw new Error("External worker TLS server name is invalid.");
   }
   return value;
 }
@@ -484,74 +469,6 @@ function decodeCanonicalV2Request(value: Uint8Array): {
   return { text, request };
 }
 
-async function connectAuthenticatedTls(
-  options: MutualTlsWorkerRpcTransportOptions,
-  signal: AbortSignal,
-  handshakeTimeoutMs: number,
-  expectedFingerprint: string,
-  expectedAlpn: string,
-): Promise<TLSSocket> {
-  if (signal.aborted) throw abortError();
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const socket = connectTls({
-      host: options.host,
-      port: options.port,
-      servername: options.servername,
-      ca: options.ca,
-      cert: options.cert,
-      key: options.key,
-      passphrase: options.keyPassphrase,
-      rejectUnauthorized: true,
-      minVersion: "TLSv1.3",
-      maxVersion: "TLSv1.3",
-      ALPNProtocols: [expectedAlpn],
-      checkServerIdentity: (_hostname, certificate) =>
-        checkServerIdentity(options.servername, certificate),
-    });
-    const cleanup = () => {
-      clearTimeout(timer);
-      signal.removeEventListener("abort", onAbort);
-      socket.removeListener("error", onError);
-    };
-    const fail = (message: string) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      socket.destroy();
-      reject(new Error(message));
-    };
-    const onAbort = () => fail("External worker TLS connection was aborted.");
-    const onError = () => fail("External worker TLS handshake failed.");
-    const timer = setTimeout(
-      () => fail("External worker TLS handshake timed out."),
-      handshakeTimeoutMs,
-    );
-    signal.addEventListener("abort", onAbort, { once: true });
-    socket.once("error", onError);
-    socket.once("secureConnect", () => {
-      try {
-        assertTlsProtocol(socket, "External worker supervisor", expectedAlpn);
-        const certificate = socket.getPeerCertificate(true) as PeerCertificate;
-        const identityError = checkServerIdentity(options.servername, certificate);
-        if (identityError !== undefined) throw identityError;
-        if (peerFingerprint(socket, "External worker supervisor") !== expectedFingerprint) {
-          throw new Error("External worker supervisor certificate pin does not match.");
-        }
-      } catch {
-        fail("External worker TLS supervisor identity verification failed.");
-        return;
-      }
-      if (settled) return;
-      settled = true;
-      cleanup();
-      socket.on("error", () => undefined);
-      socket.setNoDelay(true);
-      resolve(socket);
-    });
-  });
-}
-
 interface WorkerRpcMtlsProfile {
   alpn: string;
   requestMagic: string;
@@ -569,136 +486,6 @@ const V2_MTLS_PROFILE: WorkerRpcMtlsProfile = {
   requestMagic: WORKER_RPC_V2_MTLS_REQUEST_MAGIC,
   responseMagic: WORKER_RPC_V2_MTLS_RESPONSE_MAGIC,
 };
-
-function createMutualTlsWorkerRpcTransportForProfile(
-  options: MutualTlsWorkerRpcTransportOptions,
-  profile: WorkerRpcMtlsProfile,
-): ExternalWorkerRpcTransport {
-  const id = safeIdentifier(options.id, "External worker TLS transport ID");
-  safeHost(options.host, "External worker TLS host");
-  integer(options.port, "External worker TLS port", 1, 65_535);
-  safeServername(options.servername);
-  tlsMaterial(options.ca, "External worker TLS CA");
-  tlsMaterial(options.cert, "External worker TLS client certificate");
-  tlsMaterial(options.key, "External worker TLS client key");
-  const expectedFingerprint = fingerprintSha256(
-    options.expectedServerCertificateSha256,
-    "External worker TLS server fingerprint",
-  );
-  const handshakeTimeoutMs = integer(
-    options.handshakeTimeoutMs ?? 10_000,
-    "External worker TLS handshake timeout",
-    250,
-    60_000,
-  );
-
-  return {
-    id,
-    authenticationMode: "MUTUAL_TLS",
-    async call(canonicalRequest, callOptions): Promise<ExternalWorkerRpcResponseStream> {
-      if (
-        typeof canonicalRequest !== "string" ||
-        canonicalRequest.length === 0 ||
-        canonicalRequest.includes("\0")
-      ) {
-        throw new Error("External worker TLS request must be non-empty NUL-free text.");
-      }
-      const requestBytes = Buffer.from(canonicalRequest, "utf8");
-      if (
-        requestBytes.byteLength < 1 ||
-        requestBytes.byteLength > WORKER_RPC_MAX_REQUEST_BYTES ||
-        requestBytes.toString("utf8") !== canonicalRequest
-      ) {
-        throw new Error("External worker TLS request exceeds its canonical byte limit.");
-      }
-      const maxResponseBytes = integer(
-        callOptions.maxResponseBytes,
-        "External worker TLS response limit",
-        1,
-        WORKER_RPC_MAX_RESPONSE_BYTES,
-      );
-      const maxChunkBytes = integer(
-        callOptions.maxChunkBytes,
-        "External worker TLS response chunk limit",
-        1,
-        WORKER_RPC_MAX_RESPONSE_BYTES,
-      );
-      const maxChunks = integer(
-        callOptions.maxChunks,
-        "External worker TLS response chunk-count limit",
-        1,
-        65_536,
-      );
-      const socket = await connectAuthenticatedTls(
-        options,
-        callOptions.signal,
-        handshakeTimeoutMs,
-        expectedFingerprint,
-        profile.alpn,
-      );
-      const onAbort = () => socket.destroy(abortError());
-      callOptions.signal.addEventListener("abort", onAbort, { once: true });
-      try {
-        await writeFrame(
-          socket,
-          profile.requestMagic,
-          requestBytes,
-          WORKER_RPC_MAX_REQUEST_BYTES,
-          callOptions.signal,
-        );
-        const reader = new BoundedSocketReader(socket);
-        const header = await reader.readExactly(
-          WORKER_RPC_MTLS_HEADER_BYTES,
-          callOptions.signal,
-        );
-        const declaredLength = parseFrameHeader(
-          header,
-          profile.responseMagic,
-          maxResponseBytes,
-        );
-        if (Math.ceil(declaredLength / maxChunkBytes) > maxChunks) {
-          throw new Error("External worker TLS response cannot fit the declared chunk limits.");
-        }
-        const chunks = (async function* (): AsyncGenerator<Uint8Array> {
-          let remaining = declaredLength;
-          try {
-            while (remaining > 0) {
-              const size = Math.min(remaining, maxChunkBytes);
-              const chunk = await reader.readExactly(size, callOptions.signal);
-              remaining -= chunk.byteLength;
-              yield chunk;
-            }
-            await reader.expectEnd(callOptions.signal);
-          } finally {
-            callOptions.signal.removeEventListener("abort", onAbort);
-            socket.destroy();
-            const returned = reader.iterator.return?.();
-            if (returned !== undefined) {
-              void Promise.resolve(returned).catch(() => undefined);
-            }
-          }
-        })();
-        return { declaredLength, chunks };
-      } catch (error) {
-        callOptions.signal.removeEventListener("abort", onAbort);
-        socket.destroy();
-        throw error;
-      }
-    },
-  };
-}
-
-export function createMutualTlsWorkerRpcTransport(
-  options: MutualTlsWorkerRpcTransportOptions,
-): ExternalWorkerRpcTransport {
-  return createMutualTlsWorkerRpcTransportForProfile(options, V1_MTLS_PROFILE);
-}
-
-export function createMutualTlsWorkerRpcV2Transport(
-  options: MutualTlsWorkerRpcTransportOptions,
-): ExternalWorkerRpcTransport {
-  return createMutualTlsWorkerRpcTransportForProfile(options, V2_MTLS_PROFILE);
-}
 
 export function createEphemeralWorkerRpcReplayStore(
   options: EphemeralWorkerRpcReplayStoreOptions = {},
