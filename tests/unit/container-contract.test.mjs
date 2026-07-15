@@ -15,15 +15,16 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   const report = inspectStaticContainerContract();
   assert.deepEqual(report.failures, []);
   assert.equal(report.status, "PASS");
-  assert.equal(report.scope, "STATIC_WEB_WORKER_VERIFIER_CONTAINERS");
+  assert.equal(report.scope, "STATIC_WEB_WORKER_VERIFIER_EGRESS_CONTAINERS");
   assert.equal(report.baseImagePinned, false);
   assert.equal(report.workerImagePinned, false);
   assert.equal(report.verifierImagePinned, false);
+  assert.equal(report.egressProxyImagePinned, false);
   assert.equal(report.dynamicContainerVerified, false);
   assert.equal(report.webContainerIncludesLiveCodexWorker, false);
   assert.equal(report.workerContainerStatus, "STATIC_PREPARED");
   assert.equal(report.verifierContainerStatus, "STATIC_PREPARED");
-  assert.equal(report.egressProxyStatus, "NOT_IMPLEMENTED");
+  assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
   assert.equal(report.releaseReady, false);
 });
 
@@ -35,9 +36,11 @@ test("worker dynamic verification rejects missing base and build-input tampering
   assert.deepEqual(report.failures, ["immutable Node base image is unset"]);
   const worker = computeContainerBuildInput("worker");
   const verifier = computeContainerBuildInput("verifier");
+  const egress = computeContainerBuildInput("egress");
   const tampered = inspectWorkerContainerPrerequisites(contract, {
     worker: { ...worker, sha256: "0".repeat(64) },
     verifier,
+    egress,
   });
   assert.equal(tampered.dockerInvoked, false);
   assert.match(tampered.failures.join(" "), /worker build inputs do not match/u);
@@ -101,6 +104,7 @@ async function copyStaticContainerInputs(target) {
     "Dockerfile",
     "Dockerfile.worker",
     "Dockerfile.verifier",
+    "Dockerfile.egress-proxy",
     ".dockerignore",
     "package.json",
     "pnpm-lock.yaml",
@@ -114,6 +118,9 @@ async function copyStaticContainerInputs(target) {
     "scripts/build-core.mjs",
     "scripts/process.mjs",
     "scripts/worker-preflight.mjs",
+    "scripts/worker-entrypoint.mjs",
+    "scripts/proxy-token-helper.mjs",
+    "scripts/openai-egress-proxy.mjs",
     "scripts/verifier-preflight.mjs",
     "scripts/worker-container-verify.mjs",
   ]) {

@@ -10,8 +10,11 @@ import {
   verifierEnvironment,
   WORKER_WRITABLE_PATHS,
 } from "../../dist/codex/worker-runtime-contract.js";
+import { createOpenAiEgressLease } from "../../dist/codex/openai-egress-contract.js";
+import { buildSupervisorDockerLifecyclePlan } from "../../dist/codex/egress-runtime-contract.js";
 
 const DIGEST = "a".repeat(64);
+const PROXY_TOKEN = Buffer.alloc(32, 13).toString("base64url");
 
 function optionValues(args, option) {
   return args.flatMap((value, index) => (value === option ? [args[index + 1]] : []));
@@ -42,7 +45,8 @@ async function createRuntimeFixture() {
     [join(layout.verificationRoot, "tests", "refund.test.mjs"), "// baseline test\n"],
     [layout.requestPath, "{}\n"],
     [layout.responsePath, "\n"],
-    [layout.proxyTokenPath, "test-token\n"],
+    [layout.proxyTokenPath, `${PROXY_TOKEN}\n`],
+    [layout.proxyCaPath, "test-ca\n"],
   ]) {
     await writeFile(path, body, "utf8");
   }
@@ -114,7 +118,7 @@ test("worker runtime plan fixes the two-file write set and credential-free verif
     "/fixture/dist:rw,noexec,nosuid,nodev,size=67108864",
   ]);
   const workerMounts = optionValues(plan.worker.dockerArgs, "--mount");
-  assert.equal(workerMounts.length, 6);
+  assert.equal(workerMounts.length, 7);
   assert.match(workerMounts[0], /target=\/workspace,readonly$/u);
   assert.match(workerMounts[1], /target=\/workspace\/src\/refund\.ts$/u);
   assert.match(workerMounts[2], /target=\/workspace\/tests\/refund\.test\.mjs$/u);
@@ -123,6 +127,10 @@ test("worker runtime plan fixes the two-file write set and credential-free verif
   assert.match(
     workerMounts[5],
     /target=\/run\/secrets\/policytwin-proxy-token,readonly$/u,
+  );
+  assert.match(
+    workerMounts[6],
+    /target=\/run\/secrets\/policytwin-egress-ca\.pem,readonly$/u,
   );
   assert.equal(plan.worker.dockerArgs.includes("--privileged"), false);
   assert.equal(plan.verifier.dockerArgs.includes("--privileged"), false);
@@ -238,4 +246,109 @@ test("verifier environment never inherits host credentials or proxies", () => {
     HOME: "/tmp",
     PATH: "/opt/policytwin/bin:/usr/local/bin:/usr/bin:/bin",
   });
+});
+
+test("supervisor Docker lifecycle uses explicit create/start/wait/remove and external proxy secrets", async (t) => {
+  const fixture = await createRuntimeFixture();
+  const secretRoot = await mkdtemp(join(tmpdir(), "policytwin-egress-secrets-"));
+  t.after(() => rm(fixture.repositoryRoot, { recursive: true, force: true }));
+  t.after(() => rm(secretRoot, { recursive: true, force: true }));
+  const tlsCertificatePath = join(secretRoot, "server-cert.pem");
+  const tlsPrivateKeyPath = join(secretRoot, "server-key.pem");
+  const leasePath = join(secretRoot, "lease.json");
+  const providerCredentialPath = join(secretRoot, "provider-token");
+  const lease = createOpenAiEgressLease({
+    runId: fixture.runId,
+    token: PROXY_TOKEN,
+    issuedAt: "2026-07-15T00:00:00.000Z",
+    expiresAt: "2026-07-15T00:05:00.000Z",
+    maxRequests: 16,
+  });
+  await writeFile(tlsCertificatePath, "certificate-material\n", "utf8");
+  await writeFile(tlsPrivateKeyPath, "private-key-material\n", "utf8");
+  await writeFile(leasePath, `${JSON.stringify(lease)}\n`, "utf8");
+  await writeFile(providerCredentialPath, "provider-secret-material\n", "utf8");
+
+  const plan = buildSupervisorDockerLifecyclePlan({
+    repositoryRoot: fixture.repositoryRoot,
+    runId: fixture.runId,
+    workerImage: `sha256:${DIGEST}`,
+    verifierImage: `sha256:${DIGEST}`,
+    egressProxyImage: `sha256:${DIGEST}`,
+    egressSecrets: {
+      tlsCertificatePath,
+      tlsPrivateKeyPath,
+      leasePath,
+      providerCredentialPath,
+    },
+  });
+  assert.equal(plan.status, "STATIC_PLAN_ONLY");
+  assert.equal(plan.dynamicIsolationVerified, false);
+  assert.equal(plan.liveCodexExecuted, false);
+  assert.equal(plan.egress.createArgs[0], "create");
+  assert.equal(plan.worker.createArgs[0], "create");
+  assert.equal(plan.verifier.createArgs[0], "create");
+  assert.equal(plan.egress.createArgs.includes("--rm"), false);
+  assert.equal(plan.worker.createArgs.includes("--rm"), false);
+  assert.equal(plan.verifier.createArgs.includes("--rm"), false);
+  assert.equal(plan.egress.createArgs.includes("--publish"), false);
+  assert.equal(plan.egress.createArgs.includes("--privileged"), false);
+  assert.equal(plan.egress.createArgs.includes("--env"), false);
+  assert.deepEqual(plan.egressConnectInternalArgs.slice(0, 5), [
+    "network",
+    "connect",
+    "--alias",
+    "policytwin-egress",
+    "policytwin-worker-internal",
+  ]);
+  assert.deepEqual(plan.networkInspectArgs, [
+    ["network", "inspect", "policytwin-worker-internal"],
+    ["network", "inspect", "policytwin-egress-outbound"],
+  ]);
+  assert.deepEqual(plan.executionOrder.slice(0, 7), [
+    "EGRESS_CREATE",
+    "EGRESS_CONNECT_INTERNAL",
+    "EGRESS_START",
+    "WORKER_CREATE",
+    "WORKER_START",
+    "WORKER_WAIT",
+    "WORKER_LOGS",
+  ]);
+  assert.equal(
+    plan.executionOrder.indexOf("EGRESS_STOP") < plan.executionOrder.indexOf("VERIFIER_CREATE"),
+    true,
+  );
+  assert.deepEqual(plan.cleanupOrder.slice(-3), [
+    "DELETE_VERIFICATION_WORKSPACE",
+    "DELETE_REPAIR_WORKSPACE",
+    "OBSERVE_ZERO_REMAINING_PROCESSES",
+  ]);
+  assert.equal(optionValues(plan.egress.createArgs, "--mount").length, 4);
+  assert.equal(
+    optionValues(plan.egress.createArgs, "--mount").every((mount) => mount.endsWith(",readonly")),
+    true,
+  );
+  assert.deepEqual(plan.egress.removeArgs.slice(0, 2), ["rm", "--force"]);
+  assert.deepEqual(plan.worker.stopArgs.slice(0, 3), ["stop", "--time", "5"]);
+  assert.doesNotMatch(JSON.stringify(plan), /provider-secret-material/u);
+
+  const inRepositoryCredential = join(fixture.layout.runRoot, "provider-credential");
+  await writeFile(inRepositoryCredential, "not-allowed-here\n", "utf8");
+  assert.throws(
+    () =>
+      buildSupervisorDockerLifecyclePlan({
+        repositoryRoot: fixture.repositoryRoot,
+        runId: fixture.runId,
+        workerImage: `sha256:${DIGEST}`,
+        verifierImage: `sha256:${DIGEST}`,
+        egressProxyImage: `sha256:${DIGEST}`,
+        egressSecrets: {
+          tlsCertificatePath,
+          tlsPrivateKeyPath,
+          leasePath,
+          providerCredentialPath: inRepositoryCredential,
+        },
+      }),
+    /outside the repository/u,
+  );
 });

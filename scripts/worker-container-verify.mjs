@@ -25,10 +25,11 @@ export function inspectWorkerContainerPrerequisites(
   buildInputs = {
     worker: computeContainerBuildInput("worker"),
     verifier: computeContainerBuildInput("verifier"),
+    egress: computeContainerBuildInput("egress"),
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "3") failures.push("container schema v3 is required");
+  if (contract?.schemaVersion !== "4") failures.push("container schema v4 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }
@@ -37,6 +38,9 @@ export function inspectWorkerContainerPrerequisites(
   }
   if (contract?.verifierBuildInputSha256 !== buildInputs.verifier.sha256) {
     failures.push("verifier build inputs do not match the contract");
+  }
+  if (contract?.egressProxyBuildInputSha256 !== buildInputs.egress.sha256) {
+    failures.push("egress proxy build inputs do not match the contract");
   }
   if (
     contract?.workerContainer?.status !== "STATIC_PREPARED" ||
@@ -51,6 +55,13 @@ export function inspectWorkerContainerPrerequisites(
     contract?.verifierContainer?.liveCodexExecuted !== false
   ) {
     failures.push("verifier static boundary is invalid");
+  }
+  if (
+    contract?.egressProxy?.status !== "STATIC_PREPARED" ||
+    contract?.egressProxy?.dynamicVerified !== false ||
+    contract?.egressProxy?.liveCodexExecuted !== false
+  ) {
+    failures.push("egress proxy static boundary is invalid");
   }
   return {
     schemaVersion: "1",
@@ -189,6 +200,7 @@ async function main() {
   const buildInputs = {
     worker: computeContainerBuildInput("worker"),
     verifier: computeContainerBuildInput("verifier"),
+    egress: computeContainerBuildInput("egress"),
   };
   const readiness = inspectWorkerContainerPrerequisites(contract, buildInputs);
   const facts = {
@@ -200,6 +212,7 @@ async function main() {
     verifierImageBuilt: false,
     verifierImageId: null,
     verifierBuildInputSha256: buildInputs.verifier.sha256,
+    egressProxyBuildInputSha256: buildInputs.egress.sha256,
     workerNetworkInternal: false,
     workerStaticPreflight: false,
     verificationReconstructed: false,
@@ -312,17 +325,24 @@ async function main() {
     const requestPath = resolve(runRoot, "request.json");
     const responsePath = resolve(runRoot, "response.json");
     const tokenPath = resolve(runRoot, "proxy-token");
+    const proxyCaPath = resolve(runRoot, "proxy-ca.pem");
     writeFileSync(requestPath, "{}\n", "utf8");
     writeFileSync(responsePath, "", "utf8");
     writeFileSync(tokenPath, randomBytes(32).toString("base64url"), {
       encoding: "utf8",
       mode: 0o444,
     });
+    writeFileSync(
+      proxyCaPath,
+      "-----BEGIN CERTIFICATE-----\nSTATIC-SMOKE-PLACEHOLDER\n-----END CERTIFICATE-----\n",
+      { encoding: "utf8", mode: 0o444 },
+    );
     chmodSync(repairSource, 0o666);
     chmodSync(repairTest, 0o666);
     chmodSync(requestPath, 0o444);
     chmodSync(responsePath, 0o666);
     chmodSync(tokenPath, 0o444);
+    chmodSync(proxyCaPath, 0o444);
 
     const {
       buildWorkerRuntimePlan,

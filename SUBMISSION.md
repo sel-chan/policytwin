@@ -28,6 +28,7 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 - Every judge-facing draft remains marked `DRAFT_NOT_READY`; no generated file claims submission readiness.
 - `pnpm submission:check` currently fails with 30 explicit unmet requirements.
 - Owner declarations, live proof, project license, two required captures, video, public URLs, final form fields, and confirmation remain unverified or absent.
+- The worker/verifier/egress images, proxy-only capability authentication, and supervisor lifecycle are static/prepared contracts only; no Docker egress path or Codex SDK turn has run and no submission claim may describe them as deployed security evidence.
 
 These files are production scaffolding only. They must be regenerated from live verified evidence before publication or submission.
 

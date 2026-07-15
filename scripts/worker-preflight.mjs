@@ -6,9 +6,10 @@ const EXPECTED_ENVIRONMENT = {
   POLICYTWIN_WORKER_REQUEST: "/run/policytwin/request.json",
   POLICYTWIN_WORKER_RESPONSE: "/run/policytwin/response.json",
   POLICYTWIN_PROXY_TOKEN_FILE: "/run/secrets/policytwin-proxy-token",
-  POLICYTWIN_OPENAI_PROXY: "https://policytwin-egress:8443",
+  POLICYTWIN_OPENAI_PROXY: "https://policytwin-egress:8443/v1",
+  CODEX_CA_CERTIFICATE: "/run/secrets/policytwin-egress-ca.pem",
 };
-const FORBIDDEN_ENVIRONMENT = /^(?:OPENAI_|AZURE_OPENAI_|CODEX_(?!HOME$)|HTTP_PROXY$|HTTPS_PROXY$|ALL_PROXY$)/iu;
+const FORBIDDEN_ENVIRONMENT = /^(?:OPENAI_|AZURE_OPENAI_|CODEX_(?!HOME$|CA_CERTIFICATE$)|HTTP_PROXY$|HTTPS_PROXY$|ALL_PROXY$)/iu;
 
 function fail(message) {
   console.error(`Worker static preflight failed: ${message}`);
@@ -69,12 +70,23 @@ assertReal("/workspace/tests/refund.test.mjs", "file", 1024 * 1024);
 assertReal(EXPECTED_ENVIRONMENT.POLICYTWIN_WORKER_REQUEST, "file", 1024 * 1024);
 assertReal(EXPECTED_ENVIRONMENT.POLICYTWIN_WORKER_RESPONSE, "file", 4 * 1024 * 1024);
 assertReal(EXPECTED_ENVIRONMENT.POLICYTWIN_PROXY_TOKEN_FILE, "file", 4_096);
+assertReal(EXPECTED_ENVIRONMENT.CODEX_CA_CERTIFICATE, "file", 64 * 1024);
 assertWritableOverlay("/workspace/src/refund.ts");
 assertWritableOverlay("/workspace/tests/refund.test.mjs");
 assertReadOnlyMount("/workspace/package.json");
 assertReadOnlyMount(EXPECTED_ENVIRONMENT.POLICYTWIN_WORKER_REQUEST);
 const token = readFileSync(EXPECTED_ENVIRONMENT.POLICYTWIN_PROXY_TOKEN_FILE);
-if (token.byteLength < 16 || token.byteLength > 4_096) fail("the proxy token is invalid.");
+const tokenText = token.toString("utf8").trimEnd();
+const tokenDecoded = Buffer.from(tokenText, "base64url");
+if (
+  !/^[A-Za-z0-9_-]{43}$/u.test(tokenText) ||
+  tokenDecoded.byteLength !== 32 ||
+  tokenDecoded.toString("base64url") !== tokenText
+) {
+  tokenDecoded.fill(0);
+  fail("the proxy token is invalid.");
+}
+tokenDecoded.fill(0);
 token.fill(0);
 writeFileSync(
   EXPECTED_ENVIRONMENT.POLICYTWIN_WORKER_RESPONSE,

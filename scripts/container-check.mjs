@@ -39,11 +39,16 @@ export function inspectStaticContainerContract(root = ROOT) {
   const dockerfilePath = resolve(root, "Dockerfile");
   const workerDockerfilePath = resolve(root, "Dockerfile.worker");
   const verifierDockerfilePath = resolve(root, "Dockerfile.verifier");
+  const egressDockerfilePath = resolve(root, "Dockerfile.egress-proxy");
   const dockerignorePath = resolve(root, ".dockerignore");
   const nextConfigPath = resolve(root, "next.config.ts");
   const healthRoutePath = resolve(root, "app", "api", "health", "route.ts");
   const workerPreflightPath = resolve(root, "scripts", "worker-preflight.mjs");
+  const workerEntrypointPath = resolve(root, "scripts", "worker-entrypoint.mjs");
   const verifierPreflightPath = resolve(root, "scripts", "verifier-preflight.mjs");
+  const proxyTokenHelperPath = resolve(root, "scripts", "proxy-token-helper.mjs");
+  const egressProxyPath = resolve(root, "scripts", "openai-egress-proxy.mjs");
+  const egressContractPath = resolve(root, "src", "codex", "openai-egress-contract.ts");
   const workerVerifyPath = resolve(root, "scripts", "worker-container-verify.mjs");
   const contractBody = read(contractPath, failures, "Container contract");
   let contract = null;
@@ -54,15 +59,17 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   let workerBuildInput = null;
   let verifierBuildInput = null;
+  let egressBuildInput = null;
   try {
     workerBuildInput = computeContainerBuildInput("worker", root);
     verifierBuildInput = computeContainerBuildInput("verifier", root);
+    egressBuildInput = computeContainerBuildInput("egress", root);
   } catch {
     failures.push("Container build inputs are absent or unsafe.");
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "3" ||
+    contract.schemaVersion !== "4" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -82,6 +89,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.status !== "STATIC_PREPARED" ||
     contract.workerContainer?.dockerfile !== "Dockerfile.worker" ||
     contract.workerContainer?.entrypoint !== "scripts/worker-preflight.mjs" ||
+    contract.workerContainer?.preparedEntrypoint !== "scripts/worker-entrypoint.mjs" ||
+    contract.workerContainer?.preparedEntrypointStatus !== "VALIDATE_ONLY_LIVE_DISABLED" ||
     contract.workerContainer?.rpcProtocol !== "policytwin.codex.repair.v1" ||
     contract.workerContainer?.hostLiveConstructionAllowed !== false ||
     contract.workerContainer?.dynamicVerified !== false ||
@@ -105,6 +114,10 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.networkInternalRequired !== true ||
     contract.workerContainer?.proxyAuthority !== "policytwin-egress:8443" ||
     contract.workerContainer?.proxyTokenFile !== "/run/secrets/policytwin-proxy-token" ||
+    contract.workerContainer?.proxyCaFile !== "/run/secrets/policytwin-egress-ca.pem" ||
+    contract.workerContainer?.proxyBaseUrl !== "https://policytwin-egress:8443/v1" ||
+    contract.workerContainer?.commandBackedProxyAuth !== true ||
+    contract.workerContainer?.providerCredentialPresent !== false ||
     JSON.stringify(contract.workerContainer?.forbiddenMountTargets) !==
       JSON.stringify([
         "/var/run/docker.sock",
@@ -148,13 +161,37 @@ export function inspectStaticContainerContract(root = ROOT) {
       ]) ||
     JSON.stringify(contract.verifierContainer?.commandIds) !==
       JSON.stringify(["fixture-typecheck", "fixture-test"]) ||
-    contract.egressProxy?.status !== "NOT_IMPLEMENTED" ||
+    contract.egressProxy?.status !== "STATIC_PREPARED" ||
+    contract.egressProxy?.dockerfile !== "Dockerfile.egress-proxy" ||
+    contract.egressProxy?.entrypoint !== "scripts/openai-egress-proxy.mjs" ||
     contract.egressProxy?.dynamicVerified !== false ||
+    contract.egressProxy?.liveCodexExecuted !== false ||
+    contract.egressProxy?.runtimeUser !== "10003:10003" ||
+    contract.egressProxy?.readOnlyRootRequired !== true ||
+    JSON.stringify(contract.egressProxy?.capDrop) !== JSON.stringify(["ALL"]) ||
+    JSON.stringify(contract.egressProxy?.capAdd) !== JSON.stringify([]) ||
+    contract.egressProxy?.noNewPrivileges !== true ||
     contract.egressProxy?.workerNetwork !== "policytwin-worker-internal" ||
+    contract.egressProxy?.listenAuthority !== "policytwin-egress:8443" ||
     contract.egressProxy?.allowedAuthority !== "api.openai.com:443" ||
+    contract.egressProxy?.allowedMethod !== "POST" ||
+    contract.egressProxy?.allowedPath !== "/v1/responses" ||
+    contract.egressProxy?.maximumRequestBytes !== 1_048_576 ||
+    contract.egressProxy?.maximumResponseBytes !== 8_388_608 ||
+    contract.egressProxy?.maximumRequestsPerLease !== 64 ||
+    contract.egressProxy?.leaseMaximumLifetimeMs !== 900_000 ||
+    contract.egressProxy?.maximumInFlight !== 2 ||
+    contract.egressProxy?.upstreamDeadlineMs !== 120_000 ||
+    contract.egressProxy?.upstreamIdleTimeoutMs !== 15_000 ||
+    contract.egressProxy?.providerCredentialLocation !== "PROXY_FILE_MOUNT_ONLY" ||
+    contract.egressProxy?.genericForwardProxy !== false ||
     contract.egressProxy?.arbitraryConnectAllowed !== false ||
+    contract.egressProxy?.redirectsAllowed !== false ||
+    contract.egressProxy?.compressedResponsesAllowed !== false ||
+    contract.egressProxy?.publicIpv4PinRequired !== true ||
     contract.workerBuildInputSha256 !== workerBuildInput?.sha256 ||
-    contract.verifierBuildInputSha256 !== verifierBuildInput?.sha256
+    contract.verifierBuildInputSha256 !== verifierBuildInput?.sha256 ||
+    contract.egressProxyBuildInputSha256 !== egressBuildInput?.sha256
   ) {
     failures.push("Container contract does not preserve the static web/worker split.");
   }
@@ -170,11 +207,17 @@ export function inspectStaticContainerContract(root = ROOT) {
   const verifierImagePinned =
     typeof contract?.verifierImage === "string" &&
     /^sha256:[0-9a-f]{64}$/u.test(contract.verifierImage);
+  const egressProxyImagePinned =
+    typeof contract?.egressProxyImage === "string" &&
+    /^sha256:[0-9a-f]{64}$/u.test(contract.egressProxyImage);
   if (contract?.workerImage !== null && !workerImagePinned) {
     failures.push("Configured worker image is not immutable.");
   }
   if (contract?.verifierImage !== null && !verifierImagePinned) {
     failures.push("Configured verifier image is not immutable.");
+  }
+  if (contract?.egressProxyImage !== null && !egressProxyImagePinned) {
+    failures.push("Configured egress proxy image is not immutable.");
   }
 
   const dockerfile = read(dockerfilePath, failures, "Dockerfile");
@@ -259,6 +302,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     "COPY --from=build --chown=10001:10001 /opt/policytwin/node_modules ./node_modules",
     "COPY --from=build --chown=10001:10001 /opt/policytwin/package.json ./package.json",
     "COPY --chown=10001:10001 scripts/worker-preflight.mjs ./scripts/worker-preflight.mjs",
+    "COPY --chown=10001:10001 scripts/proxy-token-helper.mjs ./scripts/proxy-token-helper.mjs",
+    "COPY --chown=10001:10001 scripts/worker-entrypoint.mjs ./scripts/worker-entrypoint.mjs",
   ]) {
     requireText(workerDockerfile, required, failures, "Worker Dockerfile");
   }
@@ -278,6 +323,36 @@ export function inspectStaticContainerContract(root = ROOT) {
     failures.push("Verifier Dockerfile must contain only the fixed verification runtime.");
   }
 
+  const egressDockerfile = read(egressDockerfilePath, failures, "Egress proxy Dockerfile");
+  requireText(egressDockerfile, "ARG NODE_BASE_IMAGE", failures, "Egress proxy Dockerfile");
+  if (
+    (egressDockerfile.match(/^FROM \$\{NODE_BASE_IMAGE\}/gmu) ?? []).length !== 2 ||
+    /^FROM\s+node:/gimu.test(egressDockerfile) ||
+    /NODE_BASE_IMAGE\s*=\s*\S+/u.test(egressDockerfile) ||
+    /^#\s*syntax=/gimu.test(egressDockerfile) ||
+    !egressDockerfile.includes("@sha256:[0-9a-f]{64}")
+  ) {
+    failures.push("Egress proxy Dockerfile must derive from only the immutable image argument.");
+  }
+  for (const required of [
+    "RUN pnpm install --frozen-lockfile",
+    "RUN node scripts/build-core.mjs",
+    "openai-egress-contract.js ./dist/codex/openai-egress-contract.js",
+    "openai-egress-proxy.js ./dist/codex/openai-egress-proxy.js",
+    "USER 10003:10003",
+    'ENTRYPOINT ["node", "scripts/openai-egress-proxy.mjs"]',
+  ]) {
+    requireText(egressDockerfile, required, failures, "Egress proxy Dockerfile");
+  }
+  if (
+    /fixtures\/refund-demo|expected-fixed|docker\.sock|\.next|server\.js/iu.test(
+      egressDockerfile,
+    ) ||
+    /^COPY\s+\.\s+\./gmu.test(egressDockerfile)
+  ) {
+    failures.push("Egress proxy Dockerfile must not bundle fixtures, Docker access, web runtime, or the repository.");
+  }
+
   const workerPreflight = read(workerPreflightPath, failures, "Worker preflight");
   for (const required of [
     'process.argv[2] !== "--static-preflight"',
@@ -287,8 +362,57 @@ export function inspectStaticContainerContract(root = ROOT) {
     "token.fill(0)",
     'dynamicIsolationVerified: false',
     'liveCodexExecuted: false',
+    'CODEX_CA_CERTIFICATE: "/run/secrets/policytwin-egress-ca.pem"',
   ]) {
     requireText(workerPreflight, required, failures, "Worker preflight");
+  }
+  const workerEntrypoint = read(workerEntrypointPath, failures, "Prepared worker entrypoint");
+  for (const required of [
+    'process.argv[2] !== "--validate-only"',
+    "prepareWorkerEntrypointContract",
+    "canonicalWorkerRpcJson(value)",
+    "readdirSync(PATHS.codexHome)",
+    "PolicyTwin live worker remains disabled",
+    "tokenBytes.fill(0)",
+    "requestBytes.fill(0)",
+  ]) {
+    requireText(workerEntrypoint, required, failures, "Prepared worker entrypoint");
+  }
+  if (/new\s+Codex\s*\(|LIVE_CODEX_SDK/iu.test(workerEntrypoint)) {
+    failures.push("Prepared worker entrypoint must not construct or claim live Codex execution.");
+  }
+  const proxyTokenHelper = read(proxyTokenHelperPath, failures, "Proxy token helper");
+  for (const required of [
+    'const TOKEN_FILE = "/run/secrets/policytwin-proxy-token"',
+    "TOKEN_PATTERN.test(token)",
+    "decoded.byteLength === 32",
+    "tokenBytes.fill(0)",
+  ]) {
+    requireText(proxyTokenHelper, required, failures, "Proxy token helper");
+  }
+  const egressProxy = read(egressProxyPath, failures, "Egress proxy entrypoint");
+  for (const required of [
+    '"/run/secrets/policytwin-egress-tls-cert.pem"',
+    '"/run/secrets/policytwin-egress-tls-key.pem"',
+    '"/run/secrets/policytwin-egress-lease.json"',
+    '"/run/secrets/policytwin-openai-key"',
+    'minVersion: "TLSv1.3"',
+    'server.listen(8443, "0.0.0.0")',
+    'process.once("SIGTERM", close)',
+  ]) {
+    requireText(egressProxy, required, failures, "Egress proxy entrypoint");
+  }
+  const egressContract = read(egressContractPath, failures, "Egress admission contract");
+  for (const required of [
+    'OPENAI_EGRESS_UPSTREAM_AUTHORITY = "api.openai.com:443"',
+    'OPENAI_EGRESS_REQUEST_PATH = "/v1/responses"',
+    "OPENAI_EGRESS_MAX_REQUEST_BYTES = 1024 * 1024",
+    "OPENAI_EGRESS_MAX_RESPONSE_BYTES = 8 * 1024 * 1024",
+    'input.method !== "POST"',
+    "selectPinnedOpenAiIpv4",
+    "timingSafeEqual",
+  ]) {
+    requireText(egressContract, required, failures, "Egress admission contract");
   }
   const verifierPreflight = read(verifierPreflightPath, failures, "Verifier preflight");
   for (const required of [
@@ -355,15 +479,17 @@ export function inspectStaticContainerContract(root = ROOT) {
   return {
     schemaVersion: "1",
     status: failures.length === 0 ? "PASS" : "FAIL",
-    scope: "STATIC_WEB_WORKER_VERIFIER_CONTAINERS",
+    scope: "STATIC_WEB_WORKER_VERIFIER_EGRESS_CONTAINERS",
     targetPlatform: contract?.targetPlatform ?? null,
     contractStatus: contract?.status ?? null,
     baseImagePinned,
     nodeBaseImage: baseImagePinned ? contract.nodeBaseImage : null,
     workerImagePinned,
     verifierImagePinned,
+    egressProxyImagePinned,
     workerBuildInputSha256: workerBuildInput?.sha256 ?? null,
     verifierBuildInputSha256: verifierBuildInput?.sha256 ?? null,
+    egressProxyBuildInputSha256: egressBuildInput?.sha256 ?? null,
     opaVersion: contract?.opaVersion ?? null,
     webContainerIncludesLiveCodexWorker:
       contract?.webContainer?.includesLiveCodexWorker ?? null,
@@ -390,7 +516,7 @@ function main() {
     process.exit(1);
   }
   console.log(
-    "Static web, worker, and verifier container contracts passed; immutable images, Docker daemon, egress proxy, dynamic isolation, and live Codex evidence remain required.",
+    "Static web, worker, verifier, and egress proxy container contracts passed; immutable images, Docker daemon, dynamic isolation, live proxy traffic, and live Codex evidence remain required.",
   );
 }
 

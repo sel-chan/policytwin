@@ -16,11 +16,22 @@ const ROLE_INPUTS = {
     "scripts/build-core.mjs",
     "scripts/process.mjs",
     "scripts/worker-preflight.mjs",
+    "scripts/worker-entrypoint.mjs",
+    "scripts/proxy-token-helper.mjs",
     "src",
     "tsconfig.build.json",
     "tsconfig.json",
   ],
   verifier: ["Dockerfile.verifier", "scripts/verifier-preflight.mjs"],
+  egress: [
+    "Dockerfile.egress-proxy",
+    "scripts/build-core.mjs",
+    "scripts/openai-egress-proxy.mjs",
+    "scripts/process.mjs",
+    "src",
+    "tsconfig.build.json",
+    "tsconfig.json",
+  ],
 };
 const MAX_FILES = 512;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
@@ -55,7 +66,7 @@ function collectInput(root, input, files) {
 }
 
 export function computeContainerBuildInput(role, root = ROOT) {
-  if (role !== "worker" && role !== "verifier") {
+  if (role !== "worker" && role !== "verifier" && role !== "egress") {
     throw new Error("Container build role is invalid.");
   }
   const repositoryRoot = resolve(root);

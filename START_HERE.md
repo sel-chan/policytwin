@@ -30,7 +30,7 @@ A `/goal` objective is intentionally short. The full product definition and work
 6. Allow local edits and tests as appropriate. Separately approve a clearly stated external network scope before dependency installation, official-document lookup, Git push, deployment, upload, or submission. Keep account logins and destructive actions reviewable.
 7. Add secrets through the environment or a secret manager, never by committing them:
    - `OPENAI_API_KEY` for GPT-5.6 Responses API calls
-   - the current supported Codex CLI/SDK authentication; when API-key mode is used, provide `CODEX_API_KEY` only through the process environment
+   - the current supported Codex CLI/SDK authentication; the prepared worker uses command-backed authentication to obtain only a per-run proxy capability, while the provider credential stays outside the worker
    - optional deployment-provider credentials
    - optional GitHub authentication
 8. Open `GOAL_PROMPT.md`, copy the main command, and paste it into Codex.

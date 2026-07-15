@@ -42,6 +42,7 @@ export interface WorkerRuntimeLayout {
   requestPath: string;
   responsePath: string;
   proxyTokenPath: string;
+  proxyCaPath: string;
 }
 
 export interface WorkerRuntimeMount {
@@ -196,6 +197,7 @@ export function createWorkerRuntimeLayout(options: {
     requestPath: resolve(runRoot, "request.json"),
     responsePath: resolve(runRoot, "response.json"),
     proxyTokenPath: resolve(runRoot, "proxy-token"),
+    proxyCaPath: resolve(runRoot, "proxy-ca.pem"),
   };
 }
 
@@ -215,6 +217,7 @@ export function assertWorkerRuntimeLayout(layout: WorkerRuntimeLayout): void {
     [layout.runRoot, layout.requestPath],
     [layout.runRoot, layout.responsePath],
     [layout.runRoot, layout.proxyTokenPath],
+    [layout.runRoot, layout.proxyCaPath],
   ] as const) {
     assertContained(root, path);
   }
@@ -233,6 +236,7 @@ export function assertWorkerRuntimeLayout(layout: WorkerRuntimeLayout): void {
   assertRealFile(layout.requestPath, 1024 * 1024);
   assertRealFile(layout.responsePath, 4 * 1024 * 1024);
   assertRealFile(layout.proxyTokenPath, 4_096);
+  assertRealFile(layout.proxyCaPath, 64 * 1024);
   assertExactTree(layout.baselineRoot, BASELINE_TREE);
   assertExactTree(layout.repairRoot, REPAIR_TREE);
   assertExactTree(layout.verificationRoot, VERIFICATION_TREE);
@@ -299,7 +303,8 @@ function workerEnvironment(): Readonly<Record<string, string>> {
     POLICYTWIN_WORKER_REQUEST: "/run/policytwin/request.json",
     POLICYTWIN_WORKER_RESPONSE: "/run/policytwin/response.json",
     POLICYTWIN_PROXY_TOKEN_FILE: "/run/secrets/policytwin-proxy-token",
-    POLICYTWIN_OPENAI_PROXY: `https://${WORKER_PROXY_AUTHORITY}`,
+    POLICYTWIN_OPENAI_PROXY: `https://${WORKER_PROXY_AUTHORITY}/v1`,
+    CODEX_CA_CERTIFICATE: "/run/secrets/policytwin-egress-ca.pem",
   });
 }
 
@@ -368,6 +373,11 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
     {
       source: layout.proxyTokenPath,
       target: "/run/secrets/policytwin-proxy-token",
+      readOnly: true,
+    },
+    {
+      source: layout.proxyCaPath,
+      target: "/run/secrets/policytwin-egress-ca.pem",
       readOnly: true,
     },
   ];
