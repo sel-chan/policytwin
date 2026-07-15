@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7/M9 — next independently verifiable live-boundary gap`
+- Current milestone: `M7/M9 — egress restart fail-stop identity`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 00:08:44 +09:00`
+- Last updated: `2026-07-16 01:24:22 +09:00`
 - Latest checkpoint commit: `058047b89536e820f4bfa197dcf06555cdb55793`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -93,43 +93,44 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed single-run RPC client, real TLS 1.3 mutually authenticated transport, durable replay rejection, concrete shell-free Docker lifecycle driver, request/nonce-bound ownership, fake-daemon execution/teardown tests, validate-only worker entrypoint, command-backed run-capability auth, and Responses-only broker admission tests pass | pending | host live construction remains disabled; the concrete driver is not wired to a live mTLS result; no immutable image run, observed real-Docker egress/cgroup/TLS/upstream behavior, cumulative CPU enforcement, fresh SDK repair, zero live post-repair drift, live review, or signed evidence exists |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed single-run RPC client, real TLS 1.3 mutually authenticated transport, durable replay rejection, concrete shell-free Docker lifecycle driver, request/nonce-bound ownership, explicit no-restart running/stopped identity checks, fake-daemon execution/teardown tests, validate-only worker entrypoint, command-backed run-capability auth, and Responses-only broker admission tests pass | pending | host live construction remains disabled; the concrete driver is not wired to a live mTLS result; no immutable image run, observed real-Docker restart/egress/cgroup/TLS/upstream behavior, cumulative CPU enforcement, fresh SDK repair, zero live post-repair drift, live review, or signed evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS/replay, 325-file clean-copy replay, schema-v5 split web/worker/verifier/egress contracts, canonical local Docker CLI boundary, cgroup-v2 teardown observer, TLS-only no-HTTP probe, and static/fake-daemon supervisor checks | pending | actual CA/TLS binding, proxy-restart lease state, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, cumulative CPU enforcement, owner license, shared auth/quotas, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS/replay, 325-file clean-copy replay, schema-v5 split web/worker/verifier/egress contracts, canonical local Docker CLI boundary, cgroup-v2 teardown observer, explicit `restart=no` plus running/stopped instance identity checks, TLS-only no-HTTP probe, and static/fake-daemon supervisor checks | pending | actual CA/TLS binding, real restart behavior or durable lease state, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, cumulative CPU enforcement, owner license, shared auth/quotas, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
 ### Objective
 
-Create and checkpoint the missing `08-architecture.png` submission asset from repository-native vector source. The image must explain the verified offline policy-engineering flow, distinguish static/fake-daemon Docker evidence from real-Docker evidence, and show fresh GPT-5.6, live Codex repair, upstream OpenAI traffic, live attestation, and deployment as disabled or not run. It must contain no secret, personal path, fabricated PASS, or unsupported live claim.
+Prevent an egress proxy restart from resetting its in-memory request lease during one admitted repair run. The supervisor must fix the egress container's ID, PID, start timestamp, restart count, and `restart=no` policy, reobserve that identity before and after worker execution and before stop, and reject any missing, stopped, restarted, or changed instance before trusting a worker receipt. Worker, verifier, and egress logs must also remain untrusted until the same container instance is observed stopped with PID zero before and after log collection.
 
 ### Starting failing condition
 
-The Docker supervisor implementation was committed at `5d9182c` and its ledger at `40f1a4e`; `main` was clean at this checkpoint start. `pnpm submission:check` still reports 30 unmet requirements, including missing `08-architecture.png`. README and `docs/architecture.md` already contain truthful Mermaid diagrams, but no reviewer-ready raster architecture asset exists. `04-codex-repair.png` must remain missing because no live Codex repair ran.
+The architecture checkpoint was committed at `058047b` with its ledger at `9e82b3f`; `main` was clean. `OpenAiEgressLeaseGuard` stores its request count only in memory and the proxy creates a fresh guard on every process start. The supervisor owns one container ID but currently records only observed PIDs, does not parse `State.StartedAt` or `RestartCount`, does not inspect `HostConfig.RestartPolicy`, and does not reobserve the running egress instance around worker execution. A proxy restart could therefore reset the lease without the static/fake-daemon driver rejecting the worker result.
 
 ### Planned actions
 
-- [x] Confirm clean `main` at `40f1a4e` and identify the independently completable `08-architecture.png` requirement.
-- [x] Define a compact English information hierarchy from current repository and evidence facts.
-- [x] Create a repository-native SVG with explicit verified, static-only, blocked, and not-run states.
-- [x] Render the SVG to the required PNG at a submission-safe desktop size and inspect it directly.
-- [x] Update submission drafts/checks so only the genuinely missing Codex-repair capture remains.
-- [x] Run relevant static, submission, security, clean-copy, browser/build, and full offline gates.
-- [x] Finish final diff review and current-branch checkpoint commit after independent truth/visual reviews.
+- [x] Confirm clean `main` at `9e82b3f` and reproduce the lease-reset/restart-observation gap from code.
+- [x] Extend the closed Docker plan and command allowlist with an explicit `restart=no` policy.
+- [x] Parse and validate restart policy, restart count, PID, running state, and canonical start timestamp from Docker inspect.
+- [x] Pin one running-instance identity per owned container and reobserve egress before/after worker execution and before stop.
+- [x] Require the same stopped worker/verifier/egress identity before and after reading logs.
+- [x] Add fake-daemon regressions for PID/start-time drift, restart count, stopped egress, missing fields, weakened restart policy, and wait-returned running containers.
+- [x] Update decisions, threat/limitations/runbook, contract checks, generated reports, and truthfully scoped submission copy.
+- [ ] Run the authoritative final offline gate, final truth/diff review, and a current-branch checkpoint commit.
 
 ### Completion evidence
 
-- Starting HEAD: `40f1a4e`; clean `main` worktree before this ledger update.
-- Baseline asset evidence: seven local product screenshots exist; `08-architecture.png` is absent and `submission:check` reports it explicitly.
-- Truth boundary: the new image may cite local OPA, static/fake-daemon Docker contracts, partial evidence, and local Chrome verification. Fresh GPT-5.6, live Codex repair/review, real-Docker/cgroup/TLS execution, proxy outbound measurement, live attestation, and deployment must remain visibly not run.
-- Asset result: `docs/assets/policytwin-architecture.svg` renders locally through installed Chrome to `artifacts/screenshots/08-architecture.png` at exactly 1800x1200. The renderer rejects linked/escaped physical parents before writing, renders to a random managed temporary PNG, validates it, and promotes it by rename. A regression test requires byte equality with the checked-in raster.
-- Truth result: the diagram separates real local OPA from reference-expectation drift, labels prepared live rerun/result paths as not executed or not returned, uses `PARTIAL_OFFLINE / FAIL`, and keeps GPT-5.6, live Codex, real Docker, upstream traffic, and attestation explicitly unavailable.
-- Review result: two independent read-only reviews found no remaining P0/P1 after OPA/reference wording, drift status color, evidence direction, font size, rerun/proof-return wording, and PNG freshness were corrected. Final visual inspection found no clipping or overlap.
-- Regression result: 167/167 unit assertions, the integration suite, 22/22 evals, 3/3 production Chrome E2E, lint, typecheck, build, 325-file clean-copy replay, and a 325-file/296-text-file security scan pass.
-- Gate result: final `pnpm verify` exits 1 only for the absent owner-selected `LICENSE` and the 29-item non-final submission gate. `08-architecture.png` is no longer missing; `04-codex-repair.png` correctly remains absent because no live repair ran.
-- Dynamic/live truth: all three dynamic reports fail before Docker at the unset immutable Node base; worker/egress retain `dockerInvoked:false` and current build-input hashes. `verify:live` fails before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`.
-- Current checkpoint result: `ARCHITECTURE_ASSET_PASS / SUBMISSION_AND_LIVE_FAIL_CLOSED`; no dynamic or live evidence has been promoted.
+- Starting HEAD: `9e82b3f`; clean `main` worktree before this ledger update.
+- Gap evidence: proxy request accounting is process-local; the Docker observer returns only ID/name/image/PID/running/networks/labels; the driver does not preserve a running-instance identity or reobserve egress around the worker wait.
+- Security invariant: a worker result is untrusted unless the exact owned egress container remained continuously running as the same zero-restart instance under an explicit no-restart policy for the relevant execution interval.
+- Contract result: worker, verifier, egress, and TLS-probe create commands explicitly use `restart=no`; inspect requires policy `no`, retry count zero, container restart count zero, and a strict canonical Docker start timestamp. Current build-input hashes are worker `9e4b84f884deb62c0c495b994354e5890207d6a2feb29365cfe150ba427efe9a`, verifier `ecfd6e9ac299c5a65b6dcbfc3fbc67e6f6840284f91d76341f60d1716946c949`, and egress `6981812493f753fc34cb90bffeb17101aba5624ce4f4d0043901053304ba821c`.
+- Driver result: the first running PID/start timestamp is pinned; egress is reobserved immediately before worker start, after worker wait/logs, and before stop. Every worker, verifier, and egress wait is followed by same-start-time, `running=false`, PID-zero inspection both before and after log collection.
+- Regression result: the focused Docker suites pass 43/43; full unit tests pass 178/178, integration tests 49/49, evals 22/22, production Chrome E2E 3/3, lint, typecheck, build, static container checks, the 325-file/296-text-file security scan, and 325-file clean-copy replay pass.
+- Independent review: the first read-only security review found a P1 driver stopped-state gap; the second truth review found a P0 mismatch in the prepared dynamic smoke ordering. Driver and smoke scripts now inspect the same stopped worker/verifier/egress instance before and after logs, static checks enforce all three orders, and the final read-only re-review found no remaining P0/P1.
+- Dynamic/live result: all three dynamic reports still fail before Docker because the immutable Node base is unset. Worker and egress reports retain `dockerInvoked:false`, identity facts false, current hashes, no TLS/HTTP/model/Codex execution, and outbound `NOT_MEASURED`. `verify:live` fails before network because `OPENAI_API_KEY` and `CODEX_MODEL` are unset.
+- Truth boundary: this checkpoint may prove only a static/fake-daemon restart-detection and fail-stop contract. It cannot claim real Docker restart behavior, durable lease counts, upstream traffic, a model request, live Codex work, or dynamic isolation.
+- Current checkpoint result: `STATIC_FAKE_DAEMON_RESTART_FAIL_STOP_PASS / DYNAMIC_AND_LIVE_FAIL_CLOSED`; no dynamic or live evidence has been promoted.
 
 ## Quality gates
 
@@ -139,24 +140,24 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` via final `pnpm verify` | architecture source/renderer/tests and worker/verifier/egress/container contracts pass repository static checks | 2026-07-15 23:58 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` via final `pnpm verify` | strict TypeScript 6.0.3 covers the application, policy engine, repair contracts, and Docker supervisor boundaries | 2026-07-15 23:58 +09:00 |
-| Unit tests | PASS | `pnpm test` via final `pnpm verify` | 167 assertions pass; 4 architecture checks include self-containment, exact dimensions, local-only rendering, physical-output guards, and byte-identical SVG-to-PNG regeneration | 2026-07-15 23:58 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` via final `pnpm verify` | 49 serial mTLS/replay/OPA/evidence/persistence/fixture integration assertions pass | 2026-07-15 23:58 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` via final `pnpm verify` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-15 23:58 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` via final `pnpm verify` | 22/22 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-15 23:58 +09:00 |
-| Production build | PASS | `pnpm build` via final `pnpm verify` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-15 23:58 +09:00 |
+| Lint | PASS | `pnpm lint` | architecture source/renderer/tests and worker/verifier/egress/container contracts pass repository static checks | 2026-07-16 01:11 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers the application, policy engine, repair contracts, and Docker supervisor boundaries | 2026-07-16 01:11 +09:00 |
+| Unit tests | PASS | `pnpm test` | 178/178 assertions pass, including restart-policy/count, strict timestamp, running identity drift, and worker/verifier/egress stopped-state regressions | 2026-07-16 01:11 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 49/49 serial mTLS/replay/OPA/evidence/persistence/fixture integration assertions pass | 2026-07-16 01:11 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-16 01:11 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-16 01:11 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-16 01:11 +09:00 |
 | Offline full verification | FAIL | `pnpm verify` | all implemented code/static/browser/clean gates pass; exact expected failures are the owner-selected project `LICENSE` and the 29-item non-final submission gate | 2026-07-15 23:58 +09:00 |
-| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no fresh evidence exists | 2026-07-15 23:32 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` via final `pnpm verify` | 325 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-15 23:58 +09:00 |
-| Static container contract | PASS | `pnpm container:check` via final `pnpm verify` | schema-v5 static contract passes; current worker/verifier/egress hashes match and all dynamic/live facts remain false | 2026-07-15 23:58 +09:00 |
-| Dynamic container health | FAIL | `pnpm container:verify` | `DYNAMIC_WEB_CONTAINER/FAIL`; immutable Node base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-15 23:32 +09:00 |
-| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | exact current role hashes match; fails before Docker only at the unset immutable Node base with `dockerInvoked:false` | 2026-07-15 23:32 +09:00 |
-| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | fails before Docker only at the unset immutable Node base; HTTP/model facts remain false and outbound is `NOT_MEASURED` | 2026-07-15 23:32 +09:00 |
+| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no fresh evidence exists | 2026-07-16 01:11 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 325 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 01:11 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | schema-v5 static contract passes; current worker/verifier/egress hashes match and all dynamic/live facts remain false | 2026-07-16 01:11 +09:00 |
+| Dynamic container health | FAIL | `pnpm container:verify` | `DYNAMIC_WEB_CONTAINER/FAIL`; immutable Node base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-16 01:11 +09:00 |
+| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | exact current role hashes match; fails before Docker only at the unset immutable Node base with `dockerInvoked:false`; restart and identity facts remain false | 2026-07-16 01:11 +09:00 |
+| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | fails before Docker only at the unset immutable Node base; restart/identity/TLS facts remain false, HTTP/model facts remain false, and outbound is `NOT_MEASURED` | 2026-07-16 01:11 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
 | Dependency/license review | FAIL | `pnpm license:check` via final `pnpm verify`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-15 23:58 +09:00 |
-| Security review | PASS | `pnpm security:check` via final `pnpm verify` | 325 files/296 text files plus Git history; no findings and the fixed local architecture renderer test is explicitly reviewed | 2026-07-15 23:58 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` via final `pnpm verify` | exactly 29 unmet requirements; architecture capture is complete, only the truthful live Codex repair capture remains missing among screenshots | 2026-07-15 23:58 +09:00 |
+| Security review | PASS | `pnpm security:check` | 325 files/296 text files plus Git history; no findings | 2026-07-16 01:11 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; architecture capture is complete, only the truthful live Codex repair capture remains missing among screenshots | 2026-07-16 01:11 +09:00 |
 
 ## Product proof metrics
 
@@ -178,6 +179,16 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-16 01:11 +09:00 — Egress restart and stopped-result identity fail closed offline
+
+- Milestones: M7 and M9 remain `IN_PROGRESS`; this checkpoint closes the process-local egress lease restart gap only at the static/fake-daemon boundary.
+- Runtime contract: worker, verifier, egress, and TLS probe explicitly use `restart=no`; independent inspect requires policy `no`, retry count/restart count zero, and strict canonical start timestamps.
+- Supervisor behavior: one running ID/PID/start timestamp is pinned, egress is reobserved before/after worker execution and before stop, and worker/verifier/egress must remain the same stopped PID-zero instance before and after log collection.
+- Regression evidence: fake-daemon tests reject PID, start time, running state, restart count, missing timestamp, invalid calendar timestamp, weakened/missing restart policy, and wait-returned running containers. Focused suites pass 43/43 and the full unit suite passes 178/178.
+- Broader evidence: integration 49/49, eval 22/22, production Chrome 3/3, build, static container contract, 325-file/296-text-file security scan, and 325-file clean-copy replay pass.
+- Review: one read-only security review found the driver stopped-state P1, and a separate truth review found the dynamic-smoke ordering P0. Both were corrected with log-boundary inspections, order checks, and worker/verifier/egress regressions; the final re-review found no remaining P0/P1.
+- Truth boundary: real Docker and live work did not run. The three dynamic gates fail before Docker at the unset immutable Node base, and `verify:live` fails before network at missing `OPENAI_API_KEY`/`CODEX_MODEL`. The submission checker remains fail-closed with 29 unmet requirements.
 
 ### 2026-07-15 23:32 +09:00 — Truthful architecture submission asset verified offline
 
@@ -513,18 +524,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Inspect remaining M7/M9 gaps and select the highest-priority independently verifiable live-boundary slice without requiring Docker, credentials, or unsupported claims.`
+`Finish the restart fail-stop checkpoint with a final current-worktree verification, diff review, and current-branch commit.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the truthful architecture asset checkpoint is committed and the next independent M7/M9 slice is being selected`
-- Exact current state: `the verified offline product now includes a reproducible 1800x1200 architecture asset; the image and generated claims distinguish OPA from reference-expectation drift and keep all real-Docker, GPT-5.6, live Codex, upstream, attestation, deployment, and submission work unavailable`
-- Last successful command: `the 23:58 final pnpm verify sequence passed 167 unit assertions, 49 integration assertions, 22 evals, 3 browser tests, 325-file clean-copy replay, 325-file/296-text-file plus Git-history security, static schema-v5 container contract, and production build; only LICENSE and the exact 29-item submission gate remain`
+- Why paused: `not paused; the restart fail-stop checkpoint is implemented and undergoing final verification before commit`
+- Exact current state: `static and fake-daemon contracts now require restart=no, zero restart count, stable running identity, egress reobservation around worker execution, and the same stopped worker/verifier/egress identity before and after logs; real Docker and live work remain unavailable`
+- Last successful command: `the 01:11 pre-final pnpm verify sequence passed 178 unit assertions, 49 integration assertions, 22 evals, 3 browser tests, 325-file clean-copy replay, 325-file/296-text-file plus Git-history security, static schema-v5 container contract, and production build; only LICENSE and the exact 29-item submission gate failed; final rerun is pending after the truth-review correction`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `only this post-checkpoint ledger update before its documentation commit`
-- Safe resume command/action: `inspect the remaining M7/M9 acceptance gaps and implement the safest offline-verifiable prerequisite`
+- Uncommitted files: `restart fail-stop implementation, tests, generated reports/copy, and documentation pending final verification and checkpoint commit`
+- Safe resume command/action: `run focused checks, then pnpm verify, review the final diff, and commit the current checkpoint on main`
 - One owner action, if any: `none`
 
 ## Final completion record

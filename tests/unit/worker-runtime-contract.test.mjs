@@ -134,6 +134,10 @@ test("worker runtime plan fixes the two-file write set and credential-free verif
   assert.deepEqual(optionValues(plan.verifier.dockerArgs, "--cpus"), ["1"]);
   assert.deepEqual(optionValues(plan.worker.dockerArgs, "--stop-timeout"), ["5"]);
   assert.deepEqual(optionValues(plan.verifier.dockerArgs, "--stop-timeout"), ["5"]);
+  assert.deepEqual(optionValues(plan.worker.dockerArgs, "--restart"), ["no"]);
+  assert.deepEqual(optionValues(plan.verifier.dockerArgs, "--restart"), ["no"]);
+  assert.equal(plan.worker.restartPolicy, "no");
+  assert.equal(plan.verifier.restartPolicy, "no");
   assert.deepEqual(optionValues(plan.worker.dockerArgs, "--security-opt"), [
     "no-new-privileges:true",
   ]);
@@ -409,6 +413,13 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
   assert.equal(plan.egress.operateByObservedId, true);
   assert.equal(plan.worker.operateByObservedId, true);
   assert.equal(plan.verifier.operateByObservedId, true);
+  assert.deepEqual(
+    [plan.egress.restartPolicy, plan.worker.restartPolicy, plan.verifier.restartPolicy],
+    ["no", "no", "no"],
+  );
+  assert.deepEqual(optionValues(plan.egress.createArgs, "--restart"), ["no"]);
+  assert.deepEqual(optionValues(plan.worker.createArgs, "--restart"), ["no"]);
+  assert.deepEqual(optionValues(plan.verifier.createArgs, "--restart"), ["no"]);
   assert.deepEqual(optionValues(plan.egress.createArgs, "--network"), [
     OBSERVED_OUTBOUND_NETWORK_ID,
   ]);
@@ -430,6 +441,32 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
     "EGRESS_INSPECT_BY_ID",
     "EGRESS_START",
   ]);
+  for (const required of [
+    "EGRESS_IDENTITY_PIN",
+    "EGRESS_IDENTITY_REOBSERVE_BEFORE_WORKER",
+    "EGRESS_IDENTITY_REOBSERVE_AFTER_WORKER",
+    "EGRESS_IDENTITY_REOBSERVE_BEFORE_STOP",
+    "WORKER_STOPPED_IDENTITY_VERIFY_BEFORE_LOGS",
+    "WORKER_STOPPED_IDENTITY_REOBSERVE_AFTER_LOGS",
+    "EGRESS_STOPPED_IDENTITY_VERIFY_BEFORE_LOGS",
+    "EGRESS_STOPPED_IDENTITY_REOBSERVE_AFTER_LOGS",
+    "VERIFIER_STOPPED_IDENTITY_VERIFY_BEFORE_LOGS",
+    "VERIFIER_STOPPED_IDENTITY_REOBSERVE_AFTER_LOGS",
+  ]) {
+    assert.equal(plan.executionOrder.includes(required), true);
+  }
+  assert.equal(
+    plan.executionOrder.indexOf("WORKER_STOPPED_IDENTITY_VERIFY_BEFORE_LOGS") <
+      plan.executionOrder.indexOf("WORKER_LOGS") &&
+      plan.executionOrder.indexOf("WORKER_LOGS") <
+        plan.executionOrder.indexOf("WORKER_STOPPED_IDENTITY_REOBSERVE_AFTER_LOGS"),
+    true,
+  );
+  assert.equal(
+    plan.executionOrder.indexOf("EGRESS_IDENTITY_REOBSERVE_AFTER_WORKER") <
+      plan.executionOrder.indexOf("EGRESS_STOP"),
+    true,
+  );
   assert.equal(
     plan.executionOrder.indexOf("EGRESS_STOP") <
       plan.executionOrder.indexOf("VERIFIER_CREATE_CAPTURE_ID"),

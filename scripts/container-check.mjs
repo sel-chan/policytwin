@@ -33,6 +33,18 @@ function requireText(body, text, failures, label) {
   if (!body.includes(text)) failures.push(`${label} must contain ${JSON.stringify(text)}.`);
 }
 
+function requireOrderedText(body, fragments, failures, label) {
+  let offset = 0;
+  for (const fragment of fragments) {
+    const index = body.indexOf(fragment, offset);
+    if (index < 0) {
+      failures.push(`${label} must preserve stopped-instance observation around logs.`);
+      return;
+    }
+    offset = index + fragment.length;
+  }
+}
+
 export function inspectStaticContainerContract(root = ROOT) {
   const failures = [];
   const contractPath = resolve(root, "container-contract.json");
@@ -103,6 +115,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.runtimeUser !== "10001:10001" ||
     contract.workerContainer?.privileged !== false ||
     contract.workerContainer?.readOnlyRootRequired !== true ||
+    contract.workerContainer?.restartPolicy !== "no" ||
     JSON.stringify(contract.workerContainer?.capDrop) !== JSON.stringify(["ALL"]) ||
     JSON.stringify(contract.workerContainer?.capAdd) !== JSON.stringify([]) ||
     contract.workerContainer?.noNewPrivileges !== true ||
@@ -153,6 +166,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.verifierContainer?.runtimeUser !== "10002:10002" ||
     contract.verifierContainer?.privileged !== false ||
     contract.verifierContainer?.readOnlyRootRequired !== true ||
+    contract.verifierContainer?.restartPolicy !== "no" ||
     JSON.stringify(contract.verifierContainer?.capDrop) !== JSON.stringify(["ALL"]) ||
     JSON.stringify(contract.verifierContainer?.capAdd) !== JSON.stringify([]) ||
     contract.verifierContainer?.noNewPrivileges !== true ||
@@ -192,6 +206,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.egressProxy?.liveCodexExecuted !== false ||
     contract.egressProxy?.runtimeUser !== "10003:10003" ||
     contract.egressProxy?.readOnlyRootRequired !== true ||
+    contract.egressProxy?.restartPolicy !== "no" ||
     contract.egressProxy?.memoryBytes !== 268_435_456 ||
     contract.egressProxy?.memorySwapBytes !== 268_435_456 ||
     contract.egressProxy?.fileSizeLimitBytes !== 8_388_608 ||
@@ -245,6 +260,12 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.supervisorDockerExecutor?.fileSizeLimitRequired !== true ||
     contract.supervisorDockerExecutor?.boundedLocalLogDriverRequired !== true ||
     contract.supervisorDockerExecutor?.closedEnvironmentAndEntrypointInspection !== true ||
+    contract.supervisorDockerExecutor?.restartPolicyRequired !== "no" ||
+    contract.supervisorDockerExecutor?.restartCountMustRemainZero !== true ||
+    contract.supervisorDockerExecutor?.egressIdentityReobservedAroundWorker !== true ||
+    JSON.stringify(contract.supervisorDockerExecutor?.runningInstanceIdentityFields) !==
+      JSON.stringify(["containerId", "pid", "startedAt", "restartCount"]) ||
+    contract.supervisorDockerExecutor?.stoppedInstanceReobservedAroundLogs !== true ||
     contract.supervisorDockerExecutor?.cgroupV2ProcessTreeRequiredForDynamicGate !== true ||
     contract.supervisorDockerExecutor?.publishedPortsAllowed !== false ||
     JSON.stringify(contract.supervisorDockerExecutor?.policytwinLabelKeys) !==
@@ -493,6 +514,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     '"--publish"',
     "dockerExecutableStat.isFile()",
     "platform local daemon endpoint",
+    'argument === "--restart" && next !== "no"',
   ]) {
     requireText(dockerRunner, required, failures, "Supervisor Docker command runner");
   }
@@ -507,6 +529,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     "Docker memory+swap limit",
     "Docker file-size limit",
     "Docker log limits",
+    "Docker restart policy",
+    "Docker container restarted during the admitted run.",
     "parseDockerContainerOwnershipInspection",
     "Docker port bindings",
   ]) {
@@ -524,6 +548,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     "listedById?.exitCode === 0",
     "configuration.allowedWorkerImage !== request.policy.workerImageDigest",
     "maximumWorkerLimits",
+    "running instance changed",
+    "did not remain stopped",
   ]) {
     requireText(dockerDriver, required, failures, "Supervisor Docker lifecycle driver");
   }
@@ -568,11 +594,33 @@ export function inspectStaticContainerContract(root = ROOT) {
     "requiredDockerId",
     'docker(["network", "inspect", workerNetworkId])',
     "parseDockerContainerInspection",
+    "assertStoppedSameContainerInstance",
+    "runningInstanceIdentityVerified",
     'docker(["rm", "--force", id]',
     "Worker run workspace cleanup failed.",
   ]) {
     requireText(workerVerify, required, failures, "Worker container verifier");
   }
+  requireOrderedText(
+    workerVerify,
+    [
+      "const stoppedWorkerBeforeLogs = parseDockerContainerInspection(",
+      'const workerLogs = docker(["logs", workerId]);',
+      "const stoppedWorkerAfterLogs = parseDockerContainerInspection(",
+    ],
+    failures,
+    "Worker container verifier",
+  );
+  requireOrderedText(
+    workerVerify,
+    [
+      "const stoppedVerifierBeforeLogs = parseDockerContainerInspection(",
+      'const verifierLogs = docker(["logs", verifierId]);',
+      "const stoppedVerifierAfterLogs = parseDockerContainerInspection(",
+    ],
+    failures,
+    "Worker container verifier",
+  );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
     'from "./pinned-docker-cli.mjs"',
@@ -582,6 +630,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     "createTlsMaterial",
     "OBSERVED_OUTBOUND_NETWORK_ID",
     "parseDockerContainerInspection",
+    "assertSameRunningContainerInstance",
+    "runningInstanceIdentityVerified",
     'docker(["network", "disconnect", "--force", networkId, containerId]',
     "probeHttpRequestSent: false",
     'proxyUpstreamTrafficObservation: "NOT_MEASURED"',
@@ -590,6 +640,16 @@ export function inspectStaticContainerContract(root = ROOT) {
   ]) {
     requireText(egressVerify, required, failures, "Egress container verifier");
   }
+  requireOrderedText(
+    egressVerify,
+    [
+      "const stoppedProbeBeforeLogs = parseDockerContainerInspection(",
+      'const probeLogs = docker(["logs", probeId]).stdout.trim();',
+      "const stoppedProbeAfterLogs = parseDockerContainerInspection(",
+    ],
+    failures,
+    "Egress container verifier",
+  );
 
   const dockerignore = read(dockerignorePath, failures, ".dockerignore");
   const ignored = new Set(

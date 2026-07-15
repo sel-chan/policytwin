@@ -71,6 +71,40 @@ function requiredId(value, label) {
   return id;
 }
 
+function assertRunningContainerInstance(observation, label) {
+  if (
+    !observation.running ||
+    observation.pid < 1 ||
+    observation.startedAt === "0001-01-01T00:00:00Z" ||
+    observation.restartCount !== 0
+  ) {
+    throw new Error(`${label} did not expose one valid zero-restart running instance.`);
+  }
+}
+
+function assertSameRunningContainerInstance(expected, actual, label) {
+  assertRunningContainerInstance(actual, label);
+  if (
+    actual.id !== expected.id ||
+    actual.pid !== expected.pid ||
+    actual.startedAt !== expected.startedAt
+  ) {
+    throw new Error(`${label} running container instance changed during the admitted probe.`);
+  }
+}
+
+function assertStoppedSameContainerInstance(running, stopped, label) {
+  if (
+    stopped.id !== running.id ||
+    stopped.running ||
+    stopped.pid !== 0 ||
+    stopped.startedAt !== running.startedAt ||
+    stopped.restartCount !== 0
+  ) {
+    throw new Error(`${label} container instance changed before its result was trusted.`);
+  }
+}
+
 function outputLines(value) {
   return value.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
 }
@@ -344,6 +378,8 @@ async function main() {
     probeModelInvocation: false,
     egressCgroupObserved: false,
     probeCgroupObserved: false,
+    restartPolicyVerified: false,
+    runningInstanceIdentityVerified: false,
     processTreesReaped: false,
     secretMaterialDeleted: false,
     cleanupPassed: false,
@@ -644,9 +680,7 @@ async function main() {
       docker(["container", "inspect", egressId]).stdout,
       egressInspectionExpectation,
     );
-    if (!runningEgress.running || runningEgress.pid < 1) {
-      throw new Error("The egress proxy did not remain running for supervisor observation.");
-    }
+    assertRunningContainerInstance(runningEgress, "Egress proxy");
     egressCgroup = observeLinuxCgroupV2(runningEgress.pid, egressId);
     facts.egressCgroupObserved = true;
 
@@ -662,6 +696,8 @@ async function main() {
         "create",
         "--name",
         probeName,
+        "--restart",
+        "no",
         "--read-only",
         "--user",
         "10001:10001",
@@ -749,14 +785,27 @@ async function main() {
       docker(["container", "inspect", probeId]).stdout,
       probeInspectionExpectation,
     );
-    if (!runningProbe.running || runningProbe.pid < 1) {
-      throw new Error("The egress probe did not remain running for supervisor observation.");
-    }
+    assertRunningContainerInstance(runningProbe, "Egress probe");
     probeCgroup = observeLinuxCgroupV2(runningProbe.pid, probeId);
     facts.probeCgroupObserved = true;
     const probeExit = docker(["wait", probeId], 15_000).stdout.trim();
+    const stoppedProbeBeforeLogs = parseDockerContainerInspection(
+      docker(["container", "inspect", probeId]).stdout,
+      probeInspectionExpectation,
+    );
+    assertStoppedSameContainerInstance(runningProbe, stoppedProbeBeforeLogs, "Egress probe");
     const probeLogs = docker(["logs", probeId]).stdout.trim();
+    const stoppedProbeAfterLogs = parseDockerContainerInspection(
+      docker(["container", "inspect", probeId]).stdout,
+      probeInspectionExpectation,
+    );
+    assertStoppedSameContainerInstance(runningProbe, stoppedProbeAfterLogs, "Egress probe");
     if (probeExit !== "0") throw new Error("The egress TLS probe failed.");
+    const observedEgressAfterProbe = parseDockerContainerInspection(
+      docker(["container", "inspect", egressId]).stdout,
+      egressInspectionExpectation,
+    );
+    assertSameRunningContainerInstance(runningEgress, observedEgressAfterProbe, "Egress proxy");
     const probeReceipt = JSON.parse(probeLogs);
     if (
       probeReceipt?.schemaVersion !== "1" ||
@@ -773,6 +822,8 @@ async function main() {
     facts.tlsHandshakeVerified = true;
     facts.tlsVersion = probeReceipt.tlsVersion;
     facts.peerCertificateSha256 = probeReceipt.peerCertificateSha256;
+    facts.restartPolicyVerified = true;
+    facts.runningInstanceIdentityVerified = true;
   } catch (error) {
     if (failures.length === 0) failures.push(error instanceof Error ? error.message : String(error));
   } finally {
@@ -870,6 +921,8 @@ async function main() {
       facts.tlsHandshakeVerified &&
       facts.egressCgroupObserved &&
       facts.probeCgroupObserved &&
+      facts.restartPolicyVerified &&
+      facts.runningInstanceIdentityVerified &&
       facts.processTreesReaped &&
       facts.secretMaterialDeleted &&
       facts.cleanupPassed;

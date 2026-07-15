@@ -176,6 +176,7 @@ class FakeDockerRunner {
             },
           ],
           LogConfig: { Type: container.logDriver, Config: container.logOptions },
+          RestartPolicy: { Name: container.restartPolicy, MaximumRetryCount: 0 },
           PublishAllPorts: publishAll,
           PortBindings: publishAll ? { "8443/tcp": [{ HostPort: "8443" }] } : {},
           CapDrop: ["ALL"],
@@ -192,7 +193,8 @@ class FakeDockerRunner {
           DnsSearch: [],
           Tmpfs: container.tmpfs,
         },
-        State: { Pid: container.pid, Running: container.running },
+        State: { Pid: container.pid, Running: container.running, StartedAt: container.startedAt },
+        RestartCount: container.restartCount,
         NetworkSettings: {
           Ports: publishAll ? { "8443/tcp": [{ HostPort: "8443" }] } : {},
           Networks: Object.fromEntries(
@@ -342,10 +344,14 @@ class FakeDockerRunner {
         fileSizeLimitBytes: Number(fileSizeLimit[1]),
         logDriver: value(args, "--log-driver"),
         logOptions: parsePairs(values(args, "--log-opt")),
+        restartPolicy: value(args, "--restart"),
         networkMode: networkId,
         networks: new Map(),
         running: false,
         pid: 0,
+        startedAt: "0001-01-01T00:00:00Z",
+        restartCount: 0,
+        startGeneration: 0,
       };
       this.containers.set(id, container);
       if (network !== undefined) this.attach(container, network);
@@ -370,6 +376,8 @@ class FakeDockerRunner {
       container.running = true;
       container.pid = this.nextPid;
       this.nextPid += 1;
+      container.startGeneration += 1;
+      container.startedAt = `2026-07-16T00:00:00.${String(container.startGeneration).padStart(9, "0")}Z`;
       return result(0, `${container.id}\n`);
     }
     if (args[0] === "wait") {
@@ -377,6 +385,10 @@ class FakeDockerRunner {
       if (container === undefined) return result(1);
       container.running = false;
       container.pid = 0;
+      if (container.labels["com.policytwin.role"] === "worker") {
+        this.options.onWorkerWait?.(this, container);
+      }
+      this.options.onWait?.(this, container);
       return result(0, "0\n");
     }
     if (args[0] === "logs") {
@@ -525,6 +537,9 @@ test("Docker command allowlist rejects shell-like or boundary-weakening argument
   assert.doesNotThrow(() =>
     assertSupervisorDockerArguments(["network", "inspect", "1".repeat(64)]),
   );
+  assert.doesNotThrow(() =>
+    assertSupervisorDockerArguments(["create", "--restart", "no", IMAGE]),
+  );
   for (const args of [
     ["exec", "container", "sh"],
     ["create", "--privileged", IMAGE],
@@ -543,6 +558,7 @@ test("Docker command allowlist rejects shell-like or boundary-weakening argument
     ["create", "--log-driver", "json-file", IMAGE],
     ["create", "--log-opt", "max-file=10", IMAGE],
     ["create", "--ulimit", "nofile=1:1", IMAGE],
+    ["create", "--restart", "always", IMAGE],
     ["network", "create", "--opt", "bridge.name=eth0", "unsafe"],
   ]) {
     assert.throws(() => assertSupervisorDockerArguments(args), /Docker/u);
@@ -631,6 +647,67 @@ test("prepared Docker driver owns resources by returned IDs and proves full stat
   assert.equal(nameBasedMutation, false);
 });
 
+for (const [label, mutate, pattern] of [
+  ["PID", (egress) => { egress.pid += 100; }, /running instance changed/u],
+  [
+    "start timestamp",
+    (egress) => { egress.startedAt = "2026-07-16T00:00:00.999999999Z"; },
+    /running instance changed/u,
+  ],
+  ["running state", (egress) => { egress.running = false; egress.pid = 0; }, /running state/u],
+  ["restart count", (egress) => { egress.restartCount = 1; }, /restarted/u],
+  ["missing start timestamp", (egress) => { delete egress.startedAt; }, /start timestamp/u],
+]) {
+  test(`worker result is rejected after egress ${label} drift`, async (t) => {
+    const fixture = await createFixture(t);
+    const fake = new FakeDockerRunner({
+      onWorkerWait(runner) {
+        const egress = runner.containerByName(fixture.plan.egress.name);
+        if (egress === undefined) throw new Error("Missing fake egress container.");
+        mutate(egress);
+      },
+    });
+    const driver = createDriver(fake, fixture);
+    const signal = new AbortController().signal;
+    const handle = driver.createHandle(fixture.request);
+    await driver.prepare(handle, fixture.request, signal);
+    await assert.rejects(driver.runWorker(handle, fixture.request, signal), pattern);
+    const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+    assert.equal(cleanup.egressContainerRemoved, true);
+    assert.equal(cleanup.workerContainerRemoved, true);
+  });
+}
+
+for (const role of ["worker", "egress", "verifier"]) {
+  test(`${role} result is rejected unless wait leaves the same container stopped`, async (t) => {
+    const fixture = await createFixture(t);
+    const fake = new FakeDockerRunner({
+      onWait(_runner, container) {
+        if (container.labels["com.policytwin.role"] !== role) return;
+        container.running = true;
+        container.pid = 90_000;
+      },
+    });
+    const driver = createDriver(fake, fixture);
+    const signal = new AbortController().signal;
+    const handle = driver.createHandle(fixture.request);
+    await driver.prepare(handle, fixture.request, signal);
+    if (role === "verifier") {
+      const worker = await driver.runWorker(handle, fixture.request, signal);
+      await assert.rejects(
+        driver.runVerifier(handle, worker, fixture.request, signal),
+        /remain stopped/u,
+      );
+    } else {
+      await assert.rejects(driver.runWorker(handle, fixture.request, signal), /remain stopped/u);
+    }
+    const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+    assert.equal(cleanup.workerContainerRemoved, true);
+    assert.equal(cleanup.egressContainerRemoved, true);
+    assert.equal(cleanup.verifierContainerRemoved, true);
+  });
+}
+
 test("name preemption is rejected and the foreign container is never removed", async (t) => {
   const fixture = await createFixture(t);
   const fake = new FakeDockerRunner({ foreignContainerNames: [fixture.plan.worker.name] });
@@ -709,6 +786,9 @@ for (const [label, mutate] of [
   ["file-size limit", (inspection) => { inspection.HostConfig.Ulimits[0].Hard += 1; }],
   ["log driver", (inspection) => { inspection.HostConfig.LogConfig.Type = "json-file"; }],
   ["log rotation", (inspection) => { inspection.HostConfig.LogConfig.Config["max-file"] = "10"; }],
+  ["restart policy", (inspection) => { inspection.HostConfig.RestartPolicy.Name = "always"; }],
+  ["missing restart policy", (inspection) => { delete inspection.HostConfig.RestartPolicy; }],
+  ["invalid start timestamp", (inspection) => { inspection.State.StartedAt = "2026-02-31T00:00:00Z"; }],
   ["missing tmpfs", (inspection) => { inspection.HostConfig.Tmpfs = {}; }],
   ["weakened tmpfs", (inspection) => {
     const destination = Object.keys(inspection.HostConfig.Tmpfs)[0];

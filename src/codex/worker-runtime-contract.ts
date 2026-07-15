@@ -87,6 +87,7 @@ export interface WorkerContainerInvocation {
   fileSizeLimitBytes: number;
   logDriver: "local";
   logOptions: Readonly<Record<string, string>>;
+  restartPolicy: "no";
   wallTimeMs: number;
   cpuTimeMs: number;
   outputBytes: number;
@@ -432,6 +433,8 @@ function commonArguments(options: {
     "--rm",
     "--name",
     options.name,
+    "--restart",
+    "no",
     "--read-only",
     "--user",
     options.user,
@@ -600,6 +603,7 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
         "max-size": String(options.limits.outputBytes),
         "max-file": "1",
       }),
+      restartPolicy: "no",
       wallTimeMs: options.limits.wallTimeMs,
       cpuTimeMs: options.limits.cpuTimeMs,
       outputBytes: options.limits.outputBytes,
@@ -633,6 +637,7 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
         "max-size": String(options.limits.outputBytes),
         "max-file": "1",
       }),
+      restartPolicy: "no",
       wallTimeMs: options.limits.wallTimeMs,
       cpuTimeMs: options.limits.cpuTimeMs,
       outputBytes: options.limits.outputBytes,

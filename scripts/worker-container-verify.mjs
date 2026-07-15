@@ -92,6 +92,29 @@ function requiredDockerId(value, label) {
   return id;
 }
 
+function assertRunningContainerInstance(observation, label) {
+  if (
+    !observation.running ||
+    observation.pid < 1 ||
+    observation.startedAt === "0001-01-01T00:00:00Z" ||
+    observation.restartCount !== 0
+  ) {
+    throw new Error(`${label} did not expose one valid zero-restart running instance.`);
+  }
+}
+
+function assertStoppedSameContainerInstance(running, stopped, label) {
+  if (
+    stopped.id !== running.id ||
+    stopped.running ||
+    stopped.pid !== 0 ||
+    stopped.startedAt !== running.startedAt ||
+    stopped.restartCount !== 0
+  ) {
+    throw new Error(`${label} container instance changed before its result was trusted.`);
+  }
+}
+
 function outputLines(value) {
   return value.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
 }
@@ -355,6 +378,8 @@ async function main() {
     requestLimitsBound: false,
     workerCgroupObserved: false,
     verifierCgroupObserved: false,
+    restartPolicyVerified: false,
+    runningInstanceIdentityVerified: false,
     cpuBudgetsPosthocVerified: false,
     cumulativeCpuTimeEnforced: false,
     processTreesReaped: false,
@@ -660,14 +685,17 @@ async function main() {
       docker(["container", "inspect", workerId]).stdout,
       workerInspectionExpectation,
     );
-    if (!runningWorker.running || runningWorker.pid < 1) {
-      throw new Error("Worker container did not remain running for supervisor observation.");
-    }
+    assertRunningContainerInstance(runningWorker, "Worker");
     workerCgroup = observeLinuxCgroupV2(runningWorker.pid, workerId);
     facts.workerCgroupObserved = true;
     if (docker(["wait", workerId], 60_000).stdout.trim() !== "0") {
       throw new Error("Worker static preflight exited unsuccessfully.");
     }
+    const stoppedWorkerBeforeLogs = parseDockerContainerInspection(
+      docker(["container", "inspect", workerId]).stdout,
+      workerInspectionExpectation,
+    );
+    assertStoppedSameContainerInstance(runningWorker, stoppedWorkerBeforeLogs, "Worker");
     try {
       const finalCpuUsageUsec = readLinuxCgroupCpuUsageUsec(workerCgroup);
       workerCpuBudgetVerified =
@@ -676,6 +704,11 @@ async function main() {
       workerCpuBudgetVerified = false;
     }
     const workerLogs = docker(["logs", workerId]);
+    const stoppedWorkerAfterLogs = parseDockerContainerInspection(
+      docker(["container", "inspect", workerId]).stdout,
+      workerInspectionExpectation,
+    );
+    assertStoppedSameContainerInstance(runningWorker, stoppedWorkerAfterLogs, "Worker");
     parsePreflight(workerLogs.stdout, "STATIC_PREFLIGHT_PASS");
     docker(["network", "disconnect", "--force", workerNetworkId, workerId]);
     docker(["rm", "--force", workerId]);
@@ -752,14 +785,17 @@ async function main() {
       docker(["container", "inspect", verifierId]).stdout,
       verifierInspectionExpectation,
     );
-    if (!runningVerifier.running || runningVerifier.pid < 1) {
-      throw new Error("Verifier container did not remain running for supervisor observation.");
-    }
+    assertRunningContainerInstance(runningVerifier, "Verifier");
     verifierCgroup = observeLinuxCgroupV2(runningVerifier.pid, verifierId);
     facts.verifierCgroupObserved = true;
     if (docker(["wait", verifierId], 60_000).stdout.trim() !== "0") {
       throw new Error("Verifier exited unsuccessfully.");
     }
+    const stoppedVerifierBeforeLogs = parseDockerContainerInspection(
+      docker(["container", "inspect", verifierId]).stdout,
+      verifierInspectionExpectation,
+    );
+    assertStoppedSameContainerInstance(runningVerifier, stoppedVerifierBeforeLogs, "Verifier");
     try {
       const finalCpuUsageUsec = readLinuxCgroupCpuUsageUsec(verifierCgroup);
       verifierCpuBudgetVerified =
@@ -768,11 +804,18 @@ async function main() {
       verifierCpuBudgetVerified = false;
     }
     const verifierLogs = docker(["logs", verifierId]);
+    const stoppedVerifierAfterLogs = parseDockerContainerInspection(
+      docker(["container", "inspect", verifierId]).stdout,
+      verifierInspectionExpectation,
+    );
+    assertStoppedSameContainerInstance(runningVerifier, stoppedVerifierAfterLogs, "Verifier");
     const verifierReceipt = parsePreflight(verifierLogs.stdout, "FIXTURE_COMMANDS_PASS");
     if (verifierReceipt.credentialsPresent !== false) {
       throw new Error("Verifier reported credential exposure.");
     }
     docker(["rm", "--force", verifierId]);
+    facts.restartPolicyVerified = true;
+    facts.runningInstanceIdentityVerified = true;
     facts.verifierCommandsPassed = true;
   } catch (error) {
     if (failures.length === 0) {
@@ -873,6 +916,8 @@ async function main() {
       facts.workerNetworkOwnershipVerified &&
       facts.workerCgroupObserved &&
       facts.verifierCgroupObserved &&
+      facts.restartPolicyVerified &&
+      facts.runningInstanceIdentityVerified &&
       facts.processTreesReaped &&
       facts.workerStaticPreflight &&
       facts.verifierCommandsPassed &&

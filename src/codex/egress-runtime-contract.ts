@@ -49,6 +49,7 @@ export interface SupervisorDockerProcessPlan {
   fileSizeLimitBytes: number;
   logDriver: "local";
   logOptions: Readonly<Record<string, string>>;
+  restartPolicy: "no";
   wallTimeMs: number;
   cpuTimeMs: number;
   outputBytes: number;
@@ -211,6 +212,7 @@ function explicitProcessPlan(
     fileSizeLimitBytes: invocation.fileSizeLimitBytes,
     logDriver: invocation.logDriver,
     logOptions: invocation.logOptions,
+    restartPolicy: invocation.restartPolicy,
     wallTimeMs: invocation.wallTimeMs,
     cpuTimeMs: invocation.cpuTimeMs,
     outputBytes: invocation.outputBytes,
@@ -333,6 +335,8 @@ export function buildSupervisorDockerLifecyclePlan(options: {
     "create",
     "--name",
     egressName,
+    "--restart",
+    "no",
     "--read-only",
     "--user",
     "10003:10003",
@@ -400,17 +404,25 @@ export function buildSupervisorDockerLifecyclePlan(options: {
       "EGRESS_CONNECT_INTERNAL_BY_ID",
       "EGRESS_INSPECT_BY_ID",
       "EGRESS_START",
+      "EGRESS_IDENTITY_PIN",
       "WORKER_CREATE_CAPTURE_ID",
       "WORKER_CONNECT_INTERNAL_BY_ID",
       "WORKER_INSPECT_BY_ID",
+      "EGRESS_IDENTITY_REOBSERVE_BEFORE_WORKER",
       "WORKER_START",
       "WORKER_WAIT",
+      "WORKER_STOPPED_IDENTITY_VERIFY_BEFORE_LOGS",
       "WORKER_LOGS",
+      "WORKER_STOPPED_IDENTITY_REOBSERVE_AFTER_LOGS",
+      "EGRESS_IDENTITY_REOBSERVE_AFTER_WORKER",
       "WORKER_DISCONNECT_INTERNAL_BY_ID",
       "WORKER_REMOVE_BY_ID",
+      "EGRESS_IDENTITY_REOBSERVE_BEFORE_STOP",
       "EGRESS_STOP",
       "EGRESS_WAIT",
+      "EGRESS_STOPPED_IDENTITY_VERIFY_BEFORE_LOGS",
       "EGRESS_LOGS",
+      "EGRESS_STOPPED_IDENTITY_REOBSERVE_AFTER_LOGS",
       "EGRESS_DISCONNECT_INTERNAL_BY_ID",
       "EGRESS_DISCONNECT_OUTBOUND_BY_ID",
       "EGRESS_REMOVE_BY_ID",
@@ -418,7 +430,9 @@ export function buildSupervisorDockerLifecyclePlan(options: {
       "VERIFIER_INSPECT_BY_ID",
       "VERIFIER_START",
       "VERIFIER_WAIT",
+      "VERIFIER_STOPPED_IDENTITY_VERIFY_BEFORE_LOGS",
       "VERIFIER_LOGS",
+      "VERIFIER_STOPPED_IDENTITY_REOBSERVE_AFTER_LOGS",
       "VERIFIER_REMOVE_BY_ID",
     ],
     cleanupOrder: [
@@ -484,6 +498,7 @@ export function buildSupervisorDockerLifecyclePlan(options: {
       fileSizeLimitBytes: 8_388_608,
       logDriver: "local",
       logOptions: Object.freeze({ "max-size": "8388608", "max-file": "1" }),
+      restartPolicy: "no",
       wallTimeMs: options.limits.wallTimeMs,
       cpuTimeMs: options.limits.cpuTimeMs,
       outputBytes: 8 * 1024 * 1024,

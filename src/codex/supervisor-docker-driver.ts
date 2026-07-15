@@ -107,6 +107,7 @@ interface OwnedContainer {
   plan: SupervisorDockerProcessPlan;
   connections: Set<NetworkRole>;
   observedPids: Set<number>;
+  runningIdentity: { pid: number; startedAt: string } | null;
   removed: boolean;
 }
 
@@ -212,6 +213,11 @@ function assertPlanBoundToRequest(
       })
     ) {
       throw new Error("The supervisor Docker plan labels are not request-bound.");
+    }
+  }
+  for (const processPlan of [plan.egress, plan.worker, plan.verifier]) {
+    if (processPlan.restartPolicy !== "no") {
+      throw new Error("The supervisor Docker plan permits a container restart.");
     }
   }
   const placeholderNetworks = {
@@ -390,6 +396,7 @@ async function observeContainer(
   role: ContainerRole,
   signal: AbortSignal,
   requireRunning = false,
+  requireStopped = false,
 ): Promise<void> {
   const owned = handle.containers[role];
   if (owned === undefined || owned.removed) {
@@ -450,11 +457,35 @@ async function observeContainer(
   if (ports.stdout.trim().length !== 0) {
     throw new Error("A prepared Docker container published a host port.");
   }
+  if (requireRunning && requireStopped) {
+    throw new Error("A Docker container cannot be required running and stopped together.");
+  }
   if (requireRunning) {
-    if (!observation.running || observation.pid < 1) {
+    if (
+      !observation.running ||
+      observation.pid < 1 ||
+      observation.startedAt === "0001-01-01T00:00:00Z"
+    ) {
       throw new Error("The prepared Docker container did not enter a running state.");
     }
+    if (
+      owned.runningIdentity !== null &&
+      (owned.runningIdentity.pid !== observation.pid ||
+        owned.runningIdentity.startedAt !== observation.startedAt)
+    ) {
+      throw new Error("The prepared Docker container running instance changed.");
+    }
+    owned.runningIdentity ??= { pid: observation.pid, startedAt: observation.startedAt };
     owned.observedPids.add(observation.pid);
+  } else if (owned.runningIdentity !== null) {
+    if (owned.runningIdentity.startedAt !== observation.startedAt) {
+      throw new Error("The prepared Docker container start identity changed.");
+    }
+    if (requireStopped && (observation.running || observation.pid !== 0)) {
+      throw new Error("The prepared Docker container did not remain stopped.");
+    }
+  } else if (requireStopped) {
+    throw new Error("The prepared Docker container lacks a running-instance identity.");
   }
 }
 
@@ -577,6 +608,7 @@ async function createContainer(
     plan,
     connections,
     observedPids: new Set(),
+    runningIdentity: null,
     removed: false,
   };
   await observeContainer(runner, handle, role, signal);
@@ -690,6 +722,7 @@ async function waitAndReadLogs(
     "Docker container wait",
     { timeoutMs },
   );
+  await observeContainer(runner, handle, role, signal, false, true);
   const logs = await mustRun(
     runner,
     ["logs", container.id],
@@ -697,6 +730,7 @@ async function waitAndReadLogs(
     "Docker container logs",
     { maximumOutputBytes },
   );
+  await observeContainer(runner, handle, role, signal, false, true);
   return {
     exitCode: parseDockerWaitExitCode(waitResult.stdout, "Docker container wait"),
     stdout: logs.stdout,
@@ -711,6 +745,7 @@ async function stopEgress(
 ): Promise<void> {
   const egress = handle.containers.egress;
   if (egress === undefined || egress.removed) return;
+  await observeContainer(runner, handle, "egress", signal, true);
   await mustRun(
     runner,
     ["stop", "--time", "5", egress.id],
@@ -976,6 +1011,7 @@ export function createSupervisorDockerLifecycleDriver(options: {
       if (handle.request !== request || handle.plan === null) {
         throw new Error("The supervisor Docker handle is not prepared.");
       }
+      await observeContainer(options.runner, handle, "egress", signal, true);
       await startContainer(options.runner, handle, "worker", signal);
       const output = await waitAndReadLogs(
         options.runner,
@@ -985,6 +1021,7 @@ export function createSupervisorDockerLifecycleDriver(options: {
         request.policy.limits.wallTimeMs,
         request.policy.limits.outputBytes,
       );
+      await observeContainer(options.runner, handle, "egress", signal, true);
       await disconnectContainer(options.runner, handle, "worker", "worker", signal);
       await removeContainer(options.runner, handle, "worker", signal);
       await observeNetwork(options.runner, handle, "worker", signal);

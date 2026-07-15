@@ -32,6 +32,8 @@ export interface DockerContainerObservation {
   image: string;
   pid: number;
   running: boolean;
+  startedAt: string;
+  restartCount: number;
   networkIds: Readonly<Record<string, string>>;
   labels: Readonly<Record<string, string>>;
 }
@@ -63,6 +65,38 @@ function integer(value: unknown, label: string, minimum = 0): number {
     throw new Error(`${label} is invalid.`);
   }
   return value as number;
+}
+
+function dockerTimestamp(value: unknown, label: string): string {
+  const timestamp = text(value, label);
+  if (timestamp === "0001-01-01T00:00:00Z") return timestamp;
+  const matched = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?Z$/u.exec(
+    timestamp,
+  );
+  if (matched === null) {
+    throw new Error(`${label} is invalid.`);
+  }
+  const year = Number(matched[1]);
+  const month = Number(matched[2]);
+  const day = Number(matched[3]);
+  const hour = Number(matched[4]);
+  const minute = Number(matched[5]);
+  const second = Number(matched[6]);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (
+    year < 1 ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > (daysInMonth[month - 1] ?? 0) ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59
+  ) {
+    throw new Error(`${label} is invalid.`);
+  }
+  return timestamp;
 }
 
 function nullableRecord(value: unknown, label: string): JsonRecord {
@@ -349,6 +383,7 @@ export function parseDockerContainerInspection(
   const config = record(container.Config, "Docker container config");
   const host = record(container.HostConfig, "Docker host config");
   const state = record(container.State, "Docker container state");
+  const restartPolicy = record(host.RestartPolicy, "Docker restart policy");
   const networkSettings = record(container.NetworkSettings, "Docker network settings");
   const labels = stringRecord(config.Labels, "Docker container labels");
   const creationNetworkMode = text(host.NetworkMode, "Docker creation network mode");
@@ -377,6 +412,8 @@ export function parseDockerContainerInspection(
     integer(host.Memory, "Docker memory limit") !== expected.memoryBytes ||
     integer(host.MemorySwap, "Docker memory+swap limit") !== expected.memorySwapBytes ||
     integer(host.NanoCpus, "Docker CPU limit") !== expected.nanoCpus ||
+    text(restartPolicy.Name, "Docker restart policy name") !== "no" ||
+    integer(restartPolicy.MaximumRetryCount, "Docker restart retry count") !== 0 ||
     boolean(host.PublishAllPorts, "Docker publish-all flag") !== false
   ) {
     throw new Error("Docker container isolation does not match the admitted plan.");
@@ -512,5 +549,10 @@ export function parseDockerContainerInspection(
   }
   const pid = integer(state.Pid, "Docker container PID");
   const running = boolean(state.Running, "Docker container running flag");
-  return { id, name, image, pid, running, networkIds, labels };
+  const startedAt = dockerTimestamp(state.StartedAt, "Docker container start timestamp");
+  const restartCount = integer(container.RestartCount, "Docker container restart count");
+  if (restartCount !== 0) {
+    throw new Error("Docker container restarted during the admitted run.");
+  }
+  return { id, name, image, pid, running, startedAt, restartCount, networkIds, labels };
 }

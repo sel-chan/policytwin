@@ -29,7 +29,6 @@ const FORBIDDEN_OPTIONS = new Set([
   "--dns",
   "--dns-search",
   "--link",
-  "--restart",
   "--label-file",
   "--sysctl",
   "--workdir",
@@ -133,6 +132,8 @@ export function assertSupervisorDockerArguments(args: readonly string[]): void {
         !/^fsize=([1-9][0-9]{5,7}):\1$/u.test(next ?? "")) ||
       (argument.startsWith("--ulimit=") &&
         !/^--ulimit=fsize=([1-9][0-9]{5,7}):\1$/u.test(argument)) ||
+      (argument === "--restart" && next !== "no") ||
+      (argument.startsWith("--restart=") && argument !== "--restart=no") ||
       argument === "--read-only=false" ||
       (mountPayload !== undefined &&
         /(?:docker\.sock|docker_engine)/iu.test(mountPayload))
