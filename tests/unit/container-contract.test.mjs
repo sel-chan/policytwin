@@ -140,6 +140,8 @@ async function copyStaticContainerInputs(target) {
     "scripts/verifier-preflight.mjs",
     "scripts/worker-container-verify.mjs",
     "scripts/egress-container-verify.mjs",
+    "scripts/container-verify.mjs",
+    "scripts/live-gate-contract.mjs",
     "scripts/pinned-docker-cli.mjs",
   ]) {
     const destination = join(target, path);

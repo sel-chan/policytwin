@@ -15,6 +15,7 @@ import {
 } from "../../dist/codex/supervisor-docker-driver.js";
 import { createWorkerRuntimeLayout } from "../../dist/codex/worker-runtime-contract.js";
 import { workerRpcSha256 } from "../../dist/codex/worker-rpc-contract.js";
+import { createStaticSupervisorCpuBudgetController } from "../../dist/codex/cpu-budget-contract.js";
 
 const IMAGE = `sha256:${"a".repeat(64)}`;
 const NONCE = "b".repeat(32);
@@ -507,9 +508,45 @@ async function createFixture(t) {
   return { request, plan, configuration };
 }
 
+function staticCpuController(observations = {}, overrides = {}) {
+  return createStaticSupervisorCpuBudgetController({
+    roles: overrides.roles ?? [
+      {
+        role: "egress",
+        cgroupIdentitySha256: "9".repeat(64),
+        baselineUsageUsec: 10n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 110n,
+      },
+      {
+        role: "worker",
+        cgroupIdentitySha256: "a".repeat(64),
+        baselineUsageUsec: 20n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 220n,
+      },
+      {
+        role: "verifier",
+        cgroupIdentitySha256: "b".repeat(64),
+        baselineUsageUsec: 30n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 330n,
+      },
+    ],
+    cleanupStartFails: overrides.cleanupStartFails,
+    cleanupCompletes: overrides.cleanupCompletes,
+    onEvent(event) {
+      observations.cpuEvents ??= [];
+      observations.cpuEvents.push(event);
+    },
+  });
+}
+
 function createDriver(fake, fixture, observations = {}) {
   return createSupervisorDockerLifecycleDriver({
     runner: fake,
+    cpuBudgetController:
+      observations.cpuBudgetController ?? staticCpuController(observations),
     async configure() {
       return fixture.configuration;
     },
@@ -530,6 +567,7 @@ function createDriver(fake, fixture, observations = {}) {
         return true;
       },
     },
+    cpuControlTimeoutMs: observations.cpuControlTimeoutMs,
   });
 }
 
@@ -610,13 +648,16 @@ test("prepared Docker driver owns resources by returned IDs and proves full stat
   const handle = driver.createHandle(fixture.request);
   await driver.prepare(handle, fixture.request, signal);
   const worker = await driver.runWorker(handle, fixture.request, signal);
+  const verifier = await driver.runVerifier(handle, fixture.request, signal);
+  const budget = await driver.finalizeExecutionBudget(handle, fixture.request, signal);
   driver.validateWorkerOutput(worker, fixture.request);
-  const verifier = await driver.runVerifier(handle, worker, fixture.request, signal);
   driver.validateVerifierOutput(verifier, fixture.request);
   const cleanup = await driver.cleanup(handle, "SUCCESS", signal);
 
   assert.equal(observations.reconstructed, true);
   assert.equal(observations.workspaceCleaned, true);
+  assert.equal(budget.bindingSha256, fixture.plan.ownership.bindingSha256);
+  assert.equal(budget.proof.aggregateUsageUsec, "600");
   assert.deepEqual(cleanup, {
     schemaVersion: "1",
     workerContainerRemoved: true,
@@ -628,7 +669,20 @@ test("prepared Docker driver owns resources by returned IDs and proves full stat
     verificationWorkspaceDeleted: true,
     processTreeReaped: true,
     remainingProcessCount: 0,
+    cpuBudgetControllerStopped: true,
   });
+  assert.deepEqual(observations.cpuEvents, [
+    "cpu:begin",
+    "cpu:start:egress",
+    "cpu:start:worker",
+    "cpu:stop:worker",
+    "cpu:stop:egress",
+    "cpu:start:verifier",
+    "cpu:stop:verifier",
+    "cpu:finalize",
+    "cpu:cleanup-begin:SUCCESS",
+    "cpu:cleanup-complete",
+  ]);
   assert.equal(fake.containers.size, 0);
   assert.equal(fake.networks.size, 0);
   const ownedNames = [
@@ -645,6 +699,188 @@ test("prepared Docker driver owns resources by returned IDs and proves full stat
       args.some((argument) => ownedNames.includes(argument)),
   );
   assert.equal(nameBasedMutation, false);
+});
+
+test("Docker driver rejects worker plus egress aggregate CPU overage before a receipt is trusted", async (t) => {
+  const fixture = await createFixture(t);
+  const fake = new FakeDockerRunner();
+  const observations = {};
+  observations.cpuBudgetController = staticCpuController(observations, {
+    roles: [
+      {
+        role: "egress",
+        cgroupIdentitySha256: "9".repeat(64),
+        baselineUsageUsec: 0n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 3_000_000n,
+      },
+      {
+        role: "worker",
+        cgroupIdentitySha256: "a".repeat(64),
+        baselineUsageUsec: 0n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 3_000_000n,
+      },
+      {
+        role: "verifier",
+        cgroupIdentitySha256: "b".repeat(64),
+        baselineUsageUsec: 0n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 0n,
+      },
+    ],
+  });
+  const driver = createDriver(fake, fixture, observations);
+  const signal = new AbortController().signal;
+  const handle = driver.createHandle(fixture.request);
+  await driver.prepare(handle, fixture.request, signal);
+  await assert.rejects(driver.runWorker(handle, fixture.request, signal), /exceeded/u);
+  const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+  assert.equal(cleanup.cpuBudgetControllerStopped, true);
+  assert.equal(observations.cpuEvents.includes("cpu:start:verifier"), false);
+});
+
+test("Docker driver charges verifier CPU against the request aggregate", async (t) => {
+  const fixture = await createFixture(t);
+  const fake = new FakeDockerRunner();
+  const observations = {};
+  observations.cpuBudgetController = staticCpuController(observations, {
+    roles: [
+      {
+        role: "egress",
+        cgroupIdentitySha256: "9".repeat(64),
+        baselineUsageUsec: 0n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 1_000_000n,
+      },
+      {
+        role: "worker",
+        cgroupIdentitySha256: "a".repeat(64),
+        baselineUsageUsec: 0n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 1_000_000n,
+      },
+      {
+        role: "verifier",
+        cgroupIdentitySha256: "b".repeat(64),
+        baselineUsageUsec: 0n,
+        sampledUsageUsec: [],
+        finalUsageUsec: 3_000_001n,
+      },
+    ],
+  });
+  const driver = createDriver(fake, fixture, observations);
+  const signal = new AbortController().signal;
+  const handle = driver.createHandle(fixture.request);
+  await driver.prepare(handle, fixture.request, signal);
+  const worker = await driver.runWorker(handle, fixture.request, signal);
+  await assert.rejects(
+    driver.runVerifier(handle, fixture.request, signal),
+    /exceeded/u,
+  );
+  const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+  assert.equal(cleanup.cpuBudgetControllerStopped, true);
+});
+
+test("Docker driver rejects CPU controller identity drift", async (t) => {
+  const fixture = await createFixture(t);
+  const fake = new FakeDockerRunner();
+  const observations = {};
+  const base = staticCpuController(observations);
+  observations.cpuBudgetController = {
+    async begin(input, beginSignal) {
+      const session = await base.begin(input, beginSignal);
+      return {
+        ...session,
+        async roleStarted(observation, roleSignal) {
+          const identity = await session.roleStarted(observation, roleSignal);
+          return { ...identity, pid: identity.pid + 1 };
+        },
+      };
+    },
+  };
+  const driver = createDriver(fake, fixture, observations);
+  const signal = new AbortController().signal;
+  const handle = driver.createHandle(fixture.request);
+  await assert.rejects(
+    driver.prepare(handle, fixture.request, signal),
+    /drifted container identity/u,
+  );
+  const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+  assert.equal(cleanup.cpuBudgetControllerStopped, true);
+});
+
+test("Docker driver exposes CPU controller cleanup failure to the lifecycle", async (t) => {
+  const fixture = await createFixture(t);
+  const fake = new FakeDockerRunner();
+  const observations = {};
+  observations.cpuBudgetController = staticCpuController(observations, {
+    cleanupCompletes: false,
+  });
+  const driver = createDriver(fake, fixture, observations);
+  const signal = new AbortController().signal;
+  const handle = driver.createHandle(fixture.request);
+  await driver.prepare(handle, fixture.request, signal);
+  const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+  assert.equal(cleanup.cpuBudgetControllerStopped, false);
+  assert.equal(cleanup.workerContainerRemoved, true);
+  assert.equal(cleanup.egressContainerRemoved, true);
+});
+
+test("Docker driver bounds a CPU controller that ignores role-start cancellation", async (t) => {
+  const fixture = await createFixture(t);
+  const fake = new FakeDockerRunner();
+  const observations = { cpuControlTimeoutMs: 50 };
+  const base = staticCpuController(observations);
+  observations.cpuBudgetController = {
+    async begin(input, beginSignal) {
+      const session = await base.begin(input, beginSignal);
+      return {
+        ...session,
+        async roleStarted(observation, roleSignal) {
+          if (observation.role === "worker") return await new Promise(() => undefined);
+          return await session.roleStarted(observation, roleSignal);
+        },
+      };
+    },
+  };
+  const driver = createDriver(fake, fixture, observations);
+  const signal = new AbortController().signal;
+  const handle = driver.createHandle(fixture.request);
+  await driver.prepare(handle, fixture.request, signal);
+  await assert.rejects(driver.runWorker(handle, fixture.request, signal), /timed out/u);
+  const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+  assert.equal(cleanup.cpuBudgetControllerStopped, false);
+  assert.equal(cleanup.workerContainerRemoved, true);
+  assert.equal(cleanup.egressContainerRemoved, true);
+});
+
+test("Docker cleanup continues when CPU cleanup start ignores its deadline", async (t) => {
+  const fixture = await createFixture(t);
+  const fake = new FakeDockerRunner();
+  const observations = { cpuControlTimeoutMs: 50 };
+  const base = staticCpuController(observations);
+  observations.cpuBudgetController = {
+    async begin(input, beginSignal) {
+      const session = await base.begin(input, beginSignal);
+      return {
+        ...session,
+        async beginCleanup() {
+          return await new Promise(() => undefined);
+        },
+      };
+    },
+  };
+  const driver = createDriver(fake, fixture, observations);
+  const signal = new AbortController().signal;
+  const handle = driver.createHandle(fixture.request);
+  await driver.prepare(handle, fixture.request, signal);
+  const cleanup = await driver.cleanup(handle, "FAILURE", signal);
+  assert.equal(cleanup.cpuBudgetControllerStopped, false);
+  assert.equal(cleanup.workerContainerRemoved, true);
+  assert.equal(cleanup.egressContainerRemoved, true);
+  assert.equal(fake.containers.size, 0);
+  assert.equal(fake.networks.size, 0);
 });
 
 for (const [label, mutate, pattern] of [
@@ -695,7 +931,7 @@ for (const role of ["worker", "egress", "verifier"]) {
     if (role === "verifier") {
       const worker = await driver.runWorker(handle, fixture.request, signal);
       await assert.rejects(
-        driver.runVerifier(handle, worker, fixture.request, signal),
+        driver.runVerifier(handle, fixture.request, signal),
         /remain stopped/u,
       );
     } else {

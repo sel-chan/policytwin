@@ -27,8 +27,8 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 - `artifacts/demo/` contains a draft script, shot list, caption file, and deterministic demo data.
 - Every judge-facing draft remains marked `DRAFT_NOT_READY`; no generated file claims submission readiness.
 - `pnpm submission:check` currently fails with 29 explicit unmet requirements.
-- Owner declarations, live proof, project license, two required captures, video, public URLs, final form fields, and confirmation remain unverified or absent.
-- The worker/verifier/egress images, proxy-only capability authentication, request/nonce-bound ID-owned Docker driver, and TLS-only probe are prepared and fake-runner/static tested only. The probe writes no HTTP but does not measure proxy outbound traffic. All three dynamic reports—web health, worker/verifier isolation, and TLS-only egress—fail before Docker at the unset immutable base; no egress TLS path or Codex SDK turn has run, and no submission claim may describe them as deployed security evidence.
+- Owner declarations, live proof, project license, one required live Codex repair capture, video, public URLs, final form fields, and confirmation remain unverified or absent.
+- The worker/verifier/egress images, proxy-only capability authentication, request/nonce-bound ID-owned Docker driver, required CPU-controller port, and TLS-only probe are prepared and fake-runner/static tested only. The fake CPU ledger aggregates post-baseline egress, worker, and verifier values, but its proof explicitly claims no enforcement, hard limit, bounded overshoot, or containment and cannot pass the live gate. The TLS probe writes no HTTP but does not measure proxy outbound traffic. All three dynamic reports—web health, worker/verifier isolation, and TLS-only egress—fail before Docker at the unset immutable base; no real CPU enforcement, egress TLS path, or Codex SDK turn has run, and no submission claim may describe them as deployed security evidence.
 
 These files are production scaffolding only. They must be regenerated from live verified evidence before publication or submission.
 

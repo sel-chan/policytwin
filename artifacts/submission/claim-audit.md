@@ -11,6 +11,7 @@ DRAFT_NOT_READY — generated from partial offline evidence; do not submit.
 | Deterministic 38-file USTAR archive | `src/evidence/archive.ts`, integration and browser tests | Recorded reference package only |
 | Six-view browser flow with v1-v5 persistence | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` | Local Chrome E2E only; impact is reference preview |
 | Docker supervisor and egress isolation | `container-contract.json`, `tests/unit/supervisor-docker-driver.test.mjs`, worker/egress container reports | Static and fake-daemon verification only; real Docker, immutable images, cgroup/TLS/upstream traffic, and Codex remain unverified |
+| Fake-only three-role aggregate CPU budget ledger | `src/codex/cpu-budget-contract.ts`, `tests/unit/cpu-budget-contract.test.mjs`, `tests/unit/supervisor-docker-driver.test.mjs` | Static and fake-controller proof only; no real Linux cgroup sampling, polling, containment, cumulative enforcement, hard limit, or overshoot bound |
 | Live GPT-5.6 interpretation | Missing | Must not claim |
 | Live Codex repair/review | Missing | Must not claim |
 | Deployment/submission | Missing | Must not claim |

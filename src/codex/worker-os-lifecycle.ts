@@ -3,11 +3,16 @@ import {
   workerRpcSha256,
   type WorkerRpcRequest,
 } from "./worker-rpc-contract.js";
+import {
+  parseStaticSupervisorCpuBudgetProof,
+  type StaticSupervisorCpuBudgetProof,
+} from "./cpu-budget-contract.js";
 
 export type WorkerOsLifecycleStage =
   | "REQUEST_VALIDATED"
   | "HANDLE_CREATED"
   | "LAYOUT_PREPARED"
+  | "EXECUTION_BUDGET_VALIDATED"
   | "WORKER_RESULT_VALIDATED"
   | "VERIFIER_RESULT_VALIDATED"
   | "SUPERVISOR_CLEANUP_VALIDATED";
@@ -23,6 +28,7 @@ export interface WorkerOsCleanupObservation {
   verificationWorkspaceDeleted: boolean;
   processTreeReaped: boolean;
   remainingProcessCount: number;
+  cpuBudgetControllerStopped: boolean;
 }
 
 export interface PreparedWorkerOsLifecycleResult {
@@ -30,8 +36,15 @@ export interface PreparedWorkerOsLifecycleResult {
   status: "STATIC_DRIVER_TEST_ONLY";
   requestSha256: string;
   stages: readonly WorkerOsLifecycleStage[];
+  executionBudget: StaticSupervisorCpuBudgetProof;
   dynamicIsolationVerified: false;
   liveCodexExecuted: false;
+}
+
+interface WorkerOsExecutionBudgetObservation {
+  schemaVersion: "1";
+  bindingSha256: string;
+  proof: unknown;
 }
 
 export interface WorkerOsLifecycleDriver<Handle, WorkerOutput, VerifierOutput> {
@@ -46,10 +59,14 @@ export interface WorkerOsLifecycleDriver<Handle, WorkerOutput, VerifierOutput> {
   validateWorkerOutput(output: WorkerOutput, request: WorkerRpcRequest): void;
   runVerifier(
     handle: Handle,
-    workerOutput: WorkerOutput,
     request: WorkerRpcRequest,
     signal: AbortSignal,
   ): Promise<VerifierOutput>;
+  finalizeExecutionBudget(
+    handle: Handle,
+    request: WorkerRpcRequest,
+    signal: AbortSignal,
+  ): Promise<unknown>;
   validateVerifierOutput(output: VerifierOutput, request: WorkerRpcRequest): void;
   cleanup(
     handle: Handle,
@@ -91,10 +108,35 @@ function assertCleanup(value: WorkerOsCleanupObservation): void {
     value.repairWorkspaceDeleted !== true ||
     value.verificationWorkspaceDeleted !== true ||
     value.processTreeReaped !== true ||
-    value.remainingProcessCount !== 0
+    value.remainingProcessCount !== 0 ||
+    value.cpuBudgetControllerStopped !== true
   ) {
     throw new Error("Supervisor cleanup did not prove complete teardown.");
   }
+}
+
+function parseExecutionBudgetObservation(value: unknown): WorkerOsExecutionBudgetObservation {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error("The supervisor CPU budget observation is invalid.");
+  }
+  const result = value as Record<string, unknown>;
+  const keys = Object.keys(result).sort();
+  if (
+    keys.length !== 3 ||
+    keys[0] !== "bindingSha256" ||
+    keys[1] !== "proof" ||
+    keys[2] !== "schemaVersion" ||
+    result.schemaVersion !== "1" ||
+    typeof result.bindingSha256 !== "string" ||
+    !/^[0-9a-f]{64}$/u.test(result.bindingSha256)
+  ) {
+    throw new Error("The supervisor CPU budget observation is invalid.");
+  }
+  return {
+    schemaVersion: "1",
+    bindingSha256: result.bindingSha256,
+    proof: result.proof,
+  };
 }
 
 export function createPreparedSupervisorWorkerLifecycle<Handle, WorkerOutput, VerifierOutput>(
@@ -126,6 +168,7 @@ export function createPreparedSupervisorWorkerLifecycle<Handle, WorkerOutput, Ve
         wallTimer.unref();
         const executionSignal = AbortSignal.any([input.signal, wallController.signal]);
         let handle: Handle | undefined;
+        let executionBudget: StaticSupervisorCpuBudgetProof | undefined;
         let failure: unknown = null;
         let reason: "SUCCESS" | "FAILURE" | "ABORT" = "FAILURE";
         try {
@@ -139,16 +182,31 @@ export function createPreparedSupervisorWorkerLifecycle<Handle, WorkerOutput, Ve
           assertRequestBinding(request, requestSha256);
           const workerOutput = await driver.runWorker(handle, request, executionSignal);
           throwIfAborted(executionSignal);
-          driver.validateWorkerOutput(workerOutput, request);
-          stages.push("WORKER_RESULT_VALIDATED");
           assertRequestBinding(request, requestSha256);
           const verifierOutput = await driver.runVerifier(
             handle,
-            workerOutput,
             request,
             executionSignal,
           );
           throwIfAborted(executionSignal);
+          assertRequestBinding(request, requestSha256);
+          const budgetObservation = parseExecutionBudgetObservation(
+            await driver.finalizeExecutionBudget(handle, request, executionSignal),
+          );
+          executionBudget = parseStaticSupervisorCpuBudgetProof(
+            budgetObservation.proof,
+            {
+              requestSha256,
+              bindingSha256: budgetObservation.bindingSha256,
+              budgetUsec: BigInt(request.policy.limits.cpuTimeMs) * 1_000n,
+            },
+          );
+          stages.push("EXECUTION_BUDGET_VALIDATED");
+          throwIfAborted(executionSignal);
+          assertRequestBinding(request, requestSha256);
+          driver.validateWorkerOutput(workerOutput, request);
+          stages.push("WORKER_RESULT_VALIDATED");
+          assertRequestBinding(request, requestSha256);
           driver.validateVerifierOutput(verifierOutput, request);
           stages.push("VERIFIER_RESULT_VALIDATED");
           assertRequestBinding(request, requestSha256);
@@ -187,11 +245,15 @@ export function createPreparedSupervisorWorkerLifecycle<Handle, WorkerOutput, Ve
         if (failure !== null) {
           throw failure instanceof Error ? failure : new Error("The worker lifecycle failed.");
         }
+        if (executionBudget === undefined) {
+          throw new Error("The supervisor CPU budget proof is unavailable.");
+        }
         return {
           schemaVersion: "1",
           status: "STATIC_DRIVER_TEST_ONLY",
           requestSha256,
           stages,
+          executionBudget,
           dynamicIsolationVerified: false,
           liveCodexExecuted: false,
         };

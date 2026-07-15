@@ -63,7 +63,7 @@ The expected response should mention the product scope, required verification lo
 ## Verification gates
 
 - `pnpm verify` is the deterministic offline gate. It must not require credentials, network access, or fresh model output.
-- `pnpm container:verify`, `pnpm worker:verify`, and `pnpm egress:verify` are separate non-live Docker prerequisites for web health, worker/verifier isolation, and the TLS-only egress path. The latter two require inspected-ID ownership and Linux cgroup v2 teardown. The TLS probe writes no HTTP, but proxy outbound traffic is not measured. No current gate supplies cumulative worker CPU-time enforcement, so the live gate remains closed.
+- `pnpm container:verify`, `pnpm worker:verify`, and `pnpm egress:verify` are separate non-live Docker prerequisites for web health, worker/verifier isolation, and the TLS-only egress path. The latter two require inspected-ID ownership and Linux cgroup v2 teardown. The TLS probe writes no HTTP, but proxy outbound traffic is not measured. A fake-only three-role CPU ledger now proves static aggregation and receipt-validation order, while explicitly claiming no enforcement or hard limit. The live gate rejects that proof and any unbound boolean until a signed real-Linux cgroup proof exists.
 - `pnpm verify:live` is the fresh GPT-5.6 and Codex integration gate. It requires the approved network scope and safe credentials.
 - The offline and live authoritative gates, plus every required dynamic prerequisite, must pass before engineering or submission is complete; recorded evidence cannot replace `pnpm verify:live`.
 

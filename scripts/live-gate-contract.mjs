@@ -29,6 +29,13 @@ function dynamicReportPasses(report, scope) {
   );
 }
 
+function workerReportPasses(report) {
+  return (
+    dynamicReportPasses(report, LIVE_DYNAMIC_GATES[0].scope) &&
+    report?.facts?.cumulativeCpuTimeEnforced === false
+  );
+}
+
 export function evaluateLiveGateReadiness(input) {
   const missing = Array.isArray(input?.missingHostConfiguration)
     ? input.missingHostConfiguration.filter((name) => typeof name === "string" && name.length > 0)
@@ -45,7 +52,7 @@ export function evaluateLiveGateReadiness(input) {
       `verify:live is fail-closed: prerequisite dynamic gate ${input.failedDynamicGate} did not pass.`,
     );
   }
-  if (!dynamicReportPasses(input?.workerReport, LIVE_DYNAMIC_GATES[0].scope)) {
+  if (!workerReportPasses(input?.workerReport)) {
     return result(
       "WORKER_REPORT_INVALID",
       "verify:live is fail-closed: the worker/verifier dynamic report is absent, stale, or invalid.",
@@ -57,14 +64,8 @@ export function evaluateLiveGateReadiness(input) {
       "verify:live is fail-closed: the TLS-only egress dynamic report is absent, stale, or invalid.",
     );
   }
-  if (input.workerReport.facts.cumulativeCpuTimeEnforced !== true) {
-    return result(
-      "CUMULATIVE_CPU_TIME_UNAVAILABLE",
-      "verify:live is fail-closed: the non-live Docker isolation gates passed, but cumulative worker CPU-time enforcement is unavailable.",
-    );
-  }
   return result(
-    "LIVE_WORKER_UNAVAILABLE",
-    "verify:live is fail-closed: worker/verifier isolation and the TLS-only egress gate passed, but the prepared worker remains validate-only; proxy outbound traffic was not measured and no fresh Codex SDK repair, upstream Responses evidence, signed live result, or evidence promotion exists.",
+    "CUMULATIVE_CPU_PROOF_UNAVAILABLE",
+    "verify:live is fail-closed: the non-live Docker gates passed, but no signed, request-bound three-role cumulative CPU proof contract is admitted. A report boolean or static fake-controller proof cannot advance the live gate.",
   );
 }

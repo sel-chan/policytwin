@@ -309,7 +309,7 @@ async function verifyWorkspaceDecision(baseUrl, session) {
 
 try {
   if (
-    contract.schemaVersion !== "4" ||
+    contract.schemaVersion !== "6" ||
     typeof contract.nodeBaseImage !== "string" ||
     !/^node:22\.22\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/u.test(
       contract.nodeBaseImage,

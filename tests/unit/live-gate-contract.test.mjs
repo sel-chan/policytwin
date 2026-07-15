@@ -80,16 +80,32 @@ test("live gate blocks a passing non-live isolation report without cumulative CP
     workerReport: worker({ cumulativeCpuTimeEnforced: false }),
     egressReport: egress(),
   });
-  assert.equal(verdict.code, "CUMULATIVE_CPU_TIME_UNAVAILABLE");
+  assert.equal(verdict.code, "CUMULATIVE_CPU_PROOF_UNAVAILABLE");
+  assert.match(verdict.message, /report boolean|static fake-controller/u);
 });
 
-test("live gate still blocks validate-only worker after all current prerequisites", () => {
+test("live gate rejects a forged cumulative CPU boolean instead of advancing", () => {
   const verdict = evaluateLiveGateReadiness({
     missingHostConfiguration: [],
     workerReport: worker({ cumulativeCpuTimeEnforced: true }),
     egressReport: egress(),
   });
-  assert.equal(verdict.code, "LIVE_WORKER_UNAVAILABLE");
-  assert.match(verdict.message, /outbound traffic was not measured/u);
+  assert.equal(verdict.code, "WORKER_REPORT_INVALID");
+  assert.equal(verdict.ready, false);
+});
+
+test("live gate does not admit an unverified structured CPU object", () => {
+  const verdict = evaluateLiveGateReadiness({
+    missingHostConfiguration: [],
+    workerReport: worker({
+      cumulativeCpuTimeEnforced: false,
+      cpuBudgetProof: {
+        schemaVersion: "1",
+        status: "STATIC_FAKE_CONTROLLER_VERIFIED",
+      },
+    }),
+    egressReport: egress(),
+  });
+  assert.equal(verdict.code, "CUMULATIVE_CPU_PROOF_UNAVAILABLE");
   assert.equal(verdict.ready, false);
 });

@@ -35,7 +35,7 @@ export function inspectWorkerContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "5") failures.push("container schema v5 is required");
+  if (contract?.schemaVersion !== "6") failures.push("container schema v6 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }
@@ -380,7 +380,7 @@ async function main() {
     verifierCgroupObserved: false,
     restartPolicyVerified: false,
     runningInstanceIdentityVerified: false,
-    cpuBudgetsPosthocVerified: false,
+    roleCpuBudgetsPostExitObserved: false,
     cumulativeCpuTimeEnforced: false,
     processTreesReaped: false,
     cleanupPassed: false,
@@ -907,7 +907,7 @@ async function main() {
       }
     }
     facts.processTreesReaped = processTreesReaped;
-    facts.cpuBudgetsPosthocVerified =
+    facts.roleCpuBudgetsPostExitObserved =
       workerCpuBudgetVerified && verifierCpuBudgetVerified;
     facts.cleanupPassed = dockerInvoked && !cleanupFailed;
     facts.dynamicIsolationVerified =
@@ -919,6 +919,7 @@ async function main() {
       facts.restartPolicyVerified &&
       facts.runningInstanceIdentityVerified &&
       facts.processTreesReaped &&
+      facts.roleCpuBudgetsPostExitObserved &&
       facts.workerStaticPreflight &&
       facts.verifierCommandsPassed &&
       facts.cleanupPassed;

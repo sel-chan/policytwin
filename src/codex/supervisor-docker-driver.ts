@@ -13,6 +13,7 @@ import {
   parseDockerNetworkOwnershipInspection,
   parseDockerNetworkInspection,
   parseDockerWaitExitCode,
+  type DockerContainerObservation,
 } from "./docker-observer.js";
 import {
   assertSupervisorDockerArguments,
@@ -34,24 +35,24 @@ import type {
   WorkerOsLifecycleDriver,
 } from "./worker-os-lifecycle.js";
 import { createPreparedSupervisorWorkerLifecycle } from "./worker-os-lifecycle.js";
+import {
+  parseStaticSupervisorCpuBudgetProof,
+  type SupervisorCpuBudgetController,
+  type SupervisorCpuBudgetSession,
+  type SupervisorCpuContainerIdentity,
+} from "./cpu-budget-contract.js";
 
 type ContainerRole = "egress" | "worker" | "verifier";
 type NetworkRole = "worker" | "outbound";
 
 export interface StaticDockerWorkerReceipt {
   schemaVersion: "1";
-  status: "STATIC_PREFLIGHT_PASS";
-  dynamicIsolationVerified: false;
-  liveCodexExecuted: false;
+  rawReceiptJson: string;
 }
 
 export interface StaticDockerVerifierReceipt {
   schemaVersion: "1";
-  status: "FIXTURE_COMMANDS_PASS";
-  network: "UNVERIFIED_BY_PROCESS";
-  credentialsPresent: false;
-  dynamicIsolationVerified: false;
-  liveCodexExecuted: false;
+  rawReceiptJson: string;
 }
 
 export interface SupervisorDockerWorkspaceController {
@@ -108,6 +109,7 @@ interface OwnedContainer {
   connections: Set<NetworkRole>;
   observedPids: Set<number>;
   runningIdentity: { pid: number; startedAt: string } | null;
+  cpuIdentity: SupervisorCpuContainerIdentity | null;
   removed: boolean;
 }
 
@@ -118,15 +120,80 @@ interface SupervisorDockerHandle {
   containers: Partial<Record<ContainerRole, OwnedContainer>>;
   ambiguousNetworks: Set<NetworkRole>;
   ambiguousContainers: Set<ContainerRole>;
+  cpuBudgetSession: SupervisorCpuBudgetSession | null;
+  cpuBudgetProof: unknown | null;
+  cpuControlBoundaryBreached: boolean;
 }
 
 const CONTROL_TIMEOUT_MS = 30_000;
+const DEFAULT_CPU_CONTROL_TIMEOUT_MS = 5_000;
+
+class SupervisorCpuControlBoundaryError extends Error {}
 
 function throwIfAborted(signal: AbortSignal): void {
   if (signal.aborted) {
     throw signal.reason instanceof Error
       ? signal.reason
       : new Error("The supervisor Docker run was aborted.");
+  }
+}
+
+async function boundedCpuControl<T>(
+  signal: AbortSignal,
+  timeoutMs: number,
+  label: string,
+  operation: (boundedSignal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  throwIfAborted(signal);
+  const controller = new AbortController();
+  const boundedSignal = AbortSignal.any([signal, controller.signal]);
+  let timer: NodeJS.Timeout | undefined;
+  let abortListener: (() => void) | undefined;
+  const boundary = new Promise<never>((_resolve, reject) => {
+    abortListener = () => {
+      reject(
+        new SupervisorCpuControlBoundaryError(`Supervisor CPU ${label} was aborted.`, {
+          cause: signal.reason,
+        }),
+      );
+    };
+    signal.addEventListener("abort", abortListener, { once: true });
+    timer = setTimeout(() => {
+      const error = new SupervisorCpuControlBoundaryError(
+        `Supervisor CPU ${label} timed out.`,
+      );
+      controller.abort(error);
+      reject(error);
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([
+      Promise.resolve().then(async () => await operation(boundedSignal)),
+      boundary,
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    if (abortListener !== undefined) signal.removeEventListener("abort", abortListener);
+    if (!controller.signal.aborted) {
+      controller.abort(new Error(`Supervisor CPU ${label} completed.`));
+    }
+  }
+}
+
+async function handleCpuControl<T>(
+  handle: SupervisorDockerHandle,
+  signal: AbortSignal,
+  timeoutMs: number,
+  label: string,
+  operation: (boundedSignal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  try {
+    return await boundedCpuControl(signal, timeoutMs, label, operation);
+  } catch (error) {
+    if (error instanceof SupervisorCpuControlBoundaryError) {
+      handle.cpuControlBoundaryBreached = true;
+    }
+    throw error;
   }
 }
 
@@ -306,6 +373,25 @@ function exactPolicyTwinReceipt(value: string, status: string): Record<string, u
   return receipt;
 }
 
+function rawDockerReceipt(value: unknown): string {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error("A prepared Docker process returned an invalid raw receipt wrapper.");
+  }
+  const wrapper = value as Record<string, unknown>;
+  const keys = Object.keys(wrapper).sort();
+  if (
+    keys.length !== 2 ||
+    keys[0] !== "rawReceiptJson" ||
+    keys[1] !== "schemaVersion" ||
+    wrapper.schemaVersion !== "1" ||
+    typeof wrapper.rawReceiptJson !== "string" ||
+    wrapper.rawReceiptJson.length === 0
+  ) {
+    throw new Error("A prepared Docker process returned an invalid raw receipt wrapper.");
+  }
+  return wrapper.rawReceiptJson;
+}
+
 function resolveCreateArguments(
   processPlan: SupervisorDockerProcessPlan,
   networks: Partial<Record<NetworkRole, OwnedNetwork>>,
@@ -397,7 +483,7 @@ async function observeContainer(
   signal: AbortSignal,
   requireRunning = false,
   requireStopped = false,
-): Promise<void> {
+): Promise<DockerContainerObservation> {
   const owned = handle.containers[role];
   if (owned === undefined || owned.removed) {
     throw new Error("The owned Docker container is unavailable for observation.");
@@ -487,6 +573,7 @@ async function observeContainer(
   } else if (requireStopped) {
     throw new Error("The prepared Docker container lacks a running-instance identity.");
   }
+  return observation;
 }
 
 async function assertNamesAbsent(
@@ -609,6 +696,7 @@ async function createContainer(
     connections,
     observedPids: new Set(),
     runningIdentity: null,
+    cpuIdentity: null,
     removed: false,
   };
   await observeContainer(runner, handle, role, signal);
@@ -694,13 +782,74 @@ async function startContainer(
   handle: SupervisorDockerHandle,
   role: ContainerRole,
   signal: AbortSignal,
-): Promise<void> {
+): Promise<DockerContainerObservation> {
   const container = handle.containers[role];
   if (container === undefined || container.removed) {
     throw new Error("The Docker container is unavailable for start.");
   }
   await mustRun(runner, ["start", container.id], signal, "Docker container start");
-  await observeContainer(runner, handle, role, signal, true);
+  return await observeContainer(runner, handle, role, signal, true);
+}
+
+async function startCpuAccountedContainer(
+  runner: DockerCommandRunner,
+  handle: SupervisorDockerHandle,
+  role: ContainerRole,
+  signal: AbortSignal,
+  cpuControlTimeoutMs: number,
+): Promise<void> {
+  const session = handle.cpuBudgetSession;
+  const owned = handle.containers[role];
+  if (session === null || owned === undefined || owned.cpuIdentity !== null) {
+    throw new Error("The supervisor CPU accounting session is unavailable for container start.");
+  }
+  const observation = await startContainer(runner, handle, role, signal);
+  const identity = await handleCpuControl(
+    handle,
+    signal,
+    cpuControlTimeoutMs,
+    `${role} start accounting`,
+    async (cpuSignal) =>
+      await session.roleStarted(
+        {
+          role,
+          containerId: observation.id,
+          pid: observation.pid,
+          startedAt: observation.startedAt,
+        },
+        cpuSignal,
+      ),
+  );
+  if (
+    identity.role !== role ||
+    identity.containerId !== observation.id ||
+    identity.pid !== observation.pid ||
+    identity.startedAt !== observation.startedAt ||
+    !/^[0-9a-f]{64}$/u.test(identity.cgroupIdentitySha256)
+  ) {
+    throw new Error("The supervisor CPU controller returned a drifted container identity.");
+  }
+  owned.cpuIdentity = { ...identity };
+}
+
+async function finishCpuAccounting(
+  handle: SupervisorDockerHandle,
+  role: ContainerRole,
+  signal: AbortSignal,
+  cpuControlTimeoutMs: number,
+): Promise<void> {
+  const session = handle.cpuBudgetSession;
+  const identity = handle.containers[role]?.cpuIdentity;
+  if (session === null || identity === null || identity === undefined) {
+    throw new Error("The supervisor CPU accounting identity is unavailable for container stop.");
+  }
+  await handleCpuControl(
+    handle,
+    signal,
+    cpuControlTimeoutMs,
+    `${role} stop accounting`,
+    async (cpuSignal) => await session.roleStopped(identity, cpuSignal),
+  );
 }
 
 async function waitAndReadLogs(
@@ -742,6 +891,7 @@ async function stopEgress(
   runner: DockerCommandRunner,
   handle: SupervisorDockerHandle,
   signal: AbortSignal,
+  cpuControlTimeoutMs: number,
 ): Promise<void> {
   const egress = handle.containers.egress;
   if (egress === undefined || egress.removed) return;
@@ -760,6 +910,7 @@ async function stopEgress(
     CONTROL_TIMEOUT_MS,
     egress.plan.outputBytes,
   );
+  await finishCpuAccounting(handle, "egress", signal, cpuControlTimeoutMs);
   if (logs.exitCode !== 0 || logs.stdout.trim().length !== 0 || logs.stderr.trim().length !== 0) {
     throw new Error("The Docker egress process did not stop cleanly.");
   }
@@ -942,16 +1093,26 @@ export function createProcfsProcessObserver(): SupervisorProcessObserver {
 export function createSupervisorDockerLifecycleDriver(options: {
   runner: DockerCommandRunner;
   workspace: SupervisorDockerWorkspaceController;
+  cpuBudgetController: SupervisorCpuBudgetController;
   configure(
     request: WorkerRpcRequest,
     signal: AbortSignal,
   ): Promise<SupervisorDockerExecutionConfiguration>;
   processObserver: SupervisorProcessObserver;
+  cpuControlTimeoutMs?: number;
 }): WorkerOsLifecycleDriver<
   SupervisorDockerHandle,
   StaticDockerWorkerReceipt,
   StaticDockerVerifierReceipt
 > {
+  const cpuControlTimeoutMs = options.cpuControlTimeoutMs ?? DEFAULT_CPU_CONTROL_TIMEOUT_MS;
+  if (
+    !Number.isInteger(cpuControlTimeoutMs) ||
+    cpuControlTimeoutMs < 50 ||
+    cpuControlTimeoutMs > 10_000
+  ) {
+    throw new Error("The supervisor CPU control timeout is invalid.");
+  }
   return {
     createHandle(request) {
       return {
@@ -961,6 +1122,9 @@ export function createSupervisorDockerLifecycleDriver(options: {
         containers: {},
         ambiguousNetworks: new Set(),
         ambiguousContainers: new Set(),
+        cpuBudgetSession: null,
+        cpuBudgetProof: null,
+        cpuControlBoundaryBreached: false,
       };
     },
     async prepare(handle, request, signal) {
@@ -992,6 +1156,21 @@ export function createSupervisorDockerLifecycleDriver(options: {
       );
       assertPlanBoundToRequest(plan, request);
       handle.plan = plan;
+      handle.cpuBudgetSession = await handleCpuControl(
+        handle,
+        signal,
+        cpuControlTimeoutMs,
+        "session admission",
+        async (cpuSignal) =>
+          await options.cpuBudgetController.begin(
+            {
+              requestSha256: plan.ownership.requestSha256,
+              bindingSha256: plan.ownership.bindingSha256,
+              budgetUsec: BigInt(request.policy.limits.cpuTimeMs) * 1_000n,
+            },
+            cpuSignal,
+          ),
+      );
       await assertNamesAbsent(options.runner, plan, signal);
       await createNetwork(options.runner, handle, "worker", plan.networks.worker, signal);
       await createNetwork(options.runner, handle, "outbound", plan.networks.outbound, signal);
@@ -1004,7 +1183,13 @@ export function createSupervisorDockerLifecycleDriver(options: {
         ["policytwin-egress"],
         signal,
       );
-      await startContainer(options.runner, handle, "egress", signal);
+      await startCpuAccountedContainer(
+        options.runner,
+        handle,
+        "egress",
+        signal,
+        cpuControlTimeoutMs,
+      );
       await createContainer(options.runner, handle, "worker", plan.worker, signal);
     },
     async runWorker(handle, request, signal) {
@@ -1012,7 +1197,13 @@ export function createSupervisorDockerLifecycleDriver(options: {
         throw new Error("The supervisor Docker handle is not prepared.");
       }
       await observeContainer(options.runner, handle, "egress", signal, true);
-      await startContainer(options.runner, handle, "worker", signal);
+      await startCpuAccountedContainer(
+        options.runner,
+        handle,
+        "worker",
+        signal,
+        cpuControlTimeoutMs,
+      );
       const output = await waitAndReadLogs(
         options.runner,
         handle,
@@ -1021,30 +1212,39 @@ export function createSupervisorDockerLifecycleDriver(options: {
         request.policy.limits.wallTimeMs,
         request.policy.limits.outputBytes,
       );
+      await finishCpuAccounting(handle, "worker", signal, cpuControlTimeoutMs);
       await observeContainer(options.runner, handle, "egress", signal, true);
       await disconnectContainer(options.runner, handle, "worker", "worker", signal);
       await removeContainer(options.runner, handle, "worker", signal);
       await observeNetwork(options.runner, handle, "worker", signal);
-      await stopEgress(options.runner, handle, signal);
+      await stopEgress(options.runner, handle, signal, cpuControlTimeoutMs);
       await observeNetwork(options.runner, handle, "worker", signal);
       await observeNetwork(options.runner, handle, "outbound", signal);
       if (output.exitCode !== 0 || output.stderr.trim().length !== 0) {
         throw new Error("The prepared Docker worker failed.");
       }
-      const receipt = exactPolicyTwinReceipt(output.stdout, "STATIC_PREFLIGHT_PASS");
-      return receipt as unknown as StaticDockerWorkerReceipt;
+      return {
+        schemaVersion: "1",
+        rawReceiptJson: output.stdout,
+      } satisfies StaticDockerWorkerReceipt;
     },
     validateWorkerOutput(output) {
-      exactPolicyTwinReceipt(JSON.stringify(output), "STATIC_PREFLIGHT_PASS");
+      exactPolicyTwinReceipt(rawDockerReceipt(output), "STATIC_PREFLIGHT_PASS");
     },
-    async runVerifier(handle, _workerOutput, request, signal) {
+    async runVerifier(handle, request, signal) {
       const plan = handle.plan;
       if (handle.request !== request || plan === null) {
         throw new Error("The supervisor Docker handle is not prepared.");
       }
       await options.workspace.reconstructVerification(plan, request, signal);
       await createContainer(options.runner, handle, "verifier", plan.verifier, signal);
-      await startContainer(options.runner, handle, "verifier", signal);
+      await startCpuAccountedContainer(
+        options.runner,
+        handle,
+        "verifier",
+        signal,
+        cpuControlTimeoutMs,
+      );
       const output = await waitAndReadLogs(
         options.runner,
         handle,
@@ -1053,21 +1253,64 @@ export function createSupervisorDockerLifecycleDriver(options: {
         request.policy.limits.wallTimeMs,
         request.policy.limits.outputBytes,
       );
+      await finishCpuAccounting(handle, "verifier", signal, cpuControlTimeoutMs);
       await removeContainer(options.runner, handle, "verifier", signal);
       if (output.exitCode !== 0 || output.stderr.trim().length !== 0) {
         throw new Error("The prepared Docker verifier failed.");
       }
-      const receipt = exactPolicyTwinReceipt(output.stdout, "FIXTURE_COMMANDS_PASS");
+      return {
+        schemaVersion: "1",
+        rawReceiptJson: output.stdout,
+      } satisfies StaticDockerVerifierReceipt;
+    },
+    async finalizeExecutionBudget(handle, request, signal) {
+      const plan = handle.plan;
+      const session = handle.cpuBudgetSession;
       if (
-        receipt.network !== "UNVERIFIED_BY_PROCESS" ||
-        receipt.credentialsPresent !== false
+        handle.request !== request ||
+        plan === null ||
+        session === null ||
+        handle.cpuBudgetProof !== null
       ) {
-        throw new Error("The prepared Docker verifier receipt is invalid.");
+        throw new Error("The supervisor CPU budget session is not finalizable.");
       }
-      return receipt as unknown as StaticDockerVerifierReceipt;
+      const rawProof = await handleCpuControl(
+        handle,
+        signal,
+        cpuControlTimeoutMs,
+        "proof finalization",
+        async (cpuSignal) => await session.finalize(cpuSignal),
+      );
+      const proof = parseStaticSupervisorCpuBudgetProof(rawProof, {
+        requestSha256: plan.ownership.requestSha256,
+        bindingSha256: plan.ownership.bindingSha256,
+        budgetUsec: BigInt(request.policy.limits.cpuTimeMs) * 1_000n,
+      });
+      for (const roleProof of proof.roles) {
+        const identity = handle.containers[roleProof.role]?.cpuIdentity;
+        if (
+          identity === null ||
+          identity === undefined ||
+          identity.containerId !== roleProof.identity.containerId ||
+          identity.pid !== roleProof.identity.pid ||
+          identity.startedAt !== roleProof.identity.startedAt ||
+          identity.cgroupIdentitySha256 !== roleProof.identity.cgroupIdentitySha256
+        ) {
+          throw new Error("The supervisor CPU proof is not bound to an observed container identity.");
+        }
+      }
+      handle.cpuBudgetProof = proof;
+      return {
+        schemaVersion: "1",
+        bindingSha256: plan.ownership.bindingSha256,
+        proof,
+      };
     },
     validateVerifierOutput(output) {
-      const receipt = exactPolicyTwinReceipt(JSON.stringify(output), "FIXTURE_COMMANDS_PASS");
+      const receipt = exactPolicyTwinReceipt(
+        rawDockerReceipt(output),
+        "FIXTURE_COMMANDS_PASS",
+      );
       if (
         receipt.network !== "UNVERIFIED_BY_PROCESS" ||
         receipt.credentialsPresent !== false
@@ -1075,7 +1318,26 @@ export function createSupervisorDockerLifecycleDriver(options: {
         throw new Error("The prepared Docker verifier receipt is invalid.");
       }
     },
-    async cleanup(handle, _reason, signal): Promise<WorkerOsCleanupObservation> {
+    async cleanup(handle, reason, signal): Promise<WorkerOsCleanupObservation> {
+      let cpuBudgetCleanupStarted =
+        handle.cpuBudgetSession === null && !handle.cpuControlBoundaryBreached;
+      let cpuBudgetControllerStopped =
+        handle.cpuBudgetSession === null && !handle.cpuControlBoundaryBreached;
+      if (handle.cpuBudgetSession !== null) {
+        try {
+          await handleCpuControl(
+            handle,
+            signal,
+            cpuControlTimeoutMs,
+            "cleanup start",
+            async (cpuSignal) =>
+              await handle.cpuBudgetSession?.beginCleanup(reason, cpuSignal),
+          );
+          cpuBudgetCleanupStarted = true;
+        } catch {
+          cpuBudgetCleanupStarted = false;
+        }
+      }
       const verifierContainerRemoved = await cleanupContainer(
         options.runner,
         handle,
@@ -1135,6 +1397,21 @@ export function createSupervisorDockerLifecycleDriver(options: {
           processObservationComplete = false;
         }
       }
+      if (handle.cpuBudgetSession !== null && cpuBudgetCleanupStarted) {
+        try {
+          cpuBudgetControllerStopped = await handleCpuControl(
+            handle,
+            signal,
+            cpuControlTimeoutMs,
+            "cleanup completion",
+            async (cpuSignal) =>
+              (await handle.cpuBudgetSession?.completeCleanup(cpuSignal)) === true,
+          );
+        } catch {
+          cpuBudgetControllerStopped = false;
+        }
+      }
+      cpuBudgetControllerStopped &&= !handle.cpuControlBoundaryBreached;
       return {
         schemaVersion: "1",
         workerContainerRemoved,
@@ -1146,6 +1423,7 @@ export function createSupervisorDockerLifecycleDriver(options: {
         verificationWorkspaceDeleted: workspace.verificationWorkspaceDeleted,
         processTreeReaped: processObservationComplete && remainingProcessCount === 0,
         remainingProcessCount: processObservationComplete ? remainingProcessCount : -1,
+        cpuBudgetControllerStopped,
       };
     },
   };
@@ -1154,11 +1432,13 @@ export function createSupervisorDockerLifecycleDriver(options: {
 export function createPreparedSupervisorDockerLifecycle(options: {
   runner: DockerCommandRunner;
   workspace: SupervisorDockerWorkspaceController;
+  cpuBudgetController: SupervisorCpuBudgetController;
   configure(
     request: WorkerRpcRequest,
     signal: AbortSignal,
   ): Promise<SupervisorDockerExecutionConfiguration>;
   processObserver: SupervisorProcessObserver;
+  cpuControlTimeoutMs?: number;
   cleanupTimeoutMs?: number;
 }): {
   execute(

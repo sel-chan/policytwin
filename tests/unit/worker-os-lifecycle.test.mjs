@@ -8,6 +8,7 @@ import {
   workerRpcSha256,
 } from "../../dist/codex/worker-rpc-contract.js";
 import { createPreparedSupervisorWorkerLifecycle } from "../../dist/codex/worker-os-lifecycle.js";
+import { StaticSupervisorCpuBudgetLedger } from "../../dist/codex/cpu-budget-contract.js";
 import { prepareWorkerEntrypointContract } from "../../dist/codex/worker-entrypoint-contract.js";
 
 const sourcePolicy = await readFile(
@@ -125,7 +126,47 @@ const completeCleanup = {
   verificationWorkspaceDeleted: true,
   processTreeReaped: true,
   remainingProcessCount: 0,
+  cpuBudgetControllerStopped: true,
 };
+
+function staticExecutionBudget(request) {
+  const ledger = new StaticSupervisorCpuBudgetLedger({
+    requestSha256: workerRpcSha256(request),
+    bindingSha256: "8".repeat(64),
+    budgetUsec: BigInt(request.policy.limits.cpuTimeMs) * 1_000n,
+  });
+  for (const [role, index] of [["egress", 1], ["worker", 2]]) {
+    const identity = {
+      role,
+      containerId: index.toString().repeat(64),
+      pid: 100 + index,
+      startedAt: `2026-07-16T00:00:0${index}.000000000Z`,
+      cgroupIdentitySha256: (index + 5).toString().repeat(64),
+    };
+    ledger.beginRole(identity, 0n);
+    if (role === "worker") ledger.finishRole(identity, 0n);
+  }
+  ledger.finishRole(
+    {
+      role: "egress",
+      containerId: "1".repeat(64),
+      pid: 101,
+      startedAt: "2026-07-16T00:00:01.000000000Z",
+      cgroupIdentitySha256: "6".repeat(64),
+    },
+    0n,
+  );
+  const verifier = {
+    role: "verifier",
+    containerId: "3".repeat(64),
+    pid: 103,
+    startedAt: "2026-07-16T00:00:03.000000000Z",
+    cgroupIdentitySha256: "8".repeat(64),
+  };
+  ledger.beginRole(verifier, 0n);
+  ledger.finishRole(verifier, 0n);
+  return ledger.finalize();
+}
 
 function createDriver(events, overrides = {}) {
   return {
@@ -147,6 +188,11 @@ function createDriver(events, overrides = {}) {
       events.push("verifier");
       return { status: "SUPERVISOR_VERIFIED_OUTPUT" };
     },
+    async finalizeExecutionBudget(_handle, request) {
+      events.push("budget");
+      const proof = staticExecutionBudget(request);
+      return { schemaVersion: "1", bindingSha256: proof.bindingSha256, proof };
+    },
     validateVerifierOutput() {
       events.push("validate-verifier");
     },
@@ -166,8 +212,9 @@ test("prepared OS lifecycle validates every boundary and returns only an explici
     "create",
     "prepare",
     "worker",
-    "validate-worker",
     "verifier",
+    "budget",
+    "validate-worker",
     "validate-verifier",
     "cleanup:SUCCESS",
   ]);
@@ -178,10 +225,13 @@ test("prepared OS lifecycle validates every boundary and returns only an explici
     "REQUEST_VALIDATED",
     "HANDLE_CREATED",
     "LAYOUT_PREPARED",
+    "EXECUTION_BUDGET_VALIDATED",
     "WORKER_RESULT_VALIDATED",
     "VERIFIER_RESULT_VALIDATED",
     "SUPERVISOR_CLEANUP_VALIDATED",
   ]);
+  assert.equal(result.executionBudget.aggregateUsageUsec, "0");
+  assert.equal(result.executionBudget.cumulativeCpuTimeEnforced, false);
 });
 
 test("prepared worker entrypoint validates the request but cannot claim a live SDK run", () => {
@@ -195,6 +245,54 @@ test("prepared worker entrypoint validates the request but cannot claim a live S
     () => prepareWorkerEntrypointContract(validRequest(), { codexHomeEntries: ["config.toml"] }),
     /must be empty/u,
   );
+});
+
+test("prepared lifecycle never validates receipts before the aggregate CPU proof", async () => {
+  const events = [];
+  const driver = createDriver(events, {
+    async finalizeExecutionBudget() {
+      events.push("budget");
+      throw new Error("aggregate CPU proof unavailable");
+    },
+  });
+  await assert.rejects(
+    createPreparedSupervisorWorkerLifecycle(driver).execute(validRequest(), {
+      signal: new AbortController().signal,
+    }),
+    /CPU proof unavailable/u,
+  );
+  assert.deepEqual(events, [
+    "create",
+    "prepare",
+    "worker",
+    "verifier",
+    "budget",
+    "cleanup:FAILURE",
+  ]);
+});
+
+test("prepared lifecycle rejects a forged CPU proof before receipt validation", async () => {
+  const events = [];
+  const driver = createDriver(events, {
+    async finalizeExecutionBudget(_handle, request) {
+      events.push("budget");
+      const proof = staticExecutionBudget(request);
+      return {
+        schemaVersion: "1",
+        bindingSha256: proof.bindingSha256,
+        proof: { ...proof, cumulativeCpuTimeEnforced: true },
+      };
+    },
+  });
+  await assert.rejects(
+    createPreparedSupervisorWorkerLifecycle(driver).execute(validRequest(), {
+      signal: new AbortController().signal,
+    }),
+    /static result/u,
+  );
+  assert.equal(events.includes("validate-worker"), false);
+  assert.equal(events.includes("validate-verifier"), false);
+  assert.equal(events.at(-1), "cleanup:FAILURE");
 });
 
 test("prepared OS lifecycle propagates abort and still performs supervisor cleanup", async () => {

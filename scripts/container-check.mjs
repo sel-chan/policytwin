@@ -64,7 +64,10 @@ export function inspectStaticContainerContract(root = ROOT) {
   const dockerRunnerPath = resolve(root, "src", "codex", "docker-command-runner.ts");
   const dockerObserverPath = resolve(root, "src", "codex", "docker-observer.ts");
   const dockerDriverPath = resolve(root, "src", "codex", "supervisor-docker-driver.ts");
+  const cpuBudgetContractPath = resolve(root, "src", "codex", "cpu-budget-contract.ts");
+  const liveGateContractPath = resolve(root, "scripts", "live-gate-contract.mjs");
   const pinnedDockerCliPath = resolve(root, "scripts", "pinned-docker-cli.mjs");
+  const containerVerifyPath = resolve(root, "scripts", "container-verify.mjs");
   const workerVerifyPath = resolve(root, "scripts", "worker-container-verify.mjs");
   const egressVerifyPath = resolve(root, "scripts", "egress-container-verify.mjs");
   const contractBody = read(contractPath, failures, "Container contract");
@@ -86,7 +89,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "5" ||
+    contract.schemaVersion !== "6" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -133,6 +136,11 @@ export function inspectStaticContainerContract(root = ROOT) {
       "PREPARE_WORKER_VERIFIER_EXCLUDING_TEARDOWN_GRACE" ||
     contract.workerContainer?.cumulativeCpuTimeEnforcement !==
       "UNAVAILABLE_STATIC_DRIVER" ||
+    contract.workerContainer?.staticCpuBudgetProofStatus !==
+      "STATIC_FAKE_CONTROLLER_VERIFIED" ||
+    contract.workerContainer?.staticCpuAccountingScope !==
+      "POST_BASELINE_THREE_ROLE_AGGREGATE" ||
+    contract.workerContainer?.staticCpuProofClaimsEnforcement !== false ||
     contract.workerContainer?.fixtureRoot !== "/workspace" ||
     contract.workerContainer?.fixtureRootReadOnly !== true ||
     JSON.stringify(contract.workerContainer?.writablePaths) !==
@@ -266,6 +274,17 @@ export function inspectStaticContainerContract(root = ROOT) {
     JSON.stringify(contract.supervisorDockerExecutor?.runningInstanceIdentityFields) !==
       JSON.stringify(["containerId", "pid", "startedAt", "restartCount"]) ||
     contract.supervisorDockerExecutor?.stoppedInstanceReobservedAroundLogs !== true ||
+    contract.supervisorDockerExecutor?.cpuBudgetControllerPortRequired !== true ||
+    JSON.stringify(contract.supervisorDockerExecutor?.cpuBudgetRoles) !==
+      JSON.stringify(["egress", "worker", "verifier"]) ||
+    contract.supervisorDockerExecutor?.cpuBudgetReceiptValidationOrder !==
+      "FINALIZE_BUDGET_THEN_WORKER_THEN_VERIFIER" ||
+    contract.supervisorDockerExecutor?.cpuBudgetControllerCleanupRequired !== true ||
+    contract.supervisorDockerExecutor?.cpuControlTimeoutMsDefault !== 5_000 ||
+    contract.supervisorDockerExecutor?.cpuControllerBoundaryBreachBlocksCleanupProof !== true ||
+    contract.supervisorDockerExecutor?.staticCpuBudgetController !== "SERIAL_FAKE_ONLY" ||
+    contract.supervisorDockerExecutor?.liveCpuBooleanTrustAllowed !== false ||
+    contract.supervisorDockerExecutor?.linuxCgroupCpuActuationImplemented !== false ||
     contract.supervisorDockerExecutor?.cgroupV2ProcessTreeRequiredForDynamicGate !== true ||
     contract.supervisorDockerExecutor?.publishedPortsAllowed !== false ||
     JSON.stringify(contract.supervisorDockerExecutor?.policytwinLabelKeys) !==
@@ -550,8 +569,40 @@ export function inspectStaticContainerContract(root = ROOT) {
     "maximumWorkerLimits",
     "running instance changed",
     "did not remain stopped",
+    "cpuBudgetController",
+    "finalizeExecutionBudget",
+    "finishCpuAccounting",
+    "rawDockerReceipt",
+    "cpuBudgetControllerStopped",
+    "boundedCpuControl",
+    "cpuControlBoundaryBreached",
   ]) {
     requireText(dockerDriver, required, failures, "Supervisor Docker lifecycle driver");
+  }
+  const cpuBudgetContract = read(
+    cpuBudgetContractPath,
+    failures,
+    "Supervisor CPU budget contract",
+  );
+  for (const required of [
+    'SUPERVISOR_CPU_BUDGET_ROLES = ["egress", "worker", "verifier"]',
+    'status: "STATIC_FAKE_CONTROLLER_VERIFIED"',
+    'accountingScope: "POST_BASELINE_THREE_ROLE_AGGREGATE"',
+    "cumulativeCpuTimeEnforced: false",
+    "hardLimitEnforced: false",
+    "overshootBounded: false",
+    "createStaticSupervisorCpuBudgetController",
+    "createUnavailableSupervisorCpuBudgetController",
+  ]) {
+    requireText(cpuBudgetContract, required, failures, "Supervisor CPU budget contract");
+  }
+  const liveGateContract = read(liveGateContractPath, failures, "Live gate contract");
+  for (const required of [
+    "CUMULATIVE_CPU_PROOF_UNAVAILABLE",
+    "report boolean or static fake-controller proof cannot advance the live gate",
+    "report?.facts?.cumulativeCpuTimeEnforced === false",
+  ]) {
+    requireText(liveGateContract, required, failures, "Live gate contract");
   }
   const pinnedDockerCli = read(pinnedDockerCliPath, failures, "Pinned dynamic Docker CLI");
   for (const required of [
@@ -563,6 +614,14 @@ export function inspectStaticContainerContract(root = ROOT) {
     'throw new Error("The dynamic Docker command is not allowlisted.")',
   ]) {
     requireText(pinnedDockerCli, required, failures, "Pinned dynamic Docker CLI");
+  }
+  const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
+  for (const required of [
+    'contract.schemaVersion !== "6"',
+    "Container restart did not preserve the SQLite workspace decision.",
+    'scope: "DYNAMIC_WEB_CONTAINER"',
+  ]) {
+    requireText(containerVerify, required, failures, "Web container verifier");
   }
   const verifierPreflight = read(verifierPreflightPath, failures, "Verifier preflight");
   for (const required of [
@@ -596,6 +655,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     "parseDockerContainerInspection",
     "assertStoppedSameContainerInstance",
     "runningInstanceIdentityVerified",
+    "facts.roleCpuBudgetsPostExitObserved",
     'docker(["rm", "--force", id]',
     "Worker run workspace cleanup failed.",
   ]) {
