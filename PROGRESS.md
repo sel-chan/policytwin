@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — cumulative CPU budget enforcement foundation`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 03:08:00 +09:00`
-- Latest checkpoint commit: `ef2b32ae27691bc10d2b22221670ee3f68058a6d`
+- Last updated: `2026-07-16 03:17:53 +09:00`
+- Latest checkpoint commit: `b24bd9f6700ec2b102e32b88e922b9ac050d633e`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -117,7 +117,7 @@ The restart fail-stop feature was committed at `ef2b32a` with ledger commit `330
 - [x] Harden the live gate so a boolean or static fake proof cannot satisfy CPU readiness; keep the current report and live path fail-closed.
 - [x] Add adversarial unit/fake-daemon tests for exact budget/+1, aggregate sums, overflow/regression, identity drift, incomplete proof, controller timeout, cleanup failure, and exact ordering.
 - [x] Update decisions, threat/limitations/runbook, schema-v6 static contract checks, generated reports/copy, and truth boundaries.
-- [ ] Run focused and authoritative offline gates, independent review, diff review, and current-branch checkpoint commits.
+- [x] Run focused and authoritative offline gates, independent review, diff review, and current-branch checkpoint commits.
 
 ### Completion evidence
 
@@ -132,6 +132,7 @@ The restart fail-stop feature was committed at `ef2b32a` with ledger commit `330
 - Live-gate result: the current dynamic worker report requires its limited role-local post-exit CPU observations for its own PASS but keeps `cumulativeCpuTimeEnforced:false`. The live gate rejects both a forged `true` boolean and any static fake proof.
 - Focused regression result: CPU contract 9/9, lifecycle 9/9, Docker driver 42/42, and live gate 7/7 pass; full unit is 196/196. Integration 49/49, eval 22/22, build, Chrome 3/3, 327-file clean-copy replay, and 327-file/298-text-file security pass.
 - Independent review: the first read-only review found a P1 controller-hang boundary and P2 binding/report naming issues; bounded calls, boundary-breach cleanup poisoning, wrapper binding validation, and the diagnostic rename were added. The truth review found a stale web schema-v4 gate plus stale ledger/claim-audit detail; all three dynamic verifiers and static checks now require schema v6, current progress numbers are aligned, and the claim audit has a fake-only CPU row. The final read-only code/truth re-review found no P0/P1/P2.
+- Checkpoint commit: `b24bd9f6700ec2b102e32b88e922b9ac050d633e` (`feat: gate receipts on aggregate CPU proof`).
 - Current checkpoint result: `STATIC_FAKE_CONTROLLER_THREE_ROLE_LEDGER_PASS / REAL_CGROUP_ENFORCEMENT_AND_LIVE_FAIL_CLOSED`; no real CPU enforcement, hard cap, model call, or live Codex evidence has been promoted.
 
 ## Quality gates
@@ -192,7 +193,7 @@ Never fill from estimates.
 - Verified: final `pnpm verify` passes lint, strict typecheck, 196/196 unit, 49/49 integration, 22/22 eval, 3/3 production Chrome, build, schema-v6 static container checks, 327-file clean-copy replay, and 327-file/298-text-file plus Git-history security. It exits 1 only for the owner-selected `LICENSE` and the exact 29-item non-final submission gate.
 - Dynamic/live truth: all three dynamic reports fail before Docker at the unset immutable Node base; `verify:live` fails before network at missing `OPENAI_API_KEY`/`CODEX_MODEL`. No real cgroup path/sample/poll/freeze/kill, aggregate enforcement, model call, Codex repair, or live proof exists.
 - Review: initial P1/P2 findings were corrected; the final independent read-only code/truth re-review found no P0/P1/P2. `git diff --check` passes.
-- Commit: pending current-branch checkpoint.
+- Commit: `b24bd9f6700ec2b102e32b88e922b9ac050d633e` (`feat: gate receipts on aggregate CPU proof`).
 
 ### 2026-07-16 01:11 +09:00 — Egress restart and stopped-result identity fail closed offline
 
@@ -538,18 +539,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Finish the fake-only three-role CPU budget checkpoint with the independent re-review, final diff review, and current-branch commits.`
+`Inspect the remaining M7/M9 release gaps and implement the next smallest offline-verifiable prerequisite without promoting any dynamic or live claim.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the fake-only three-role CPU budget checkpoint passed its authoritative offline sequence and is undergoing final review before commit`
+- Why paused: `not paused; the fake-only three-role CPU budget checkpoint is verified and committed, and only this commit-hash ledger update remains before the documentation checkpoint`
 - Exact current state: `a strict request/binding/identity-bound BigInt ledger covers egress, worker, and verifier and blocks receipt validation until its static proof passes; controller timeout or cleanup failure poisons the lifecycle; real cgroup sampling, polling, containment, and cumulative enforcement remain unavailable`
 - Last successful command: `the 03:04 pnpm verify sequence passed every implemented offline gate, including 196 unit, 49 integration, 22 eval, 3 browser, 327-file clean-copy, 327-file/298-text-file security, schema-v6 static container, and production build; only LICENSE and the exact 29-item submission gate failed as expected`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `the reviewed CPU budget contract, lifecycle/driver/live-gate integration, tests, schema-v6 reports, documentation, and this ledger; checkpoint commits are pending`
-- Safe resume command/action: `inspect the final diff and independent review, resolve any P0/P1 finding, and commit the checkpoint on the current branch`
+- Uncommitted files: `only this post-checkpoint PROGRESS.md commit-hash update before its documentation commit`
+- Safe resume command/action: `inspect the remaining M7/M9 gaps and implement the next safest offline-verifiable prerequisite`
 - One owner action, if any: `none`
 
 ## Final completion record
