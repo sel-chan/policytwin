@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — egress restart fail-stop identity`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 01:24:22 +09:00`
-- Latest checkpoint commit: `058047b89536e820f4bfa197dcf06555cdb55793`
+- Last updated: `2026-07-16 01:34:23 +09:00`
+- Latest checkpoint commit: `ef2b32ae27691bc10d2b22221670ee3f68058a6d`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -117,7 +117,7 @@ The architecture checkpoint was committed at `058047b` with its ledger at `9e82b
 - [x] Require the same stopped worker/verifier/egress identity before and after reading logs.
 - [x] Add fake-daemon regressions for PID/start-time drift, restart count, stopped egress, missing fields, weakened restart policy, and wait-returned running containers.
 - [x] Update decisions, threat/limitations/runbook, contract checks, generated reports, and truthfully scoped submission copy.
-- [ ] Run the authoritative final offline gate, final truth/diff review, and a current-branch checkpoint commit.
+- [x] Run the authoritative final offline gate, final truth/diff review, and a current-branch checkpoint commit.
 
 ### Completion evidence
 
@@ -129,6 +129,7 @@ The architecture checkpoint was committed at `058047b` with its ledger at `9e82b
 - Regression result: the focused Docker suites pass 43/43; full unit tests pass 178/178, integration tests 49/49, evals 22/22, production Chrome E2E 3/3, lint, typecheck, build, static container checks, the 325-file/296-text-file security scan, and 325-file clean-copy replay pass.
 - Independent review: the first read-only security review found a P1 driver stopped-state gap; the second truth review found a P0 mismatch in the prepared dynamic smoke ordering. Driver and smoke scripts now inspect the same stopped worker/verifier/egress instance before and after logs, static checks enforce all three orders, and the final read-only re-review found no remaining P0/P1.
 - Dynamic/live result: all three dynamic reports still fail before Docker because the immutable Node base is unset. Worker and egress reports retain `dockerInvoked:false`, identity facts false, current hashes, no TLS/HTTP/model/Codex execution, and outbound `NOT_MEASURED`. `verify:live` fails before network because `OPENAI_API_KEY` and `CODEX_MODEL` are unset.
+- Checkpoint commit: `ef2b32ae27691bc10d2b22221670ee3f68058a6d` (`feat: fail closed on container restarts`).
 - Truth boundary: this checkpoint may prove only a static/fake-daemon restart-detection and fail-stop contract. It cannot claim real Docker restart behavior, durable lease counts, upstream traffic, a model request, live Codex work, or dynamic isolation.
 - Current checkpoint result: `STATIC_FAKE_DAEMON_RESTART_FAIL_STOP_PASS / DYNAMIC_AND_LIVE_FAIL_CLOSED`; no dynamic or live evidence has been promoted.
 
@@ -147,7 +148,7 @@ Record latest actual result.
 | Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-16 01:11 +09:00 |
 | Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass; live model/Codex work remains unverified | 2026-07-16 01:11 +09:00 |
 | Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-16 01:11 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | all implemented code/static/browser/clean gates pass; exact expected failures are the owner-selected project `LICENSE` and the 29-item non-final submission gate | 2026-07-15 23:58 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | final current-worktree sequence passes every implemented code/static/browser/clean gate; exact expected failures are the owner-selected project `LICENSE` and the 29-item non-final submission gate | 2026-07-16 01:34 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no fresh evidence exists | 2026-07-16 01:11 +09:00 |
 | Clean-copy reproduction | PASS | `pnpm clean:check` | 325 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 01:11 +09:00 |
 | Static container contract | PASS | `pnpm container:check` | schema-v5 static contract passes; current worker/verifier/egress hashes match and all dynamic/live facts remain false | 2026-07-16 01:11 +09:00 |
@@ -532,10 +533,10 @@ Fill before `/goal pause` or any handoff.
 
 - Why paused: `not paused; the restart fail-stop checkpoint is implemented and undergoing final verification before commit`
 - Exact current state: `static and fake-daemon contracts now require restart=no, zero restart count, stable running identity, egress reobservation around worker execution, and the same stopped worker/verifier/egress identity before and after logs; real Docker and live work remain unavailable`
-- Last successful command: `the 01:11 pre-final pnpm verify sequence passed 178 unit assertions, 49 integration assertions, 22 evals, 3 browser tests, 325-file clean-copy replay, 325-file/296-text-file plus Git-history security, static schema-v5 container contract, and production build; only LICENSE and the exact 29-item submission gate failed; final rerun is pending after the truth-review correction`
+- Last successful command: `the 01:34 final current-worktree pnpm verify sequence passed 178 unit assertions, 49 integration assertions, 22 evals, 3 browser tests, 325-file clean-copy replay, 325-file/296-text-file plus Git-history security, static schema-v5 container contract, and production build; only LICENSE and the exact 29-item submission gate failed`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `restart fail-stop implementation, tests, generated reports/copy, and documentation pending final verification and checkpoint commit`
-- Safe resume command/action: `run focused checks, then pnpm verify, review the final diff, and commit the current checkpoint on main`
+- Uncommitted files: `only this post-checkpoint ledger update before its documentation commit`
+- Safe resume command/action: `inspect the remaining M7/M9 gaps and implement the next safest offline-verifiable prerequisite`
 - One owner action, if any: `none`
 
 ## Final completion record
