@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — fail-only Worker RPC v2 CPU evidence envelope`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 05:05:07 +09:00`
-- Latest checkpoint commit: `b24bd9f6700ec2b102e32b88e922b9ac050d633e`
+- Last updated: `2026-07-16 05:15:56 +09:00`
+- Latest checkpoint commit: `c366246df1c5df210c7d536870253a55f6411c32`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -189,7 +189,7 @@ Never fill from estimates.
 - Verification: `pnpm verify` passes lint, strict typecheck, 217/217 unit, 55/55 integration, 22/22 eval, 3/3 production Chrome, build, schema-v7 static container checks, 330-file clean-copy replay, and 330-file/301-text-file plus Git-history security. It exits 1 only for owner-selected `LICENSE` and the exact 29-item non-final submission gate.
 - Dynamic/live truth: web, worker/verifier, and egress gates fail before Docker at the unset immutable Node base; `verify:live` fails before network at missing `OPENAI_API_KEY`/`CODEX_MODEL`. No Docker, Linux `cpu.stat`, model, Codex, deployment, or live evidence run occurred.
 - Review: independent read-only review found no P0/P1. The remaining P2 is opaque runtime branding of the mTLS v2 transport object; Ed25519 verification plus disabled PASS/live admission prevent promotion in the current checkpoint.
-- Commit: pending final diff review and current-branch checkpoint commit.
+- Commit: `c366246df1c5df210c7d536870253a55f6411c32` (`feat: define fail-only live CPU proof envelope`).
 
 ### 2026-07-16 03:08 +09:00 — Fake-only three-role CPU budget proof gates receipt trust
 
@@ -547,18 +547,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Complete final independent truth/diff review, commit this Worker RPC v2 checkpoint on main, record the commit hash, then select the next smallest offline-verifiable M7/M9 prerequisite without promoting a dynamic or live claim.`
+`Select and implement the next smallest offline-verifiable M7/M9 prerequisite without promoting a dynamic or live claim.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the fail-only Worker RPC v2 CPU evidence envelope is implemented and verified, with final review and checkpoint commits remaining`
+- Why paused: `not paused; the fail-only Worker RPC v2 CPU evidence envelope is implemented, verified, independently reviewed, and committed`
 - Exact current state: `strict candidate success parsing/signature/binding/downgrade controls exist, but the generic supervisor refuses PASS and the live gate remains closed; global event and failure/containment evidence plus a real Linux controller are absent`
 - Last successful command: `the 05:04 pnpm verify sequence passed every implemented offline gate, including 217 unit, 55 integration, 22 eval, 3 browser, 330-file clean-copy, 330-file/301-text-file security, schema-v7 static container checks, and production build; only LICENSE and the exact 29-item submission gate failed as expected`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `the Worker RPC v2 CPU evidence checkpoint and generated truthful reports pending final review and commit`
-- Safe resume command/action: `run final truth/diff review, commit the checkpoint, record the hash, and continue the next offline-verifiable M7/M9 prerequisite`
+- Uncommitted files: `only this post-checkpoint commit-hash ledger update before its documentation commit`
+- Safe resume command/action: `inspect the remaining M7/M9 gaps and implement the next safest offline-verifiable prerequisite`
 - One owner action, if any: `none`
 
 ## Final completion record
