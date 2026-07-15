@@ -1,0 +1,229 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title description">
+  <title id="title">PolicyTwin architecture and current verification boundary</title>
+  <desc id="description">A three-layer architecture diagram separating the deterministic offline path from prepared but unexecuted GPT-5.6, Codex, Docker, OpenAI upstream, attestation, and deployment paths.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="7" stdDeviation="12" flood-color="#173128" flood-opacity="0.09"/>
+    </filter>
+    <marker id="arrow-solid" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#14684d"/>
+    </marker>
+    <marker id="arrow-dashed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#9c6a24"/>
+    </marker>
+    <style>
+      .bg { fill: #f4f7f3; }
+      .lane { fill: #eef3ef; stroke: #cbd7d0; stroke-width: 1.5; }
+      .lane-live { fill: #faf5ea; stroke: #cda869; stroke-width: 2; stroke-dasharray: 9 8; }
+      .card { fill: #ffffff; stroke: #c9d6cf; stroke-width: 1.5; filter: url(#shadow); }
+      .card-prepared { fill: #fffaf0; stroke: #c79a4e; stroke-width: 1.7; filter: url(#shadow); }
+      .card-notrun { fill: #f8f5ee; stroke: #a8926f; stroke-width: 1.7; stroke-dasharray: 8 7; filter: url(#shadow); }
+      .footer { fill: #102d24; }
+      .footer-boundary { fill: #263c35; }
+      .heading { font: 700 44px Georgia, "Times New Roman", serif; fill: #102d24; }
+      .subheading { font: 400 18px Arial, sans-serif; fill: #52645d; letter-spacing: 0.2px; }
+      .eyebrow { font: 700 13px Arial, sans-serif; fill: #247157; letter-spacing: 2.1px; }
+      .lane-title { font: 700 14px Arial, sans-serif; fill: #1d624c; letter-spacing: 2px; }
+      .lane-title-live { font: 700 14px Arial, sans-serif; fill: #885b1e; letter-spacing: 2px; }
+      .card-title { font: 700 24px Georgia, "Times New Roman", serif; fill: #132b23; }
+      .card-title-small { font: 700 21px Georgia, "Times New Roman", serif; fill: #132b23; }
+      .body { font: 400 16px Arial, sans-serif; fill: #465a52; }
+      .body-small { font: 400 14px Arial, sans-serif; fill: #53675f; }
+      .metric { font: 700 18px Arial, sans-serif; fill: #123f31; }
+      .badge-text { font: 700 12px Arial, sans-serif; letter-spacing: 0.8px; }
+      .badge-teal { fill: #dcefe7; }
+      .badge-teal-text { fill: #0e684a; }
+      .badge-amber { fill: #f5e6c7; }
+      .badge-amber-text { fill: #8b5a17; }
+      .badge-gray { fill: #e7e6e1; }
+      .badge-gray-text { fill: #655f53; }
+      .badge-red { fill: #f5dfd8; }
+      .badge-red-text { fill: #9b3c27; }
+      .solid { fill: none; stroke: #14684d; stroke-width: 3; marker-end: url(#arrow-solid); }
+      .evidence { fill: none; stroke: #4f8c78; stroke-width: 2; marker-end: url(#arrow-solid); }
+      .dashed { fill: none; stroke: #9c6a24; stroke-width: 2.5; stroke-dasharray: 9 8; marker-end: url(#arrow-dashed); }
+      .line-label { font: 700 12px Arial, sans-serif; fill: #527066; letter-spacing: 0.6px; }
+      .line-label-live { font: 700 12px Arial, sans-serif; fill: #916222; letter-spacing: 0.6px; }
+      .footer-title { font: 700 15px Arial, sans-serif; fill: #d8eee5; letter-spacing: 1.5px; }
+      .footer-body { font: 400 15px Arial, sans-serif; fill: #e8f0ec; }
+      .footer-note { font: 400 14px Arial, sans-serif; fill: #bdcbc5; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1800" height="1200"/>
+
+  <text class="eyebrow" x="58" y="45">ARCHITECTURE SNAPSHOT · JULY 15, 2026</text>
+  <text class="heading" x="58" y="92">PolicyTwin</text>
+  <text class="subheading" x="58" y="124">From policy text to executable rules, application drift, and reviewable proof.</text>
+
+  <g transform="translate(1370 37)">
+    <rect width="370" height="70" rx="18" fill="#102d24"/>
+    <text x="24" y="28" font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.4" fill="#a8d8c6">CURRENT EVIDENCE</text>
+    <text x="24" y="53" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#ffffff">PARTIAL_OFFLINE · FAIL</text>
+  </g>
+
+  <g transform="translate(850 116)">
+    <line x1="0" y1="0" x2="55" y2="0" stroke="#14684d" stroke-width="3"/>
+    <text class="body-small" x="67" y="5">locally executed or deterministic</text>
+    <line x1="330" y1="0" x2="385" y2="0" stroke="#9c6a24" stroke-width="2.5" stroke-dasharray="9 8"/>
+    <text class="body-small" x="397" y="5">prepared live path · not executed</text>
+  </g>
+
+  <rect class="lane" x="42" y="155" width="1716" height="205" rx="24"/>
+  <text class="lane-title" x="70" y="184">01 · SEMANTIC INTERPRETATION</text>
+
+  <path class="dashed" d="M530 255 L675 255"/>
+  <path class="dashed" d="M1125 255 L1270 255"/>
+  <path class="solid" d="M530 305 C760 355, 1040 355, 1270 305"/>
+  <text class="line-label" x="760" y="349">RECORDED FIXTURE → STRICT VALIDATION</text>
+
+  <g id="node-policy-studio" transform="translate(80 205)">
+    <rect class="card" width="450" height="125" rx="18"/>
+    <rect class="badge-teal" x="24" y="20" width="122" height="24" rx="12"/>
+    <text class="badge-text badge-teal-text" x="38" y="36">SEEDED INPUT</text>
+    <text class="card-title" x="24" y="73">Policy Studio</text>
+    <text class="body" x="24" y="100">Refund policy + 6 authoritative golden cases</text>
+  </g>
+
+  <g id="node-gpt" transform="translate(675 205)">
+    <rect class="card-notrun" width="450" height="125" rx="18"/>
+    <rect class="badge-gray" x="24" y="20" width="130" height="24" rx="12"/>
+    <text class="badge-text badge-gray-text" x="38" y="36">LIVE NOT RUN</text>
+    <text class="card-title" x="24" y="73">GPT-5.6 Interpreter</text>
+    <text class="body" x="24" y="100">Responses API · strict structured output</text>
+  </g>
+
+  <g id="node-policy-ir" transform="translate(1270 205)">
+    <rect class="card" width="450" height="125" rx="18"/>
+    <rect class="badge-teal" x="24" y="20" width="192" height="24" rx="12"/>
+    <text class="badge-text badge-teal-text" x="38" y="36">IMPLEMENTED OFFLINE</text>
+    <text class="card-title" x="24" y="73">PolicyIR + Decision Queue</text>
+    <text class="body" x="24" y="100">Validated · versioned · ambiguity explicit</text>
+  </g>
+
+  <rect class="lane" x="42" y="392" width="1716" height="330" rx="24"/>
+  <text class="lane-title" x="70" y="423">02 · DETERMINISTIC OFFLINE PATH · IMPLEMENTED AND LOCALLY EXECUTED</text>
+
+  <path class="solid" d="M1495 330 L1495 450 L250 450 L250 470"/>
+  <text class="line-label" x="770" y="444">ACCEPTED MEANING</text>
+  <path class="solid" d="M440 565 L500 565"/>
+  <path class="solid" d="M880 565 L940 565"/>
+  <path class="solid" d="M1320 565 L1380 565"/>
+  <path class="evidence" d="M250 660 C250 700, 1570 700, 1570 660"/>
+  <path class="evidence" d="M690 660 L690 690"/>
+  <path class="evidence" d="M1130 660 L1130 690"/>
+  <text class="line-label" x="778" y="686">EVIDENCE COLLECTION → PROOF</text>
+
+  <g id="node-compiler" transform="translate(60 470)">
+    <rect class="card" width="380" height="190" rx="18"/>
+    <rect class="badge-teal" x="22" y="20" width="178" height="24" rx="12"/>
+    <text class="badge-text badge-teal-text" x="36" y="36">DETERMINISTIC LOCAL</text>
+    <text class="card-title" x="22" y="78">Deterministic Compiler</text>
+    <text class="metric" x="22" y="111">PolicyIR → Rego</text>
+    <text class="body-small" x="22" y="143">The model never emits the final</text>
+    <text class="body-small" x="22" y="165">executable policy.</text>
+  </g>
+
+  <g id="node-opa" transform="translate(500 470)">
+    <rect class="card" width="380" height="190" rx="18"/>
+    <rect class="badge-teal" x="22" y="20" width="132" height="24" rx="12"/>
+    <text class="badge-text badge-teal-text" x="36" y="36">OPA CLI · LOCAL</text>
+    <text class="card-title" x="22" y="78">OPA + Case Lab</text>
+    <text class="metric" x="22" y="111">41/41 accepted cases</text>
+    <text class="body-small" x="22" y="143">44/47 mutants killed (93.62%)*</text>
+    <text class="body-small" x="22" y="165">* Reference evaluator, not OPA-backed.</text>
+  </g>
+
+  <g id="node-drift" transform="translate(940 470)">
+    <rect class="card" width="380" height="190" rx="18"/>
+    <rect class="badge-red" x="22" y="20" width="198" height="24" rx="12"/>
+    <text class="badge-text badge-red-text" x="36" y="36">16 PRE-REPAIR DRIFTS</text>
+    <text class="card-title" x="22" y="78">Integration / Drift</text>
+    <text class="metric" x="22" y="111">Reference-expectation differential</text>
+    <text class="body-small" x="22" y="143">16 drifts; not OPA-backed.</text>
+    <text class="body-small" x="22" y="165">D01–D03 included; no post-repair result.</text>
+  </g>
+
+  <g id="node-proof" transform="translate(1380 470)">
+    <rect class="card" width="380" height="190" rx="18"/>
+    <rect class="badge-red" x="22" y="20" width="192" height="24" rx="12"/>
+    <text class="badge-text badge-red-text" x="36" y="36">PARTIAL_OFFLINE · FAIL</text>
+    <text class="card-title" x="22" y="78">Proof Package</text>
+    <text class="metric" x="22" y="111">Traceability + validation</text>
+    <text class="body-small" x="22" y="143">38-file deterministic USTAR archive</text>
+    <text class="body-small" x="22" y="165">No live attestation has been issued.</text>
+  </g>
+
+  <rect class="lane-live" x="42" y="752" width="1716" height="205" rx="24"/>
+  <text class="lane-title-live" x="70" y="783">03 · GUARDED LIVE REPAIR PATH · PREPARED, NOT EXECUTED</text>
+
+  <path class="dashed" d="M1130 660 L1130 732 L205 732 L205 805"/>
+  <text class="line-label-live" x="570" y="726">REPAIR REQUEST · NOT DISPATCHED</text>
+  <path class="dashed" d="M360 870 L400 870"/>
+  <path class="dashed" d="M710 870 L750 870"/>
+  <path class="dashed" d="M1060 870 L1100 870"/>
+  <path class="dashed" d="M1410 870 L1450 870"/>
+
+  <g id="node-rpc" transform="translate(50 805)">
+    <rect class="card-prepared" width="310" height="130" rx="17"/>
+    <rect class="badge-amber" x="18" y="17" width="190" height="23" rx="11"/>
+    <text class="badge-text badge-amber-text" x="30" y="33">LOOPBACK CONTRACT ONLY</text>
+    <text class="card-title-small" x="18" y="70">Authenticated Run RPC</text>
+    <text class="body-small" x="18" y="98">mTLS 1.3 · replay rejection</text>
+    <text class="body-small" x="18" y="118">One bounded run</text>
+  </g>
+
+  <g id="node-supervisor" transform="translate(400 805)">
+    <rect class="card-notrun" width="310" height="130" rx="17"/>
+    <rect class="badge-gray" x="18" y="17" width="150" height="23" rx="11"/>
+    <text class="badge-text badge-gray-text" x="30" y="33">NO LIVE EXECUTOR</text>
+    <text class="card-title-small" x="18" y="70">External Supervisor</text>
+    <text class="body-small" x="18" y="98">Cartography · repair · review</text>
+    <text class="body-small" x="18" y="118">Signed result → Proof · NOT RETURNED</text>
+  </g>
+
+  <g id="node-worker" transform="translate(750 805)">
+    <rect class="card-prepared" width="310" height="130" rx="17"/>
+    <rect class="badge-amber" x="18" y="17" width="192" height="23" rx="11"/>
+    <text class="badge-text badge-amber-text" x="30" y="33">REAL DOCKER NOT RUN</text>
+    <text class="card-title-small" x="18" y="70">Worker + Verifier</text>
+    <text class="body-small" x="18" y="98">Two-file write set · rerun → Drift</text>
+    <text class="body-small" x="18" y="118">Verifier network = none</text>
+  </g>
+
+  <g id="node-broker" transform="translate(1100 805)">
+    <rect class="card-prepared" width="310" height="130" rx="17"/>
+    <rect class="badge-amber" x="18" y="17" width="142" height="23" rx="11"/>
+    <text class="badge-text badge-amber-text" x="30" y="33">STATIC PREPARED</text>
+    <text class="card-title-small" x="18" y="70">Responses-only Broker</text>
+    <text class="body-small" x="18" y="98">Run capability in worker</text>
+    <text class="body-small" x="18" y="118">Provider key external</text>
+  </g>
+
+  <g id="node-upstream" transform="translate(1450 805)">
+    <rect class="card-notrun" width="310" height="130" rx="17"/>
+    <rect class="badge-gray" x="18" y="17" width="178" height="23" rx="11"/>
+    <text class="badge-text badge-gray-text" x="30" y="33">NO OPENAI REQUEST</text>
+    <text class="card-title-small" x="18" y="70">OpenAI Upstream</text>
+    <text class="body-small" x="18" y="98">api.openai.com/v1/responses</text>
+    <text class="body-small" x="18" y="118">Outbound traffic NOT_MEASURED</text>
+  </g>
+
+  <g transform="translate(42 990)">
+    <rect class="footer" width="836" height="170" rx="22"/>
+    <text class="footer-title" x="28" y="34">EVIDENCE SNAPSHOT · PARTIAL_OFFLINE / FAIL</text>
+    <text class="footer-body" x="28" y="67">OPA evaluated 41/41 accepted cases. The seeded application produced 16 pre-repair</text>
+    <text class="footer-body" x="28" y="91">drift records, including D01–D03. Mutation testing killed 44/47 mutants with the</text>
+    <text class="footer-body" x="28" y="115">reference evaluator. All 4 clauses and 4 rules are traceable.</text>
+    <text class="footer-note" x="28" y="145">Local Chrome: 3/3 E2E · Proof archive: 38 deterministic USTAR files</text>
+  </g>
+
+  <g transform="translate(922 990)">
+    <rect class="footer-boundary" width="836" height="170" rx="22"/>
+    <text class="footer-title" x="28" y="34">CURRENT BOUNDARY</text>
+    <text class="footer-body" x="28" y="67">GPT-5.6 and live Codex were not run. No Codex repair, post-repair drift, live</text>
+    <text class="footer-body" x="28" y="91">attestation, immutable image build, real-Docker isolation, OpenAI upstream traffic,</text>
+    <text class="footer-body" x="28" y="115">deployment, or submission is claimed.</text>
+    <text class="footer-note" x="28" y="145">Dynamic gates stopped before Docker because the immutable Node base is unset.</text>
+  </g>
+</svg>

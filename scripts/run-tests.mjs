@@ -4,6 +4,7 @@ const suites = {
   unit: [
     "tests/unit/scaffold.test.mjs",
     "tests/unit/container-contract.test.mjs",
+    "tests/unit/architecture-asset.test.mjs",
     "tests/unit/refund-domain.test.mjs",
     "tests/unit/clause-segmentation.test.mjs",
     "tests/unit/policy-ir-validation.test.mjs",

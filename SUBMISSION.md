@@ -274,14 +274,14 @@ The final README should use this order:
 
 Generate polished PNGs under `artifacts/screenshots/`:
 
-- [ ] `01-policy-studio.png`
-- [ ] `02-decision-queue.png`
-- [ ] `03-case-lab-drift.png`
+- [x] `01-policy-studio.png`
+- [x] `02-decision-queue.png`
+- [x] `03-case-lab-drift.png`
 - [ ] `04-codex-repair.png`
-- [ ] `05-proof.png`
-- [ ] `06-change-impact.png`
-- [ ] `07-mobile-or-responsive.png`
-- [ ] `08-architecture.png`
+- [x] `05-proof.png`
+- [x] `06-change-impact.png`
+- [x] `07-mobile-or-responsive.png`
+- [x] `08-architecture.png`
 
 Requirements:
 

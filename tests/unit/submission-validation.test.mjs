@@ -11,11 +11,18 @@ function readySnapshot() {
       videoUrl: "https://example.com/video",
       submissionUrl: "https://example.com/submission",
     },
-    state: { status: "SUBMITTED", confirmation: "confirmed" },
+    state: {
+      status: "SUBMITTED",
+      confirmation: "confirmed",
+      staticSecurityStatus: "PASS",
+      cleanCopyStatus: "PASS",
+      evidenceStatus: "PASS",
+    },
     rulesVerified: true,
     evidence: { status: "PASS", evidenceMode: "LIVE_VERIFIED" },
     licensePresent: true,
     securityStatus: "PASS",
+    cleanCopyStatus: "PASS",
     containerStatus: "PASS",
   };
 }
@@ -32,6 +39,15 @@ test("submission readiness requires every independent proof boundary", () => {
   assert.equal(failures.includes("Evidence package is not live verified PASS."), true);
   assert.equal(failures.includes("Missing verified HTTPS link: videoUrl"), true);
   assert.equal(failures.includes("Official rules have not been verified."), true);
+
+  const stale = readySnapshot();
+  stale.state.cleanCopyStatus = "FAIL";
+  stale.state.staticSecurityStatus = "FAIL";
+  stale.state.evidenceStatus = "FAIL";
+  const staleFailures = collectSubmissionFailures(stale);
+  assert.equal(staleFailures.includes("Submission state clean-copy status is stale."), true);
+  assert.equal(staleFailures.includes("Submission state security status is stale."), true);
+  assert.equal(staleFailures.includes("Submission state evidence status is stale."), true);
 });
 
 test("draft, license, security, and container failures cannot be hidden by final state text", () => {
@@ -45,5 +61,6 @@ test("draft, license, security, and container failures cannot be hidden by final
     "Draft marker remains: long-description.md",
     "Offline security check is not passing.",
     "Project LICENSE is absent.",
+    "Submission state security status is stale.",
   ]);
 });

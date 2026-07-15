@@ -26,6 +26,15 @@ export function collectSubmissionFailures(snapshot) {
   if (snapshot.securityStatus !== "PASS") {
     failures.push("Offline security check is not passing.");
   }
+  if (snapshot.state.staticSecurityStatus !== snapshot.securityStatus) {
+    failures.push("Submission state security status is stale.");
+  }
+  if (snapshot.state.cleanCopyStatus !== snapshot.cleanCopyStatus) {
+    failures.push("Submission state clean-copy status is stale.");
+  }
+  if (snapshot.state.evidenceStatus !== snapshot.evidence.status) {
+    failures.push("Submission state evidence status is stale.");
+  }
   if (snapshot.containerStatus !== "PASS") {
     failures.push("Container health evidence is not passing.");
   }

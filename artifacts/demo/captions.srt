@@ -16,7 +16,7 @@ A deterministic compiler and OPA 1.18.2 verify 41 accepted policy cases.
 
 5
 00:01:40,000 --> 00:02:00,000
-The OPA-backed comparison exposes the three seeded defects.
+The reference-expectation comparison, which is not OPA-backed, exposes the three seeded defects.
 
 6
 00:02:00,000 --> 00:02:30,000

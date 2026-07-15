@@ -38,6 +38,8 @@ flowchart LR
 
 Dashed edges are planned live execution and have not run. Model output never becomes the final executable policy. The validated IR is compiled deterministically, every rule traces to source clauses, and golden-case contradictions fail closed.
 
+![PolicyTwin architecture snapshot](docs/assets/policytwin-architecture.svg)
+
 ## Local setup
 
 Requirements:

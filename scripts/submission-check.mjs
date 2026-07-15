@@ -98,6 +98,12 @@ const evidence = JSON.parse(
 const security = JSON.parse(
   readFileSync(resolve(ROOT, "artifacts", "security", "security-report.json"), "utf8"),
 );
+const clean = JSON.parse(
+  readFileSync(
+    resolve(ROOT, "artifacts", "security", "clean-checkout-report.json"),
+    "utf8",
+  ),
+);
 const container = JSON.parse(
   readFileSync(resolve(ROOT, "artifacts", "security", "container-report.json"), "utf8"),
 );
@@ -109,6 +115,7 @@ const uniqueFailures = collectSubmissionFailures({
   evidence,
   licensePresent: existsSync(resolve(ROOT, "LICENSE")),
   securityStatus: security.status,
+  cleanCopyStatus: clean.status,
   containerStatus: container.status,
 });
 const report = {

@@ -15,6 +15,7 @@ const TEXT_EXTENSIONS = new Set([
   ".mjs",
   ".rego",
   ".srt",
+  ".svg",
   ".ts",
   ".txt",
   ".yaml",
@@ -37,6 +38,7 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "src/opa/runner.ts",
   "tests/helpers/worker-rpc-tls-certificates.mjs",
   "tests/integration/refund-fixture.integration.test.mjs",
+  "tests/unit/architecture-asset.test.mjs",
 ]);
 const TEST_SECRET_SENTINELS = new Set([
   "secret-value-123456789",

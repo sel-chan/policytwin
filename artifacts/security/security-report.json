@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 321,
-  "scannedTextFiles": 293,
+  "scannedFiles": 325,
+  "scannedTextFiles": 296,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [
@@ -22,7 +22,8 @@
     "src/codex/docker-command-runner.ts",
     "src/opa/runner.ts",
     "tests/helpers/worker-rpc-tls-certificates.mjs",
-    "tests/integration/refund-fixture.integration.test.mjs"
+    "tests/integration/refund-fixture.integration.test.mjs",
+    "tests/unit/architecture-asset.test.mjs"
   ],
   "findings": []
 }
