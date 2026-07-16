@@ -11,6 +11,7 @@ import {
   type TLSSocket,
 } from "node:tls";
 import { TextDecoder } from "node:util";
+import { parseLiveLinuxCgroupCpuEvidenceV2 } from "./live-linux-cgroup-cpu-evidence-v2.js";
 import {
   WORKER_RPC_MAX_REQUEST_BYTES,
   WORKER_RPC_MAX_RESPONSE_BYTES,
@@ -704,6 +705,17 @@ function validateV2ExecutionReceiptBindings(
   request: WorkerRpcV2Request,
 ): void {
   const expectedCpuBudgetUsec = BigInt(request.policy.limits.cpuTimeMs) * 1_000n;
+  const cpuEvidence = parseLiveLinuxCgroupCpuEvidenceV2(result.receipt.cpuEvidence, {
+    requestId: request.requestId,
+    runNonce: request.runNonce,
+    requestSha256: workerRpcSha256(request),
+    executionBindingSha256: request.executionBindingSha256,
+    supervisorRunId: result.receipt.supervisorRunId,
+    workerImageDigest: request.policy.workerImageDigest,
+    workerPolicySha256: request.policySha256,
+    acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
+    budgetUsec: expectedCpuBudgetUsec,
+  });
   if (
     result.receipt.workerImageDigest !== request.policy.workerImageDigest ||
     result.receipt.workerPolicySha256 !== request.policySha256 ||
@@ -713,10 +725,25 @@ function validateV2ExecutionReceiptBindings(
       request.policy.baselineExecutionTreeSha256 ||
     result.receipt.acceptedCorpusSha256 !== request.policy.acceptedCorpusSha256 ||
     result.receipt.executionBindingSha256 !== request.executionBindingSha256 ||
-    (result.status === "PASS" && result.receipt.cpuProof === null) ||
-    (result.receipt.cpuProof !== null &&
-      BigInt(result.receipt.cpuProof.budgetUsec) !== expectedCpuBudgetUsec) ||
-    (result.status === "FAIL" && result.receipt.cpuProof !== null)
+    result.receipt.dockerBindingSha256 !== cpuEvidence.dockerBindingSha256 ||
+    result.receipt.remainingProcessCount !== cpuEvidence.remainingProcessCount ||
+    result.receipt.processTreeReaped !== (result.receipt.remainingProcessCount === 0) ||
+    (result.receipt.executionMode === "NOT_STARTED" &&
+      result.receipt.finalExecutionTreeSha256 !==
+        request.policy.baselineExecutionTreeSha256) ||
+    (cpuEvidence.outcome === "OBSERVED_WITHIN_BUDGET" &&
+      result.receipt.executionMode !== "LIVE_CODEX_SDK") ||
+    (cpuEvidence.outcome === "EXECUTION_NON_CPU_FAILURE" &&
+      result.receipt.executionMode !== "LIVE_CODEX_SDK") ||
+    (cpuEvidence.outcome === "PRE_EXECUTION_REJECTED" &&
+      result.receipt.executionMode !== "NOT_STARTED") ||
+    (!("executionStarted" in cpuEvidence) ? false :
+      result.receipt.executionMode !==
+        (cpuEvidence.executionStarted ? "LIVE_CODEX_SDK" : "NOT_STARTED")) ||
+    (result.status === "PASS" &&
+      cpuEvidence.outcome !== "OBSERVED_WITHIN_BUDGET") ||
+    (result.status === "FAIL" &&
+      cpuEvidence.outcome === "OBSERVED_WITHIN_BUDGET")
   ) {
     throw new Error("Worker supervisor v2 execution receipt is not bound to its request.");
   }
@@ -754,7 +781,7 @@ async function buildSignedV2Response(
       "executionMode",
       "executionBindingSha256",
       "dockerBindingSha256",
-      "cpuProof",
+      "cpuEvidence",
       "repairWorkspaceDeleted",
       "verificationWorkspaceDeleted",
       "processTreeReaped",
@@ -784,7 +811,11 @@ async function buildSignedV2Response(
     executionBindingSha256: request.executionBindingSha256,
     status: result.status,
     completedAt,
-    resultSha256: workerRpcSha256(result.report ?? { error: result.error }),
+    resultSha256: workerRpcSha256({
+      report: result.report,
+      error: result.error,
+      cpuEvidenceSha256: result.receipt.cpuEvidence.cpuEvidenceSha256,
+    }),
     report: result.report,
     error: result.error,
     receipt: {

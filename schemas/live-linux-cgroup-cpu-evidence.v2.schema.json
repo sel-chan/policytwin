@@ -1,0 +1,1057 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policytwin.local/schemas/live-linux-cgroup-cpu-evidence.v2.schema.json",
+  "title": "PolicyTwin live Linux cgroup-v2 CPU evidence with a global event transcript",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "evidenceType",
+    "outcome",
+    "requestId",
+    "runNonce",
+    "requestSha256",
+    "executionBindingSha256",
+    "supervisorRunId",
+    "workerImageDigest",
+    "workerPolicySha256",
+    "acceptedCorpusSha256",
+    "budgetUsec",
+    "cpuEvidenceSha256"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "2" },
+    "evidenceType": { "const": "LIVE_LINUX_CGROUP_CPU_EVIDENCE_V2" },
+    "outcome": {
+      "enum": [
+        "OBSERVED_WITHIN_BUDGET",
+        "EXECUTION_NON_CPU_FAILURE",
+        "PRE_EXECUTION_REJECTED",
+        "LINUX_CONTROLLER_FAILURE",
+        "OBSERVED_OVER_BUDGET_CONTAINED",
+        "CONTAINMENT_INCOMPLETE"
+      ]
+    },
+    "requestId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "runNonce": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$"
+    },
+    "requestSha256": { "$ref": "#/$defs/sha256" },
+    "executionBindingSha256": { "$ref": "#/$defs/sha256" },
+    "supervisorRunId": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "workerImageDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "workerPolicySha256": { "$ref": "#/$defs/sha256" },
+    "acceptedCorpusSha256": { "$ref": "#/$defs/sha256" },
+    "budgetUsec": { "$ref": "#/$defs/positiveUint64Decimal" },
+    "cpuEvidenceSha256": { "$ref": "#/$defs/sha256" },
+    "dockerBindingSha256": {
+      "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+    },
+    "aggregateUsageUsec": { "$ref": "#/$defs/uint64Decimal" },
+    "accountingScope": { "const": "POST_BASELINE_THREE_ROLE_AGGREGATE" },
+    "samplingMode": { "const": "LINUX_CGROUP_V2_GLOBAL_MONOTONIC_EVENT_TRANSCRIPT" },
+    "clock": { "const": "CLOCK_MONOTONIC_RAW_NS" },
+    "controllerIdentitySha256": { "$ref": "#/$defs/sha256" },
+    "eventCount": { "type": "integer", "minimum": 2, "maximum": 4096 },
+    "events": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4096,
+      "items": { "$ref": "#/$defs/event" }
+    },
+    "eventTranscriptSha256": { "$ref": "#/$defs/sha256" },
+    "cumulativeAccountingVerified": { "const": true },
+    "failStopEnforcementArmed": { "const": true },
+    "hardLimitEnforced": { "const": false },
+    "overshootBounded": { "const": false },
+    "containmentTriggered": { "const": false },
+    "controllerStopped": { "const": true },
+    "allRoleCgroupsReleased": { "const": true },
+    "remainingProcessCount": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/roleProof" },
+            { "properties": { "role": { "const": "egress" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/roleProof" },
+            { "properties": { "role": { "const": "worker" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/roleProof" },
+            { "properties": { "role": { "const": "verifier" } } }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "failurePhase": {
+      "enum": [
+        "CODEX_EXECUTION",
+        "VERIFICATION",
+        "ROLE_ADMISSION",
+        "SAMPLING",
+        "CONTAINMENT",
+        "CONTROLLER_STOP",
+        "CGROUP_RELEASE"
+      ]
+    },
+    "failureCode": {
+      "enum": [
+        "WORKER_REPORTED_FAILURE",
+        "VERIFICATION_FAILED",
+        "CGROUP_BIND_FAILED",
+        "CPU_STAT_READ_FAILED",
+        "CPU_COUNTER_REGRESSION",
+        "ROLE_IDENTITY_DRIFT",
+        "CPU_BUDGET_EXCEEDED",
+        "CONTAINMENT_ACTION_FAILED",
+        "CONTROLLER_STOP_FAILED",
+        "CGROUP_RELEASE_FAILED"
+      ]
+    },
+    "rejectionStage": {
+      "enum": ["SUPERVISOR_ADMISSION", "CONTROLLER_INITIALIZATION", "EXECUTOR_START"]
+    },
+    "rejectionCode": {
+      "enum": [
+        "SUPERVISOR_FAIL_CLOSED",
+        "REQUEST_REJECTED",
+        "CONTROLLER_UNAVAILABLE",
+        "EXECUTOR_UNAVAILABLE"
+      ]
+    },
+    "controllerStarted": { "type": "boolean" },
+    "executionStarted": { "type": "boolean" },
+    "containmentStatus": { "const": "NOT_APPLICABLE" },
+    "controllerStopStatus": {
+      "enum": ["NOT_STARTED", "STOPPED", "STOP_FAILED", "NOT_ATTEMPTED"]
+    },
+    "cgroupReleaseStatus": { "const": "NOT_APPLICABLE" },
+    "attemptBindingSha256": { "$ref": "#/$defs/sha256" },
+    "observedAggregateUsageUsec": { "$ref": "#/$defs/uint64Decimal" },
+    "overageUsec": {
+      "oneOf": [{ "$ref": "#/$defs/uint64Decimal" }, { "type": "null" }]
+    },
+    "observedRoles": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/observedRole" },
+            { "properties": { "role": { "const": "egress" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/observedRole" },
+            { "properties": { "role": { "const": "worker" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/observedRole" },
+            { "properties": { "role": { "const": "verifier" } } }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "containment": { "$ref": "#/$defs/containment" }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "outcome": { "const": "OBSERVED_WITHIN_BUDGET" },
+        "dockerBindingSha256": { "$ref": "#/$defs/sha256" },
+        "remainingProcessCount": { "const": 0 }
+      },
+      "required": [
+        "dockerBindingSha256",
+        "aggregateUsageUsec",
+        "accountingScope",
+        "samplingMode",
+        "clock",
+        "controllerIdentitySha256",
+        "eventCount",
+        "events",
+        "eventTranscriptSha256",
+        "cumulativeAccountingVerified",
+        "failStopEnforcementArmed",
+        "hardLimitEnforced",
+        "overshootBounded",
+        "containmentTriggered",
+        "controllerStopped",
+        "allRoleCgroupsReleased",
+        "remainingProcessCount",
+        "roles"
+      ],
+      "not": {
+        "anyOf": [
+          { "required": ["failurePhase"] },
+          { "required": ["failureCode"] },
+          { "required": ["rejectionStage"] },
+          { "required": ["rejectionCode"] },
+          { "required": ["controllerStarted"] },
+          { "required": ["executionStarted"] },
+          { "required": ["containmentStatus"] },
+          { "required": ["controllerStopStatus"] },
+          { "required": ["cgroupReleaseStatus"] },
+          { "required": ["attemptBindingSha256"] },
+          { "required": ["observedAggregateUsageUsec"] },
+          { "required": ["overageUsec"] },
+          { "required": ["observedRoles"] },
+          { "required": ["containment"] }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "outcome": { "const": "EXECUTION_NON_CPU_FAILURE" },
+        "dockerBindingSha256": { "$ref": "#/$defs/sha256" },
+        "remainingProcessCount": { "const": 0 },
+        "failurePhase": { "enum": ["CODEX_EXECUTION", "VERIFICATION"] },
+        "failureCode": { "enum": ["WORKER_REPORTED_FAILURE", "VERIFICATION_FAILED"] }
+      },
+      "required": [
+        "dockerBindingSha256",
+        "aggregateUsageUsec",
+        "accountingScope",
+        "samplingMode",
+        "clock",
+        "controllerIdentitySha256",
+        "eventCount",
+        "events",
+        "eventTranscriptSha256",
+        "cumulativeAccountingVerified",
+        "failStopEnforcementArmed",
+        "hardLimitEnforced",
+        "overshootBounded",
+        "containmentTriggered",
+        "controllerStopped",
+        "allRoleCgroupsReleased",
+        "remainingProcessCount",
+        "roles",
+        "failurePhase",
+        "failureCode"
+      ],
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "failurePhase": { "const": "CODEX_EXECUTION" },
+                "failureCode": { "const": "WORKER_REPORTED_FAILURE" }
+              },
+              "required": ["failurePhase", "failureCode"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "VERIFICATION" },
+                "failureCode": { "const": "VERIFICATION_FAILED" }
+              },
+              "required": ["failurePhase", "failureCode"]
+            }
+          ]
+        }
+      ],
+      "not": {
+        "anyOf": [
+          { "required": ["rejectionStage"] },
+          { "required": ["rejectionCode"] },
+          { "required": ["controllerStarted"] },
+          { "required": ["executionStarted"] },
+          { "required": ["containmentStatus"] },
+          { "required": ["controllerStopStatus"] },
+          { "required": ["cgroupReleaseStatus"] },
+          { "required": ["attemptBindingSha256"] },
+          { "required": ["observedAggregateUsageUsec"] },
+          { "required": ["overageUsec"] },
+          { "required": ["observedRoles"] },
+          { "required": ["containment"] }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "outcome": { "const": "PRE_EXECUTION_REJECTED" },
+        "controllerStarted": { "const": false },
+        "executionStarted": { "const": false },
+        "dockerBindingSha256": { "type": "null" },
+        "containmentStatus": { "const": "NOT_APPLICABLE" },
+        "controllerStopStatus": { "const": "NOT_STARTED" },
+        "cgroupReleaseStatus": { "const": "NOT_APPLICABLE" },
+        "remainingProcessCount": { "const": 0 }
+      },
+      "required": [
+        "rejectionStage",
+        "rejectionCode",
+        "controllerStarted",
+        "executionStarted",
+        "dockerBindingSha256",
+        "containmentStatus",
+        "controllerStopStatus",
+        "cgroupReleaseStatus",
+        "remainingProcessCount"
+      ],
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "rejectionStage": { "const": "SUPERVISOR_ADMISSION" },
+                "rejectionCode": {
+                  "enum": ["SUPERVISOR_FAIL_CLOSED", "REQUEST_REJECTED"]
+                }
+              },
+              "required": ["rejectionStage", "rejectionCode"]
+            },
+            {
+              "properties": {
+                "rejectionStage": { "const": "CONTROLLER_INITIALIZATION" },
+                "rejectionCode": { "const": "CONTROLLER_UNAVAILABLE" }
+              },
+              "required": ["rejectionStage", "rejectionCode"]
+            },
+            {
+              "properties": {
+                "rejectionStage": { "const": "EXECUTOR_START" },
+                "rejectionCode": { "const": "EXECUTOR_UNAVAILABLE" }
+              },
+              "required": ["rejectionStage", "rejectionCode"]
+            }
+          ]
+        }
+      ],
+      "not": {
+        "anyOf": [
+          { "required": ["controllerIdentitySha256"] },
+          { "required": ["aggregateUsageUsec"] },
+          { "required": ["accountingScope"] },
+          { "required": ["samplingMode"] },
+          { "required": ["clock"] },
+          { "required": ["eventCount"] },
+          { "required": ["events"] },
+          { "required": ["eventTranscriptSha256"] },
+          { "required": ["cumulativeAccountingVerified"] },
+          { "required": ["failStopEnforcementArmed"] },
+          { "required": ["hardLimitEnforced"] },
+          { "required": ["overshootBounded"] },
+          { "required": ["containmentTriggered"] },
+          { "required": ["controllerStopped"] },
+          { "required": ["allRoleCgroupsReleased"] },
+          { "required": ["roles"] },
+          { "required": ["failurePhase"] },
+          { "required": ["failureCode"] },
+          { "required": ["attemptBindingSha256"] },
+          { "required": ["observedAggregateUsageUsec"] },
+          { "required": ["overageUsec"] },
+          { "required": ["observedRoles"] },
+          { "required": ["containment"] }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "outcome": { "const": "LINUX_CONTROLLER_FAILURE" },
+        "controllerStarted": { "const": true },
+        "overageUsec": { "type": "null" },
+        "controllerStopStatus": { "const": "STOPPED" },
+        "remainingProcessCount": { "const": 0 },
+        "observedRoles": {
+          "not": {
+            "contains": {
+              "properties": { "released": { "const": false } },
+              "required": ["released"]
+            }
+          }
+        },
+        "containment": {
+          "properties": { "status": { "enum": ["NOT_REQUIRED", "SUCCEEDED"] } },
+          "required": ["status"]
+        }
+      },
+      "required": [
+        "failurePhase",
+        "failureCode",
+        "controllerStarted",
+        "executionStarted",
+        "controllerIdentitySha256",
+        "attemptBindingSha256",
+        "dockerBindingSha256",
+        "observedAggregateUsageUsec",
+        "overageUsec",
+        "clock",
+        "eventCount",
+        "events",
+        "eventTranscriptSha256",
+        "observedRoles",
+        "containment",
+        "controllerStopStatus",
+        "remainingProcessCount"
+      ],
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "failurePhase": { "const": "ROLE_ADMISSION" },
+                "failureCode": { "const": "CGROUP_BIND_FAILED" }
+              },
+              "required": ["failurePhase", "failureCode"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "SAMPLING" },
+                "failureCode": { "const": "CPU_STAT_READ_FAILED" }
+              },
+              "required": ["failurePhase", "failureCode"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "SAMPLING" },
+                "failureCode": { "const": "CPU_COUNTER_REGRESSION" }
+              },
+              "required": ["failurePhase", "failureCode"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "SAMPLING" },
+                "failureCode": { "const": "ROLE_IDENTITY_DRIFT" }
+              },
+              "required": ["failurePhase", "failureCode"]
+            }
+          ]
+        },
+        { "$ref": "#/$defs/observedDockerBindingProfile" }
+      ],
+      "not": {
+        "anyOf": [
+          { "required": ["rejectionStage"] },
+          { "required": ["rejectionCode"] },
+          { "required": ["containmentStatus"] },
+          { "required": ["cgroupReleaseStatus"] },
+          { "required": ["aggregateUsageUsec"] },
+          { "required": ["accountingScope"] },
+          { "required": ["samplingMode"] },
+          { "required": ["cumulativeAccountingVerified"] },
+          { "required": ["failStopEnforcementArmed"] },
+          { "required": ["hardLimitEnforced"] },
+          { "required": ["overshootBounded"] },
+          { "required": ["containmentTriggered"] },
+          { "required": ["controllerStopped"] },
+          { "required": ["allRoleCgroupsReleased"] },
+          { "required": ["roles"] }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "outcome": { "const": "OBSERVED_OVER_BUDGET_CONTAINED" },
+        "controllerStarted": { "const": true },
+        "failurePhase": { "const": "SAMPLING" },
+        "failureCode": { "const": "CPU_BUDGET_EXCEEDED" },
+        "overageUsec": { "$ref": "#/$defs/positiveUint64Decimal" },
+        "controllerStopStatus": { "const": "STOPPED" },
+        "remainingProcessCount": { "const": 0 },
+        "observedRoles": {
+          "not": {
+            "contains": {
+              "properties": { "released": { "const": false } },
+              "required": ["released"]
+            }
+          }
+        },
+        "containment": {
+          "properties": {
+            "status": { "const": "SUCCEEDED" },
+            "trigger": { "const": "CPU_BUDGET_EXCEEDED" },
+            "freeze": { "const": "SUCCEEDED" },
+            "kill": { "const": "SUCCEEDED" },
+            "reap": { "const": "SUCCEEDED" }
+          },
+          "required": ["status", "trigger", "freeze", "kill", "reap"]
+        }
+      },
+      "required": [
+        "failurePhase",
+        "failureCode",
+        "controllerStarted",
+        "executionStarted",
+        "controllerIdentitySha256",
+        "attemptBindingSha256",
+        "dockerBindingSha256",
+        "observedAggregateUsageUsec",
+        "overageUsec",
+        "clock",
+        "eventCount",
+        "events",
+        "eventTranscriptSha256",
+        "observedRoles",
+        "containment",
+        "controllerStopStatus",
+        "remainingProcessCount"
+      ],
+      "allOf": [{ "$ref": "#/$defs/observedDockerBindingProfile" }],
+      "not": {
+        "anyOf": [
+          { "required": ["rejectionStage"] },
+          { "required": ["rejectionCode"] },
+          { "required": ["containmentStatus"] },
+          { "required": ["cgroupReleaseStatus"] },
+          { "required": ["aggregateUsageUsec"] },
+          { "required": ["accountingScope"] },
+          { "required": ["samplingMode"] },
+          { "required": ["cumulativeAccountingVerified"] },
+          { "required": ["failStopEnforcementArmed"] },
+          { "required": ["hardLimitEnforced"] },
+          { "required": ["overshootBounded"] },
+          { "required": ["containmentTriggered"] },
+          { "required": ["controllerStopped"] },
+          { "required": ["allRoleCgroupsReleased"] },
+          { "required": ["roles"] }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "outcome": { "const": "CONTAINMENT_INCOMPLETE" },
+        "controllerStarted": { "const": true },
+        "containment": {
+          "properties": { "status": { "const": "INCOMPLETE" } },
+          "required": ["status"]
+        }
+      },
+      "required": [
+        "failurePhase",
+        "failureCode",
+        "controllerStarted",
+        "executionStarted",
+        "controllerIdentitySha256",
+        "attemptBindingSha256",
+        "dockerBindingSha256",
+        "observedAggregateUsageUsec",
+        "overageUsec",
+        "clock",
+        "eventCount",
+        "events",
+        "eventTranscriptSha256",
+        "observedRoles",
+        "containment",
+        "controllerStopStatus",
+        "remainingProcessCount"
+      ],
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "failurePhase": { "const": "ROLE_ADMISSION" },
+                "failureCode": { "const": "CGROUP_BIND_FAILED" },
+                "overageUsec": { "type": "null" },
+                "containment": {
+                  "properties": { "trigger": { "const": "CONTROLLER_FAILURE" } },
+                  "required": ["trigger"]
+                }
+              },
+              "required": ["failurePhase", "failureCode", "overageUsec", "containment"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "SAMPLING" },
+                "failureCode": { "enum": ["CPU_STAT_READ_FAILED", "CPU_COUNTER_REGRESSION"] },
+                "overageUsec": { "type": "null" },
+                "containment": {
+                  "properties": { "trigger": { "const": "CONTROLLER_FAILURE" } },
+                  "required": ["trigger"]
+                }
+              },
+              "required": ["failurePhase", "failureCode", "overageUsec", "containment"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "SAMPLING" },
+                "failureCode": { "const": "ROLE_IDENTITY_DRIFT" },
+                "overageUsec": { "type": "null" },
+                "containment": {
+                  "properties": { "trigger": { "const": "IDENTITY_DRIFT" } },
+                  "required": ["trigger"]
+                }
+              },
+              "required": ["failurePhase", "failureCode", "overageUsec", "containment"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "SAMPLING" },
+                "failureCode": { "const": "CPU_BUDGET_EXCEEDED" },
+                "overageUsec": { "$ref": "#/$defs/positiveUint64Decimal" },
+                "containment": {
+                  "properties": { "trigger": { "const": "CPU_BUDGET_EXCEEDED" } },
+                  "required": ["trigger"]
+                }
+              },
+              "required": ["failurePhase", "failureCode", "overageUsec", "containment"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "CONTAINMENT" },
+                "failureCode": { "const": "CONTAINMENT_ACTION_FAILED" },
+                "overageUsec": { "type": "null" },
+                "containment": {
+                  "properties": { "trigger": { "const": "CONTROLLER_FAILURE" } },
+                  "required": ["trigger"],
+                  "anyOf": [
+                    { "properties": { "freeze": { "const": "FAILED" } } },
+                    { "properties": { "kill": { "const": "FAILED" } } },
+                    { "properties": { "reap": { "const": "FAILED" } } }
+                  ]
+                }
+              },
+              "required": ["failurePhase", "failureCode", "overageUsec", "containment"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "CONTROLLER_STOP" },
+                "failureCode": { "const": "CONTROLLER_STOP_FAILED" },
+                "overageUsec": { "type": "null" },
+                "controllerStopStatus": { "const": "STOP_FAILED" },
+                "containment": {
+                  "properties": { "trigger": { "const": "CONTROLLER_FAILURE" } },
+                  "required": ["trigger"]
+                }
+              },
+              "required": ["failurePhase", "failureCode", "overageUsec", "controllerStopStatus", "containment"]
+            },
+            {
+              "properties": {
+                "failurePhase": { "const": "CGROUP_RELEASE" },
+                "failureCode": { "const": "CGROUP_RELEASE_FAILED" },
+                "overageUsec": { "type": "null" },
+                "observedRoles": {
+                  "contains": {
+                    "properties": { "released": { "const": false } },
+                    "required": ["released"]
+                  }
+                },
+                "containment": {
+                  "properties": { "trigger": { "const": "CONTROLLER_FAILURE" } },
+                  "required": ["trigger"]
+                }
+              },
+              "required": ["failurePhase", "failureCode", "overageUsec", "observedRoles", "containment"]
+            }
+          ]
+        },
+        { "$ref": "#/$defs/observedDockerBindingProfile" }
+      ],
+      "anyOf": [
+        { "properties": { "remainingProcessCount": { "minimum": 1 } } },
+        {
+          "properties": {
+            "controllerStopStatus": { "enum": ["STOP_FAILED", "NOT_ATTEMPTED"] }
+          }
+        },
+        {
+          "properties": {
+            "observedRoles": {
+              "contains": {
+                "properties": { "released": { "const": false } },
+                "required": ["released"]
+              }
+            }
+          }
+        }
+      ],
+      "not": {
+        "anyOf": [
+          { "required": ["rejectionStage"] },
+          { "required": ["rejectionCode"] },
+          { "required": ["containmentStatus"] },
+          { "required": ["cgroupReleaseStatus"] },
+          { "required": ["aggregateUsageUsec"] },
+          { "required": ["accountingScope"] },
+          { "required": ["samplingMode"] },
+          { "required": ["cumulativeAccountingVerified"] },
+          { "required": ["failStopEnforcementArmed"] },
+          { "required": ["hardLimitEnforced"] },
+          { "required": ["overshootBounded"] },
+          { "required": ["containmentTriggered"] },
+          { "required": ["controllerStopped"] },
+          { "required": ["allRoleCgroupsReleased"] },
+          { "required": ["roles"] }
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "uint64Decimal": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]|1844674407370955161[0-5])$"
+    },
+    "positiveUint64Decimal": {
+      "allOf": [
+        { "$ref": "#/$defs/uint64Decimal" },
+        { "not": { "const": "0" } }
+      ]
+    },
+    "observedDockerBindingProfile": {
+      "oneOf": [
+        {
+          "properties": {
+            "observedRoles": { "minItems": 3, "maxItems": 3 },
+            "dockerBindingSha256": { "$ref": "#/$defs/sha256" }
+          },
+          "required": ["observedRoles", "dockerBindingSha256"]
+        },
+        {
+          "properties": {
+            "observedRoles": { "maxItems": 2 },
+            "dockerBindingSha256": { "type": "null" }
+          },
+          "required": ["observedRoles", "dockerBindingSha256"]
+        }
+      ]
+    },
+    "roleIdentityProperties": {
+      "type": "object",
+      "properties": {
+        "role": { "enum": ["egress", "worker", "verifier"] },
+        "containerId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pid": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z$"
+        },
+        "cgroupIdentitySha256": { "$ref": "#/$defs/sha256" },
+        "roleBindingSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "roleProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "containerId",
+        "pid",
+        "startedAt",
+        "cgroupIdentitySha256",
+        "roleBindingSha256",
+        "baselineUsageUsec",
+        "finalUsageUsec",
+        "deltaUsageUsec",
+        "sampleCount",
+        "samplesUsec",
+        "sampleEventSequences",
+        "cgroupBoundEventSequence",
+        "executionStartedEventSequence",
+        "executionStoppedEventSequence",
+        "cgroupReleasedEventSequence",
+        "released"
+      ],
+      "properties": {
+        "role": { "enum": ["egress", "worker", "verifier"] },
+        "containerId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pid": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z$"
+        },
+        "cgroupIdentitySha256": { "$ref": "#/$defs/sha256" },
+        "roleBindingSha256": { "$ref": "#/$defs/sha256" },
+        "baselineUsageUsec": { "$ref": "#/$defs/uint64Decimal" },
+        "finalUsageUsec": { "$ref": "#/$defs/uint64Decimal" },
+        "deltaUsageUsec": { "$ref": "#/$defs/uint64Decimal" },
+        "sampleCount": { "type": "integer", "minimum": 2, "maximum": 1024 },
+        "samplesUsec": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 1024,
+          "items": { "$ref": "#/$defs/uint64Decimal" }
+        },
+        "sampleEventSequences": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 1024,
+          "items": { "type": "integer", "minimum": 1, "maximum": 4096 }
+        },
+        "cgroupBoundEventSequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "executionStartedEventSequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "executionStoppedEventSequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "cgroupReleasedEventSequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "released": { "const": true }
+      }
+    },
+    "nullableUint64": {
+      "oneOf": [{ "$ref": "#/$defs/uint64Decimal" }, { "type": "null" }]
+    },
+    "observedRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "containerId",
+        "pid",
+        "startedAt",
+        "cgroupIdentitySha256",
+        "roleBindingSha256",
+        "baselineUsageUsec",
+        "lastUsageUsec",
+        "observedDeltaUsageUsec",
+        "sampleCount",
+        "released"
+      ],
+      "properties": {
+        "role": { "enum": ["egress", "worker", "verifier"] },
+        "containerId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pid": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?Z$"
+        },
+        "cgroupIdentitySha256": { "$ref": "#/$defs/sha256" },
+        "roleBindingSha256": { "$ref": "#/$defs/sha256" },
+        "baselineUsageUsec": { "$ref": "#/$defs/nullableUint64" },
+        "lastUsageUsec": { "$ref": "#/$defs/nullableUint64" },
+        "observedDeltaUsageUsec": { "$ref": "#/$defs/nullableUint64" },
+        "sampleCount": { "type": "integer", "minimum": 0, "maximum": 1024 },
+        "released": { "type": "boolean" }
+      }
+    },
+    "eventBase": {
+      "type": "object",
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "monotonicNs": { "$ref": "#/$defs/uint64Decimal" }
+      }
+    },
+    "failurePair": {
+      "oneOf": [
+        {
+          "properties": {
+            "failurePhase": { "const": "ROLE_ADMISSION" },
+            "failureCode": { "const": "CGROUP_BIND_FAILED" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        },
+        {
+          "properties": {
+            "failurePhase": { "const": "SAMPLING" },
+            "failureCode": { "const": "CPU_STAT_READ_FAILED" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        },
+        {
+          "properties": {
+            "failurePhase": { "const": "SAMPLING" },
+            "failureCode": { "const": "CPU_COUNTER_REGRESSION" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        },
+        {
+          "properties": {
+            "failurePhase": { "const": "SAMPLING" },
+            "failureCode": { "const": "ROLE_IDENTITY_DRIFT" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        },
+        {
+          "properties": {
+            "failurePhase": { "const": "SAMPLING" },
+            "failureCode": { "const": "CPU_BUDGET_EXCEEDED" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        },
+        {
+          "properties": {
+            "failurePhase": { "const": "CONTAINMENT" },
+            "failureCode": { "const": "CONTAINMENT_ACTION_FAILED" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        },
+        {
+          "properties": {
+            "failurePhase": { "const": "CONTROLLER_STOP" },
+            "failureCode": { "const": "CONTROLLER_STOP_FAILED" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        },
+        {
+          "properties": {
+            "failurePhase": { "const": "CGROUP_RELEASE" },
+            "failureCode": { "const": "CGROUP_RELEASE_FAILED" }
+          },
+          "required": ["failurePhase", "failureCode"]
+        }
+      ]
+    },
+    "event": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sequence", "monotonicNs", "eventType", "controllerIdentitySha256"],
+          "properties": {
+            "sequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+            "monotonicNs": { "$ref": "#/$defs/uint64Decimal" },
+            "eventType": { "enum": ["CONTROLLER_STARTED", "CONTROLLER_STOPPED"] },
+            "controllerIdentitySha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sequence", "monotonicNs", "eventType", "role", "roleBindingSha256"],
+          "properties": {
+            "sequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+            "monotonicNs": { "$ref": "#/$defs/uint64Decimal" },
+            "eventType": {
+              "enum": [
+                "ROLE_CGROUP_BOUND",
+                "ROLE_EXECUTION_STARTED",
+                "ROLE_EXECUTION_STOPPED",
+                "ROLE_CGROUP_RELEASED"
+              ]
+            },
+            "role": { "enum": ["egress", "worker", "verifier"] },
+            "roleBindingSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sequence",
+            "monotonicNs",
+            "eventType",
+            "role",
+            "roleBindingSha256",
+            "sampleIndex",
+            "usageUsec"
+          ],
+          "properties": {
+            "sequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+            "monotonicNs": { "$ref": "#/$defs/uint64Decimal" },
+            "eventType": { "const": "ROLE_CPU_SAMPLE" },
+            "role": { "enum": ["egress", "worker", "verifier"] },
+            "roleBindingSha256": { "$ref": "#/$defs/sha256" },
+            "sampleIndex": { "type": "integer", "minimum": 0, "maximum": 1023 },
+            "usageUsec": { "$ref": "#/$defs/uint64Decimal" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sequence", "monotonicNs", "eventType", "failurePhase", "failureCode"],
+          "allOf": [{ "$ref": "#/$defs/failurePair" }],
+          "properties": {
+            "sequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+            "monotonicNs": { "$ref": "#/$defs/uint64Decimal" },
+            "eventType": { "const": "FAILURE_OBSERVED" },
+            "failurePhase": {
+              "enum": [
+                "ROLE_ADMISSION",
+                "SAMPLING",
+                "CONTAINMENT",
+                "CONTROLLER_STOP",
+                "CGROUP_RELEASE"
+              ]
+            },
+            "failureCode": {
+              "enum": [
+                "CGROUP_BIND_FAILED",
+                "CPU_STAT_READ_FAILED",
+                "CPU_COUNTER_REGRESSION",
+                "ROLE_IDENTITY_DRIFT",
+                "CPU_BUDGET_EXCEEDED",
+                "CONTAINMENT_ACTION_FAILED",
+                "CONTROLLER_STOP_FAILED",
+                "CGROUP_RELEASE_FAILED"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sequence", "monotonicNs", "eventType", "action", "result"],
+          "properties": {
+            "sequence": { "type": "integer", "minimum": 1, "maximum": 4096 },
+            "monotonicNs": { "$ref": "#/$defs/uint64Decimal" },
+            "eventType": { "const": "CONTAINMENT_ACTION" },
+            "action": { "enum": ["FREEZE", "KILL", "REAP"] },
+            "result": { "enum": ["SUCCEEDED", "FAILED"] }
+          }
+        }
+      ]
+    },
+    "containment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "trigger", "freeze", "kill", "reap"],
+      "properties": {
+        "status": { "enum": ["NOT_REQUIRED", "SUCCEEDED", "INCOMPLETE"] },
+        "trigger": { "enum": ["CONTROLLER_FAILURE", "CPU_BUDGET_EXCEEDED", "IDENTITY_DRIFT"] },
+        "freeze": { "enum": ["NOT_ATTEMPTED", "SUCCEEDED", "FAILED"] },
+        "kill": { "enum": ["NOT_ATTEMPTED", "SUCCEEDED", "FAILED"] },
+        "reap": { "enum": ["NOT_ATTEMPTED", "SUCCEEDED", "FAILED"] }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "status": { "const": "NOT_REQUIRED" },
+            "freeze": { "const": "NOT_ATTEMPTED" },
+            "kill": { "const": "NOT_ATTEMPTED" },
+            "reap": { "const": "NOT_ATTEMPTED" }
+          },
+          "required": ["status", "freeze", "kill", "reap"]
+        },
+        {
+          "properties": {
+            "status": { "const": "SUCCEEDED" },
+            "freeze": { "const": "SUCCEEDED" },
+            "kill": { "const": "SUCCEEDED" },
+            "reap": { "const": "SUCCEEDED" }
+          },
+          "required": ["status", "freeze", "kill", "reap"]
+        },
+        {
+          "properties": { "status": { "const": "INCOMPLETE" } },
+          "required": ["status"],
+          "not": {
+            "properties": {
+              "freeze": { "const": "SUCCEEDED" },
+              "kill": { "const": "SUCCEEDED" },
+              "reap": { "const": "SUCCEEDED" }
+            },
+            "required": ["freeze", "kill", "reap"]
+          }
+        }
+      ]
+    }
+  }
+}

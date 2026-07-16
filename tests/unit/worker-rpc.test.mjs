@@ -18,8 +18,8 @@ import {
   createMutualTlsWorkerRpcTransport,
   createMutualTlsWorkerRpcV2Transport,
   createWorkerRpcTrustBundle,
-  liveLinuxCgroupDockerBindingSha256,
-  liveLinuxCgroupCpuSampleTranscriptSha256,
+  liveLinuxCgroupCpuEvidenceV2EventTranscriptSha256,
+  liveLinuxCgroupCpuEvidenceV2Sha256,
   parseWorkerRpcRequest,
   parseWorkerRpcV2Request,
   workerRpcExecutionTreeSha256,
@@ -28,6 +28,11 @@ import {
   workerRpcV2SignaturePayload,
 } from "../../dist/index.js";
 import { createEphemeralWorkerRpcTlsCertificates } from "../helpers/worker-rpc-tls-certificates.mjs";
+import {
+  createObservedBudgetFailureCpuEvidenceV2,
+  createPreExecutionFailureCpuEvidenceV2,
+  createSuccessCpuEvidenceV2,
+} from "../helpers/live-cpu-evidence-v2.mjs";
 
 const tlsCertificates = await createEphemeralWorkerRpcTlsCertificates();
 after(async () => tlsCertificates.cleanup());
@@ -331,79 +336,23 @@ function signedResponse(request, options = {}) {
   return canonicalWorkerRpcJson(response);
 }
 
-function cpuRole(roleName, index, samplesUsec) {
-  return {
-    role: roleName,
-    containerId: index.toString(16).repeat(64),
-    pid: 2_000 + index,
-    startedAt: `2026-07-15T00:00:0${index}.000000000Z`,
-    cgroupIdentitySha256: (index + 8).toString(16).repeat(64),
-    baselineUsageUsec: samplesUsec[0],
-    finalUsageUsec: samplesUsec.at(-1),
-    deltaUsageUsec: String(BigInt(samplesUsec.at(-1)) - BigInt(samplesUsec[0])),
-    sampleCount: samplesUsec.length,
-    samplesUsec,
-    sampleTranscriptSha256: liveLinuxCgroupCpuSampleTranscriptSha256(samplesUsec),
-    released: true,
-  };
-}
-
-function liveCpuProof(request, overrides = {}) {
-  const supervisorRunId = overrides.supervisorRunId ?? "live-supervisor-run-0001";
-  const roles = [
-    cpuRole("egress", 1, ["10", "20", "30"]),
-    cpuRole("worker", 2, ["20", "60"]),
-    cpuRole("verifier", 3, ["100", "140"]),
-  ];
-  const dockerBindingSha256 = liveLinuxCgroupDockerBindingSha256({
-    requestSha256: workerRpcSha256(request),
-    executionBindingSha256: request.executionBindingSha256,
-    supervisorRunId,
-    workerImageDigest: request.policy.workerImageDigest,
-    roles,
-  });
-  return {
-    schemaVersion: "1",
-    proofType: "LIVE_LINUX_CGROUP_V2_THREE_ROLE",
-    status: "OBSERVED_WITHIN_BUDGET",
-    requestId: request.requestId,
-    runNonce: request.runNonce,
-    requestSha256: workerRpcSha256(request),
-    executionBindingSha256: request.executionBindingSha256,
-    supervisorRunId,
-    dockerBindingSha256,
-    workerImageDigest: request.policy.workerImageDigest,
-    workerPolicySha256: request.policySha256,
-    acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
-    budgetUsec: String(BigInt(request.policy.limits.cpuTimeMs) * 1_000n),
-    aggregateUsageUsec: "100",
-    accountingScope: "POST_BASELINE_THREE_ROLE_AGGREGATE",
-    samplingMode: "LINUX_CGROUP_V2_EMBEDDED_ROLE_SAMPLES",
-    cumulativeAccountingVerified: true,
-    failStopEnforcementArmed: true,
-    hardLimitEnforced: false,
-    overshootBounded: false,
-    containmentTriggered: false,
-    controllerStopped: true,
-    allRoleCgroupsReleased: true,
-    roles,
-    ...overrides,
-  };
-}
-
 function signedV2Response(request, options = {}) {
   const status = options.status ?? "PASS";
   const report = status === "PASS" ? liveReport(request, options.reportOverrides) : null;
   const error = status === "FAIL" ? (options.error ?? "worker failed safely") : null;
   const supervisorRunId = options.supervisorRunId ?? "live-supervisor-run-0001";
-  const cpuProof =
-    options.cpuProof === undefined
+  const cpuEvidence =
+    options.cpuEvidence === undefined
       ? status === "PASS"
-        ? liveCpuProof(request, { supervisorRunId })
-        : null
-      : options.cpuProof;
+        ? createSuccessCpuEvidenceV2(request, { supervisorRunId })
+        : createPreExecutionFailureCpuEvidenceV2(request, { supervisorRunId })
+      : options.cpuEvidence;
   const dockerBindingSha256 =
-    options.dockerBindingSha256 ?? cpuProof?.dockerBindingSha256 ?? "8".repeat(64);
+    options.dockerBindingSha256 === undefined
+      ? (cpuEvidence?.dockerBindingSha256 ?? null)
+      : options.dockerBindingSha256;
+  const executionNotStarted =
+    cpuEvidence?.outcome === "PRE_EXECUTION_REJECTED" || cpuEvidence === null;
   const response = {
     schemaVersion: "2",
     protocol: "policytwin.codex.repair.v2",
@@ -415,7 +364,11 @@ function signedV2Response(request, options = {}) {
     executionBindingSha256: request.executionBindingSha256,
     status,
     completedAt: new Date(Date.parse(request.issuedAt) + 1_000).toISOString(),
-    resultSha256: workerRpcSha256(report ?? { error }),
+    resultSha256: workerRpcSha256({
+      report,
+      error,
+      cpuEvidenceSha256: cpuEvidence?.cpuEvidenceSha256 ?? "0".repeat(64),
+    }),
     report,
     error,
     receipt: {
@@ -429,13 +382,20 @@ function signedV2Response(request, options = {}) {
       fixtureId: "seeded-refund-demo",
       baselineContentSha256: request.policy.baselineContentSha256,
       baselineExecutionTreeSha256: request.policy.baselineExecutionTreeSha256,
-      finalExecutionTreeSha256: FINAL_TREE_DIGEST,
-      finalExecutionTreeManifest: FINAL_TREE_MANIFEST,
+      finalExecutionTreeSha256: executionNotStarted
+        ? request.policy.baselineExecutionTreeSha256
+        : FINAL_TREE_DIGEST,
+      finalExecutionTreeManifest: executionNotStarted
+        ? request.policy.baselineExecutionTreeManifest
+        : FINAL_TREE_MANIFEST,
       acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
-      executionMode: "LIVE_CODEX_SDK",
+      executionMode:
+        executionNotStarted
+          ? "NOT_STARTED"
+          : "LIVE_CODEX_SDK",
       executionBindingSha256: request.executionBindingSha256,
       dockerBindingSha256,
-      cpuProof,
+      cpuEvidence,
       repairWorkspaceDeleted: true,
       verificationWorkspaceDeleted: true,
       processTreeReaped: true,
@@ -1065,10 +1025,10 @@ test("Worker RPC v2 accepts one signed live-purpose CPU-bound repair result", as
   assert.equal(observedRequest.schemaVersion, "2");
   assert.equal(observedRequest.protocol, "policytwin.codex.repair.v2");
   assert.equal(result.executionBindingSha256, observedRequest.executionBindingSha256);
-  assert.equal(result.receipt.cpuProof.status, "OBSERVED_WITHIN_BUDGET");
-  assert.equal(result.receipt.cpuProof.aggregateUsageUsec, "100");
-  assert.equal(result.receipt.cpuProof.hardLimitEnforced, false);
-  assert.equal(result.receipt.cpuProof.overshootBounded, false);
+  assert.equal(result.receipt.cpuEvidence.outcome, "OBSERVED_WITHIN_BUDGET");
+  assert.equal(result.receipt.cpuEvidence.aggregateUsageUsec, "100");
+  assert.equal(result.receipt.cpuEvidence.hardLimitEnforced, false);
+  assert.equal(result.receipt.cpuEvidence.overshootBounded, false);
 });
 
 test("Worker RPC v2 rejects local-socket transport and reused v1 key material at construction", async () => {
@@ -1154,7 +1114,7 @@ test("Worker RPC v2 rejects local-socket transport and reused v1 key material at
   );
 });
 
-test("Worker RPC v2 rejects v1 downgrade, static proof, and proof-less PASS", async (t) => {
+test("Worker RPC v2 rejects v1 downgrade, static evidence, and evidence-less PASS", async (t) => {
   for (const scenario of [
     {
       name: "v1 downgrade",
@@ -1167,21 +1127,21 @@ test("Worker RPC v2 rejects v1 downgrade, static proof, and proof-less PASS", as
       name: "static fake proof",
       body(request) {
         return signedV2Response(request, {
-          cpuProof: {
+          cpuEvidence: {
             schemaVersion: "1",
             status: "STATIC_FAKE_CONTROLLER_VERIFIED",
             samplingMode: "SERIAL_SUPERVISOR_FAKE",
           },
         });
       },
-      pattern: /live Linux cgroup CPU proof|unknown or missing/u,
+      pattern: /CPU evidence v2|unknown or missing/u,
     },
     {
-      name: "proof-less PASS",
+      name: "evidence-less PASS",
       body(request) {
-        return signedV2Response(request, { cpuProof: null });
+        return signedV2Response(request, { cpuEvidence: null });
       },
-      pattern: /live Linux cgroup CPU proof/u,
+      pattern: /CPU evidence v2/u,
     },
   ]) {
     await t.test(scenario.name, async (scenarioTest) => {
@@ -1204,7 +1164,14 @@ test("Worker RPC v2 rejects proof replay, request-budget drift, and key-purpose 
       name: "proof request replay",
       responseOptions: {
         mutateBeforeSign(response) {
-          response.receipt.cpuProof.requestId = "f".repeat(32);
+          response.receipt.cpuEvidence.requestId = "f".repeat(32);
+          response.receipt.cpuEvidence.cpuEvidenceSha256 =
+            liveLinuxCgroupCpuEvidenceV2Sha256(response.receipt.cpuEvidence);
+          response.resultSha256 = workerRpcSha256({
+            report: response.report,
+            error: response.error,
+            cpuEvidenceSha256: response.receipt.cpuEvidence.cpuEvidenceSha256,
+          });
         },
       },
       options: {},
@@ -1214,9 +1181,36 @@ test("Worker RPC v2 rejects proof replay, request-budget drift, and key-purpose 
       name: "request budget drift",
       responseOptions: {
         mutateBeforeSign(response) {
-          response.receipt.cpuProof.budgetUsec = String(
-            BigInt(response.receipt.cpuProof.budgetUsec) + 1n,
+          response.receipt.cpuEvidence.budgetUsec = String(
+            BigInt(response.receipt.cpuEvidence.budgetUsec) + 1n,
           );
+          response.receipt.cpuEvidence.cpuEvidenceSha256 =
+            liveLinuxCgroupCpuEvidenceV2Sha256(response.receipt.cpuEvidence);
+          response.resultSha256 = workerRpcSha256({
+            report: response.report,
+            error: response.error,
+            cpuEvidenceSha256: response.receipt.cpuEvidence.cpuEvidenceSha256,
+          });
+        },
+      },
+      options: {},
+      pattern: /request budget/u,
+    },
+    {
+      name: "signed failure request budget drift",
+      responseOptions: {
+        status: "FAIL",
+        mutateBeforeSign(response) {
+          response.receipt.cpuEvidence.budgetUsec = String(
+            BigInt(response.receipt.cpuEvidence.budgetUsec) + 1n,
+          );
+          response.receipt.cpuEvidence.cpuEvidenceSha256 =
+            liveLinuxCgroupCpuEvidenceV2Sha256(response.receipt.cpuEvidence);
+          response.resultSha256 = workerRpcSha256({
+            report: response.report,
+            error: response.error,
+            cpuEvidenceSha256: response.receipt.cpuEvidence.cpuEvidenceSha256,
+          });
         },
       },
       options: {},
@@ -1246,22 +1240,32 @@ test("Worker RPC v2 rejects proof replay, request-budget drift, and key-purpose 
   }
 });
 
-test("Worker RPC v2 signature covers Docker and CPU proof bindings", async (t) => {
+test("Worker RPC v2 signature covers the global CPU event transcript", async (t) => {
   const transport = await createScriptedV2Transport(
     t,
     async (request) =>
       signedV2Response(request, {
         mutateAfterSign(response) {
-          response.receipt.cpuProof.roles[0].containerId = "a".repeat(64);
-          const changed = liveLinuxCgroupDockerBindingSha256({
-            requestSha256: response.requestSha256,
-            executionBindingSha256: response.executionBindingSha256,
-            supervisorRunId: response.receipt.supervisorRunId,
-            workerImageDigest: response.receipt.workerImageDigest,
-            roles: response.receipt.cpuProof.roles,
+          response.receipt.cpuEvidence.events[7].monotonicNs = "171";
+          response.receipt.cpuEvidence.eventTranscriptSha256 =
+            liveLinuxCgroupCpuEvidenceV2EventTranscriptSha256({
+              requestId: response.requestId,
+              runNonce: response.runNonce,
+              requestSha256: response.requestSha256,
+              executionBindingSha256: response.executionBindingSha256,
+              supervisorRunId: response.receipt.supervisorRunId,
+              controllerIdentitySha256:
+                response.receipt.cpuEvidence.controllerIdentitySha256,
+              clock: response.receipt.cpuEvidence.clock,
+              events: response.receipt.cpuEvidence.events,
+            });
+          response.receipt.cpuEvidence.cpuEvidenceSha256 =
+            liveLinuxCgroupCpuEvidenceV2Sha256(response.receipt.cpuEvidence);
+          response.resultSha256 = workerRpcSha256({
+            report: response.report,
+            error: response.error,
+            cpuEvidenceSha256: response.receipt.cpuEvidence.cpuEvidenceSha256,
           });
-          response.receipt.dockerBindingSha256 = changed;
-          response.receipt.cpuProof.dockerBindingSha256 = changed;
         },
       }),
     "v2-proof-signature-tamper",
@@ -1272,18 +1276,198 @@ test("Worker RPC v2 signature covers Docker and CPU proof bindings", async (t) =
   );
 });
 
-test("Worker RPC v2 FAIL cannot carry a success CPU proof", async (t) => {
+test("Worker RPC v2 FAIL cannot carry within-budget success CPU evidence", async (t) => {
   const transport = await createScriptedV2Transport(
     t,
     async (request) =>
       signedV2Response(request, {
         status: "FAIL",
-        cpuProof: liveCpuProof(request),
+        cpuEvidence: createSuccessCpuEvidenceV2(request),
       }),
     "v2-fail-proof-confusion",
   );
   await assert.rejects(
     createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
-    /FAIL receipt cannot carry a success CPU proof/u,
+    /status is inconsistent with its CPU evidence outcome/u,
   );
+});
+
+test("Worker RPC v2 signs typed pre-execution failure evidence and rejects it fail-closed", async (t) => {
+  const transport = await createScriptedV2Transport(
+    t,
+    async (request) => signedV2Response(request, { status: "FAIL" }),
+    "v2-typed-pre-execution-failure",
+  );
+  await assert.rejects(
+    createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+    /worker failed safely/u,
+  );
+});
+
+test("Worker RPC v2 validates signed execution and containment failures before failing closed", async (t) => {
+  const scenarios = [
+    {
+      name: "non-CPU execution failure",
+      evidence(request) {
+        return createSuccessCpuEvidenceV2(request, {
+          outcome: "EXECUTION_NON_CPU_FAILURE",
+        });
+      },
+      receiptOverrides: {},
+    },
+    {
+      name: "contained CPU overage",
+      evidence: (request) => createObservedBudgetFailureCpuEvidenceV2(request),
+      receiptOverrides: {},
+    },
+    {
+      name: "incomplete containment",
+      evidence: (request) =>
+        createObservedBudgetFailureCpuEvidenceV2(request, { incomplete: true }),
+      receiptOverrides: {
+        processTreeReaped: false,
+        remainingProcessCount: 1,
+      },
+    },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async (scenarioTest) => {
+      const transport = await createScriptedV2Transport(
+        scenarioTest,
+        async (request) =>
+          signedV2Response(request, {
+            status: "FAIL",
+            cpuEvidence: scenario.evidence(request),
+            receiptOverrides: scenario.receiptOverrides,
+          }),
+        `v2-${scenario.name.replaceAll(" ", "-")}`,
+      );
+      await assert.rejects(
+        createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+        /worker failed safely/u,
+      );
+    });
+  }
+});
+
+test("Worker RPC v2 signature covers typed failure evidence and its result hash", async (t) => {
+  const transport = await createScriptedV2Transport(
+    t,
+    async (request) =>
+      signedV2Response(request, {
+        status: "FAIL",
+        mutateAfterSign(response) {
+          response.receipt.cpuEvidence.rejectionStage = "CONTROLLER_INITIALIZATION";
+          response.receipt.cpuEvidence.rejectionCode = "CONTROLLER_UNAVAILABLE";
+          response.receipt.cpuEvidence.cpuEvidenceSha256 =
+            liveLinuxCgroupCpuEvidenceV2Sha256(response.receipt.cpuEvidence);
+          response.resultSha256 = workerRpcSha256({
+            report: response.report,
+            error: response.error,
+            cpuEvidenceSha256: response.receipt.cpuEvidence.cpuEvidenceSha256,
+          });
+        },
+      }),
+    "v2-failure-evidence-signature-tamper",
+  );
+  await assert.rejects(
+    createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+    /v2 supervisor signature is invalid/u,
+  );
+});
+
+test("Worker RPC v2 rejects freshly signed failure evidence with a stale result hash", async (t) => {
+  const transport = await createScriptedV2Transport(
+    t,
+    async (request) =>
+      signedV2Response(request, {
+        status: "FAIL",
+        mutateBeforeSign(response) {
+          response.receipt.cpuEvidence.rejectionStage = "CONTROLLER_INITIALIZATION";
+          response.receipt.cpuEvidence.rejectionCode = "CONTROLLER_UNAVAILABLE";
+          response.receipt.cpuEvidence.cpuEvidenceSha256 =
+            liveLinuxCgroupCpuEvidenceV2Sha256(response.receipt.cpuEvidence);
+        },
+      }),
+    "v2-failure-evidence-stale-result-hash",
+  );
+  await assert.rejects(
+    createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+    /result digest does not match its body and CPU evidence/u,
+  );
+});
+
+test("Worker RPC v2 rejects the legacy nullable cpuProof receipt field", async (t) => {
+  const transport = await createScriptedV2Transport(
+    t,
+    async (request) =>
+      signedV2Response(request, {
+        status: "FAIL",
+        receiptOverrides: { cpuProof: null },
+      }),
+    "v2-legacy-nullable-cpu-proof",
+  );
+  await assert.rejects(
+    createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+    /supervisor receipt must contain exactly|unknown or missing/u,
+  );
+});
+
+test("Worker RPC v2 rejects execution-mode and final-tree contradictions on signed FAIL", async (t) => {
+  for (const scenario of [
+    {
+      name: "pre-execution changed tree",
+      responseOptions: {
+        status: "FAIL",
+        receiptOverrides: {
+          finalExecutionTreeSha256: FINAL_TREE_DIGEST,
+          finalExecutionTreeManifest: FINAL_TREE_MANIFEST,
+        },
+      },
+    },
+    {
+      name: "non-CPU failure marked not started",
+      responseOptions(request) {
+        return {
+          status: "FAIL",
+          cpuEvidence: createSuccessCpuEvidenceV2(request, {
+            outcome: "EXECUTION_NON_CPU_FAILURE",
+          }),
+          receiptOverrides: { executionMode: "NOT_STARTED" },
+        };
+      },
+    },
+    {
+      name: "started over-budget failure marked not started",
+      responseOptions(request) {
+        return {
+          status: "FAIL",
+          cpuEvidence: createObservedBudgetFailureCpuEvidenceV2(request),
+          receiptOverrides: {
+            executionMode: "NOT_STARTED",
+            finalExecutionTreeSha256: request.policy.baselineExecutionTreeSha256,
+            finalExecutionTreeManifest: request.policy.baselineExecutionTreeManifest,
+          },
+        };
+      },
+    },
+  ]) {
+    await t.test(scenario.name, async (scenarioTest) => {
+      const transport = await createScriptedV2Transport(
+        scenarioTest,
+        async (request) =>
+          signedV2Response(
+            request,
+            typeof scenario.responseOptions === "function"
+              ? scenario.responseOptions(request)
+              : scenario.responseOptions,
+          ),
+        `v2-${scenario.name.replaceAll(" ", "-")}`,
+      );
+      await assert.rejects(
+        createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(input),
+        /teardown state contradicts its CPU evidence|execution mode contradicts its signed tree or CPU evidence/u,
+      );
+    });
+  }
 });

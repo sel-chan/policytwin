@@ -76,6 +76,17 @@ export function inspectStaticContainerContract(root = ROOT) {
     "schemas",
     "live-linux-cgroup-cpu-proof.v1.schema.json",
   );
+  const liveCpuEvidenceContractPath = resolve(
+    root,
+    "src",
+    "codex",
+    "live-linux-cgroup-cpu-evidence-v2.ts",
+  );
+  const liveCpuEvidenceSchemaPath = resolve(
+    root,
+    "schemas",
+    "live-linux-cgroup-cpu-evidence.v2.schema.json",
+  );
   const workerRpcContractPath = resolve(root, "src", "codex", "worker-rpc-contract.ts");
   const workerRpcClientPath = resolve(root, "src", "codex", "worker-rpc-client.ts");
   const workerRpcMtlsPath = resolve(root, "src", "codex", "worker-rpc-mtls.ts");
@@ -116,7 +127,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "7" ||
+    contract.schemaVersion !== "8" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -142,11 +153,16 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveRpcProtocolPrepared !== "policytwin.codex.repair.v2" ||
     contract.workerContainer?.liveRpcV2Status !== "CONTRACT_ONLY_NO_LINUX_CONTROLLER" ||
     contract.workerContainer?.liveRpcV2PassSigningEnabled !== false ||
-    contract.workerContainer?.liveCpuProofSchema !==
+    contract.workerContainer?.liveCpuLegacyProofSchema !==
       "schemas/live-linux-cgroup-cpu-proof.v1.schema.json" ||
-    contract.workerContainer?.liveCpuProofType !== "LIVE_LINUX_CGROUP_V2_THREE_ROLE" ||
-    contract.workerContainer?.liveCpuPassProofRequired !== true ||
-    contract.workerContainer?.liveCpuFailMayCarrySuccessProof !== false ||
+    contract.workerContainer?.liveCpuLegacyProofType !== "LIVE_LINUX_CGROUP_V2_THREE_ROLE" ||
+    contract.workerContainer?.liveCpuEvidenceSchema !==
+      "schemas/live-linux-cgroup-cpu-evidence.v2.schema.json" ||
+    contract.workerContainer?.liveCpuEvidenceType !==
+      "LIVE_LINUX_CGROUP_CPU_EVIDENCE_V2" ||
+    contract.workerContainer?.liveCpuPassEvidenceRequired !== true ||
+    contract.workerContainer?.liveCpuFailEvidenceRequired !== true ||
+    contract.workerContainer?.liveCpuFailMayCarrySuccessEvidence !== false ||
     contract.workerContainer?.liveCpuExecutionBindingClientDerived !== true ||
     contract.workerContainer?.liveCpuDockerBindingDerivedFromRequestAndRoles !== true ||
     contract.workerContainer?.liveCpuKeyPurposePrefix !== "live-cpu-" ||
@@ -160,8 +176,10 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveCpuMtlsResponseMagic !== "PTS2" ||
     contract.workerContainer?.liveCpuHardLimitClaim !== false ||
     contract.workerContainer?.liveCpuOvershootBoundClaim !== false ||
-    contract.workerContainer?.liveCpuGlobalEventTranscriptImplemented !== false ||
-    contract.workerContainer?.liveCpuFailureEvidenceImplemented !== false ||
+    contract.workerContainer?.liveCpuGlobalEventTranscriptContractImplemented !== true ||
+    contract.workerContainer?.liveCpuGlobalEventTranscriptObserved !== false ||
+    contract.workerContainer?.liveCpuFailureEvidenceContractImplemented !== true ||
+    contract.workerContainer?.liveCpuFailureEvidenceObserved !== false ||
     contract.workerContainer?.hostLiveConstructionAllowed !== false ||
     contract.workerContainer?.dynamicVerified !== false ||
     contract.workerContainer?.liveCodexExecuted !== false ||
@@ -720,6 +738,88 @@ export function inspectStaticContainerContract(root = ROOT) {
   } catch {
     failures.push("Live Linux cgroup CPU proof JSON Schema is not valid JSON or regex.");
   }
+  const liveCpuEvidenceContract = read(
+    liveCpuEvidenceContractPath,
+    failures,
+    "Live Linux cgroup CPU evidence v2 contract",
+  );
+  for (const required of [
+    'LIVE_LINUX_CGROUP_CPU_EVIDENCE_V2_ROLES = [',
+    '"egress",',
+    '"worker",',
+    '"verifier",',
+    '"OBSERVED_WITHIN_BUDGET"',
+    '"PRE_EXECUTION_REJECTED"',
+    '"LINUX_CONTROLLER_FAILURE"',
+    '"OBSERVED_OVER_BUDGET_CONTAINED"',
+    '"CONTAINMENT_INCOMPLETE"',
+    '"CLOCK_MONOTONIC_RAW_NS"',
+    '"LINUX_CGROUP_V2_GLOBAL_MONOTONIC_EVENT_TRANSCRIPT"',
+    "liveLinuxCgroupCpuEvidenceV2EventTranscriptSha256",
+    "liveLinuxCgroupCpuEvidenceV2AttemptBindingSha256",
+    "liveLinuxCgroupCpuEvidenceV2Sha256",
+    "parseLiveLinuxCgroupCpuEvidenceV2",
+    "PRE_EXECUTION_CODES_BY_STAGE",
+    "FAILURE_PHASE_BY_CODE",
+    "hardLimitEnforced: false",
+    "overshootBounded: false",
+  ]) {
+    requireText(
+      liveCpuEvidenceContract,
+      required,
+      failures,
+      "Live Linux cgroup CPU evidence v2 contract",
+    );
+  }
+  const liveCpuEvidenceSchema = read(
+    liveCpuEvidenceSchemaPath,
+    failures,
+    "Live Linux cgroup CPU evidence v2 JSON Schema",
+  );
+  try {
+    const schema = JSON.parse(liveCpuEvidenceSchema);
+    const uint64Pattern = schema?.$defs?.uint64Decimal?.pattern;
+    const runNoncePattern = schema?.properties?.runNonce?.pattern;
+    if (
+      schema?.additionalProperties !== false ||
+      schema?.properties?.schemaVersion?.const !== "2" ||
+      schema?.properties?.evidenceType?.const !== "LIVE_LINUX_CGROUP_CPU_EVIDENCE_V2" ||
+      !Array.isArray(schema?.oneOf) ||
+      schema.oneOf.length !== 6 ||
+      !Array.isArray(schema?.$defs?.event?.oneOf) ||
+      schema.$defs.event.oneOf.length !== 5 ||
+      schema?.$defs?.roleProof?.additionalProperties !== false ||
+      schema?.$defs?.observedRole?.additionalProperties !== false ||
+      schema?.$defs?.containment?.additionalProperties !== false ||
+      !Array.isArray(schema?.$defs?.containment?.oneOf) ||
+      schema.$defs.containment.oneOf.length !== 3 ||
+      !Array.isArray(schema?.$defs?.failurePair?.oneOf) ||
+      schema.$defs.failurePair.oneOf.length !== 8 ||
+      !Array.isArray(schema?.oneOf?.[2]?.allOf?.[0]?.oneOf) ||
+      schema.oneOf[2].allOf[0].oneOf.length !== 3 ||
+      !Array.isArray(schema?.$defs?.observedDockerBindingProfile?.oneOf) ||
+      schema.$defs.observedDockerBindingProfile.oneOf.length !== 2 ||
+      schema.oneOf.slice(3).some(
+        (branch) =>
+          !Array.isArray(branch?.allOf) ||
+          !branch.allOf.some(
+            (entry) => entry?.$ref === "#/$defs/observedDockerBindingProfile",
+          ),
+      ) ||
+      schema?.properties?.budgetUsec?.$ref !== "#/$defs/positiveUint64Decimal" ||
+      schema?.$defs?.positiveUint64Decimal?.allOf?.[1]?.not?.const !== "0" ||
+      typeof runNoncePattern !== "string" ||
+      !new RegExp(runNoncePattern, "u").test(Buffer.alloc(32, 7).toString("base64url")) ||
+      new RegExp(runNoncePattern, "u").test(`${"A".repeat(42)}B`) ||
+      typeof uint64Pattern !== "string" ||
+      !new RegExp(uint64Pattern, "u").test("18446744073709551615") ||
+      new RegExp(uint64Pattern, "u").test("18446744073709551616")
+    ) {
+      failures.push("Live Linux cgroup CPU evidence v2 JSON Schema is structurally weakened.");
+    }
+  } catch {
+    failures.push("Live Linux cgroup CPU evidence v2 JSON Schema is not valid JSON or regex.");
+  }
   const workerRpcContract = read(workerRpcContractPath, failures, "Worker RPC contract");
   for (const required of [
     'WORKER_RPC_V2_PROTOCOL = "policytwin.codex.repair.v2"',
@@ -729,8 +829,10 @@ export function inspectStaticContainerContract(root = ROOT) {
     "parseWorkerRpcV2Request",
     "parseWorkerRpcV2Response",
     "workerRpcV2SignaturePayload",
-    "parseLiveLinuxCgroupCpuProof",
-    "FAIL receipt cannot carry a success CPU proof",
+    "parseLiveLinuxCgroupCpuEvidenceV2",
+    '"cpuEvidence"',
+    "status is inconsistent with its CPU evidence outcome",
+    "cpuEvidenceSha256",
   ]) {
     requireText(workerRpcContract, required, failures, "Worker RPC contract");
   }
@@ -846,7 +948,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "7"',
+    'contract.schemaVersion !== "8"',
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
   ]) {
@@ -869,7 +971,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "7"',
+    'contract?.schemaVersion !== "8"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     '"Dockerfile.worker"',
@@ -913,7 +1015,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "7"',
+    'contract?.schemaVersion !== "8"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',

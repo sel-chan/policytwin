@@ -28,6 +28,7 @@ import {
   createWorkerRpcTrustBundle,
   workerRpcExecutionTreeSha256,
 } from "../../dist/index.js";
+import { createPreExecutionFailureCpuEvidenceV2 } from "../helpers/live-cpu-evidence-v2.mjs";
 import { createEphemeralWorkerRpcTlsCertificates } from "../helpers/worker-rpc-tls-certificates.mjs";
 
 const certificates = await createEphemeralWorkerRpcTlsCertificates();
@@ -188,12 +189,14 @@ function failureResult(request, runNumber) {
 }
 
 function v2FailureResult(request, runNumber) {
+  const supervisorRunId = `tls-v2-test-supervisor-run-${String(runNumber).padStart(4, "0")}`;
+  const cpuEvidence = createPreExecutionFailureCpuEvidenceV2(request, { supervisorRunId });
   return {
     status: "FAIL",
     report: null,
     error: "OFFLINE_TEST_DOUBLE_NO_LIVE_LINUX_CPU_PROOF",
     receipt: {
-      supervisorRunId: `tls-v2-test-supervisor-run-${String(runNumber).padStart(4, "0")}`,
+      supervisorRunId,
       workerImageDigest: request.policy.workerImageDigest,
       workerPolicySha256: request.policySha256,
       fixtureId: request.policy.fixtureId,
@@ -202,10 +205,10 @@ function v2FailureResult(request, runNumber) {
       finalExecutionTreeSha256: request.policy.baselineExecutionTreeSha256,
       finalExecutionTreeManifest: request.policy.baselineExecutionTreeManifest,
       acceptedCorpusSha256: request.policy.acceptedCorpusSha256,
-      executionMode: "LIVE_CODEX_SDK",
+      executionMode: "NOT_STARTED",
       executionBindingSha256: request.executionBindingSha256,
-      dockerBindingSha256: "9".repeat(64),
-      cpuProof: null,
+      dockerBindingSha256: null,
+      cpuEvidence,
       repairWorkspaceDeleted: true,
       verificationWorkspaceDeleted: true,
       processTreeReaped: true,
@@ -441,7 +444,7 @@ test("real mTLS transport authenticates both peers and verifies a signed fail-cl
   assert.equal(service.events.includes("RESPONSE_SENT"), true);
 });
 
-test("real mTLS v2 profile signs only a fail-closed no-CPU-proof response", async (t) => {
+test("real mTLS v2 profile signs only typed pre-execution failure evidence", async (t) => {
   const service = await startV2Supervisor(t);
   const client = v2ClientFor(v2TransportFor(service.address));
   await assert.rejects(client.runRepair(input), /External worker v2 rejected the repair/u);

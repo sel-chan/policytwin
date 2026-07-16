@@ -44,6 +44,7 @@ import {
 } from "./worker-rpc-transport-capability.js";
 import { parseRepairWorkerInput } from "./validate.js";
 import type { RepairWorkerInput, RepairWorkerReport } from "./types.js";
+import type { LiveLinuxCgroupCpuObservedSuccessEvidenceV2 } from "./live-linux-cgroup-cpu-evidence-v2.js";
 
 export type {
   ExternalWorkerRpcResponseStream,
@@ -116,7 +117,9 @@ export interface ValidatedExternalWorkerV2Run {
   executionBindingSha256: string;
   completedAt: string;
   report: RepairWorkerReport;
-  receipt: WorkerRpcV2SupervisorReceipt & { cpuProof: NonNullable<WorkerRpcV2SupervisorReceipt["cpuProof"]> };
+  receipt: WorkerRpcV2SupervisorReceipt & {
+    cpuEvidence: LiveLinuxCgroupCpuObservedSuccessEvidenceV2;
+  };
 }
 
 function safeDiagnostic(value: unknown): string {
@@ -749,6 +752,22 @@ function verifyV2ResponseBindings(
   ) {
     throw new Error("External worker v2 response is not bound to the exact request and policy.");
   }
+  if (
+    (response.receipt.executionMode === "NOT_STARTED" &&
+      response.receipt.finalExecutionTreeSha256 !==
+        request.policy.baselineExecutionTreeSha256) ||
+    (response.receipt.cpuEvidence.outcome === "OBSERVED_WITHIN_BUDGET" &&
+      response.receipt.executionMode !== "LIVE_CODEX_SDK") ||
+    (response.receipt.cpuEvidence.outcome === "EXECUTION_NON_CPU_FAILURE" &&
+      response.receipt.executionMode !== "LIVE_CODEX_SDK") ||
+    (response.receipt.cpuEvidence.outcome === "PRE_EXECUTION_REJECTED" &&
+      response.receipt.executionMode !== "NOT_STARTED") ||
+    (!("executionStarted" in response.receipt.cpuEvidence) ? false :
+      response.receipt.executionMode !==
+        (response.receipt.cpuEvidence.executionStarted ? "LIVE_CODEX_SDK" : "NOT_STARTED"))
+  ) {
+    throw new Error("External worker v2 execution mode contradicts its signed tree or CPU evidence.");
+  }
   const completedAt = Date.parse(response.completedAt);
   if (
     completedAt < Date.parse(request.issuedAt) ||
@@ -758,12 +777,12 @@ function verifyV2ResponseBindings(
     throw new Error("External worker v2 completion timestamp is outside the request window.");
   }
   if (
-    response.status === "PASS" &&
-    (response.receipt.cpuProof === null ||
-      BigInt(response.receipt.cpuProof.budgetUsec) !==
-        BigInt(request.policy.limits.cpuTimeMs) * 1_000n)
+    BigInt(response.receipt.cpuEvidence.budgetUsec) !==
+      BigInt(request.policy.limits.cpuTimeMs) * 1_000n ||
+    (response.status === "PASS" &&
+      response.receipt.cpuEvidence.outcome !== "OBSERVED_WITHIN_BUDGET")
   ) {
-    throw new Error("External worker v2 CPU proof is missing or not bound to the request budget.");
+    throw new Error("External worker v2 CPU evidence is not bound to the request budget.");
   }
 }
 
@@ -1025,18 +1044,19 @@ export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2Clie
         if (usedSupervisorRuns.has(response.receipt.supervisorRunId)) {
           throw new Error("External worker v2 supervisor run identity was replayed.");
         }
-        if (usedDockerBindings.has(response.receipt.dockerBindingSha256)) {
-          throw new Error("External worker v2 Docker execution binding was replayed.");
-        }
         usedSupervisorRuns.add(response.receipt.supervisorRunId);
-        usedDockerBindings.add(response.receipt.dockerBindingSha256);
         if (
           response.status === "FAIL" ||
           response.report === null ||
-          response.receipt.cpuProof === null
+          response.receipt.cpuEvidence.outcome !== "OBSERVED_WITHIN_BUDGET" ||
+          response.receipt.dockerBindingSha256 === null
         ) {
           throw new Error(`External worker v2 rejected the repair: ${response.error ?? "unknown"}`);
         }
+        if (usedDockerBindings.has(response.receipt.dockerBindingSha256)) {
+          throw new Error("External worker v2 Docker execution binding was replayed.");
+        }
+        usedDockerBindings.add(response.receipt.dockerBindingSha256);
         verifyPhaseMetadata(response.report, request, options.expectedBackendId);
         const finalExecutionTreeSha256 = verifyReportHistory(response.report, request);
         if (response.receipt.finalExecutionTreeSha256 !== finalExecutionTreeSha256) {
@@ -1057,7 +1077,7 @@ export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2Clie
           report: response.report,
           receipt: {
             ...response.receipt,
-            cpuProof: response.receipt.cpuProof,
+            cpuEvidence: response.receipt.cpuEvidence,
           },
         };
       } finally {

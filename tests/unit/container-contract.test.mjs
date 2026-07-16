@@ -131,6 +131,7 @@ async function copyStaticContainerInputs(target) {
     "pnpm-workspace.yaml",
     "prompts",
     "schemas/live-linux-cgroup-cpu-proof.v1.schema.json",
+    "schemas/live-linux-cgroup-cpu-evidence.v2.schema.json",
     "src",
     "tsconfig.build.json",
     "tsconfig.json",
@@ -200,8 +201,34 @@ test("static container inspection detects weakened verifier networking and fixtu
   report = inspectStaticContainerContract(target);
   assert.equal(report.status, "FAIL");
   assert.match(report.failures.join(" "), /structurally weakened/u);
-  liveCpuSchema.additionalProperties = false;
-  await writeFile(liveCpuSchemaPath, `${JSON.stringify(liveCpuSchema, null, 2)}\n`, "utf8");
+  await cp(
+    resolve("schemas/live-linux-cgroup-cpu-proof.v1.schema.json"),
+    liveCpuSchemaPath,
+  );
+
+  const liveCpuEvidenceSchemaPath = join(
+    target,
+    "schemas/live-linux-cgroup-cpu-evidence.v2.schema.json",
+  );
+  const liveCpuEvidenceSchema = JSON.parse(
+    await readFile(liveCpuEvidenceSchemaPath, "utf8"),
+  );
+  liveCpuEvidenceSchema.oneOf.pop();
+  await writeFile(
+    liveCpuEvidenceSchemaPath,
+    `${JSON.stringify(liveCpuEvidenceSchema, null, 2)}\n`,
+    "utf8",
+  );
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(
+    report.failures.join(" "),
+    /CPU evidence v2 JSON Schema is structurally weakened/u,
+  );
+  await cp(
+    resolve("schemas/live-linux-cgroup-cpu-evidence.v2.schema.json"),
+    liveCpuEvidenceSchemaPath,
+  );
 
   contract.verifierContainer.network = "bridge";
   await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");

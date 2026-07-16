@@ -15,9 +15,9 @@ import type {
   RepairWorkerReport,
 } from "./types.js";
 import {
-  parseLiveLinuxCgroupCpuProof,
-  type LiveLinuxCgroupCpuProof,
-} from "./live-linux-cgroup-cpu-proof.js";
+  parseLiveLinuxCgroupCpuEvidenceV2,
+  type LiveLinuxCgroupCpuEvidenceV2,
+} from "./live-linux-cgroup-cpu-evidence-v2.js";
 
 export const WORKER_RPC_PROTOCOL = "policytwin.codex.repair.v1" as const;
 export const WORKER_RPC_REQUEST_ACTION = "RUN_REPAIR" as const;
@@ -170,14 +170,14 @@ export interface WorkerRpcV2SupervisorReceipt {
   finalExecutionTreeSha256: string;
   finalExecutionTreeManifest: WorkerRpcExecutionTreeManifest;
   acceptedCorpusSha256: string;
-  executionMode: "LIVE_CODEX_SDK";
+  executionMode: "LIVE_CODEX_SDK" | "NOT_STARTED";
   executionBindingSha256: string;
-  dockerBindingSha256: string;
-  cpuProof: LiveLinuxCgroupCpuProof | null;
-  repairWorkspaceDeleted: true;
-  verificationWorkspaceDeleted: true;
-  processTreeReaped: true;
-  remainingProcessCount: 0;
+  dockerBindingSha256: string | null;
+  cpuEvidence: LiveLinuxCgroupCpuEvidenceV2;
+  repairWorkspaceDeleted: boolean;
+  verificationWorkspaceDeleted: boolean;
+  processTreeReaped: boolean;
+  remainingProcessCount: number;
   signature: string;
 }
 
@@ -1033,7 +1033,7 @@ function parseV2Receipt(
       "executionMode",
       "executionBindingSha256",
       "dockerBindingSha256",
-      "cpuProof",
+      "cpuEvidence",
       "repairWorkspaceDeleted",
       "verificationWorkspaceDeleted",
       "processTreeReaped",
@@ -1046,13 +1046,12 @@ function parseV2Receipt(
     result.schemaVersion !== "2" ||
     result.algorithm !== "Ed25519" ||
     result.fixtureId !== "seeded-refund-demo" ||
-    result.executionMode !== "LIVE_CODEX_SDK" ||
-    result.repairWorkspaceDeleted !== true ||
-    result.verificationWorkspaceDeleted !== true ||
-    result.processTreeReaped !== true ||
-    result.remainingProcessCount !== 0
+    (result.executionMode !== "LIVE_CODEX_SDK" && result.executionMode !== "NOT_STARTED") ||
+    typeof result.repairWorkspaceDeleted !== "boolean" ||
+    typeof result.verificationWorkspaceDeleted !== "boolean" ||
+    typeof result.processTreeReaped !== "boolean"
   ) {
-    throw new Error("Worker RPC v2 receipt does not prove mandatory teardown.");
+    throw new Error("Worker RPC v2 receipt profile is invalid.");
   }
   if (
     typeof result.signature !== "string" ||
@@ -1084,28 +1083,53 @@ function parseV2Receipt(
   if (executionBindingSha256 !== expected.executionBindingSha256) {
     throw new Error("Worker RPC v2 receipt execution binding is inconsistent.");
   }
-  const dockerBindingSha256 = sha256(
-    result.dockerBindingSha256,
-    "worker RPC v2 Docker binding",
+  const cpuEvidence = parseLiveLinuxCgroupCpuEvidenceV2(result.cpuEvidence, {
+    requestId: expected.requestId,
+    runNonce: expected.runNonce,
+    requestSha256: expected.requestSha256,
+    executionBindingSha256,
+    supervisorRunId,
+    workerImageDigest: parsedWorkerImageDigest,
+    workerPolicySha256,
+    acceptedCorpusSha256,
+  });
+  if (
+    (expected.status === "PASS" && cpuEvidence.outcome !== "OBSERVED_WITHIN_BUDGET") ||
+    (expected.status === "FAIL" && cpuEvidence.outcome === "OBSERVED_WITHIN_BUDGET")
+  ) {
+    throw new Error("Worker RPC v2 status is inconsistent with its CPU evidence outcome.");
+  }
+  const dockerBindingSha256 =
+    result.dockerBindingSha256 === null
+      ? null
+      : sha256(result.dockerBindingSha256, "worker RPC v2 Docker binding");
+  if (dockerBindingSha256 !== cpuEvidence.dockerBindingSha256) {
+    throw new Error("Worker RPC v2 Docker binding does not match its CPU evidence.");
+  }
+  const remainingProcessCount = integer(
+    result.remainingProcessCount,
+    "worker RPC v2 remaining process count",
+    0,
+    1_000_000,
   );
-  let cpuProof: LiveLinuxCgroupCpuProof | null;
-  if (expected.status === "PASS") {
-    cpuProof = parseLiveLinuxCgroupCpuProof(result.cpuProof, {
-      requestId: expected.requestId,
-      runNonce: expected.runNonce,
-      requestSha256: expected.requestSha256,
-      executionBindingSha256,
-      supervisorRunId,
-      dockerBindingSha256,
-      workerImageDigest: parsedWorkerImageDigest,
-      workerPolicySha256,
-      acceptedCorpusSha256,
-    });
-  } else {
-    if (result.cpuProof !== null) {
-      throw new Error("Worker RPC v2 FAIL receipt cannot carry a success CPU proof.");
-    }
-    cpuProof = null;
+  const evidenceExecutionMode =
+    cpuEvidence.outcome === "PRE_EXECUTION_REJECTED"
+      ? "NOT_STARTED"
+      : cpuEvidence.outcome === "OBSERVED_WITHIN_BUDGET" ||
+          cpuEvidence.outcome === "EXECUTION_NON_CPU_FAILURE" ||
+          cpuEvidence.executionStarted
+        ? "LIVE_CODEX_SDK"
+        : "NOT_STARTED";
+  if (
+    remainingProcessCount !== cpuEvidence.remainingProcessCount ||
+    result.processTreeReaped !== (remainingProcessCount === 0) ||
+    result.executionMode !== evidenceExecutionMode ||
+    (expected.status === "PASS" &&
+      (result.executionMode !== "LIVE_CODEX_SDK" ||
+        result.repairWorkspaceDeleted !== true ||
+        result.verificationWorkspaceDeleted !== true))
+  ) {
+    throw new Error("Worker RPC v2 teardown state contradicts its CPU evidence.");
   }
   const finalExecutionTreeManifest = parseWorkerRpcExecutionTreeManifest(
     result.finalExecutionTreeManifest,
@@ -1137,14 +1161,14 @@ function parseV2Receipt(
     finalExecutionTreeSha256,
     finalExecutionTreeManifest,
     acceptedCorpusSha256,
-    executionMode: "LIVE_CODEX_SDK",
+    executionMode: result.executionMode,
     executionBindingSha256,
     dockerBindingSha256,
-    cpuProof,
-    repairWorkspaceDeleted: true,
-    verificationWorkspaceDeleted: true,
-    processTreeReaped: true,
-    remainingProcessCount: 0,
+    cpuEvidence,
+    repairWorkspaceDeleted: result.repairWorkspaceDeleted,
+    verificationWorkspaceDeleted: result.verificationWorkspaceDeleted,
+    processTreeReaped: result.processTreeReaped,
+    remainingProcessCount,
     signature: result.signature,
   };
 }
@@ -1208,10 +1232,6 @@ export function parseWorkerRpcV2Response(value: unknown): WorkerRpcV2Response {
     error = assertSafeRpcText(result.error, "worker RPC v2 error", 4_096);
     report = null;
   }
-  const expectedResultHash = workerRpcSha256(report ?? { error });
-  if (sha256(result.resultSha256, "worker RPC v2 result digest") !== expectedResultHash) {
-    throw new Error("Worker RPC v2 result digest does not match its body.");
-  }
   const parsedRequestSha256 = sha256(
     result.requestSha256,
     "worker RPC v2 request digest",
@@ -1220,6 +1240,21 @@ export function parseWorkerRpcV2Response(value: unknown): WorkerRpcV2Response {
     result.executionBindingSha256,
     "worker RPC v2 execution binding",
   );
+  const receipt = parseV2Receipt(result.receipt, {
+    status,
+    requestId: parsedRequestId,
+    runNonce: result.runNonce,
+    requestSha256: parsedRequestSha256,
+    executionBindingSha256,
+  });
+  const expectedResultHash = workerRpcSha256({
+    report,
+    error,
+    cpuEvidenceSha256: receipt.cpuEvidence.cpuEvidenceSha256,
+  });
+  if (sha256(result.resultSha256, "worker RPC v2 result digest") !== expectedResultHash) {
+    throw new Error("Worker RPC v2 result digest does not match its body and CPU evidence.");
+  }
   return {
     schemaVersion: "2",
     protocol: WORKER_RPC_V2_PROTOCOL,
@@ -1234,13 +1269,7 @@ export function parseWorkerRpcV2Response(value: unknown): WorkerRpcV2Response {
     resultSha256: result.resultSha256 as string,
     report,
     error,
-    receipt: parseV2Receipt(result.receipt, {
-      status,
-      requestId: parsedRequestId,
-      runNonce: result.runNonce,
-      requestSha256: parsedRequestSha256,
-      executionBindingSha256,
-    }),
+    receipt,
   };
 }
 
