@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — dedicated live lifecycle and Linux CPU producer boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 18:03 +09:00`
-- Latest checkpoint commit: `8b768abaa7699f3bce758d507652c9738af43523`
+- Last updated: `2026-07-16 18:14 +09:00`
+- Latest checkpoint commit: `2668e9a22a8b0e3276c2f86963c04c47662b7a49`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,9 +93,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free static Docker lifecycle, fake-only aggregate CPU ledger, Worker RPC v2 CPU evidence schema v2, synthetic-only producer, schema-v12 one-shot barrier protocol, non-privileged dedicated lifecycle harness, and native helper protocol/client/source | pending | host live construction and v2 PASS signing remain disabled; the static Docker entrypoints still bypass the barrier, and no pinned helper runtime, concrete private-capability Linux adapter, immutable image run, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free static Docker lifecycle, fake-only aggregate CPU ledger, Worker RPC v2 CPU evidence schema v2, synthetic-only producer, schema-v12 one-shot barrier protocol, non-privileged dedicated lifecycle harness, and native helper protocol/client/source | `2668e9a` | host live construction and v2 PASS signing remain disabled; the static Docker entrypoints still bypass the barrier, and no pinned helper runtime, concrete private-capability Linux adapter, immutable image run, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, schema-v12 split container contract, exact-path/private-FD-device-inode non-live observer, private adapter/final-result identity scaffold, one-shot role barrier, 28-stage non-privileged lifecycle harness, and fixed-frame native Linux helper boundary; uint64, subtree/release, sticky-cleanup, local-Docker, `restart=no`, TLS-only probe, and static/fake-daemon checks remain intact | pending | no scaffold can issue evidence; helper build/runtime, Docker barrier integration, concrete owned-container/RAW-clock/poller/containment runtime, immutable images, Linux cgroup-v2 Docker daemon, dynamic PASS, measured upstream behavior, signed evidence, owner license, shared auth/quotas, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, schema-v12 split container contract, exact-path/private-FD-device-inode non-live observer, private adapter/final-result identity scaffold, one-shot role barrier, 28-stage non-privileged lifecycle harness, and fixed-frame native Linux helper boundary; uint64, subtree/release, sticky-cleanup, local-Docker, `restart=no`, TLS-only probe, and static/fake-daemon checks remain intact | `2668e9a` | no scaffold can issue evidence; helper build/runtime, Docker barrier integration, concrete owned-container/RAW-clock/poller/containment runtime, immutable images, Linux cgroup-v2 Docker daemon, dynamic PASS, measured upstream behavior, signed evidence, owner license, shared auth/quotas, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -119,7 +119,7 @@ Starting HEAD is clean `main` at `8b768abaa7699f3bce758d507652c9738af43523`. The
 - [x] Complete the authoritative current-tree offline replay and review its artifacts/diff. Focused tests, lint, typecheck, unit, integration, eval, browser, production build, static container, security, and strict native compile pass; the latest replay fails only the owner license and exact 29-item submission gate.
 - [x] Structurally address the final review's cross-UID barrier finding by replacing the role-owned `0600` receipt with host-owned, pre-created, non-replaceable payload/commit slots; actual cross-UID bind-mount permissions and process/FD exclusivity remain dynamic release blockers.
 - [x] Rerun focused and authoritative gates and obtain final acceptance review; the post-fix replay fails only the owner license and exact 29-item submission gate, and final review reports no P0/P1.
-- [ ] Review the final generated diff and create a current-branch checkpoint commit.
+- [x] Review the final generated diff and create current-branch checkpoint commit `2668e9a22a8b0e3276c2f86963c04c47662b7a49`.
 
 The intended implementation is deliberately narrower than a live claim. Real Linux `CLOCK_MONOTONIC_RAW`, pidfd or equivalent process identity, cgroup v2 polling/containment, immutable Docker execution, and final evidence issuance remain unavailable until Linux dynamic tests provide evidence.
 
@@ -195,7 +195,8 @@ Never fill from estimates.
 - Regression: acceptance reviews identified cross-UID receipt ownership, concurrent release, and publish-before-final-mode defects. Host-owned non-replaceable payload/commit slots, a `RELEASING` transition, publish-last rename, and sticky prepublish/nonce failure now pass 20/20 focused plus 300/300 full unit tests. The authoritative post-fix replay also passes 57/57 integration, 22/22 eval, 3/3 browser, 352-file clean-copy, security, static container, demo, and build, and exits 1 only for owner `LICENSE` plus the exact 29-item submission gate. The C helper still has only strict WSL compile evidence because that environment exposes tmpfs rather than cgroup v2. Final read-only re-review reports no remaining P0/P1.
 - Build hermeticity: a full integration replay exposed global TypeScript 5.8.3 selection on Windows. Repository-local command shims now take precedence, the selected compiler is project TypeScript 6.0.3, and both focused and full fixture regressions pass.
 - Expected blockers: immutable Node/role images and a Linux Docker/cgroup-v2 runtime are absent; dynamic gates fail before Docker. Live verification fails before network for missing model credentials. Owner LICENSE and exactly 29 final-submission requirements remain.
-- Next: preserve one final current-tree replay log, review generated reports and the final diff, and commit this checkpoint on `main`.
+- Commit: `2668e9a22a8b0e3276c2f86963c04c47662b7a49` (`feat: prepare Linux CPU barrier and helper boundary`).
+- Next: implement the separate Docker-owned Linux adapter and dynamically verify the barrier/helper lifecycle without enabling PASS early.
 
 ### 2026-07-16 12:17 +09:00 — Non-live cgroup observer hardened without live promotion
 
@@ -608,18 +609,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Finish and commit the schema-v12 checkpoint, then implement the still-separate concrete Linux owned-container/start-barrier/RAW-clock/poller/containment lifecycle without enabling PASS or live admission.`
+`Implement the still-separate concrete Linux owned-container/start-barrier/RAW-clock/poller/containment lifecycle without enabling PASS or live admission.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; post-fix replay and final re-review are complete, and the checkpoint commit is in progress`
+- Why paused: `not paused; implementation checkpoint 2668e9a and its verified ledger are ready, and the concrete Linux runtime checkpoint is next`
 - Exact current state: `the role barrier, non-privileged lifecycle harness, and native helper boundary are implemented and statically verified, but the default Docker role entrypoints still bypass the barrier; no helper runtime, finalized-evidence issuer, signer, PASS, or live admission exists`
 - Last successful command: `pnpm verify completed every implemented post-fix schema-v12 step with 300/300 unit, 57/57 integration, 22/22 eval, 3/3 browser, 352-file clean-copy, security, static container, demo, and build passing; it remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `the current checkpoint includes the barrier launcher/controller, lifecycle harness, native helper protocol/client/source, Docker bundling, schema-v12 contract/tests/docs, local executable resolution fix, regenerated reports, and this ledger`
-- Safe resume command/action: `run pnpm verify, review the final diff and generated reports, commit on main, confirm a clean tree, then begin the concrete Linux runtime checkpoint`
+- Uncommitted files: `none expected after the final ledger/screenshot verification commit; no product-source change follows implementation checkpoint 2668e9a`
+- Safe resume command/action: `confirm git status is clean, then begin the concrete Linux runtime checkpoint without enabling PASS or live admission`
 - One owner action, if any: `none`
 
 ## Final completion record
