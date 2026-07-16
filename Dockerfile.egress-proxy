@@ -26,6 +26,10 @@ WORKDIR /opt/policytwin
 COPY --from=build --chown=10003:10003 /opt/policytwin/dist/codex/openai-egress-contract.js ./dist/codex/openai-egress-contract.js
 COPY --from=build --chown=10003:10003 /opt/policytwin/dist/codex/openai-egress-proxy.js ./dist/codex/openai-egress-proxy.js
 COPY --chown=10003:10003 scripts/openai-egress-proxy.mjs ./scripts/openai-egress-proxy.mjs
+COPY --chown=10003:10003 scripts/role-start-barrier.mjs ./scripts/role-start-barrier.mjs
+
+RUN mkdir -p /run/policytwin-start-barrier/egress/receipt /run/policytwin-start-barrier/egress/control
+RUN chown -R 10003:10003 /run/policytwin-start-barrier
 
 USER 10003:10003
 ENTRYPOINT ["node", "scripts/openai-egress-proxy.mjs"]

@@ -23,9 +23,10 @@ WORKDIR /opt/policytwin
 
 COPY --from=build --chown=10002:10002 /tmp/policytwin-typescript ./typescript
 COPY --chown=10002:10002 scripts/verifier-preflight.mjs ./scripts/verifier-preflight.mjs
+COPY --chown=10002:10002 scripts/role-start-barrier.mjs ./scripts/role-start-barrier.mjs
 
-RUN mkdir -p /opt/policytwin/bin /fixture
-RUN chown -R 10002:10002 /opt/policytwin/bin /fixture
+RUN mkdir -p /opt/policytwin/bin /fixture /run/policytwin-start-barrier/verifier/receipt /run/policytwin-start-barrier/verifier/control
+RUN chown -R 10002:10002 /opt/policytwin/bin /fixture /run/policytwin-start-barrier
 
 USER 10002:10002
 ENTRYPOINT ["node", "scripts/verifier-preflight.mjs"]

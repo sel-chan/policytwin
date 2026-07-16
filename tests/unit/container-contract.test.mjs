@@ -33,7 +33,7 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
   assert.equal(report.releaseReady, false);
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
-  assert.equal(contract.schemaVersion, "11");
+  assert.equal(contract.schemaVersion, "12");
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerStateMachineImplemented, true);
   assert.equal(
     contract.workerContainer.liveCpuEvidenceProducerCandidateStatus,
@@ -60,6 +60,35 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   );
   assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleContractImplemented, true);
   assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleSuccessStageCount, 28);
+  assert.equal(contract.workerContainer.liveCpuStartBarrierProtocolImplemented, true);
+  assert.equal(
+    contract.workerContainer.liveCpuStartBarrierHostOwnedReceiptSlotsImplemented,
+    true,
+  );
+  assert.equal(
+    contract.workerContainer.liveCpuStartBarrierReceiptCommitBindingImplemented,
+    true,
+  );
+  assert.equal(
+    contract.workerContainer.liveCpuStartBarrierConcurrentReleaseGuardImplemented,
+    true,
+  );
+  assert.equal(contract.workerContainer.liveCpuStartBarrierRoleLauncherBundled, true);
+  assert.equal(contract.workerContainer.liveCpuStartBarrierNodeOptionsLocked, true);
+  assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleHarnessImplemented, true);
+  assert.equal(
+    contract.workerContainer.liveCpuDedicatedLifecycleHarnessProvenance,
+    "NON_PRIVILEGED_TEST_PORT",
+  );
+  assert.equal(
+    contract.workerContainer.liveCpuDedicatedLifecycleQuiescentFinalSamplingImplemented,
+    true,
+  );
+  assert.equal(contract.workerContainer.liveCpuNativeHelperProtocolImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuNativeHelperSourceImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuNativeHelperClientImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuNativeHelperBuildVerified, false);
+  assert.equal(contract.workerContainer.liveCpuNativeHelperRuntimeVerified, false);
   assert.equal(contract.workerContainer.liveCpuStartBarrierRuntimeImplemented, false);
   assert.equal(contract.workerContainer.liveCpuLinuxSystemAdapterImplemented, false);
   assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleImplemented, false);
@@ -76,6 +105,25 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverRuntimeVerified, false);
   assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverStartBarrierImplemented, false);
   assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverLiveEvidenceAdapter, false);
+  assert.equal(contract.supervisorDockerExecutor.linuxStartBarrierProtocolImplemented, true);
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxStartBarrierHostOwnedReceiptSlotsImplemented,
+    true,
+  );
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxStartBarrierConcurrentReleaseGuardImplemented,
+    true,
+  );
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxStartBarrierDockerIntegrationImplemented,
+    false,
+  );
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxNativeHelperFixedBinaryProtocolImplemented,
+    true,
+  );
+  assert.equal(contract.supervisorDockerExecutor.linuxNativeHelperRuntimeVerified, false);
+  assert.equal(contract.supervisorDockerExecutor.linuxCgroupCpuActuationSourceImplemented, true);
 });
 
 test("worker dynamic verification rejects missing base and build-input tampering before Docker", async () => {
@@ -184,6 +232,7 @@ async function copyStaticContainerInputs(target) {
     "scripts/build-core.mjs",
     "scripts/process.mjs",
     "scripts/worker-preflight.mjs",
+    "scripts/role-start-barrier.mjs",
     "scripts/egress-tls-probe.mjs",
     "scripts/worker-entrypoint.mjs",
     "scripts/proxy-token-helper.mjs",
@@ -192,6 +241,7 @@ async function copyStaticContainerInputs(target) {
     "scripts/worker-container-verify.mjs",
     "scripts/egress-container-verify.mjs",
     "scripts/linux-cgroup-observer.mjs",
+    "native/policytwin-linux-cgroup-helper.c",
     "scripts/container-verify.mjs",
     "scripts/live-gate-contract.mjs",
     "scripts/pinned-docker-cli.mjs",

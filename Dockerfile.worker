@@ -36,9 +36,10 @@ COPY --chown=10001:10001 scripts/worker-preflight.mjs ./scripts/worker-preflight
 COPY --chown=10001:10001 scripts/egress-tls-probe.mjs ./scripts/egress-tls-probe.mjs
 COPY --chown=10001:10001 scripts/proxy-token-helper.mjs ./scripts/proxy-token-helper.mjs
 COPY --chown=10001:10001 scripts/worker-entrypoint.mjs ./scripts/worker-entrypoint.mjs
+COPY --chown=10001:10001 scripts/role-start-barrier.mjs ./scripts/role-start-barrier.mjs
 
-RUN mkdir -p /run/policytwin /run/secrets /worker-home
-RUN chown -R 10001:10001 /run/policytwin /run/secrets /worker-home
+RUN mkdir -p /run/policytwin /run/secrets /worker-home /run/policytwin-start-barrier/worker/receipt /run/policytwin-start-barrier/worker/control
+RUN chown -R 10001:10001 /run/policytwin /run/secrets /worker-home /run/policytwin-start-barrier
 
 USER 10001:10001
 ENTRYPOINT ["node", "scripts/worker-preflight.mjs"]

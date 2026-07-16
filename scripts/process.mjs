@@ -1,10 +1,15 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
 export function executable(name) {
-  return process.platform === "win32" ? `${name}.cmd` : name;
+  const suffix = process.platform === "win32" ? ".cmd" : "";
+  const localExecutable = resolve(ROOT, "node_modules", ".bin", `${name}${suffix}`);
+
+  return existsSync(localExecutable) ? localExecutable : `${name}${suffix}`;
 }
 
 export function run(command, args) {

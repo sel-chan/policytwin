@@ -139,6 +139,31 @@ export function inspectStaticContainerContract(root = ROOT) {
   const workerVerifyPath = resolve(root, "scripts", "worker-container-verify.mjs");
   const egressVerifyPath = resolve(root, "scripts", "egress-container-verify.mjs");
   const linuxCgroupObserverPath = resolve(root, "scripts", "linux-cgroup-observer.mjs");
+  const roleStartBarrierPath = resolve(root, "scripts", "role-start-barrier.mjs");
+  const linuxStartBarrierPath = resolve(root, "src", "codex", "linux-start-barrier.ts");
+  const dedicatedLifecyclePath = resolve(
+    root,
+    "src",
+    "codex",
+    "live-linux-cgroup-cpu-dedicated-lifecycle.ts",
+  );
+  const nativeHelperProtocolPath = resolve(
+    root,
+    "src",
+    "codex",
+    "linux-cgroup-helper-protocol.ts",
+  );
+  const nativeHelperClientPath = resolve(
+    root,
+    "src",
+    "codex",
+    "linux-cgroup-helper-client.ts",
+  );
+  const nativeHelperSourcePath = resolve(
+    root,
+    "native",
+    "policytwin-linux-cgroup-helper.c",
+  );
   const contractBody = read(contractPath, failures, "Container contract");
   let contract = null;
   try {
@@ -158,7 +183,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "11" ||
+    contract.schemaVersion !== "12" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -197,6 +222,24 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveCpuSignerFinalizedCapabilityAdmissionImplemented !== false ||
     contract.workerContainer?.liveCpuDedicatedLifecycleContractImplemented !== true ||
     contract.workerContainer?.liveCpuDedicatedLifecycleSuccessStageCount !== 28 ||
+    contract.workerContainer?.liveCpuStartBarrierProtocolImplemented !== true ||
+    contract.workerContainer?.liveCpuStartBarrierHostOwnedReceiptSlotsImplemented !== true ||
+    contract.workerContainer?.liveCpuStartBarrierReceiptCommitBindingImplemented !== true ||
+    contract.workerContainer?.liveCpuStartBarrierConcurrentReleaseGuardImplemented !== true ||
+    contract.workerContainer?.liveCpuStartBarrierRoleLauncherBundled !== true ||
+    contract.workerContainer?.liveCpuStartBarrierNodeOptionsLocked !== true ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleHarnessImplemented !== true ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleHarnessProvenance !==
+      "NON_PRIVILEGED_TEST_PORT" ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleSerialSamplingImplemented !== true ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleQuiescentFinalSamplingImplemented !==
+      true ||
+    contract.workerContainer?.liveCpuIndependentCleanupTerminationContractImplemented !== true ||
+    contract.workerContainer?.liveCpuNativeHelperProtocolImplemented !== true ||
+    contract.workerContainer?.liveCpuNativeHelperSourceImplemented !== true ||
+    contract.workerContainer?.liveCpuNativeHelperClientImplemented !== true ||
+    contract.workerContainer?.liveCpuNativeHelperBuildVerified !== false ||
+    contract.workerContainer?.liveCpuNativeHelperRuntimeVerified !== false ||
     contract.workerContainer?.liveCpuStartBarrierRuntimeImplemented !== false ||
     contract.workerContainer?.liveCpuLinuxSystemAdapterImplemented !== false ||
     contract.workerContainer?.liveCpuDedicatedLifecycleImplemented !== false ||
@@ -412,6 +455,14 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.supervisorDockerExecutor?.linuxCgroupObserverRuntimeVerified !== false ||
     contract.supervisorDockerExecutor?.linuxCgroupObserverStartBarrierImplemented !== false ||
     contract.supervisorDockerExecutor?.linuxCgroupObserverLiveEvidenceAdapter !== false ||
+    contract.supervisorDockerExecutor?.linuxStartBarrierProtocolImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxStartBarrierHostOwnedReceiptSlotsImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxStartBarrierConcurrentReleaseGuardImplemented !==
+      true ||
+    contract.supervisorDockerExecutor?.linuxStartBarrierDockerIntegrationImplemented !== false ||
+    contract.supervisorDockerExecutor?.linuxNativeHelperFixedBinaryProtocolImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxNativeHelperRuntimeVerified !== false ||
+    contract.supervisorDockerExecutor?.linuxCgroupCpuActuationSourceImplemented !== true ||
     contract.supervisorDockerExecutor?.linuxCgroupCpuActuationImplemented !== false ||
     contract.supervisorDockerExecutor?.publishedPortsAllowed !== false ||
     JSON.stringify(contract.supervisorDockerExecutor?.policytwinLabelKeys) !==
@@ -578,6 +629,154 @@ export function inspectStaticContainerContract(root = ROOT) {
       "Private live Linux cgroup CPU capability must expose neither a registrar nor a finalized-evidence issuer.",
     );
   }
+  const roleStartBarrier = read(roleStartBarrierPath, failures, "Role start barrier launcher");
+  for (const required of [
+    "awaitPolicyTwinRoleStartBarrier",
+    'status: "HELD_BEFORE_ROLE_EXECUTION"',
+    'status: "HELD_RECEIPT_COMMITTED"',
+    "writeExistingHostOwnedSlot",
+    'release.status !== "RELEASED_BY_HOST_SUPERVISOR"',
+    'process.env.NODE_OPTIONS !== ""',
+    'childEnvironment.NODE_OPTIONS = ""',
+    "exactTarget(options.role, target)",
+    "shell: false",
+  ]) {
+    requireText(roleStartBarrier, required, failures, "Role start barrier launcher");
+  }
+  const linuxStartBarrier = read(
+    linuxStartBarrierPath,
+    failures,
+    "Private Linux start barrier controller",
+  );
+  for (const required of [
+    "const controllerStates = new WeakMap<object, ControllerState>()",
+    "const preparedRoleStates = new WeakMap<object, PreparedRoleState>()",
+    "createPrivateLinuxStartBarrierController",
+    "preparePrivateLinuxStartBarrierRole",
+    "awaitPrivateLinuxStartBarrierHeld",
+    "releasePrivateLinuxStartBarrierRole",
+    "createHostOwnedReceiptSlot",
+    'join(receiptDirectory, "held.commit.json")',
+    "LOCKED_RECEIPT_DIRECTORY_MODE",
+    "LOCKED_CONTROL_DIRECTORY_MODE",
+    'state.status = "RELEASING"',
+    "await handle.chmod(0o444)",
+    'NODE_OPTIONS: ""',
+    "dynamicRuntimeVerified: false",
+  ]) {
+    requireText(
+      linuxStartBarrier,
+      required,
+      failures,
+      "Private Linux start barrier controller",
+    );
+  }
+  const releaseWriterStart = linuxStartBarrier.indexOf(
+    "async function writeAtomicProtocolFile",
+  );
+  const releaseWriterEnd = linuxStartBarrier.indexOf(
+    "export async function releasePrivateLinuxStartBarrierRole",
+    releaseWriterStart,
+  );
+  const releaseWriter =
+    releaseWriterStart >= 0 && releaseWriterEnd > releaseWriterStart
+      ? linuxStartBarrier.slice(releaseWriterStart, releaseWriterEnd)
+      : "";
+  const releaseModeIndex = releaseWriter.indexOf("await handle.chmod(0o444)");
+  const releaseRenameIndex = releaseWriter.indexOf("await rename(temporaryPath, path)");
+  if (
+    releaseModeIndex < 0 ||
+    releaseRenameIndex < 0 ||
+    releaseModeIndex > releaseRenameIndex ||
+    releaseWriter.slice(releaseRenameIndex).includes("await chmod(path")
+  ) {
+    failures.push(
+      "The start-barrier release must validate its final mode before rename publishes it.",
+    );
+  }
+  const dedicatedLifecycle = read(
+    dedicatedLifecyclePath,
+    failures,
+    "Non-privileged dedicated CPU lifecycle harness",
+  );
+  for (const required of [
+    'readonly provenance: "NON_PRIVILEGED_TEST_PORT"',
+    "revalidateAndReadRoleCpuSample",
+    "readQuiescentRoleCpuSample",
+    "terminateControllerAfterCleanupTimeout",
+    "FORCED_TERMINATION_SETTLE_MS",
+    'status: "COMPLETED_NOT_FINALIZED"',
+    "dynamicRuntimeVerified: false",
+    "finalizedEvidenceIssued: false",
+    "passSigningEligible: false",
+    'finalizationBlockedReason: "FINALIZED_EVIDENCE_ISSUER_NOT_IMPLEMENTED"',
+  ]) {
+    requireText(
+      dedicatedLifecycle,
+      required,
+      failures,
+      "Non-privileged dedicated CPU lifecycle harness",
+    );
+  }
+  const nativeHelperProtocol = read(
+    nativeHelperProtocolPath,
+    failures,
+    "Linux cgroup helper fixed binary protocol",
+  );
+  for (const required of [
+    'Buffer.from("PTLC", "ascii")',
+    "FRAME_HEADER_BYTES = 24",
+    "MAX_PAYLOAD_BYTES = 256",
+    "encodeLinuxCgroupHelperFrame",
+    "decodeLinuxCgroupHelperFrame",
+    "encodeLinuxCgroupHelperBindPayload",
+    "decodeLinuxCgroupHelperSampleResponse",
+  ]) {
+    requireText(
+      nativeHelperProtocol,
+      required,
+      failures,
+      "Linux cgroup helper fixed binary protocol",
+    );
+  }
+  const nativeHelperClient = read(
+    nativeHelperClientPath,
+    failures,
+    "Private Linux cgroup helper client",
+  );
+  for (const required of [
+    "const helperClientStates = new WeakMap<object, HelperClientState>()",
+    "createPrivateLinuxCgroupHelperClient",
+    'spawn("/proc/self/fd/3", ["--stdio-v1"]',
+    'shell: false',
+    'createHash("sha256")',
+    "dynamicContainerRuntimeVerified: false",
+    "liveEvidenceIssuanceEnabled: false",
+    "passSigningEligible: false",
+  ]) {
+    requireText(nativeHelperClient, required, failures, "Private Linux cgroup helper client");
+  }
+  const nativeHelperSource = read(nativeHelperSourcePath, failures, "Linux cgroup native helper");
+  for (const required of [
+    "CLOCK_MONOTONIC_RAW",
+    "SYS_pidfd_open",
+    "SYS_pidfd_send_signal",
+    "SYS_openat2",
+    "RESOLVE_BENEATH",
+    "RESOLVE_NO_SYMLINKS",
+    "RESOLVE_NO_MAGICLINKS",
+    "RESOLVE_NO_XDEV",
+    "CGROUP2_SUPER_MAGIC",
+    '"cgroup.freeze"',
+    '"cgroup.kill"',
+    "role_seen",
+    "quiescent_verified",
+  ]) {
+    requireText(nativeHelperSource, required, failures, "Linux cgroup native helper");
+  }
+  if (/\bsystem\s*\(|\bpopen\s*\(|AF_INET|SOCK_STREAM/u.test(nativeHelperSource)) {
+    failures.push("Linux cgroup native helper must expose no shell or network surface.");
+  }
   if (/OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN|PRIVATE KEY/iu.test(dockerfile)) {
     failures.push("Dockerfile must not name or embed live worker credentials.");
   }
@@ -631,6 +830,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     "COPY --chown=10001:10001 scripts/worker-preflight.mjs ./scripts/worker-preflight.mjs",
     "COPY --chown=10001:10001 scripts/proxy-token-helper.mjs ./scripts/proxy-token-helper.mjs",
     "COPY --chown=10001:10001 scripts/worker-entrypoint.mjs ./scripts/worker-entrypoint.mjs",
+    "COPY --chown=10001:10001 scripts/role-start-barrier.mjs ./scripts/role-start-barrier.mjs",
   ]) {
     requireText(workerDockerfile, required, failures, "Worker Dockerfile");
   }
@@ -643,6 +843,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     "fs.cpSync(fs.realpathSync('node_modules/typescript')",
     "COPY --from=build --chown=10002:10002 /tmp/policytwin-typescript ./typescript",
     "COPY --chown=10002:10002 scripts/verifier-preflight.mjs ./scripts/verifier-preflight.mjs",
+    "COPY --chown=10002:10002 scripts/role-start-barrier.mjs ./scripts/role-start-barrier.mjs",
   ]) {
     requireText(verifierDockerfile, required, failures, "Verifier Dockerfile");
   }
@@ -666,6 +867,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     "RUN node scripts/build-core.mjs",
     "openai-egress-contract.js ./dist/codex/openai-egress-contract.js",
     "openai-egress-proxy.js ./dist/codex/openai-egress-proxy.js",
+    "COPY --chown=10003:10003 scripts/role-start-barrier.mjs ./scripts/role-start-barrier.mjs",
     "USER 10003:10003",
     'ENTRYPOINT ["node", "scripts/openai-egress-proxy.mjs"]',
   ]) {
@@ -1097,6 +1299,10 @@ export function inspectStaticContainerContract(root = ROOT) {
     rootIndex.includes("linux-cgroup-cpu-evidence-producer") ||
     rootIndex.includes("live-linux-cgroup-cpu-adapter") ||
     rootIndex.includes("live-linux-cgroup-cpu-adapter-capability") ||
+    rootIndex.includes("live-linux-cgroup-cpu-dedicated-lifecycle") ||
+    rootIndex.includes("linux-start-barrier") ||
+    rootIndex.includes("linux-cgroup-helper-protocol") ||
+    rootIndex.includes("linux-cgroup-helper-client") ||
     rootIndex.includes("registerMutualTlsWorkerRpcV2TransportInternal") ||
     rootIndex.includes("assertMutualTlsWorkerRpcV2Transport")
   ) {
@@ -1123,7 +1329,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "11"',
+    'contract.schemaVersion !== "12"',
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
   ]) {
@@ -1146,7 +1352,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "11"',
+    'contract?.schemaVersion !== "12"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     '"Dockerfile.worker"',
@@ -1201,7 +1407,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "11"',
+    'contract?.schemaVersion !== "12"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',

@@ -98,9 +98,18 @@ test("dedicated lifecycle contract fixes barrier-before-baseline and finalize-af
   assert.equal(contract.status, "DEDICATED_LIFECYCLE_CONTRACT_ONLY");
   assert.equal(contract.runtimeImplemented, false);
   assert.equal(contract.startBarrierImplemented, false);
+  assert.equal(contract.startBarrierProtocolImplemented, true);
+  assert.equal(contract.startBarrierHostOwnedReceiptSlotsImplemented, true);
+  assert.equal(contract.startBarrierReceiptCommitBindingImplemented, true);
+  assert.equal(contract.startBarrierConcurrentReleaseGuardImplemented, true);
+  assert.equal(contract.nonPrivilegedLifecycleHarnessImplemented, true);
+  assert.equal(contract.nativeHelperBoundaryPrepared, true);
+  assert.equal(contract.nativeHelperBuildVerified, false);
+  assert.equal(contract.nativeHelperRuntimeVerified, false);
   assert.equal(contract.finalizedEvidenceIssuanceImplemented, false);
   assert.equal(contract.liveEvidenceIssuanceEnabled, false);
   assert.equal(contract.passSigningEligible, false);
+  assert.equal(contract.cleanupTimeoutMs, 30_000);
   assert.equal(contract.independentCleanupSignalRequired, true);
   assert.equal(contract.serialPollingRequired, true);
   assert.equal(contract.identityRevalidationEverySampleRequired, true);

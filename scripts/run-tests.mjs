@@ -2,6 +2,7 @@ import { executable, runOrExit } from "./process.mjs";
 
 const suites = {
   unit: [
+    "tests/unit/process-executable.test.mjs",
     "tests/unit/scaffold.test.mjs",
     "tests/unit/container-contract.test.mjs",
     "tests/unit/architecture-asset.test.mjs",
@@ -23,6 +24,9 @@ const suites = {
     "tests/unit/live-linux-cgroup-cpu-proof.test.mjs",
     "tests/unit/live-linux-cgroup-cpu-evidence-v2.test.mjs",
     "tests/unit/live-linux-cgroup-cpu-adapter.test.mjs",
+    "tests/unit/linux-start-barrier.test.mjs",
+    "tests/unit/live-linux-cgroup-cpu-dedicated-lifecycle.test.mjs",
+    "tests/unit/linux-cgroup-helper-protocol.test.mjs",
     "tests/unit/linux-cgroup-cpu-evidence-producer.test.mjs",
     "tests/unit/linux-cgroup-observer.test.mjs",
     "tests/unit/worker-os-lifecycle.test.mjs",

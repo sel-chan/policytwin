@@ -51,9 +51,18 @@ export interface PrivateLiveLinuxCgroupCpuDedicatedLifecycleContract {
   readonly status: "DEDICATED_LIFECYCLE_CONTRACT_ONLY";
   readonly runtimeImplemented: false;
   readonly startBarrierImplemented: false;
+  readonly startBarrierProtocolImplemented: true;
+  readonly startBarrierHostOwnedReceiptSlotsImplemented: true;
+  readonly startBarrierReceiptCommitBindingImplemented: true;
+  readonly startBarrierConcurrentReleaseGuardImplemented: true;
+  readonly nonPrivilegedLifecycleHarnessImplemented: true;
+  readonly nativeHelperBoundaryPrepared: true;
+  readonly nativeHelperBuildVerified: false;
+  readonly nativeHelperRuntimeVerified: false;
   readonly finalizedEvidenceIssuanceImplemented: false;
   readonly liveEvidenceIssuanceEnabled: false;
   readonly passSigningEligible: false;
+  readonly cleanupTimeoutMs: number;
   readonly independentCleanupSignalRequired: true;
   readonly serialPollingRequired: true;
   readonly identityRevalidationEverySampleRequired: true;
