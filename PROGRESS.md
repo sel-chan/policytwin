@@ -9,7 +9,7 @@
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
 - Last updated: `2026-07-16 11:22 +09:00`
-- Latest checkpoint commit: `c675662fc32f6d311a9624466bb6bc422c8bfb5d`
+- Latest checkpoint commit: `43b04198e72b3c5f6f9158e3a3a6f63716acfefd`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,9 +93,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free Docker lifecycle driver, fake-only aggregate CPU ledger, and Worker RPC v2 with required CPU evidence schema v2, one global monotonic transcript, closed typed failure outcomes, exact request/role/Docker-or-attempt bindings, downgrade rejection, and a deliberately FAIL-only supervisor | `c675662` | host live construction and v2 PASS signing remain disabled; no immutable image run, real Linux producer or cgroup observation, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free Docker lifecycle driver, fake-only aggregate CPU ledger, Worker RPC v2 CPU evidence schema v2, and an internal synthetic-only producer that emits parsed unsigned/non-live/signing-ineligible wrappers with one-read input/observation snapshots and closed failure outcomes | `43b0419` | host live construction and v2 PASS signing remain disabled; no immutable image run, private-capability Linux adapter, dedicated cleanup lifecycle, cgroup observation, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission with private validated TLS-input snapshots, 336-file clean-copy replay, schema-v8 split web/worker/verifier/egress contracts, canonical local Docker CLI boundary, cgroup-v2 teardown observer, explicit `restart=no` identity checks, TLS-only no-HTTP probe, strict fake CPU accounting, and static/fake-daemon supervisor checks | `c675662` | real restart/lease behavior, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, signed real-Linux CPU evidence, owner license, shared auth/quotas, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, 338-file clean-copy replay, schema-v9 split container contracts with synthetic-producer/current-signing-false versus real-adapter/lifecycle-false facts, canonical local Docker CLI boundary, cgroup-v2 teardown observer, explicit `restart=no` identity checks, TLS-only no-HTTP probe, and static/fake-daemon checks | `43b0419` | real restart/lease behavior, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, signed real-Linux CPU evidence, owner license, shared auth/quotas, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -117,7 +117,7 @@ Starting HEAD is clean `main` at `cbcf37cc5ae8553831b4ea69fbce99d21b52e97a`. `pn
 - [x] Align JSON Schema, runtime parsing, and producer semantics so action failure is incomplete even when later release/stop checks recover, while all-success actions may still be incomplete when release/process/controller-stop proof is absent.
 - [x] Record D-040 and advance the static container contract to schema v9 with explicit state-machine-implemented, synthetic-only, Linux-adapter-false, dedicated-lifecycle-false, PASS-false, and exact build-input facts.
 - [x] Update README, start guide, submission source, architecture, threat model, limitations, runbook, and generated-copy source without claiming Linux/Docker/OpenAI/Codex execution.
-- [x] Run focused and authoritative offline gates, independent code/security/truth review, and final diff review; create the current-branch checkpoint commits next.
+- [x] Run focused and authoritative offline gates, independent code/security/truth review, final diff review, and current-branch checkpoint commits.
 
 The dedicated real-Linux adapter and live lifecycle were deliberately split into the next checkpoint under D-040 because they require a private factory capability, pre-execution Docker start barriers, an independent bounded cleanup signal, actual raw-clock and descriptor/inode-pinned cgroup observation, and different finalize-after-cleanup ordering. Reusing the static lifecycle or this synthetic producer would violate the live-proof acceptance boundary.
 
@@ -187,7 +187,7 @@ Never fill from estimates.
 - Review: two independent truth/code reviews found and drove fixes for containment/schema mismatch, fake Linux provenance, transient cleanup recovery, observation/input getter TOCTOU, parser-failure reuse, overlap omission, stale handoff text, and overstrong signing language. The final latest-diff review reports no remaining P0/P1/P2 merge blocker.
 - Dynamic truth: no Docker daemon, Linux raw clock/cgroup adapter, start barrier, bounded independent cleanup lifecycle, `cpu.stat` observation, containment, OpenAI request, Codex repair, deployment, or live proof occurred.
 - Decision: D-040 requires a separate private-capability Linux adapter and dedicated finalize-after-cleanup lifecycle; neither the synthetic wrapper nor its raw parser-valid fixture is live provenance or signer authorization.
-- Commit: `pending`.
+- Commit: `43b04198e72b3c5f6f9158e3a3a6f63716acfefd` (`feat: add synthetic CPU evidence producer`).
 
 ### 2026-07-16 09:29 +09:00 — Signed CPU evidence v2 contract verified offline
 
@@ -577,18 +577,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Finish the synthetic producer checkpoint commit, then begin a separate private-capability Linux adapter and dedicated finalize-after-cleanup lifecycle while keeping generic PASS signing and the live gate disabled until immutable real-container observations exist.`
+`Begin the separate private-capability Linux adapter and dedicated finalize-after-cleanup lifecycle while keeping generic PASS signing and the live gate disabled until immutable real-container observations exist.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the synthetic CPU evidence v2 producer, schema-v9 static contract, documentation, independent review, and authoritative verification are complete; the checkpoint commits remain`
+- Why paused: `not paused; the synthetic CPU evidence v2 producer, schema-v9 static contract, documentation, independent review, authoritative verification, and implementation checkpoint are complete; this post-checkpoint ledger commit is the only remaining bookkeeping action`
 - Exact current state: `the internal producer emits only unsigned/non-live/signing-ineligible wrappers with synthetic provenance; enclosed raw evidence is parser-valid contract data but not authorization; the generic supervisor still refuses PASS and all Linux/Docker/OpenAI/Codex observation flags remain false`
 - Last successful command: `the 11:22 pnpm verify sequence passed 265 unit, 57 integration, 22 eval, 3 browser, production build, schema-v9 static checks, 338-file clean-copy, and 338-file/309-text-file security; only LICENSE and the exact 29-item submission gate failed as expected`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `synthetic producer implementation, schema/parser/tests, schema-v9 container contract, generated reports/copy, documentation, decisions, and this ledger`
-- Safe resume command/action: `finish final diff review and commit this checkpoint, then design the private-capability Linux adapter and dedicated cleanup lifecycle without enabling PASS until real dynamic observations validate it`
+- Uncommitted files: `only this post-checkpoint PROGRESS.md ledger update before its documentation commit`
+- Safe resume command/action: `commit this ledger, then design the private-capability Linux adapter and dedicated cleanup lifecycle without enabling PASS until real dynamic observations validate it`
 - One owner action, if any: `none`
 
 ## Final completion record
