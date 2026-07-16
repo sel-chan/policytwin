@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — dedicated live lifecycle and Linux CPU producer boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 12:17 +09:00`
-- Latest checkpoint commit: `2359445c9fd29b004c0266034e1f55049f99029d`
+- Last updated: `2026-07-16 12:31 +09:00`
+- Latest checkpoint commit: `c9802210b0d8b7bd26caed50fdc30aad744ad164`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -95,7 +95,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free Docker lifecycle driver, fake-only aggregate CPU ledger, Worker RPC v2 CPU evidence schema v2, and an internal synthetic-only producer that emits parsed unsigned/non-live/signing-ineligible wrappers with one-read input/observation snapshots and closed failure outcomes | `43b0419` | host live construction and v2 PASS signing remain disabled; no immutable image run, private-capability Linux adapter, dedicated cleanup lifecycle, cgroup observation, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, schema-v10 split container contract, exact-path/private-FD-device-inode cgroup observer, uint64 CPU arithmetic, descendant-quiescence/PID/release facts, sticky cleanup failures, canonical local Docker CLI boundary, `restart=no` identity checks, TLS-only no-HTTP probe, and static/fake-daemon checks | pending | observer runtime remains unverified; start barrier, real restart/lease behavior, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, signed real-Linux CPU evidence, owner license, shared auth/quotas, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, schema-v10 split container contract, exact-path/private-FD-device-inode cgroup observer, uint64 CPU arithmetic, descendant-quiescence/PID/release facts, sticky cleanup failures, canonical local Docker CLI boundary, `restart=no` identity checks, TLS-only no-HTTP probe, and static/fake-daemon checks | `c980221` | observer runtime remains unverified; start barrier, real restart/lease behavior, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, signed real-Linux CPU evidence, owner license, shared auth/quotas, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -116,7 +116,7 @@ Starting HEAD is clean `main` at `2359445c9fd29b004c0266034e1f55049f99029d`. The
 - [x] Parse `usage_usec` as exact unsigned 64-bit `bigint`, reject regression/overage/final-observation failure in worker/verifier reports, and require exact Docker cgroup path segments.
 - [x] Require `cgroup.events populated 0` plus an empty direct process list, separate subtree/PID/release facts, reject forged/finalized observations, retain independent Docker absence checks, and make normal/recovery cleanup action failures sticky.
 - [x] Record D-041, advance the static contract to schema v10, and update documentation/generated submission copy without setting real-Linux adapter, start-barrier, dedicated lifecycle, dynamic observation, signing, or live-admission facts to true.
-- [x] Run focused tests, lint/typecheck, all repository gates, two independent read-only reviews, and the authoritative offline/live-disabled gates; only final diff review and current-branch checkpoint commits remain.
+- [x] Run focused tests, lint/typecheck, all repository gates, two independent read-only reviews, the authoritative offline/live-disabled gates, final diff review, and the current-branch implementation checkpoint commit.
 
 This is a hardening prerequisite, not the D-040 real-Linux adapter. A future signer-eligible adapter still requires its own private factory capability, raw monotonic clock, pre-execution start barriers, serial polling/containment, independently bounded cleanup signal, dynamic Linux/Docker evidence, and finalize-after-cleanup lifecycle.
 
@@ -185,7 +185,7 @@ Never fill from estimates.
 - Review: one read-only gap review identified descendant, forged-path, precision, and TOCTOU risks. Independent final code review found unavailable `O_CLOEXEC`, report-status, and normal-cleanup stickiness defects; all were fixed, and its follow-up found no remaining P0/P1/P2. A separate truth review found and drove current-ledger and v2 claim-audit corrections; no live/Docker/OpenAI/Codex/signing overclaim remains.
 - Expected blockers: `pnpm verify` exits 1 only for the owner-selected project `LICENSE` and exact 29-item submission gate. All three Docker gates fail before daemon use at the unset immutable Node base. `pnpm verify:live` fails before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`.
 - Truth boundary: no Linux cgroup filesystem, Docker daemon, raw monotonic clock, start barrier, containment action, OpenAI request, Codex repair, signing, deployment, or live proof occurred. The observer still takes a post-start baseline and is not the D-040 private live adapter or signer authorization.
-- Commit: `pending`.
+- Commit: `c9802210b0d8b7bd26caed50fdc30aad744ad164` (`feat: harden non-live cgroup observation`).
 
 ### 2026-07-16 11:22 +09:00 — Synthetic CPU evidence v2 producer verified without live promotion
 
@@ -587,18 +587,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Finish final diff review and checkpoint commits for the hardened non-live observer, then design the still-separate start-barrier/private-capability Linux adapter and dedicated lifecycle.`
+`Record the post-checkpoint ledger commit, then design the still-separate start-barrier/private-capability Linux adapter and dedicated lifecycle without enabling PASS or live admission.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; implementation, schema-v10 contract, documentation, all authoritative offline gates, dynamic/live preflight failures, and independent follow-up reviews are complete; final diff review and commits remain`
+- Why paused: `not paused; the schema-v10 observer implementation checkpoint is committed at c980221 after authoritative verification and independent follow-up reviews; only this post-checkpoint ledger commit remains`
 - Exact current state: `the non-live observer now rejects path substrings, forged/finalized handles, uint64 loss/regression, descendant survivors, unreleased cgroups, and ignored cleanup actions; the post-start baseline and Windows-only coverage prevent live use, while the synthetic producer and every signer/live path remain separate`
 - Last successful command: `the 12:17 pnpm verify sequence passed every implemented gate: 271 unit, 57 integration, 22 eval, 3 browser, schema v10, 339-file clean copy, 339-file/310-text-file security, demo, and build; only LICENSE and the exact 29-item submission gate failed as expected`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `schema-v10 cgroup observer implementation, dynamic verifier/report semantics, tests, contract, D-041, documentation, generated submission notes, and this ledger`
-- Safe resume command/action: `review the final diff and commit this checkpoint on main, then record the commit hash in a small ledger commit`
+- Uncommitted files: `only this post-checkpoint PROGRESS.md ledger update`
+- Safe resume command/action: `run the required final verification for this ledger-only change, commit it on main, then begin the separate start-barrier/private Linux adapter design`
 - One owner action, if any: `none`
 
 ## Final completion record
