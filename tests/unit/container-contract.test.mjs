@@ -12,7 +12,7 @@ import {
   removeSafeWorkerRunRoot,
 } from "../../scripts/worker-container-verify.mjs";
 
-test("static web, worker, and verifier contracts remain non-live and fail closed", () => {
+test("static web, worker, and verifier contracts remain non-live and fail closed", async () => {
   const report = inspectStaticContainerContract();
   assert.deepEqual(report.failures, []);
   assert.equal(report.status, "PASS");
@@ -32,6 +32,20 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.verifierContainerStatus, "STATIC_PREPARED");
   assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
   assert.equal(report.releaseReady, false);
+  const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
+  assert.equal(contract.schemaVersion, "9");
+  assert.equal(contract.workerContainer.liveCpuEvidenceProducerStateMachineImplemented, true);
+  assert.equal(
+    contract.workerContainer.liveCpuEvidenceProducerCandidateStatus,
+    "UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE",
+  );
+  assert.equal(
+    contract.workerContainer.liveCpuEvidenceProducerProvenance,
+    "SYNTHETIC_CONTRACT_ONLY",
+  );
+  assert.equal(contract.workerContainer.liveCpuEvidenceProducerPassSigningEligible, false);
+  assert.equal(contract.workerContainer.liveCpuLinuxSystemAdapterImplemented, false);
+  assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleImplemented, false);
 });
 
 test("worker dynamic verification rejects missing base and build-input tampering before Docker", async () => {

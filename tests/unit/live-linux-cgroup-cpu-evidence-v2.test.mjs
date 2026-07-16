@@ -822,6 +822,8 @@ test("CPU evidence v2 hash and JSON Schema keep exact version and uint64 bounds"
   }
   assert.equal(JSON.stringify(schema).includes("CONTROLLER_START_FAILED"), false);
   assert.equal(schema.$defs.containment.oneOf.length, 3);
+  assert.equal("not" in schema.$defs.containment.oneOf[2], false);
+  assert.equal(schema.oneOf[5].anyOf.length, 5);
   const oversizedString = preExecutionFailure();
   oversizedString.rejectionCode = "x".repeat(1_025);
   assert.throws(

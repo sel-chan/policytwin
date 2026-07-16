@@ -635,31 +635,24 @@
                 "failurePhase": { "const": "CONTROLLER_STOP" },
                 "failureCode": { "const": "CONTROLLER_STOP_FAILED" },
                 "overageUsec": { "type": "null" },
-                "controllerStopStatus": { "const": "STOP_FAILED" },
                 "containment": {
                   "properties": { "trigger": { "const": "CONTROLLER_FAILURE" } },
                   "required": ["trigger"]
                 }
               },
-              "required": ["failurePhase", "failureCode", "overageUsec", "controllerStopStatus", "containment"]
+              "required": ["failurePhase", "failureCode", "overageUsec", "containment"]
             },
             {
               "properties": {
                 "failurePhase": { "const": "CGROUP_RELEASE" },
                 "failureCode": { "const": "CGROUP_RELEASE_FAILED" },
                 "overageUsec": { "type": "null" },
-                "observedRoles": {
-                  "contains": {
-                    "properties": { "released": { "const": false } },
-                    "required": ["released"]
-                  }
-                },
                 "containment": {
                   "properties": { "trigger": { "const": "CONTROLLER_FAILURE" } },
                   "required": ["trigger"]
                 }
               },
-              "required": ["failurePhase", "failureCode", "overageUsec", "observedRoles", "containment"]
+              "required": ["failurePhase", "failureCode", "overageUsec", "containment"]
             }
           ]
         },
@@ -681,6 +674,39 @@
               }
             }
           }
+        },
+        {
+          "properties": {
+            "failureCode": {
+              "enum": [
+                "CONTAINMENT_ACTION_FAILED",
+                "CONTROLLER_STOP_FAILED",
+                "CGROUP_RELEASE_FAILED"
+              ]
+            }
+          },
+          "required": ["failureCode"]
+        },
+        {
+          "properties": {
+            "containment": {
+              "anyOf": [
+                {
+                  "properties": { "freeze": { "const": "FAILED" } },
+                  "required": ["freeze"]
+                },
+                {
+                  "properties": { "kill": { "const": "FAILED" } },
+                  "required": ["kill"]
+                },
+                {
+                  "properties": { "reap": { "const": "FAILED" } },
+                  "required": ["reap"]
+                }
+              ]
+            }
+          },
+          "required": ["containment"]
         }
       ],
       "not": {
@@ -1041,15 +1067,7 @@
         },
         {
           "properties": { "status": { "const": "INCOMPLETE" } },
-          "required": ["status"],
-          "not": {
-            "properties": {
-              "freeze": { "const": "SUCCEEDED" },
-              "kill": { "const": "SUCCEEDED" },
-              "reap": { "const": "SUCCEEDED" }
-            },
-            "required": ["freeze", "kill", "reap"]
-          }
+          "required": ["status"]
         }
       ]
     }

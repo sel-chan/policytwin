@@ -82,6 +82,12 @@ export function inspectStaticContainerContract(root = ROOT) {
     "codex",
     "live-linux-cgroup-cpu-evidence-v2.ts",
   );
+  const liveCpuEvidenceProducerPath = resolve(
+    root,
+    "src",
+    "codex",
+    "linux-cgroup-cpu-evidence-producer.ts",
+  );
   const liveCpuEvidenceSchemaPath = resolve(
     root,
     "schemas",
@@ -127,7 +133,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "8" ||
+    contract.schemaVersion !== "9" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -153,6 +159,14 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveRpcProtocolPrepared !== "policytwin.codex.repair.v2" ||
     contract.workerContainer?.liveRpcV2Status !== "CONTRACT_ONLY_NO_LINUX_CONTROLLER" ||
     contract.workerContainer?.liveRpcV2PassSigningEnabled !== false ||
+    contract.workerContainer?.liveCpuEvidenceProducerStateMachineImplemented !== true ||
+    contract.workerContainer?.liveCpuEvidenceProducerCandidateStatus !==
+      "UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE" ||
+    contract.workerContainer?.liveCpuEvidenceProducerProvenance !==
+      "SYNTHETIC_CONTRACT_ONLY" ||
+    contract.workerContainer?.liveCpuEvidenceProducerPassSigningEligible !== false ||
+    contract.workerContainer?.liveCpuLinuxSystemAdapterImplemented !== false ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleImplemented !== false ||
     contract.workerContainer?.liveCpuLegacyProofSchema !==
       "schemas/live-linux-cgroup-cpu-proof.v1.schema.json" ||
     contract.workerContainer?.liveCpuLegacyProofType !== "LIVE_LINUX_CGROUP_V2_THREE_ROLE" ||
@@ -771,6 +785,26 @@ export function inspectStaticContainerContract(root = ROOT) {
       "Live Linux cgroup CPU evidence v2 contract",
     );
   }
+  const liveCpuEvidenceProducer = read(
+    liveCpuEvidenceProducerPath,
+    failures,
+    "Live Linux cgroup CPU evidence v2 producer state machine",
+  );
+  for (const required of [
+    'status: "UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE";',
+    "liveClaim: false;",
+    "passSigningEligible: false;",
+    "createLinuxCgroupCpuEvidenceV2Producer",
+    "parseLiveLinuxCgroupCpuEvidenceV2",
+    'clock: "CLOCK_MONOTONIC_RAW_NS"',
+  ]) {
+    requireText(
+      liveCpuEvidenceProducer,
+      required,
+      failures,
+      "Live Linux cgroup CPU evidence v2 producer state machine",
+    );
+  }
   const liveCpuEvidenceSchema = read(
     liveCpuEvidenceSchemaPath,
     failures,
@@ -793,6 +827,8 @@ export function inspectStaticContainerContract(root = ROOT) {
       schema?.$defs?.containment?.additionalProperties !== false ||
       !Array.isArray(schema?.$defs?.containment?.oneOf) ||
       schema.$defs.containment.oneOf.length !== 3 ||
+      !Array.isArray(schema?.oneOf?.[5]?.anyOf) ||
+      schema.oneOf[5].anyOf.length !== 5 ||
       !Array.isArray(schema?.$defs?.failurePair?.oneOf) ||
       schema.$defs.failurePair.oneOf.length !== 8 ||
       !Array.isArray(schema?.oneOf?.[2]?.allOf?.[0]?.oneOf) ||
@@ -922,6 +958,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   if (
     rootIndex.includes("worker-rpc-transport-capability") ||
     rootIndex.includes("worker-rpc-mtls-transport") ||
+    rootIndex.includes("linux-cgroup-cpu-evidence-producer") ||
     rootIndex.includes("registerMutualTlsWorkerRpcV2TransportInternal") ||
     rootIndex.includes("assertMutualTlsWorkerRpcV2Transport")
   ) {
@@ -948,7 +985,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "8"',
+    'contract.schemaVersion !== "9"',
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
   ]) {
@@ -971,7 +1008,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "8"',
+    'contract?.schemaVersion !== "9"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     '"Dockerfile.worker"',
@@ -1015,7 +1052,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "8"',
+    'contract?.schemaVersion !== "9"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',

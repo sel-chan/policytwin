@@ -37,7 +37,7 @@ export function inspectEgressContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "8") failures.push("container schema v8 is required");
+  if (contract?.schemaVersion !== "9") failures.push("container schema v9 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }

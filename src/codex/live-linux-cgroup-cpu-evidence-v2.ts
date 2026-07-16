@@ -1415,9 +1415,7 @@ function parseContainment(value: unknown): LiveLinuxCgroupCpuContainmentEvidence
     (parsed.status === "NOT_REQUIRED" &&
       [parsed.freeze, parsed.kill, parsed.reap].some((entry) => entry !== "NOT_ATTEMPTED")) ||
     (parsed.status === "SUCCEEDED" &&
-      [parsed.freeze, parsed.kill, parsed.reap].some((entry) => entry !== "SUCCEEDED")) ||
-    (parsed.status === "INCOMPLETE" &&
-      [parsed.freeze, parsed.kill, parsed.reap].every((entry) => entry === "SUCCEEDED"))
+      [parsed.freeze, parsed.kill, parsed.reap].some((entry) => entry !== "SUCCEEDED"))
   ) {
     throw new Error("CPU evidence v2 containment state is contradictory.");
   }
@@ -1755,10 +1753,7 @@ function parseObservedFailure(
   }
   if (
     (failureCode === "CONTAINMENT_ACTION_FAILED" &&
-      ![containment.freeze, containment.kill, containment.reap].includes("FAILED")) ||
-    (failureCode === "CONTROLLER_STOP_FAILED" && controllerStopStatus !== "STOP_FAILED") ||
-    (failureCode === "CGROUP_RELEASE_FAILED" &&
-      !observedRoles.some((entry) => !entry.released))
+      ![containment.freeze, containment.kill, containment.reap].includes("FAILED"))
   ) {
     throw new Error("CPU evidence v2 failure code contradicts the observed cleanup state.");
   }
@@ -1786,11 +1781,17 @@ function parseObservedFailure(
       throw new Error("CPU evidence v2 over-budget containment result is inconsistent.");
     }
   } else if (value.outcome === "CONTAINMENT_INCOMPLETE") {
+    const cleanupFailureObserved =
+      [containment.freeze, containment.kill, containment.reap].includes("FAILED") ||
+      failureCode === "CONTAINMENT_ACTION_FAILED" ||
+      failureCode === "CONTROLLER_STOP_FAILED" ||
+      failureCode === "CGROUP_RELEASE_FAILED";
     if (
       containment.status !== "INCOMPLETE" ||
       (remainingProcessCount === 0 &&
         observedRoles.every((entry) => entry.released) &&
-        controllerStopStatus === "STOPPED") ||
+        controllerStopStatus === "STOPPED" &&
+        !cleanupFailureObserved) ||
       (failureCode === "CPU_BUDGET_EXCEEDED"
         ? observedAggregate <= base.budgetUsec || overage !== observedAggregate - base.budgetUsec
         : observedAggregate > base.budgetUsec || overage !== null)

@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7/M9 — CPU evidence v2 contract committed; real-Linux producer remains`
+- Current milestone: `M7/M9 — dedicated live lifecycle and Linux CPU producer boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 09:29 +09:00`
+- Last updated: `2026-07-16 11:22 +09:00`
 - Latest checkpoint commit: `c675662fc32f6d311a9624466bb6bc422c8bfb5d`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -102,37 +102,32 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ### Objective
 
-Complete the offline Worker RPC v2 CPU evidence version boundary: one globally ordered monotonic transcript must bind egress, worker, and verifier success, while every signed FAIL must carry a closed typed failure/containment outcome instead of nullable evidence. Preserve the generic supervisor as FAIL-only and keep every Linux/Docker/OpenAI/Codex runtime claim closed.
+Create and verify the first CPU evidence v2 producer checkpoint as an internal synthetic-only state machine. It must return only fully parsed, frozen, unsigned/non-live/non-admitted candidate wrappers; keep the existing static/fake lifecycle separate; reject self-declared Linux provenance; preserve the generic mTLS v2 supervisor as FAIL-only; and leave the real Linux adapter plus dedicated bounded-cleanup lifecycle for the next checkpoint without changing any runtime-observation flag.
 
 ### Starting failing condition
 
-At starting HEAD `513218f`, proof schema v1 contained only role-local sample arrays and could not establish cross-role ordering on one clock. Worker RPC v2 accepted success proof only and forced `cpuProof:null` on FAIL, so controller phase, observed usage, containment attempts, remaining processes, and release state were not expressible. The static contract therefore kept both global-transcript and failure-evidence implementation flags false. The generic supervisor already refused PASS, and no Linux producer existed.
+Starting HEAD is clean `main` at `cbcf37cc5ae8553831b4ea69fbce99d21b52e97a`. `pnpm test` passes 249/249. Enrolling `tests/unit/linux-cgroup-cpu-evidence-producer.test.mjs` first fails with `ERR_MODULE_NOT_FOUND`, while all prior 249 tests still pass. CPU evidence schema v2 and Worker RPC bindings exist, but no producer owns the global transcript, arithmetic, typed containment, or candidate boundary. `worker-os-lifecycle.ts` can return only `STATIC_DRIVER_TEST_ONLY`, the existing Linux observer is role-local/post-exit, `worker-entrypoint-contract.ts` remains `VALIDATED_REQUEST_LIVE_DISABLED`, and `live-gate-contract.mjs` ends at `CUMULATIVE_CPU_PROOF_UNAVAILABLE`. Docker CLI 29.1.5 is present but the Linux daemon pipe is absent.
 
 ### Planned actions
 
-- [x] Confirm clean `main` at `513218f` and record the two explicit schema-v7 blockers.
-- [x] Map proof/RPC/parser/schema/static-contract dependencies and choose a separate evidence schema v2 boundary while freezing v1 as legacy non-live proof.
-- [x] Add failing tests for exact global event order, monotonic timestamps, role overlap/sequencing, identity/sample linkage, and transcript hash binding.
-- [x] Add failing tests for strict signed CPU failure/containment outcomes, foreign fields, request/budget/Docker/role binding, and impossible state combinations.
-- [x] Implement the TypeScript parser and JSON Schema without accepting v1, static, nullable, unsigned, or downgraded evidence as v2.
-- [x] Bind success and failure evidence into Worker RPC v2 result hashes, signatures, mTLS supervisor validation, and client validation while keeping PASS signing disabled.
-- [x] Update schema-v8 static contracts, decisions, threat model, limitations, runbook, generated submission copy, and exact role hashes without implying runtime execution.
-- [x] Run focused and authoritative offline gates, independent read-only code/security/truth review, final diff review, and the current-branch implementation commit.
+- [x] Re-read the required control documents, confirm clean `main`, inspect the current Docker/environment boundary, and re-establish the 249-test unit baseline.
+- [x] Map the static lifecycle, Docker driver, Linux observer, CPU evidence v2, Worker RPC v2, worker entrypoint, and live-gate seams; request three bounded read-only reviews.
+- [x] Add the producer test before implementation, reproduce `ERR_MODULE_NOT_FOUND`, then cover strict role order, one monotonic global queue, aggregate budget, non-CPU/controller/containment failures, overlap omission, transient cleanup failure, identity drift, input mutation, abort/overflow poisoning, and fake Linux provenance rejection.
+- [x] Implement an internal synthetic-only CPU evidence v2 recorder/producer with exact request/execution/image/policy/corpus bindings, self-validation through the canonical parser, frozen candidate output, and no root export or signer-eligible path.
+- [x] Align JSON Schema, runtime parsing, and producer semantics so action failure is incomplete even when later release/stop checks recover, while all-success actions may still be incomplete when release/process/controller-stop proof is absent.
+- [x] Record D-040 and advance the static container contract to schema v9 with explicit state-machine-implemented, synthetic-only, Linux-adapter-false, dedicated-lifecycle-false, PASS-false, and exact build-input facts.
+- [x] Update README, start guide, submission source, architecture, threat model, limitations, runbook, and generated-copy source without claiming Linux/Docker/OpenAI/Codex execution.
+- [x] Run focused and authoritative offline gates, independent code/security/truth review, and final diff review; create the current-branch checkpoint commits next.
+
+The dedicated real-Linux adapter and live lifecycle were deliberately split into the next checkpoint under D-040 because they require a private factory capability, pre-execution Docker start barriers, an independent bounded cleanup signal, actual raw-clock and descriptor/inode-pinned cgroup observation, and different finalize-after-cleanup ordering. Reusing the static lifecycle or this synthetic producer would violate the live-proof acceptance boundary.
 
 ### Completion evidence
 
-- Starting HEAD: `513218f56f9af28ed44a519f8ee449d862d242b1`; clean `main` worktree before this ledger update.
-- Reproduced failure: after enrolling the new unit suite before implementation, `pnpm test` reported 217 passing tests plus one `ERR_MODULE_NOT_FOUND` failure for the absent v2 evidence module.
-- Evidence contract: `LIVE_LINUX_CGROUP_CPU_EVIDENCE_V2` binds request, nonce, client-derived execution identity, image, policy, corpus, CPU budget, exact Docker or partial-attempt roles, and one contiguous strictly increasing `CLOCK_MONOTONIC_RAW_NS` transcript. Success recomputes role samples, arithmetic, egress/worker overlap, verifier ordering, controller stop, and release from that transcript.
-- Closed failures: exact pre-execution stage/code pairs, non-CPU execution failure, controller failure, contained overage, and incomplete containment are mutually exclusive. Failure events, role lifecycles, phase/code mapping, fail-stop actions, cleanup state, remaining processes, and release state are cross-checked; a success outcome cannot be carried by FAIL.
-- Receipt boundary: Worker RPC v2 requires `cpuEvidence` for PASS and FAIL, includes its evidence hash in `resultSha256`, signs the entire v2 response, binds every outcome to the request CPU budget and execution mode, and rejects legacy v1/static/nullable evidence, replay, key-purpose confusion, and contradictory final-tree state. The generic supervisor still rejects PASS before signing.
-- Parser/schema hardening: canonical evidence hashing is bounded to 64 levels, 50,000 nodes, and 1,024 UTF-8 bytes per string; the mTLS supervisor parses untrusted executor evidence before numeric/binding comparisons. Schema v2 uses six closed outcome branches, canonical nonce and positive uint64 budget constraints, exact failure mappings, and observed-role/Docker-binding parity.
-- Static contract: `container-contract.json` is schema v8 with contract-implemented flags true and observation flags false. Final build-input hashes are worker `6033b4f442d9a12d1c27b99a1c6f31c0d70f56bc180eaac26d933c05f1398e3b`, verifier `ecfd6e9ac299c5a65b6dcbfc3fbc67e6f6840284f91d76341f60d1716946c949`, and egress `015cb9d5d72a098fdf67fb0353a88cfe761e18a37dfacf012c4dc021491f1301`.
-- Independent review: initial reviewers found lifecycle, phase/code, schema parity, FAIL budget, and execution-mode gaps; each was reproduced and corrected. Final code/security re-review found no P0/P1 and confirmed the pre-execution mapping, bounded canonical hash, mTLS pre-parse, observed-role/Docker parity, downgrade rejection, and PASS prohibition. Final truth review confirmed all runtime observation flags remain false.
-- Authoritative verification at 09:29: a second `pnpm verify` after this ledger update passed lint, strict typecheck, 249/249 unit tests, 57/57 integration tests, 22/22 evals, 3/3 production Chrome tests, production build, schema-v8 static container inspection, 336-file clean-copy replay, and 336-file/307-text-file plus Git-history security review. It exited 1 only for the owner-selected project `LICENSE` and the exact 29-item non-final submission gate.
-- External/runtime gates: `pnpm verify:live` failed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; web, worker, and egress dynamic gates failed before Docker at the unset immutable Node base. No Docker command, Linux cgroup observation, containment action, OpenAI request, Codex repair, deployment, or live proof occurred.
-- Truth boundary: parser/schema/signature implementation and synthetic test-key evidence are contract evidence only; they do not prove runtime CPU enforcement, a hard cap, bounded overshoot, or containment.
-- Implementation commit: `c675662fc32f6d311a9624466bb6bc422c8bfb5d` (`feat: version signed CPU evidence contract`).
+- Starting HEAD: `cbcf37cc5ae8553831b4ea69fbce99d21b52e97a`; clean `main` before this ledger update.
+- Baseline: `pnpm test` passed 249/249 after a fresh core build; enrolling the producer test first reproduced `ERR_MODULE_NOT_FOUND` while preserving the prior 249 passes.
+- Environment: Node v22.22.2 and pnpm 11.7.0 are available. Docker CLI 29.1.5 is present, but the Docker Desktop Linux engine pipe is absent; no Docker command reached a daemon.
+- Structural result: the internal synthetic producer now owns deterministic event/arithmetic/failure derivation, but it is non-exported and every wrapper is unsigned, non-live, and ineligible for current signing/admission paths. Its enclosed raw evidence stays parser-valid for contract tests and is not provenance or signer authorization. The real Linux adapter, pre-execution start barrier, independently bounded cleanup lifecycle, and signed result connection remain a separate next checkpoint under D-040.
+- Truth boundary: all work in this checkpoint remains contract/unit evidence until a Linux cgroup v2 host, immutable images, dynamic containment runs, fresh OpenAI/Codex work, and signed live validation exist.
 
 ## Quality gates
 
@@ -142,24 +137,24 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` | CPU evidence v2, fail-only Worker RPC supervisor, schema-v8 static checks, and submission generators pass repository checks | 2026-07-16 09:29 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers v1/v2 RPC, evidence v2, bounded hashing, mTLS pre-parse, lifecycle, application, and policy-engine boundaries | 2026-07-16 09:29 +09:00 |
-| Unit tests | PASS | `pnpm test` | 249/249 tests pass, including global transcript ordering, strict success/failure unions, parser/schema parity, signed FAIL budget/mode/result binding, downgrade, lifecycle, live-gate, and Docker-driver cases | 2026-07-16 09:29 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 57/57 serial mTLS v1/v2, typed pre-execution FAIL signing, replay restart, OPA, evidence, persistence, and fixture assertions pass | 2026-07-16 09:29 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-16 09:29 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass with contract-only CPU evidence and explicit live exclusions | 2026-07-16 09:29 +09:00 |
-| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-16 09:29 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | every implemented offline gate passed; the command exited 1 only for owner-selected project `LICENSE` and the exact 29-item non-final submission gate | 2026-07-16 09:29 +09:00 |
+| Lint | PASS | `pnpm lint` | CPU evidence v2 producer, fail-only Worker RPC supervisor, schema-v9 static checks, and submission generators pass repository checks | 2026-07-16 11:22 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers the synthetic producer, v1/v2 RPC, evidence v2, bounded hashing, mTLS pre-parse, lifecycle, application, and policy-engine boundaries | 2026-07-16 11:22 +09:00 |
+| Unit tests | PASS | `pnpm test` | 265/265 pass, including producer one-read snapshots, ordering, overlap, overage, transient cleanup failure, identity/input drift, parser-failure/abort/overflow poisoning, fake-provenance rejection, parser/schema parity, RPC, lifecycle, live-gate, and Docker-driver cases | 2026-07-16 11:22 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 57/57 serial mTLS v1/v2, typed pre-execution FAIL signing, replay restart, OPA, evidence, persistence, and fixture assertions pass | 2026-07-16 11:22 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-16 11:22 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass with synthetic-only CPU candidate evidence and explicit live exclusions | 2026-07-16 11:22 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-16 11:22 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | every implemented offline gate passed; the command exited 1 only for owner-selected project `LICENSE` and the exact 29-item non-final submission gate | 2026-07-16 11:22 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no fresh evidence exists | 2026-07-16 09:17 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 336 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 09:29 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | schema-v8 structural JSON, evidence v2 source/schema markers, TLS input snapshots, and exact worker/verifier/egress hashes pass; dynamic/live observation facts remain false | 2026-07-16 09:29 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 338 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 11:22 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | schema-v9 structural JSON, synthetic producer/signing-eligibility-false markers, TLS input snapshots, and exact worker/verifier/egress hashes pass; Linux adapter/lifecycle and dynamic/live facts remain false | 2026-07-16 11:22 +09:00 |
 | Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-16 09:17 +09:00 |
 | Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | role hashes match; fails before Docker at the unset immutable Node base with `dockerInvoked:false`; live CPU observation remains false | 2026-07-16 09:17 +09:00 |
 | Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | fails before Docker at the unset immutable Node base; restart/identity/TLS facts remain false and outbound is `NOT_MEASURED` | 2026-07-16 09:17 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check` via final `pnpm verify`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-16 09:29 +09:00 |
-| Security review | PASS | `pnpm security:check` | 336 files/307 text files plus Git history; no findings | 2026-07-16 09:29 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; no fabricated live URL, video, license, confirmation, or live Codex capture | 2026-07-16 09:29 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check` via final `pnpm verify`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-16 11:22 +09:00 |
+| Security review | PASS | `pnpm security:check` | 338 files/309 text files plus Git history; no findings | 2026-07-16 11:22 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; no fabricated live URL, video, license, confirmation, or live Codex capture | 2026-07-16 11:22 +09:00 |
 
 ## Product proof metrics
 
@@ -181,6 +176,28 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-16 11:22 +09:00 — Synthetic CPU evidence v2 producer verified without live promotion
+
+- Milestones: M7 and M9 remain `IN_PROGRESS`; this checkpoint implements only the internal synthetic producer state machine and advances the static container contract to schema v9.
+- Producer: one serialized queue snapshots request/system/Docker inputs, enforces egress-worker-verifier order, derives role/attempt/Docker/transcript/evidence hashes with `bigint`, and self-validates within-budget, non-CPU, controller, overage-contained, and containment-incomplete candidates through the canonical parser.
+- Fail-closed behavior: missing overlap, counter regression, identity drift, first aggregate overage, failed or transient cleanup actions, missing release/process/controller-stop proof, post-bind invalidity, in-flight abort, aggregate overflow, duplicate identities, and non-advancing clocks cannot produce a signable success. Schema and parser now permit truthful incomplete cleanup when actions succeeded but release/stop proof failed, or actions failed but later cleanup recovered.
+- Provenance boundary: the only accepted wrapper provenance is `SYNTHETIC_CONTRACT`; the module is absent from the root export and every frozen wrapper is `UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE` with `liveClaim:false` and `passSigningEligible:false`. Raw parser-valid evidence is not authorization. Generic Worker RPC v2 PASS signing and `verify:live` admission remain disabled.
+- Verification: lint, strict typecheck, 265/265 unit, 57/57 integration, 22/22 eval, 3/3 production Chrome, build, schema-v9 static checks, 338-file clean-copy replay, and 338-file/309-text-file plus Git-history security pass. Final `pnpm verify` exits 1 only for owner-selected `LICENSE` and the exact 29-item non-final submission gate.
+- Review: two independent truth/code reviews found and drove fixes for containment/schema mismatch, fake Linux provenance, transient cleanup recovery, observation/input getter TOCTOU, parser-failure reuse, overlap omission, stale handoff text, and overstrong signing language. The final latest-diff review reports no remaining P0/P1/P2 merge blocker.
+- Dynamic truth: no Docker daemon, Linux raw clock/cgroup adapter, start barrier, bounded independent cleanup lifecycle, `cpu.stat` observation, containment, OpenAI request, Codex repair, deployment, or live proof occurred.
+- Decision: D-040 requires a separate private-capability Linux adapter and dedicated finalize-after-cleanup lifecycle; neither the synthetic wrapper nor its raw parser-valid fixture is live provenance or signer authorization.
+- Commit: `pending`.
+
+### 2026-07-16 09:29 +09:00 — Signed CPU evidence v2 contract verified offline
+
+- Milestones: M7 and M9 remain `IN_PROGRESS`; this checkpoint versions the unreleased Worker RPC v2 CPU slot without enabling a live producer or PASS signer.
+- Contract: one strict `CLOCK_MONOTONIC_RAW_NS` transcript binds all egress, worker, and verifier events; six closed outcomes distinguish within-budget success, non-CPU failure, pre-execution rejection, controller failure, contained overage, and incomplete containment.
+- Binding: request, nonce, execution identity, image, policy, corpus, budget, role/Docker-or-attempt identity, transcript, result hash, and signature are cross-checked. Legacy proof v1, static fake, nullable evidence, key-purpose reuse, replay, and protocol downgrade cannot promote a result.
+- Hardening: canonical hashing is bounded to 64 levels, 50,000 nodes, and 1,024 UTF-8 bytes per string; mTLS parses evidence before numeric comparisons; schema v2 closes failure stage/code and observed-role/Docker parity.
+- Verification: lint, strict typecheck, 249/249 unit, 57/57 integration, 22/22 eval, 3/3 production Chrome, build, schema-v8 static checks, 336-file clean-copy replay, and 336-file/307-text-file plus Git-history security pass. `pnpm verify` exits 1 only for owner-selected `LICENSE` and the exact 29-item non-final submission gate.
+- Truth boundary: no Docker daemon, Linux cgroup observation, containment, OpenAI request, Codex repair, deployment, or live proof occurred; generic Worker RPC v2 PASS signing remains disabled.
+- Commits: implementation `c675662fc32f6d311a9624466bb6bc422c8bfb5d`; ledger `cbcf37cc5ae8553831b4ea69fbce99d21b52e97a`.
 
 ### 2026-07-16 06:59 +09:00 — Factory-only Worker RPC v2 mTLS transport verified offline
 
@@ -560,18 +577,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Commit this post-checkpoint ledger, then begin the dedicated Linux-only CPU evidence producer boundary while keeping generic PASS signing and the live gate disabled until immutable real-container observations exist.`
+`Finish the synthetic producer checkpoint commit, then begin a separate private-capability Linux adapter and dedicated finalize-after-cleanup lifecycle while keeping generic PASS signing and the live gate disabled until immutable real-container observations exist.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; CPU evidence schema v2, Worker RPC bindings, schema-v8 static contracts, independent review, authoritative verification, and implementation commit c675662 are complete; only this post-checkpoint ledger commit remains`
-- Exact current state: `global transcript and typed failure evidence are implemented as an offline contract; the generic supervisor still refuses PASS, observation flags remain false, and no dedicated Linux producer exists`
-- Last successful command: `the 09:29 post-ledger pnpm verify sequence passed 249 unit, 57 integration, 22 eval, 3 browser, production build, schema-v8 static checks, 336-file clean-copy, and 336-file/307-text-file security; only LICENSE and the exact 29-item submission gate failed as expected`
+- Why paused: `not paused; the synthetic CPU evidence v2 producer, schema-v9 static contract, documentation, independent review, and authoritative verification are complete; the checkpoint commits remain`
+- Exact current state: `the internal producer emits only unsigned/non-live/signing-ineligible wrappers with synthetic provenance; enclosed raw evidence is parser-valid contract data but not authorization; the generic supervisor still refuses PASS and all Linux/Docker/OpenAI/Codex observation flags remain false`
+- Last successful command: `the 11:22 pnpm verify sequence passed 265 unit, 57 integration, 22 eval, 3 browser, production build, schema-v9 static checks, 338-file clean-copy, and 338-file/309-text-file security; only LICENSE and the exact 29-item submission gate failed as expected`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `only this post-checkpoint PROGRESS.md ledger update before its documentation commit`
-- Safe resume command/action: `commit the ledger, then design and implement the dedicated Linux-only evidence producer without enabling PASS until real dynamic observations validate it`
+- Uncommitted files: `synthetic producer implementation, schema/parser/tests, schema-v9 container contract, generated reports/copy, documentation, decisions, and this ledger`
+- Safe resume command/action: `finish final diff review and commit this checkpoint, then design the private-capability Linux adapter and dedicated cleanup lifecycle without enabling PASS until real dynamic observations validate it`
 - One owner action, if any: `none`
 
 ## Final completion record
