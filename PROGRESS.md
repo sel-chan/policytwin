@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — dedicated live lifecycle and Linux CPU producer boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 14:16 +09:00`
-- Latest checkpoint commit: `e8f009e7746dfd5f83ac0a1fc4e676052e5317b6`
+- Last updated: `2026-07-16 14:58 +09:00`
+- Latest checkpoint commit: `01c63af0f35a656b6abb6b63dceefcbf3dddebb8`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,9 +93,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free Docker lifecycle driver, fake-only aggregate CPU ledger, Worker RPC v2 CPU evidence schema v2, and an internal synthetic-only producer that emits parsed unsigned/non-live/signing-ineligible wrappers with one-read input/observation snapshots and closed failure outcomes | `43b0419` | host live construction and v2 PASS signing remain disabled; no immutable image run, private-capability Linux adapter, dedicated cleanup lifecycle, cgroup observation, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free Docker lifecycle driver, fake-only aggregate CPU ledger, Worker RPC v2 CPU evidence schema v2, and an internal synthetic-only producer that emits parsed unsigned/non-live/signing-ineligible wrappers with one-read input/observation snapshots and closed failure outcomes | `43b0419` | host live construction and v2 PASS signing remain disabled; no immutable image run, concrete private-capability Linux adapter, dedicated cleanup lifecycle, cgroup observation, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, schema-v11 split container contract, exact-path/private-FD-device-inode non-live observer, and an internal private adapter/final-result identity scaffold plus 28-stage finalize-after-cleanup contract; uint64, subtree/release, sticky-cleanup, local-Docker, `restart=no`, TLS-only probe, and static/fake-daemon checks remain intact | pending | the scaffold cannot issue evidence; concrete owned-container/start-barrier/RAW-clock/poller/containment/cleanup runtime, observer runtime, immutable images, Linux Docker daemon, dynamic PASS, measured upstream behavior, signed evidence, owner license, shared auth/quotas, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, schema-v11 split container contract, exact-path/private-FD-device-inode non-live observer, and an internal private adapter/final-result identity scaffold plus 28-stage finalize-after-cleanup contract; uint64, subtree/release, sticky-cleanup, local-Docker, `restart=no`, TLS-only probe, and static/fake-daemon checks remain intact | `01c63af` | the scaffold cannot issue evidence; concrete owned-container/start-barrier/RAW-clock/poller/containment/cleanup runtime, observer runtime, immutable images, Linux Docker daemon, dynamic PASS, measured upstream behavior, signed evidence, owner license, shared auth/quotas, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -115,7 +115,7 @@ Starting HEAD is clean `main` at `e8f009e7746dfd5f83ac0a1fc4e676052e5317b6`. The
 - [x] Add non-root-exported compile-time brands plus module-private runtime identity registries, one-read option snapshots, frozen scaffold objects, and no arbitrary registrar or finalized-evidence issuer.
 - [x] Define and validate the dedicated success-stage order: request/adaptor admission, role-specific held barrier, cgroup bind, baseline, release, serial observation, stop/containment, Docker and cgroup release, controller stop, then one-shot evidence finalization.
 - [x] Record D-042 and advance the static container contract to schema v11 without marking the Linux system adapter, start barrier runtime, dedicated lifecycle implementation, finalized-evidence issuance, PASS signing, live admission, or dynamic verification true.
-- [x] Run focused tests, lint/typecheck, all repository gates, independent code/test reviews, the authoritative schema-v11 offline/live-disabled gates, and inspect the refreshed Policy Studio screenshot; final truth follow-up, diff review, and current-branch checkpoint commits remain.
+- [x] Run focused tests, lint/typecheck, all repository gates, independent code/test/truth reviews, the authoritative schema-v11 offline/live-disabled gates, inspect the refreshed Policy Studio screenshot, review the final diff, and create implementation checkpoint `01c63af`.
 
 This checkpoint creates only the unforgeable identity boundary and the required lifecycle contract. It deliberately cannot issue signer-eligible evidence. A real implementation still needs a concrete Linux/Docker-owned-container factory, PID start-time or pidfd binding, actual `clock_gettime(CLOCK_MONOTONIC_RAW)`, pre-execution barriers, serial cgroup polling, containment actuation, a separate cleanup deadline, and dynamic under/over-budget evidence.
 
@@ -126,6 +126,9 @@ This checkpoint creates only the unforgeable identity boundary and the required 
 - Review finding: the real adapter must remain separate from the public synthetic `System` port, post-start observer object, v1 static OS lifecycle, and static Docker driver. Independent code and test-gap reviews found no P0/P1/P2 merge blocker; the truth review's stale-ledger and v10/v11 wording findings were corrected. The unconditional v2 PASS rejection and live-gate CPU-unavailable result remain unchanged.
 - Structural result: the internal adapter factory snapshots one bounded cleanup timeout and issues only a frozen non-live identity registered in a private `WeakSet`. The separate finalized-evidence identity set has no issuer. The exact 28-stage contract puts every role's barrier before cgroup bind/baseline/release and all Docker/cgroup cleanup plus controller stop before finalization. Root/subpath export, arbitrary registration, raw/synthetic/non-live promotion, issuance, signer admission, and runtime claims remain absent.
 - Truth boundary: no Linux adapter, raw clock, start barrier, serial poll, containment, finalized evidence, OpenAI request, Codex repair, signing, deployment, or live proof may be claimed from this Windows/offline scaffold checkpoint.
+- Implementation checkpoint: `01c63af0f35a656b6abb6b63dceefcbf3dddebb8` (`feat: add private live CPU capability scaffold`).
+- Retry incident: the post-commit `pnpm verify` reproduced 4/280 unit failures because the final EOF-whitespace cleanup changed the worker and egress `src` build inputs after the schema-v11 hashes were captured. `scripts/container-build-inputs.mjs` confirmed that `PROGRESS.md` is outside every role input, verifier input stayed unchanged, and only the worker/egress hashes required refresh. The contract now records worker `896b6ab6e611ef206010c4d5e690d2b5d7effd9ff436cf4f9760415a093d8297` and egress `66d64c4c97b8efbf1254d534eea2b4e907df7cfaed234e8d80fd65177189d134`; focused container tests passed 5/5 and the 14:48 full retry completed through build with only the expected license/submission failures.
+- Final document-inclusive replay: the 14:58 `pnpm verify` again passed every implemented gate through the production build and exited 1 only for the owner `LICENSE` and exact 29-item non-final submission gate.
 
 ## Quality gates
 
@@ -135,24 +138,24 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` | schema-v11 private capability/lifecycle, source-tamper checks, generated submission notes, cgroup observer, RPC, and repository static checks pass | 2026-07-16 14:16 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers the new branded private capability scaffold, lifecycle contract, synthetic producer, v1/v2 RPC, evidence, application, and policy-engine boundaries | 2026-07-16 14:16 +09:00 |
-| Unit tests | PASS | `pnpm test` | 280/280 pass; 9 new cases cover one-read/freeze, plain/copy/wrapper/prototype/JSON/synthetic/raw/non-live rejection, no export/registrar/issuer, exact 28-stage order, schema v11, and existing RPC/Docker/cgroup regressions | 2026-07-16 14:16 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 57/57 serial mTLS v1/v2, PASS-signing rejection, typed pre-execution FAIL signing, replay restart, OPA, evidence, persistence, and fixture assertions pass | 2026-07-16 14:16 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass; refreshed Policy Studio screenshot inspected without layout defect | 2026-07-16 14:16 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | after recording the expected submission FAIL, 22/22 offline/recorded evals pass with schema-v11 capability-scaffold wording and explicit live exclusions | 2026-07-16 14:16 +09:00 |
-| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build and strict TypeScript pass with the internal non-exported modules | 2026-07-16 14:16 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | every implemented gate passes: 280 unit, 57 integration, 22 eval, 3 browser, schema v11, 342-file clean copy, 342-file/313-text-file security plus Git history, demo, and build; exit 1 is only owner `LICENSE` plus exact 29-item submission gate | 2026-07-16 14:16 +09:00 |
+| Lint | PASS | `pnpm lint` | schema-v11 private capability/lifecycle, source-tamper checks, generated submission notes, cgroup observer, RPC, and repository static checks pass | 2026-07-16 14:58 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers the new branded private capability scaffold, lifecycle contract, synthetic producer, v1/v2 RPC, evidence, application, and policy-engine boundaries | 2026-07-16 14:58 +09:00 |
+| Unit tests | PASS | `pnpm test` | 280/280 pass; 9 new cases cover one-read/freeze, plain/copy/wrapper/prototype/JSON/synthetic/raw/non-live rejection, no export/registrar/issuer, exact 28-stage order, schema v11, and existing RPC/Docker/cgroup regressions | 2026-07-16 14:58 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 57/57 serial mTLS v1/v2, PASS-signing rejection, typed pre-execution FAIL signing, replay restart, OPA, evidence, persistence, and fixture assertions pass | 2026-07-16 14:58 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass; refreshed Policy Studio screenshot inspected without layout defect | 2026-07-16 14:58 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | after recording the expected submission FAIL, 22/22 offline/recorded evals pass with schema-v11 capability-scaffold wording and explicit live exclusions | 2026-07-16 14:58 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build and strict TypeScript pass with the internal non-exported modules | 2026-07-16 14:58 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | every implemented gate passes: 280 unit, 57 integration, 22 eval, 3 browser, schema v11, 342-file clean copy, 342-file/313-text-file security plus Git history, demo, and build; exit 1 is only owner `LICENSE` plus exact 29-item submission gate | 2026-07-16 14:58 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no fresh evidence exists | 2026-07-16 14:06 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 342 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 14:16 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | schema-v11 structural JSON/source markers require private identity sets, no final issuer/registrar/export, exact lifecycle order, and all runtime/PASS/live flags false while retaining v10 observer controls | 2026-07-16 14:16 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 342 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 14:58 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | schema-v11 structural JSON/source markers require private identity sets, no final issuer/registrar/export, exact lifecycle order, and all runtime/PASS/live flags false while retaining v10 observer controls | 2026-07-16 14:58 +09:00 |
 | Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-16 14:06 +09:00 |
 | Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | schema v11 and role hashes match; fails before Docker at the unset immutable Node base with `dockerInvoked:false`; cgroup/runtime/live facts remain false | 2026-07-16 14:06 +09:00 |
 | Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | schema v11 and role hashes match; fails before Docker at the unset immutable Node base with `dockerInvoked:false`; outbound remains `NOT_MEASURED` | 2026-07-16 14:06 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check` via final `pnpm verify`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-16 12:17 +09:00 |
-| Security review | PASS | `pnpm security:check` | 342 files/313 text files plus Git history; no findings | 2026-07-16 14:16 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; generated schema-v11 observer/capability notes remain contract-only and no fabricated URL, video, license, confirmation, or Codex capture exists | 2026-07-16 14:16 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check` via final `pnpm verify`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-16 14:58 +09:00 |
+| Security review | PASS | `pnpm security:check` | 342 files/313 text files plus Git history; no findings | 2026-07-16 14:58 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; generated schema-v11 observer/capability notes remain contract-only and no fabricated URL, video, license, confirmation, or Codex capture exists | 2026-07-16 14:58 +09:00 |
 
 ## Product proof metrics
 
@@ -586,18 +589,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Complete the final truth/diff review and checkpoint commits for schema v11, then implement the still-separate concrete Linux owned-container/start-barrier/RAW-clock/poller/containment lifecycle without enabling PASS or live admission.`
+`Implement the still-separate concrete Linux owned-container/start-barrier/RAW-clock/poller/containment lifecycle without enabling PASS or live admission.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; schema-v11 private identity and dedicated-order scaffolding, focused/full unit, integration, eval, build, dynamic preflight, the 14:16 authoritative offline verification, and three independent reviews are complete; only final truth/diff review and checkpoint commits remain`
+- Why paused: `not paused; schema-v11 private identity and dedicated-order scaffolding, three independent reviews, implementation checkpoint 01c63af, refreshed worker/egress build-input hashes, focused 5/5 container tests, and the 14:58 final document-inclusive verification are complete; only the checkpoint commit remains`
 - Exact current state: `a non-root-exported private adapter identity exists only as a frozen non-live scaffold; finalized-evidence identity has no issuer; 28 ordered stages require barrier-before-baseline and cleanup/controller-stop-before-finalize; every Linux runtime, signer, PASS, and live flag remains false`
-- Last successful command: `pnpm verify completed its full 14:16 schema-v11 sequence through the production build with 280/280 unit, 57/57 integration, 22/22 eval, 3/3 E2E, clean-copy reproduction, and security checks passing; it exited 1 only for the expected owner LICENSE and exact 29-item submission gate`
+- Last successful command: `pnpm verify completed its full 14:58 schema-v11 sequence through the production build with 280/280 unit, 57/57 integration, 22/22 eval, 3/3 E2E, clean-copy reproduction, and security checks passing; it exited 1 only for the expected owner LICENSE and exact 29-item submission gate`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `schema-v11 capability/lifecycle scaffold, 9 focused tests, static contract/source checks, D-042, current documentation/generated draft notes, reports, and this ledger`
-- Safe resume command/action: `review the final diff, commit the schema-v11 implementation and post-commit ledger on main, then begin the concrete Linux lifecycle checkpoint`
+- Uncommitted files: `exactly container-contract.json worker/egress build-input hash refresh, regenerated container-static report, and PROGRESS.md checkpoint ledger; no unrelated worktree change`
+- Safe resume command/action: `commit the verified hash refresh and ledger on main, confirm a clean tree, then begin the concrete Linux lifecycle checkpoint`
 - One owner action, if any: `none`
 
 ## Final completion record
@@ -605,7 +608,7 @@ Fill before `/goal pause` or any handoff.
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `FAIL_EXPECTED — the 14:16 schema-v11 current-worktree sequence completed through the production build; all implemented gates passed and only the owner LICENSE plus the exact 29-item non-final submission gate failed`
+- `pnpm verify`: `FAIL_EXPECTED — the 14:58 schema-v11 current-worktree sequence completed through the production build; all implemented gates passed and only the owner LICENSE plus the exact 29-item non-final submission gate failed`
 - `pnpm verify:live`: `FAIL — host credentials, immutable role images, real-Docker/cumulative-CPU/outbound observations, fresh GPT/Codex evidence, and live wiring are absent; concrete driver and dynamic gate contracts exist only as static/fake-daemon evidence`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`
