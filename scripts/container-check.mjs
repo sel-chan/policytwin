@@ -45,6 +45,18 @@ function requireOrderedText(body, fragments, failures, label) {
   }
 }
 
+function requireStageOrder(body, fragments, failures, label) {
+  let offset = 0;
+  for (const fragment of fragments) {
+    const index = body.indexOf(fragment, offset);
+    if (index < 0) {
+      failures.push(`${label} must preserve the required lifecycle stage order.`);
+      return;
+    }
+    offset = index + fragment.length;
+  }
+}
+
 export function inspectStaticContainerContract(root = ROOT) {
   const failures = [];
   const contractPath = resolve(root, "container-contract.json");
@@ -87,6 +99,18 @@ export function inspectStaticContainerContract(root = ROOT) {
     "src",
     "codex",
     "linux-cgroup-cpu-evidence-producer.ts",
+  );
+  const liveCpuAdapterCapabilityPath = resolve(
+    root,
+    "src",
+    "codex",
+    "live-linux-cgroup-cpu-adapter-capability.ts",
+  );
+  const liveCpuAdapterPath = resolve(
+    root,
+    "src",
+    "codex",
+    "live-linux-cgroup-cpu-adapter.ts",
   );
   const liveCpuEvidenceSchemaPath = resolve(
     root,
@@ -134,7 +158,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "10" ||
+    contract.schemaVersion !== "11" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -166,6 +190,14 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveCpuEvidenceProducerProvenance !==
       "SYNTHETIC_CONTRACT_ONLY" ||
     contract.workerContainer?.liveCpuEvidenceProducerPassSigningEligible !== false ||
+    contract.workerContainer?.liveCpuPrivateAdapterCapabilityScaffoldImplemented !== true ||
+    contract.workerContainer?.liveCpuFinalizedEvidenceIdentityGuardScaffoldImplemented !== true ||
+    contract.workerContainer?.liveCpuFinalizedEvidenceIssuanceImplemented !== false ||
+    contract.workerContainer?.liveCpuSignerFinalizedCapabilityRequired !== true ||
+    contract.workerContainer?.liveCpuSignerFinalizedCapabilityAdmissionImplemented !== false ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleContractImplemented !== true ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleSuccessStageCount !== 28 ||
+    contract.workerContainer?.liveCpuStartBarrierRuntimeImplemented !== false ||
     contract.workerContainer?.liveCpuLinuxSystemAdapterImplemented !== false ||
     contract.workerContainer?.liveCpuDedicatedLifecycleImplemented !== false ||
     contract.workerContainer?.liveCpuLegacyProofSchema !==
@@ -454,6 +486,97 @@ export function inspectStaticContainerContract(root = ROOT) {
     'CMD ["node", "server.js"]',
   ]) {
     requireText(dockerfile, required, failures, "Dockerfile");
+  }
+  const liveCpuAdapterCapability = read(
+    liveCpuAdapterCapabilityPath,
+    failures,
+    "Private live Linux cgroup CPU adapter capability",
+  );
+  for (const required of [
+    "PRIVATE_LIVE_LINUX_CGROUP_CPU_ADAPTER: unique symbol",
+    "PRIVATE_LIVE_LINUX_CGROUP_CPU_FINALIZED_EVIDENCE: unique symbol",
+    "interface PrivateLiveLinuxCgroupCpuAdapter",
+    "interface PrivateLiveLinuxCgroupCpuFinalizedEvidence",
+    'readonly status: "PRIVATE_CAPABILITY_SCAFFOLD_ONLY"',
+    "readonly runtimeAvailable: false",
+    "readonly passSigningEligible: false",
+  ]) {
+    requireText(
+      liveCpuAdapterCapability,
+      required,
+      failures,
+      "Private live Linux cgroup CPU adapter capability",
+    );
+  }
+  const liveCpuAdapter = read(
+    liveCpuAdapterPath,
+    failures,
+    "Private live Linux cgroup CPU adapter scaffold",
+  );
+  for (const required of [
+    "const privateAdapterCapabilities = new WeakSet<object>();",
+    "const finalizedEvidenceCapabilities = new WeakSet<object>();",
+    "createPrivateLiveLinuxCgroupCpuAdapterScaffold",
+    "privateAdapterCapabilities.add(adapter)",
+    "assertPrivateLiveLinuxCgroupCpuAdapter",
+    "privateAdapterCapabilities.has(value)",
+    "assertPrivateLiveLinuxCgroupCpuFinalizedEvidence",
+    "finalizedEvidenceCapabilities.has(value)",
+    'status: "PRIVATE_CAPABILITY_SCAFFOLD_ONLY"',
+    "runtimeAvailable: false",
+    "liveEvidenceIssuanceEnabled: false",
+    "passSigningEligible: false",
+    'status: "DEDICATED_LIFECYCLE_CONTRACT_ONLY"',
+    "runtimeImplemented: false",
+    "startBarrierImplemented: false",
+    "finalizedEvidenceIssuanceImplemented: false",
+    "independentCleanupSignalRequired: true",
+    "serialPollingRequired: true",
+    "identityRevalidationEverySampleRequired: true",
+    "cleanupFailureSticky: true",
+    "finalizeAfterCleanupRequired: true",
+  ]) {
+    requireText(
+      liveCpuAdapter,
+      required,
+      failures,
+      "Private live Linux cgroup CPU adapter scaffold",
+    );
+  }
+  requireStageOrder(
+    liveCpuAdapter,
+    [
+      '"EGRESS_START_BARRIER_HELD"',
+      '"EGRESS_CGROUP_BOUND"',
+      '"EGRESS_BASELINE_RECORDED"',
+      '"EGRESS_START_BARRIER_RELEASED"',
+      '"WORKER_START_BARRIER_HELD"',
+      '"WORKER_CGROUP_BOUND"',
+      '"WORKER_BASELINE_RECORDED"',
+      '"WORKER_START_BARRIER_RELEASED"',
+      '"WORKER_DOCKER_RELEASED"',
+      '"WORKER_CGROUP_RELEASED"',
+      '"EGRESS_DOCKER_RELEASED"',
+      '"EGRESS_CGROUP_RELEASED"',
+      '"VERIFIER_START_BARRIER_HELD"',
+      '"VERIFIER_CGROUP_BOUND"',
+      '"VERIFIER_BASELINE_RECORDED"',
+      '"VERIFIER_START_BARRIER_RELEASED"',
+      '"VERIFIER_DOCKER_RELEASED"',
+      '"VERIFIER_CGROUP_RELEASED"',
+      '"CONTROLLER_STOPPED"',
+      '"EVIDENCE_FINALIZED"',
+    ],
+    failures,
+    "Private live Linux cgroup CPU adapter scaffold",
+  );
+  if (
+    /export\s+function\s+register/iu.test(liveCpuAdapter) ||
+    liveCpuAdapter.includes("finalizedEvidenceCapabilities.add")
+  ) {
+    failures.push(
+      "Private live Linux cgroup CPU capability must expose neither a registrar nor a finalized-evidence issuer.",
+    );
   }
   if (/OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN|PRIVATE KEY/iu.test(dockerfile)) {
     failures.push("Dockerfile must not name or embed live worker credentials.");
@@ -972,6 +1095,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     rootIndex.includes("worker-rpc-transport-capability") ||
     rootIndex.includes("worker-rpc-mtls-transport") ||
     rootIndex.includes("linux-cgroup-cpu-evidence-producer") ||
+    rootIndex.includes("live-linux-cgroup-cpu-adapter") ||
+    rootIndex.includes("live-linux-cgroup-cpu-adapter-capability") ||
     rootIndex.includes("registerMutualTlsWorkerRpcV2TransportInternal") ||
     rootIndex.includes("assertMutualTlsWorkerRpcV2Transport")
   ) {
@@ -998,7 +1123,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "10"',
+    'contract.schemaVersion !== "11"',
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
   ]) {
@@ -1021,7 +1146,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "10"',
+    'contract?.schemaVersion !== "11"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     '"Dockerfile.worker"',
@@ -1076,7 +1201,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "10"',
+    'contract?.schemaVersion !== "11"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',

@@ -22,6 +22,7 @@ const suites = {
     "tests/unit/cpu-budget-contract.test.mjs",
     "tests/unit/live-linux-cgroup-cpu-proof.test.mjs",
     "tests/unit/live-linux-cgroup-cpu-evidence-v2.test.mjs",
+    "tests/unit/live-linux-cgroup-cpu-adapter.test.mjs",
     "tests/unit/linux-cgroup-cpu-evidence-producer.test.mjs",
     "tests/unit/linux-cgroup-observer.test.mjs",
     "tests/unit/worker-os-lifecycle.test.mjs",

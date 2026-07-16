@@ -170,7 +170,9 @@ const v2TransportCapabilityNote =
 const syntheticCpuProducerBoundaryNote =
   "CPU evidence v2 now has an internal synthetic-only state-machine producer. It snapshots Docker identity inputs, serializes the three-role transcript, recomputes bindings and unsigned-64 arithmetic, records overage and cleanup failures, and returns only a frozen UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE wrapper with liveClaim=false and passSigningEligible=false. It rejects a port that self-declares Linux provenance and is not exported from the package root. The enclosed raw evidence remains parser-valid contract data and is not provenance or signer authorization. This is contract evidence only: no kernel adapter, Docker start barrier, bounded independent cleanup lifecycle, PASS signer, cpu.stat observation, or real containment exists.";
 const nonLiveCgroupObserverBoundaryNote =
-  "The schema-v10 non-live cgroup observer contract now requires an exact Docker cgroup component, cgroup-v2 filesystem, a private O_DIRECTORY/O_NOFOLLOW directory descriptor with device/inode identity, bounded descriptor-relative reads, full uint64 BigInt CPU arithmetic, descendant populated=0, explicit sample failure, initial-PID absence, original-cgroup release, and sticky normal/recovery cleanup-action failures. Offline parser and source-tamper tests cover this boundary. It has not run on Linux or Docker, still takes a post-start baseline, is not the private live adapter, and cannot authorize signing or live admission.";
+  "The schema-v11 static contract retains the non-live cgroup observer requirement for an exact Docker cgroup component, cgroup-v2 filesystem, a private O_DIRECTORY/O_NOFOLLOW directory descriptor with device/inode identity, bounded descriptor-relative reads, full uint64 BigInt CPU arithmetic, descendant populated=0, explicit sample failure, initial-PID absence, original-cgroup release, and sticky normal/recovery cleanup-action failures. Offline parser and source-tamper tests cover this boundary. It has not run on Linux or Docker, still takes a post-start baseline, is not the private live adapter, and cannot authorize signing or live admission.";
+const privateCpuAdapterBoundaryNote =
+  "Schema v11 adds an internal private CPU-adapter identity scaffold and a 28-stage dedicated success-order contract. Module-private identity rejects raw evidence, synthetic candidates, non-live observations, copies, wrappers, and JSON-round-tripped values, and there is deliberately no finalized-evidence issuer. The order requires barrier hold before cgroup bind and baseline, release only afterward, and Docker/cgroup cleanup plus controller stop before finalization. This is contract evidence only: no concrete Linux adapter, start barrier, RAW clock, polling, containment, signer admission, PASS signing, or live gate is enabled.";
 for (const name of [
   "how-we-built-it.md",
   "openai-and-codex-usage.md",
@@ -180,6 +182,7 @@ for (const name of [
   append(submissionDirectory, name, v2TransportCapabilityNote);
   append(submissionDirectory, name, syntheticCpuProducerBoundaryNote);
   append(submissionDirectory, name, nonLiveCgroupObserverBoundaryNote);
+  append(submissionDirectory, name, privateCpuAdapterBoundaryNote);
 }
 
 write(

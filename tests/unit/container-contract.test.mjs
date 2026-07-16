@@ -33,7 +33,7 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
   assert.equal(report.releaseReady, false);
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
-  assert.equal(contract.schemaVersion, "10");
+  assert.equal(contract.schemaVersion, "11");
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerStateMachineImplemented, true);
   assert.equal(
     contract.workerContainer.liveCpuEvidenceProducerCandidateStatus,
@@ -44,6 +44,23 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
     "SYNTHETIC_CONTRACT_ONLY",
   );
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerPassSigningEligible, false);
+  assert.equal(
+    contract.workerContainer.liveCpuPrivateAdapterCapabilityScaffoldImplemented,
+    true,
+  );
+  assert.equal(
+    contract.workerContainer.liveCpuFinalizedEvidenceIdentityGuardScaffoldImplemented,
+    true,
+  );
+  assert.equal(contract.workerContainer.liveCpuFinalizedEvidenceIssuanceImplemented, false);
+  assert.equal(contract.workerContainer.liveCpuSignerFinalizedCapabilityRequired, true);
+  assert.equal(
+    contract.workerContainer.liveCpuSignerFinalizedCapabilityAdmissionImplemented,
+    false,
+  );
+  assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleContractImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleSuccessStageCount, 28);
+  assert.equal(contract.workerContainer.liveCpuStartBarrierRuntimeImplemented, false);
   assert.equal(contract.workerContainer.liveCpuLinuxSystemAdapterImplemented, false);
   assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleImplemented, false);
   assert.equal(
