@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — dedicated live lifecycle and Linux CPU producer boundary`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-16 11:22 +09:00`
-- Latest checkpoint commit: `43b04198e72b3c5f6f9158e3a3a6f63716acfefd`
+- Last updated: `2026-07-16 12:17 +09:00`
+- Latest checkpoint commit: `2359445c9fd29b004c0266034e1f55049f99029d`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -95,39 +95,38 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, shell-free Docker lifecycle driver, fake-only aggregate CPU ledger, Worker RPC v2 CPU evidence schema v2, and an internal synthetic-only producer that emits parsed unsigned/non-live/signing-ineligible wrappers with one-read input/observation snapshots and closed failure outcomes | `43b0419` | host live construction and v2 PASS signing remain disabled; no immutable image run, private-capability Linux adapter, dedicated cleanup lifecycle, cgroup observation, observed containment, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, 338-file clean-copy replay, schema-v9 split container contracts with synthetic-producer/current-signing-false versus real-adapter/lifecycle-false facts, canonical local Docker CLI boundary, cgroup-v2 teardown observer, explicit `restart=no` identity checks, TLS-only no-HTTP probe, and static/fake-daemon checks | `43b0419` | real restart/lease behavior, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, signed real-Linux CPU evidence, owner license, shared auth/quotas, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | checksum-pinned OPA/dependency foundation, session/CSRF/body limits, real mTLS plus restart-persistent replay, factory-identity-only v2 transport admission, schema-v10 split container contract, exact-path/private-FD-device-inode cgroup observer, uint64 CPU arithmetic, descendant-quiescence/PID/release facts, sticky cleanup failures, canonical local Docker CLI boundary, `restart=no` identity checks, TLS-only no-HTTP probe, and static/fake-daemon checks | pending | observer runtime remains unverified; start barrier, real restart/lease behavior, immutable Node/role images, Linux Docker daemon, dynamic web/worker/verifier/egress PASS, measured upstream behavior, signed real-Linux CPU evidence, owner license, shared auth/quotas, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
 ### Objective
 
-Create and verify the first CPU evidence v2 producer checkpoint as an internal synthetic-only state machine. It must return only fully parsed, frozen, unsigned/non-live/non-admitted candidate wrappers; keep the existing static/fake lifecycle separate; reject self-declared Linux provenance; preserve the generic mTLS v2 supervisor as FAIL-only; and leave the real Linux adapter plus dedicated bounded-cleanup lifecycle for the next checkpoint without changing any runtime-observation flag.
+Harden the existing non-live Linux cgroup-v2 observer as an offline prerequisite for the future private-capability adapter. Bind membership to an exact Docker cgroup segment, keep follow-up reads on private descriptor/inode-pinned state, preserve unsigned 64-bit `cpu.stat` precision, prove descendant emptiness through `cgroup.events populated`, and reject forged/reused observations. Do not connect this observer to the synthetic producer, signer, generic PASS path, or live gate, and do not change any runtime-observation claim.
 
 ### Starting failing condition
 
-Starting HEAD is clean `main` at `cbcf37cc5ae8553831b4ea69fbce99d21b52e97a`. `pnpm test` passes 249/249. Enrolling `tests/unit/linux-cgroup-cpu-evidence-producer.test.mjs` first fails with `ERR_MODULE_NOT_FOUND`, while all prior 249 tests still pass. CPU evidence schema v2 and Worker RPC bindings exist, but no producer owns the global transcript, arithmetic, typed containment, or candidate boundary. `worker-os-lifecycle.ts` can return only `STATIC_DRIVER_TEST_ONLY`, the existing Linux observer is role-local/post-exit, `worker-entrypoint-contract.ts` remains `VALIDATED_REQUEST_LIVE_DISABLED`, and `live-gate-contract.mjs` ends at `CUMULATIVE_CPU_PROOF_UNAVAILABLE`. Docker CLI 29.1.5 is present but the Linux daemon pipe is absent.
+Starting HEAD is clean `main` at `2359445c9fd29b004c0266034e1f55049f99029d`. The final prior-checkpoint `pnpm verify` passes 265 unit, 57 integration, 22 eval, 3 browser, and production build gates, then fails only at the intentionally unmet owner license and exact 29-item submission gate. Code inspection shows that `scripts/linux-cgroup-observer.mjs` accepts a Docker ID as any path substring, performs path `lstat` then pathname reads, accepts caller-constructed observation objects and their `path`, converts `usage_usec` through `Number`, and checks only the direct `cgroup.procs` file after teardown. No dedicated observer unit test exists. Docker CLI 29.1.5 is present, but the Linux daemon pipe is absent, so all new evidence in this checkpoint must remain parser/contract evidence rather than a real cgroup observation.
 
 ### Planned actions
 
-- [x] Re-read the required control documents, confirm clean `main`, inspect the current Docker/environment boundary, and re-establish the 249-test unit baseline.
-- [x] Map the static lifecycle, Docker driver, Linux observer, CPU evidence v2, Worker RPC v2, worker entrypoint, and live-gate seams; request three bounded read-only reviews.
-- [x] Add the producer test before implementation, reproduce `ERR_MODULE_NOT_FOUND`, then cover strict role order, one monotonic global queue, aggregate budget, non-CPU/controller/containment failures, overlap omission, transient cleanup failure, identity drift, input mutation, abort/overflow poisoning, and fake Linux provenance rejection.
-- [x] Implement an internal synthetic-only CPU evidence v2 recorder/producer with exact request/execution/image/policy/corpus bindings, self-validation through the canonical parser, frozen candidate output, and no root export or signer-eligible path.
-- [x] Align JSON Schema, runtime parsing, and producer semantics so action failure is incomplete even when later release/stop checks recover, while all-success actions may still be incomplete when release/process/controller-stop proof is absent.
-- [x] Record D-040 and advance the static container contract to schema v9 with explicit state-machine-implemented, synthetic-only, Linux-adapter-false, dedicated-lifecycle-false, PASS-false, and exact build-input facts.
-- [x] Update README, start guide, submission source, architecture, threat model, limitations, runbook, and generated-copy source without claiming Linux/Docker/OpenAI/Codex execution.
-- [x] Run focused and authoritative offline gates, independent code/security/truth review, final diff review, and current-branch checkpoint commits.
+- [x] Re-read the required control documents, confirm clean `main`, inspect the existing observer/callers, and preserve the final prior-checkpoint verification baseline.
+- [x] Add focused observer contract tests first and reproduce the missing exact-path, uint64, forged-observation, descendant-quiescence, and actual-byte-limit contracts.
+- [x] Replace pathname-trusting follow-up reads with private descriptor/device/inode-pinned observation state and bounded no-follow reads; make finalization close and invalidate the descriptor on every outcome.
+- [x] Parse `usage_usec` as exact unsigned 64-bit `bigint`, reject regression/overage/final-observation failure in worker/verifier reports, and require exact Docker cgroup path segments.
+- [x] Require `cgroup.events populated 0` plus an empty direct process list, separate subtree/PID/release facts, reject forged/finalized observations, retain independent Docker absence checks, and make normal/recovery cleanup action failures sticky.
+- [x] Record D-041, advance the static contract to schema v10, and update documentation/generated submission copy without setting real-Linux adapter, start-barrier, dedicated lifecycle, dynamic observation, signing, or live-admission facts to true.
+- [x] Run focused tests, lint/typecheck, all repository gates, two independent read-only reviews, and the authoritative offline/live-disabled gates; only final diff review and current-branch checkpoint commits remain.
 
-The dedicated real-Linux adapter and live lifecycle were deliberately split into the next checkpoint under D-040 because they require a private factory capability, pre-execution Docker start barriers, an independent bounded cleanup signal, actual raw-clock and descriptor/inode-pinned cgroup observation, and different finalize-after-cleanup ordering. Reusing the static lifecycle or this synthetic producer would violate the live-proof acceptance boundary.
+This is a hardening prerequisite, not the D-040 real-Linux adapter. A future signer-eligible adapter still requires its own private factory capability, raw monotonic clock, pre-execution start barriers, serial polling/containment, independently bounded cleanup signal, dynamic Linux/Docker evidence, and finalize-after-cleanup lifecycle.
 
 ### Completion evidence
 
-- Starting HEAD: `cbcf37cc5ae8553831b4ea69fbce99d21b52e97a`; clean `main` before this ledger update.
-- Baseline: `pnpm test` passed 249/249 after a fresh core build; enrolling the producer test first reproduced `ERR_MODULE_NOT_FOUND` while preserving the prior 249 passes.
+- Starting HEAD: `2359445c9fd29b004c0266034e1f55049f99029d`; clean `main` before this ledger update.
+- Baseline: the final prior-checkpoint `pnpm verify` passed 265 unit, 57 integration, 22 eval, 3 browser, production build, static contract, 338-file clean-copy, and security/history checks; only the absent owner `LICENSE` and exact 29-item non-final submission gate failed as expected.
 - Environment: Node v22.22.2 and pnpm 11.7.0 are available. Docker CLI 29.1.5 is present, but the Docker Desktop Linux engine pipe is absent; no Docker command reached a daemon.
-- Structural result: the internal synthetic producer now owns deterministic event/arithmetic/failure derivation, but it is non-exported and every wrapper is unsigned, non-live, and ineligible for current signing/admission paths. Its enclosed raw evidence stays parser-valid for contract tests and is not provenance or signer authorization. The real Linux adapter, pre-execution start barrier, independently bounded cleanup lifecycle, and signed result connection remain a separate next checkpoint under D-040.
-- Truth boundary: all work in this checkpoint remains contract/unit evidence until a Linux cgroup v2 host, immutable images, dynamic containment runs, fresh OpenAI/Codex work, and signed live validation exist.
+- Structural result: the non-live observer now binds exact Docker cgroup path forms to a cgroup-v2 directory descriptor and device/inode in module-private state, reads only bounded allowlisted descriptor-relative files, uses full uint64 `bigint` CPU arithmetic, requires descendant quiescence before the final sample, invalidates one-shot handles, and splits subtree/PID/release/Docker/action facts. Independent review found three initial blockers; the unavailable `O_CLOEXEC` constant requirement, report-status gap, and non-sticky normal cleanup actions were corrected, and the follow-up code review found no remaining P0/P1/P2.
+- Truth boundary: no Linux cgroup, Docker daemon, raw clock, containment, OpenAI request, Codex repair, signing, deployment, or live proof may be claimed from this Windows/offline checkpoint.
 
 ## Quality gates
 
@@ -137,24 +136,24 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` | exact 469-entry lock graph passes supply-chain policy | 2026-07-14 15:16 +09:00 |
-| Lint | PASS | `pnpm lint` | CPU evidence v2 producer, fail-only Worker RPC supervisor, schema-v9 static checks, and submission generators pass repository checks | 2026-07-16 11:22 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers the synthetic producer, v1/v2 RPC, evidence v2, bounded hashing, mTLS pre-parse, lifecycle, application, and policy-engine boundaries | 2026-07-16 11:22 +09:00 |
-| Unit tests | PASS | `pnpm test` | 265/265 pass, including producer one-read snapshots, ordering, overlap, overage, transient cleanup failure, identity/input drift, parser-failure/abort/overflow poisoning, fake-provenance rejection, parser/schema parity, RPC, lifecycle, live-gate, and Docker-driver cases | 2026-07-16 11:22 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 57/57 serial mTLS v1/v2, typed pre-execution FAIL signing, replay restart, OPA, evidence, persistence, and fixture assertions pass | 2026-07-16 11:22 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-16 11:22 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass with synthetic-only CPU candidate evidence and explicit live exclusions | 2026-07-16 11:22 +09:00 |
-| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-16 11:22 +09:00 |
-| Offline full verification | FAIL | `pnpm verify` | every implemented offline gate passed; the command exited 1 only for owner-selected project `LICENSE` and the exact 29-item non-final submission gate | 2026-07-16 11:22 +09:00 |
-| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no fresh evidence exists | 2026-07-16 09:17 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 338 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 11:22 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | schema-v9 structural JSON, synthetic producer/signing-eligibility-false markers, TLS input snapshots, and exact worker/verifier/egress hashes pass; Linux adapter/lifecycle and dynamic/live facts remain false | 2026-07-16 11:22 +09:00 |
-| Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-16 09:17 +09:00 |
-| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | role hashes match; fails before Docker at the unset immutable Node base with `dockerInvoked:false`; live CPU observation remains false | 2026-07-16 09:17 +09:00 |
-| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | fails before Docker at the unset immutable Node base; restart/identity/TLS facts remain false and outbound is `NOT_MEASURED` | 2026-07-16 09:17 +09:00 |
+| Lint | PASS | `pnpm lint` | cgroup observer, schema-v10 static checks, cleanup/report failure markers, CPU evidence producer, and submission generators pass repository checks | 2026-07-16 12:17 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers the synthetic producer, v1/v2 RPC, evidence v2, bounded hashing, mTLS pre-parse, lifecycle, application, and policy-engine boundaries | 2026-07-16 12:17 +09:00 |
+| Unit tests | PASS | `pnpm test` | 271/271 pass, adding exact Docker-path, actual-byte-cap, uint64, counter-regression, descendant-populated, forged-handle, schema-v10, source-tamper, RPC, lifecycle, and Docker-driver cases | 2026-07-16 12:17 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 57/57 serial mTLS v1/v2, typed pre-execution FAIL signing, replay restart, OPA, evidence, persistence, and fixture assertions pass | 2026-07-16 12:17 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-16 12:17 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass with schema-v10 non-live observer wording, synthetic-only CPU candidate evidence, and explicit live exclusions | 2026-07-16 12:17 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build includes the dynamic archive and workspace routes | 2026-07-16 12:17 +09:00 |
+| Offline full verification | FAIL | `pnpm verify` | every implemented offline gate passed; 271 unit, 57 integration, 22 eval, 3 browser, security, 339-file clean copy, schema v10, demo, and build pass; exit 1 is only owner `LICENSE` plus the exact 29-item submission gate | 2026-07-16 12:17 +09:00 |
+| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no fresh evidence exists | 2026-07-16 12:17 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 339 source files; frozen offline install and all 11 command groups, including architecture regeneration and production Chrome E2E, pass | 2026-07-16 12:17 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | schema-v10 structural JSON and source markers cover private FD/device/inode observation, exact path/uint64/subtree/release/sticky-failure rules; real adapter/start barrier/lifecycle and dynamic/live facts remain false | 2026-07-16 12:17 +09:00 |
+| Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-16 12:05 +09:00 |
+| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | role hashes match; fails before Docker at the unset immutable Node base with `dockerInvoked:false`; cgroup observer runtime and live CPU observation remain false | 2026-07-16 12:05 +09:00 |
+| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | fails before Docker at the unset immutable Node base; restart/identity/cgroup/TLS facts remain false and outbound is `NOT_MEASURED` | 2026-07-16 12:05 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check` via final `pnpm verify`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-16 11:22 +09:00 |
-| Security review | PASS | `pnpm security:check` | 338 files/309 text files plus Git history; no findings | 2026-07-16 11:22 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; no fabricated live URL, video, license, confirmation, or live Codex capture | 2026-07-16 11:22 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check` via final `pnpm verify`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent | 2026-07-16 12:17 +09:00 |
+| Security review | PASS | `pnpm security:check` | 339 files/310 text files plus Git history; no findings | 2026-07-16 12:17 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; generated schema-v10 observer note remains non-live and no fabricated URL, video, license, confirmation, or Codex capture exists | 2026-07-16 12:17 +09:00 |
 
 ## Product proof metrics
 
@@ -176,6 +175,17 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-16 12:17 +09:00 — Non-live cgroup observer hardened without live promotion
+
+- Milestones: M7 and M9 remain `IN_PROGRESS`; this checkpoint hardens only the role-local dynamic-smoke observer and advances the static container contract to schema v10.
+- Identity/read boundary: only canonical `/docker/<id>` or final `docker-<id>.scope` memberships are accepted. A cgroup-v2 directory descriptor is bound to its canonical path, `/proc/self/fd` target, device, and inode in module-private `WeakMap` state. Follow-up reads are allowlisted, no-follow, fatal-UTF-8, and actually byte-bounded; forged/finalized handles fail closed.
+- CPU/teardown semantics: `usage_usec` covers the full uint64 range as `bigint`; final values must not regress and budget/observation failure now enters the report failure set. Final sampling requires `cgroup.events populated=0` plus an empty direct process list. Subtree quiescence, initial-PID absence, original-cgroup release, Docker absence, and normal/recovery cleanup actions are separate sticky facts.
+- Regression evidence: the new focused file first failed on missing observer-contract exports, then 6/6 focused cases passed. The authoritative suite passes 271/271 unit, 57/57 integration, 22/22 eval, 3/3 Chrome, schema-v10 static checks, 339-file clean-copy replay, 339-file/310-text-file plus Git-history security, demo reset/run, and production build.
+- Review: one read-only gap review identified descendant, forged-path, precision, and TOCTOU risks. Independent final code review found unavailable `O_CLOEXEC`, report-status, and normal-cleanup stickiness defects; all were fixed, and its follow-up found no remaining P0/P1/P2. A separate truth review found and drove current-ledger and v2 claim-audit corrections; no live/Docker/OpenAI/Codex/signing overclaim remains.
+- Expected blockers: `pnpm verify` exits 1 only for the owner-selected project `LICENSE` and exact 29-item submission gate. All three Docker gates fail before daemon use at the unset immutable Node base. `pnpm verify:live` fails before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`.
+- Truth boundary: no Linux cgroup filesystem, Docker daemon, raw monotonic clock, start barrier, containment action, OpenAI request, Codex repair, signing, deployment, or live proof occurred. The observer still takes a post-start baseline and is not the D-040 private live adapter or signer authorization.
+- Commit: `pending`.
 
 ### 2026-07-16 11:22 +09:00 — Synthetic CPU evidence v2 producer verified without live promotion
 
@@ -577,18 +587,18 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Begin the separate private-capability Linux adapter and dedicated finalize-after-cleanup lifecycle while keeping generic PASS signing and the live gate disabled until immutable real-container observations exist.`
+`Finish final diff review and checkpoint commits for the hardened non-live observer, then design the still-separate start-barrier/private-capability Linux adapter and dedicated lifecycle.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the synthetic CPU evidence v2 producer, schema-v9 static contract, documentation, independent review, authoritative verification, and implementation checkpoint are complete; this post-checkpoint ledger commit is the only remaining bookkeeping action`
-- Exact current state: `the internal producer emits only unsigned/non-live/signing-ineligible wrappers with synthetic provenance; enclosed raw evidence is parser-valid contract data but not authorization; the generic supervisor still refuses PASS and all Linux/Docker/OpenAI/Codex observation flags remain false`
-- Last successful command: `the 11:22 pnpm verify sequence passed 265 unit, 57 integration, 22 eval, 3 browser, production build, schema-v9 static checks, 338-file clean-copy, and 338-file/309-text-file security; only LICENSE and the exact 29-item submission gate failed as expected`
+- Why paused: `not paused; implementation, schema-v10 contract, documentation, all authoritative offline gates, dynamic/live preflight failures, and independent follow-up reviews are complete; final diff review and commits remain`
+- Exact current state: `the non-live observer now rejects path substrings, forged/finalized handles, uint64 loss/regression, descendant survivors, unreleased cgroups, and ignored cleanup actions; the post-start baseline and Windows-only coverage prevent live use, while the synthetic producer and every signer/live path remain separate`
+- Last successful command: `the 12:17 pnpm verify sequence passed every implemented gate: 271 unit, 57 integration, 22 eval, 3 browser, schema v10, 339-file clean copy, 339-file/310-text-file security, demo, and build; only LICENSE and the exact 29-item submission gate failed as expected`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `only this post-checkpoint PROGRESS.md ledger update before its documentation commit`
-- Safe resume command/action: `commit this ledger, then design the private-capability Linux adapter and dedicated cleanup lifecycle without enabling PASS until real dynamic observations validate it`
+- Uncommitted files: `schema-v10 cgroup observer implementation, dynamic verifier/report semantics, tests, contract, D-041, documentation, generated submission notes, and this ledger`
+- Safe resume command/action: `review the final diff and commit this checkpoint on main, then record the commit hash in a small ledger commit`
 - One owner action, if any: `none`
 
 ## Final completion record

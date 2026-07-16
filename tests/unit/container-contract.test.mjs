@@ -33,7 +33,7 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
   assert.equal(report.releaseReady, false);
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
-  assert.equal(contract.schemaVersion, "9");
+  assert.equal(contract.schemaVersion, "10");
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerStateMachineImplemented, true);
   assert.equal(
     contract.workerContainer.liveCpuEvidenceProducerCandidateStatus,
@@ -46,6 +46,19 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerPassSigningEligible, false);
   assert.equal(contract.workerContainer.liveCpuLinuxSystemAdapterImplemented, false);
   assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleImplemented, false);
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxCgroupObserverPurpose,
+    "NON_LIVE_DYNAMIC_GATE_ONLY",
+  );
+  assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverPrivateHandleRequired, true);
+  assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverDirectoryFdPinned, true);
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxCgroupObserverDescendantQuiescenceRequired,
+    true,
+  );
+  assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverRuntimeVerified, false);
+  assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverStartBarrierImplemented, false);
+  assert.equal(contract.supervisorDockerExecutor.linuxCgroupObserverLiveEvidenceAdapter, false);
 });
 
 test("worker dynamic verification rejects missing base and build-input tampering before Docker", async () => {
@@ -161,6 +174,7 @@ async function copyStaticContainerInputs(target) {
     "scripts/verifier-preflight.mjs",
     "scripts/worker-container-verify.mjs",
     "scripts/egress-container-verify.mjs",
+    "scripts/linux-cgroup-observer.mjs",
     "scripts/container-verify.mjs",
     "scripts/live-gate-contract.mjs",
     "scripts/pinned-docker-cli.mjs",
@@ -205,6 +219,20 @@ test("static container inspection detects weakened verifier networking and fixtu
   contract.workerContainer.liveCpuV2TransportInputsSnapshotted = true;
   await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
 
+  contract.supervisorDockerExecutor.linuxCgroupObserverRuntimeVerified = true;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /static web\/worker split/u);
+  contract.supervisorDockerExecutor.linuxCgroupObserverRuntimeVerified = false;
+  contract.supervisorDockerExecutor.linuxCgroupObserverCleanupActionFailureSticky = false;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /static web\/worker split/u);
+  contract.supervisorDockerExecutor.linuxCgroupObserverCleanupActionFailureSticky = true;
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+
   const liveCpuSchemaPath = join(
     target,
     "schemas/live-linux-cgroup-cpu-proof.v1.schema.json",
@@ -243,6 +271,18 @@ test("static container inspection detects weakened verifier networking and fixtu
     resolve("schemas/live-linux-cgroup-cpu-evidence.v2.schema.json"),
     liveCpuEvidenceSchemaPath,
   );
+
+  const linuxCgroupObserverPath = join(target, "scripts/linux-cgroup-observer.mjs");
+  const linuxCgroupObserver = await readFile(linuxCgroupObserverPath, "utf8");
+  await writeFile(
+    linuxCgroupObserverPath,
+    linuxCgroupObserver.replace("const observations = new WeakMap();", "const observations = new Map();"),
+    "utf8",
+  );
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /Linux cgroup observer/u);
+  await writeFile(linuxCgroupObserverPath, linuxCgroupObserver, "utf8");
 
   contract.verifierContainer.network = "bridge";
   await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");

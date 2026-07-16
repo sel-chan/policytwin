@@ -16,7 +16,8 @@ import { isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeContainerBuildInput } from "./container-build-inputs.mjs";
 import {
-  assertLinuxCgroupProcessTreeEmpty,
+  assertLinuxCgroupSubtreeQuiescent,
+  isLinuxCgroupCpuUsageWithinBudget,
   observeLinuxCgroupV2,
   readLinuxCgroupCpuUsageUsec,
 } from "./linux-cgroup-observer.mjs";
@@ -35,7 +36,7 @@ export function inspectWorkerContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "9") failures.push("container schema v9 is required");
+  if (contract?.schemaVersion !== "10") failures.push("container schema v10 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }
@@ -382,7 +383,9 @@ async function main() {
     runningInstanceIdentityVerified: false,
     roleCpuBudgetsPostExitObserved: false,
     cumulativeCpuTimeEnforced: false,
-    processTreesReaped: false,
+    cgroupSubtreesQuiescent: false,
+    originalContainerInitPidsAbsent: false,
+    originalCgroupsReleased: false,
     cleanupPassed: false,
     egressProxyVerified: false,
     dynamicIsolationVerified: false,
@@ -698,10 +701,17 @@ async function main() {
     assertStoppedSameContainerInstance(runningWorker, stoppedWorkerBeforeLogs, "Worker");
     try {
       const finalCpuUsageUsec = readLinuxCgroupCpuUsageUsec(workerCgroup);
-      workerCpuBudgetVerified =
-        finalCpuUsageUsec - workerCgroup.initialCpuUsageUsec <= plan.worker.cpuTimeMs * 1_000;
+      workerCpuBudgetVerified = isLinuxCgroupCpuUsageWithinBudget(
+        workerCgroup.initialCpuUsageUsec,
+        finalCpuUsageUsec,
+        plan.worker.cpuTimeMs,
+      );
+      if (!workerCpuBudgetVerified) {
+        failures.push("Worker role-local CPU usage exceeded or regressed against its budget.");
+      }
     } catch {
       workerCpuBudgetVerified = false;
+      failures.push("Worker final cgroup CPU observation failed.");
     }
     const workerLogs = docker(["logs", workerId]);
     const stoppedWorkerAfterLogs = parseDockerContainerInspection(
@@ -710,8 +720,20 @@ async function main() {
     );
     assertStoppedSameContainerInstance(runningWorker, stoppedWorkerAfterLogs, "Worker");
     parsePreflight(workerLogs.stdout, "STATIC_PREFLIGHT_PASS");
-    docker(["network", "disconnect", "--force", workerNetworkId, workerId]);
-    docker(["rm", "--force", workerId]);
+    const disconnectedWorker = docker(
+      ["network", "disconnect", "--force", workerNetworkId, workerId],
+      15_000,
+      true,
+    );
+    if (disconnectedWorker.status !== 0 || disconnectedWorker.error !== undefined) {
+      cleanupFailed = true;
+      throw new Error("Worker normal-path network-disconnect action failed.");
+    }
+    const removedWorker = docker(["rm", "--force", workerId], 30_000, true);
+    if (removedWorker.status !== 0 || removedWorker.error !== undefined) {
+      cleanupFailed = true;
+      throw new Error("Worker normal-path removal action failed.");
+    }
     parseDockerNetworkInspection(docker(["network", "inspect", workerNetworkId]).stdout, {
       id: workerNetworkId,
       name: workerNetwork,
@@ -798,10 +820,17 @@ async function main() {
     assertStoppedSameContainerInstance(runningVerifier, stoppedVerifierBeforeLogs, "Verifier");
     try {
       const finalCpuUsageUsec = readLinuxCgroupCpuUsageUsec(verifierCgroup);
-      verifierCpuBudgetVerified =
-        finalCpuUsageUsec - verifierCgroup.initialCpuUsageUsec <= plan.verifier.cpuTimeMs * 1_000;
+      verifierCpuBudgetVerified = isLinuxCgroupCpuUsageWithinBudget(
+        verifierCgroup.initialCpuUsageUsec,
+        finalCpuUsageUsec,
+        plan.verifier.cpuTimeMs,
+      );
+      if (!verifierCpuBudgetVerified) {
+        failures.push("Verifier role-local CPU usage exceeded or regressed against its budget.");
+      }
     } catch {
       verifierCpuBudgetVerified = false;
+      failures.push("Verifier final cgroup CPU observation failed.");
     }
     const verifierLogs = docker(["logs", verifierId]);
     const stoppedVerifierAfterLogs = parseDockerContainerInspection(
@@ -813,7 +842,11 @@ async function main() {
     if (verifierReceipt.credentialsPresent !== false) {
       throw new Error("Verifier reported credential exposure.");
     }
-    docker(["rm", "--force", verifierId]);
+    const removedVerifier = docker(["rm", "--force", verifierId], 30_000, true);
+    if (removedVerifier.status !== 0 || removedVerifier.error !== undefined) {
+      cleanupFailed = true;
+      throw new Error("Verifier normal-path removal action failed.");
+    }
     facts.restartPolicyVerified = true;
     facts.runningInstanceIdentityVerified = true;
     facts.verifierCommandsPassed = true;
@@ -827,9 +860,21 @@ async function main() {
         if (id === null) continue;
         const inspect = docker(["container", "inspect", id], 10_000, true);
         if (inspect.status === 0) {
-          docker(["stop", "--time", "5", id], 15_000, true);
+          const stopped = docker(["stop", "--time", "5", id], 15_000, true);
+          if (stopped.status !== 0 || stopped.error !== undefined) {
+            cleanupFailed = true;
+            failures.push("Worker container stop action failed.");
+          }
           if (workerNetworkId !== null) {
-            docker(["network", "disconnect", "--force", workerNetworkId, id], 15_000, true);
+            const disconnected = docker(
+              ["network", "disconnect", "--force", workerNetworkId, id],
+              15_000,
+              true,
+            );
+            if (disconnected.status !== 0 || disconnected.error !== undefined) {
+              cleanupFailed = true;
+              failures.push("Worker container network-disconnect action failed.");
+            }
           }
           const removed = docker(["rm", "--force", id], 30_000, true);
           if (removed.status !== 0 || removed.error !== undefined) {
@@ -895,18 +940,30 @@ async function main() {
         failures.push("Docker worker network absence was not independently observed.");
       }
     }
-    let processTreesReaped = workerCgroup !== null && verifierCgroup !== null;
+    let cgroupSubtreesQuiescent = workerCgroup !== null && verifierCgroup !== null;
+    let originalContainerInitPidsAbsent = cgroupSubtreesQuiescent;
+    let originalCgroupsReleased = cgroupSubtreesQuiescent;
     for (const cgroup of [workerCgroup, verifierCgroup]) {
       if (cgroup === null) continue;
       try {
-        assertLinuxCgroupProcessTreeEmpty(cgroup);
+        const release = assertLinuxCgroupSubtreeQuiescent(cgroup);
+        originalContainerInitPidsAbsent &&= release.initialPidAbsent;
+        originalCgroupsReleased &&= release.originalCgroupReleased;
+        if (!release.originalCgroupReleased) {
+          cleanupFailed = true;
+          failures.push("An original container cgroup was not released.");
+        }
       } catch {
-        processTreesReaped = false;
+        cgroupSubtreesQuiescent = false;
+        originalContainerInitPidsAbsent = false;
+        originalCgroupsReleased = false;
         cleanupFailed = true;
-        failures.push("A container cgroup still has an unobserved process tree.");
+        failures.push("A container cgroup subtree was not proven quiescent.");
       }
     }
-    facts.processTreesReaped = processTreesReaped;
+    facts.cgroupSubtreesQuiescent = cgroupSubtreesQuiescent;
+    facts.originalContainerInitPidsAbsent = originalContainerInitPidsAbsent;
+    facts.originalCgroupsReleased = originalCgroupsReleased;
     facts.roleCpuBudgetsPostExitObserved =
       workerCpuBudgetVerified && verifierCpuBudgetVerified;
     facts.cleanupPassed = dockerInvoked && !cleanupFailed;
@@ -918,7 +975,9 @@ async function main() {
       facts.verifierCgroupObserved &&
       facts.restartPolicyVerified &&
       facts.runningInstanceIdentityVerified &&
-      facts.processTreesReaped &&
+      facts.cgroupSubtreesQuiescent &&
+      facts.originalContainerInitPidsAbsent &&
+      facts.originalCgroupsReleased &&
       facts.roleCpuBudgetsPostExitObserved &&
       facts.workerStaticPreflight &&
       facts.verifierCommandsPassed &&

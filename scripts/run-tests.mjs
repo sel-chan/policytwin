@@ -23,6 +23,7 @@ const suites = {
     "tests/unit/live-linux-cgroup-cpu-proof.test.mjs",
     "tests/unit/live-linux-cgroup-cpu-evidence-v2.test.mjs",
     "tests/unit/linux-cgroup-cpu-evidence-producer.test.mjs",
+    "tests/unit/linux-cgroup-observer.test.mjs",
     "tests/unit/worker-os-lifecycle.test.mjs",
     "tests/unit/supervisor-docker-driver.test.mjs",
     "tests/unit/pinned-docker-cli.test.mjs",

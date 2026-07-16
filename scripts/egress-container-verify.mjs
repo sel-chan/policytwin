@@ -16,7 +16,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeContainerBuildInput } from "./container-build-inputs.mjs";
 import {
-  assertLinuxCgroupProcessTreeEmpty,
+  assertLinuxCgroupSubtreeQuiescent,
   observeLinuxCgroupV2,
 } from "./linux-cgroup-observer.mjs";
 import {
@@ -37,7 +37,7 @@ export function inspectEgressContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "9") failures.push("container schema v9 is required");
+  if (contract?.schemaVersion !== "10") failures.push("container schema v10 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }
@@ -380,7 +380,9 @@ async function main() {
     probeCgroupObserved: false,
     restartPolicyVerified: false,
     runningInstanceIdentityVerified: false,
-    processTreesReaped: false,
+    cgroupSubtreesQuiescent: false,
+    originalContainerInitPidsAbsent: false,
+    originalCgroupsReleased: false,
     secretMaterialDeleted: false,
     cleanupPassed: false,
     dynamicIsolationVerified: false,
@@ -832,10 +834,18 @@ async function main() {
       [egressId, [workerNetworkId, outboundNetworkId]],
     ]) {
       if (containerId === null) continue;
-      docker(["stop", "--time", "5", containerId], 15_000, true);
+      const stopped = docker(["stop", "--time", "5", containerId], 15_000, true);
+      if (stopped.status !== 0 || stopped.error !== undefined) cleanupFailed = true;
       for (const networkId of networkIds) {
         if (networkId !== null) {
-          docker(["network", "disconnect", "--force", networkId, containerId], 15_000, true);
+          const disconnected = docker(
+            ["network", "disconnect", "--force", networkId, containerId],
+            15_000,
+            true,
+          );
+          if (disconnected.status !== 0 || disconnected.error !== undefined) {
+            cleanupFailed = true;
+          }
         }
       }
       const removed = docker(["rm", "--force", containerId], 30_000, true);
@@ -889,17 +899,26 @@ async function main() {
         cleanupFailed = true;
       }
     }
-    let processTreesReaped = egressCgroup !== null && probeCgroup !== null;
+    let cgroupSubtreesQuiescent = egressCgroup !== null && probeCgroup !== null;
+    let originalContainerInitPidsAbsent = cgroupSubtreesQuiescent;
+    let originalCgroupsReleased = cgroupSubtreesQuiescent;
     for (const cgroup of [egressCgroup, probeCgroup]) {
       if (cgroup === null) continue;
       try {
-        assertLinuxCgroupProcessTreeEmpty(cgroup);
+        const release = assertLinuxCgroupSubtreeQuiescent(cgroup);
+        originalContainerInitPidsAbsent &&= release.initialPidAbsent;
+        originalCgroupsReleased &&= release.originalCgroupReleased;
+        if (!release.originalCgroupReleased) cleanupFailed = true;
       } catch {
-        processTreesReaped = false;
+        cgroupSubtreesQuiescent = false;
+        originalContainerInitPidsAbsent = false;
+        originalCgroupsReleased = false;
         cleanupFailed = true;
       }
     }
-    facts.processTreesReaped = processTreesReaped;
+    facts.cgroupSubtreesQuiescent = cgroupSubtreesQuiescent;
+    facts.originalContainerInitPidsAbsent = originalContainerInitPidsAbsent;
+    facts.originalCgroupsReleased = originalCgroupsReleased;
     if (secretRoot !== null) {
       try {
         rmSync(secretRoot, { recursive: true, force: true });
@@ -923,7 +942,9 @@ async function main() {
       facts.probeCgroupObserved &&
       facts.restartPolicyVerified &&
       facts.runningInstanceIdentityVerified &&
-      facts.processTreesReaped &&
+      facts.cgroupSubtreesQuiescent &&
+      facts.originalContainerInitPidsAbsent &&
+      facts.originalCgroupsReleased &&
       facts.secretMaterialDeleted &&
       facts.cleanupPassed;
   }

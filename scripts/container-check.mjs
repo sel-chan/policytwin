@@ -114,6 +114,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   const containerVerifyPath = resolve(root, "scripts", "container-verify.mjs");
   const workerVerifyPath = resolve(root, "scripts", "worker-container-verify.mjs");
   const egressVerifyPath = resolve(root, "scripts", "egress-container-verify.mjs");
+  const linuxCgroupObserverPath = resolve(root, "scripts", "linux-cgroup-observer.mjs");
   const contractBody = read(contractPath, failures, "Container contract");
   let contract = null;
   try {
@@ -133,7 +134,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "9" ||
+    contract.schemaVersion !== "10" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -366,8 +367,20 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.supervisorDockerExecutor?.cpuControllerBoundaryBreachBlocksCleanupProof !== true ||
     contract.supervisorDockerExecutor?.staticCpuBudgetController !== "SERIAL_FAKE_ONLY" ||
     contract.supervisorDockerExecutor?.liveCpuBooleanTrustAllowed !== false ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverContractVersion !== "2" ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverPurpose !==
+      "NON_LIVE_DYNAMIC_GATE_ONLY" ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverPrivateHandleRequired !== true ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverDirectoryFdPinned !== true ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverExactDockerIdentityRequired !== true ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverCpuUsageUint64BigInt !== true ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverDescendantQuiescenceRequired !== true ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverOriginalReleaseRequired !== true ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverCleanupActionFailureSticky !== true ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverRuntimeVerified !== false ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverStartBarrierImplemented !== false ||
+    contract.supervisorDockerExecutor?.linuxCgroupObserverLiveEvidenceAdapter !== false ||
     contract.supervisorDockerExecutor?.linuxCgroupCpuActuationImplemented !== false ||
-    contract.supervisorDockerExecutor?.cgroupV2ProcessTreeRequiredForDynamicGate !== true ||
     contract.supervisorDockerExecutor?.publishedPortsAllowed !== false ||
     JSON.stringify(contract.supervisorDockerExecutor?.policytwinLabelKeys) !==
       JSON.stringify([
@@ -985,7 +998,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "9"',
+    'contract.schemaVersion !== "10"',
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
   ]) {
@@ -1008,7 +1021,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "9"',
+    'contract?.schemaVersion !== "10"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     '"Dockerfile.worker"',
@@ -1025,6 +1038,17 @@ export function inspectStaticContainerContract(root = ROOT) {
     "assertStoppedSameContainerInstance",
     "runningInstanceIdentityVerified",
     "facts.roleCpuBudgetsPostExitObserved",
+    "facts.cgroupSubtreesQuiescent",
+    "facts.originalCgroupsReleased",
+    "Worker role-local CPU usage exceeded or regressed against its budget.",
+    "Verifier role-local CPU usage exceeded or regressed against its budget.",
+    "Worker final cgroup CPU observation failed.",
+    "Verifier final cgroup CPU observation failed.",
+    "Worker normal-path network-disconnect action failed.",
+    "Worker normal-path removal action failed.",
+    "Verifier normal-path removal action failed.",
+    "const stopped = docker(",
+    "const disconnected = docker(",
     'docker(["rm", "--force", id]',
     "Worker run workspace cleanup failed.",
   ]) {
@@ -1052,7 +1076,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "9"',
+    'contract?.schemaVersion !== "10"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',
@@ -1062,13 +1086,36 @@ export function inspectStaticContainerContract(root = ROOT) {
     "parseDockerContainerInspection",
     "assertSameRunningContainerInstance",
     "runningInstanceIdentityVerified",
-    'docker(["network", "disconnect", "--force", networkId, containerId]',
+    "facts.cgroupSubtreesQuiescent",
+    "facts.originalCgroupsReleased",
+    "const stopped = docker(",
+    "const disconnected = docker(",
     "probeHttpRequestSent: false",
     'proxyUpstreamTrafficObservation: "NOT_MEASURED"',
     "probeModelInvocation: false",
     "liveCodexExecuted: false",
   ]) {
     requireText(egressVerify, required, failures, "Egress container verifier");
+  }
+  const linuxCgroupObserver = read(
+    linuxCgroupObserverPath,
+    failures,
+    "Linux cgroup observer",
+  );
+  for (const required of [
+    "const observations = new WeakMap();",
+    'requiredLinuxOpenFlag("O_DIRECTORY")',
+    "realpathSync.native(`/proc/self/fd/${directoryFileDescriptor}`) !== path",
+    "parseLinuxCgroupPopulated",
+    "populated || processIds.length !== 0",
+    "const UINT64_MAX = (1n << 64n) - 1n;",
+    "finalUsageUsec >= initialUsageUsec",
+    "closeObservationState(state)",
+  ]) {
+    requireText(linuxCgroupObserver, required, failures, "Linux cgroup observer");
+  }
+  if (linuxCgroupObserver.includes('requiredLinuxOpenFlag("O_CLOEXEC")')) {
+    failures.push("Linux cgroup observer must not require Node to expose O_CLOEXEC.");
   }
   requireOrderedText(
     egressVerify,
