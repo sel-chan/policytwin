@@ -9,7 +9,7 @@
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
 - Last updated: `2026-07-17 10:54 +09:00`
-- Latest checkpoint commit: `995b12c9bc9e1207ee5cda6b5bc31e55db47861e`
+- Latest checkpoint commit: `447f077797fdaf712f1d75d4a632a4a5c2a1b847`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,9 +93,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v15 lifecycle-v3 Docker/helper construction plus exact helper-artifact identity binding pass offline contracts | pending | no immutable helper artifact has been built, installed, or run on Linux Docker/cgroup v2; finalized-result issuance, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, and signed live evidence remain absent |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v15 lifecycle-v3 Docker/helper construction plus exact helper-artifact identity binding pass offline contracts | `447f077` | no immutable helper artifact has been built, installed, or run on Linux Docker/cgroup v2; finalized-result issuance, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, and signed live evidence remain absent |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 adds a no-download scratch helper-artifact recipe, fixed source/build/ELF/tar checks, byte-identical local build evidence, lifecycle-v3 hash binding, a no-pull/no-network dynamic artifact gate, and offline/live compatibility for safely pinned helper identities; 315 unit, 57 integration, 22 eval, static container, 335-file security, and 365-file clean-copy gates pass | pending | digest-pinned compiler/Node/role images, Docker daemon, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 adds a no-download scratch helper-artifact recipe, fixed source/build/ELF/tar checks, byte-identical local build evidence, lifecycle-v3 hash binding, a no-pull/no-network dynamic artifact gate, and offline/live compatibility for safely pinned helper identities; 315 unit, 57 integration, 22 eval, static container, 335-file security, and 365-file clean-copy gates pass | `447f077` | digest-pinned compiler/Node/role images, Docker daemon, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -190,6 +190,7 @@ Never fill from estimates.
 - Verification: 315/315 unit, 57/57 integration, 22/22 eval, 3/3 browser, 335-text-file security plus Git history, 365-file clean-copy replay, static container, demo, and production build pass. `pnpm verify` exits only for the owner-selected `LICENSE` and exact 29-item non-final submission gate.
 - Build-input bindings: worker `91839f30c2ce65c6c93db149507143dc371170369daacb8bfe402b3e441988c6`; verifier `f688fa01fc35b377c91578e404506eb47ccf6a2eaf6c2c4a3f2162856710c3a3`; egress `dd359a1723d06218ecf6cd9a7966423f6adbd5265aac5392d8d3bdc1cc945a21`; helper `2c4b74f1126fb25244f449dd9ded6ad166c01d678de138bfc5b3337b0aea2d2d`; source `bfcd860b0e7771130b91ef89fc8762b11c87aadf48b128c0a9d2cc75dbad9e23`.
 - Decision: D-046 records the artifact-only scratch image, local-versus-pinned proof distinction, lifecycle identity binding, and remaining dynamic requirements.
+- Checkpoint commit: `447f077797fdaf712f1d75d4a632a4a5c2a1b847` (`feat: bind immutable native helper artifact`).
 - Next: with explicit Docker registry scope and a running local Linux daemon, select already-reviewed digest-pinned compiler and Node bases, build/discover/pin the helper and role image IDs, then run artifact, web, worker, egress, and private Linux cgroup-v2 failure-injection gates. Do not add a finalized-result issuer or PASS signer before those gates pass.
 
 ### 2026-07-17 09:24 +09:00 — Schema-v14 sealed lifecycle and owned-network checkpoint verified offline
@@ -656,13 +657,13 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the schema-v15 helper-artifact/lifecycle-v3 checkpoint is offline-verified and awaiting its current-branch checkpoint commit`
+- Why paused: `schema-v15 helper-artifact/lifecycle-v3 checkpoint is offline-verified and committed; the next dynamic phase requires the owner-controlled Docker Linux engine and newly approved registry scope`
 - Exact current state: `the helper has a fixed no-download scratch artifact recipe, source/build/ELF/tar validation, byte-identical unpinned local-build evidence, sealed lifecycle-v3 identity binding, and a first-in-order live artifact gate; no immutable helper image, host install, Linux Docker/cgroup-v2 transcript, finalized-evidence issuer, signer, PASS, or live admission exists`
 - Last successful command: `pnpm verify completed every implemented schema-v15 step with 315/315 unit, 57/57 integration, 22/22 eval, 3/3 browser, 365-file clean-copy, 335-file security/history, static container, demo, and build passing; it remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm helper:verify fails before Docker at the unset immutable builder; web/worker fail at the unset Node base; egress also lacks sealed helper IDs; pnpm verify:live fails before dynamic gates/network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `schema-v15 checkpoint changes pending final verification, diff review, and current-branch commits`
-- Safe resume command/action: `confirm the checkpoint commits and clean status, then run the helper artifact gate first after the owner supplies the exact Docker/registry prerequisites`
-- One owner action, if any: `start the Docker Desktop Linux engine and explicitly approve pulls of selected digest-pinned compiler and Node images`
+- Uncommitted files: `none after the checkpoint and ledger commits`
+- Safe resume command/action: `after the owner supplies the exact Docker/registry prerequisites, confirm clean main and run the helper artifact gate first`
+- One owner action, if any: `start the Docker Desktop Linux engine, then reply with explicit approval to pull the selected digest-pinned compiler and Node images`
 
 ## Final completion record
 
