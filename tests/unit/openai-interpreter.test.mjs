@@ -6,6 +6,7 @@ import {
   interpretPolicyWithOpenAI,
   PolicyInterpreterError,
 } from "../../dist/openai/interpreter.js";
+import { createPolicyIRModelOutputJsonSchema } from "../../dist/policy-ir/zod-schema.js";
 import {
   readUtf8BodyLimited,
   RequestBodyTooLargeError,
@@ -35,6 +36,16 @@ function input(overrides = {}) {
     goldenCases,
     ...overrides,
   };
+}
+
+function modelOutput(policyIR = recorded) {
+  const output = structuredClone(policyIR);
+  delete output.inputSchema;
+  delete output.metadata;
+  for (const ambiguity of output.ambiguities) {
+    ambiguity.selectedOptionId ??= null;
+  }
+  return output;
 }
 
 function clock() {
@@ -149,7 +160,7 @@ test("builds a strict GPT-5.6 Responses request and trusts only server provenanc
       responses: {
         async create(parameters) {
           requests.push(parameters);
-          return { id: "resp_live_123", output_text: JSON.stringify(recorded) };
+          return { id: "resp_live_123", output_text: JSON.stringify(modelOutput()) };
         },
       },
     },
@@ -162,15 +173,9 @@ test("builds a strict GPT-5.6 Responses request and trusts only server provenanc
   assert.equal(requests[0].store, false);
   assert.equal(requests[0].max_output_tokens, 12_000);
   assert.equal(requests[0].text.format.type, "json_schema");
+  assert.equal(requests[0].text.format.name, "policy_ir_v1");
   assert.equal(requests[0].text.format.strict, true);
-  assert.equal("metadata" in requests[0].text.format.schema.properties, false);
-  assert.equal("inputSchema" in requests[0].text.format.schema.properties, false);
-  const ambiguitySchema = requests[0].text.format.schema.$defs.ambiguity;
-  assert.equal(ambiguitySchema.required.includes("selectedOptionId"), true);
-  assert.equal(
-    ambiguitySchema.properties.selectedOptionId.anyOf.some((item) => item.type === "null"),
-    true,
-  );
+  assert.deepEqual(requests[0].text.format.schema, createPolicyIRModelOutputJsonSchema());
   assert.equal("apiKey" in requests[0], false);
   assert.equal(result.policyIR.metadata.source, "LIVE_RESPONSE");
   assert.equal(result.policyIR.metadata.requestId, "resp_live_123");
@@ -188,7 +193,7 @@ test("retries one recoverable structured-output failure and then succeeds", asyn
           calls += 1;
           return calls === 1
             ? { id: "resp_bad", output_text: "not-json" }
-            : { id: "resp_good", output_text: JSON.stringify(recorded) };
+            : { id: "resp_good", output_text: JSON.stringify(modelOutput()) };
         },
       },
     },
@@ -242,7 +247,7 @@ test("rejects incomplete source traceability and mismatched request identity", a
       {
         responses: {
           async create() {
-            return { id: "resp_incomplete", output_text: JSON.stringify(incomplete) };
+            return { id: "resp_incomplete", output_text: JSON.stringify(modelOutput(incomplete)) };
           },
         },
       },
@@ -258,7 +263,7 @@ test("rejects incomplete source traceability and mismatched request identity", a
       {
         responses: {
           async create() {
-            return { id: "resp_identity", output_text: JSON.stringify(wrongIdentity) };
+            return { id: "resp_identity", output_text: JSON.stringify(modelOutput(wrongIdentity)) };
           },
         },
       },
@@ -278,7 +283,10 @@ test("rejects a schema-valid interpretation that contradicts golden cases", asyn
       {
         responses: {
           async create() {
-            return { id: "resp_contradiction", output_text: JSON.stringify(contradictory) };
+            return {
+              id: "resp_contradiction",
+              output_text: JSON.stringify(modelOutput(contradictory)),
+            };
           },
         },
       },

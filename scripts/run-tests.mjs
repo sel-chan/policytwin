@@ -10,6 +10,7 @@ const suites = {
     "tests/unit/architecture-asset.test.mjs",
     "tests/unit/refund-domain.test.mjs",
     "tests/unit/clause-segmentation.test.mjs",
+    "tests/unit/policy-ir-zod-schema.test.mjs",
     "tests/unit/policy-ir-validation.test.mjs",
     "tests/unit/policy-resolution.test.mjs",
     "tests/unit/policy-state.test.mjs",

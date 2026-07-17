@@ -32,7 +32,7 @@ flowchart LR
 
 Implemented offline:
 
-- strict refund input and `PolicyIR` validation;
+- strict refund input validation plus one Zod-defined `PolicyIR` structural contract shared by runtime admission, the generated checked-in JSON Schema, and the model-owned Responses Structured Outputs projection. Server-owned metadata/input schema are excluded from model output and injected only after the projection passes locally; deterministic semantic validation still owns references, field/value compatibility, exact input schema, source coverage, patches, and golden-case agreement;
 - explicit ambiguity patches and state transitions;
 - deterministic Rego source generation;
 - policy-derived cases, conflicts, contrasts, and mutation execution;

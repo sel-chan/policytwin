@@ -7,6 +7,10 @@ import { REFUND_INPUT_SCHEMA_V1 } from "../domain/refund-schema.js";
 import { segmentPolicyClauses } from "../policy-ir/clauses.js";
 import { findGoldenContradictions } from "../policy-ir/evaluate.js";
 import { parsePolicyIR, PolicyIRValidationError } from "../policy-ir/validate.js";
+import {
+  createPolicyIRModelOutputTextFormat,
+  PolicyIRModelOutputSchema,
+} from "../policy-ir/zod-schema.js";
 import type { PolicyIR } from "../policy-ir/types.js";
 
 const PROMPT_VERSION = "interpreter.v1" as const;
@@ -101,47 +105,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function strictifyResponseSchema(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((item) => strictifyResponseSchema(item));
-  }
-  if (!isRecord(value)) {
-    return value;
-  }
-  const result: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value)) {
-    if (["$schema", "$id", "title", "allOf", "if", "then"].includes(key)) {
-      continue;
-    }
-    result[key === "oneOf" ? "anyOf" : key] = strictifyResponseSchema(item);
-  }
-  if (result.type === "object" && isRecord(result.properties)) {
-    result.additionalProperties = false;
-    result.required = Object.keys(result.properties);
-  }
-  return result;
-}
-
-function loadResponseSchema(): Record<string, unknown> {
-  const schema = JSON.parse(
-    readFileSync(resolve(process.cwd(), "schemas", "policy-ir.v1.schema.json"), "utf8"),
-  ) as Record<string, unknown>;
-  const properties = isRecord(schema.properties) ? schema.properties : {};
-  delete properties.metadata;
-  delete properties.inputSchema;
-  schema.required = Array.isArray(schema.required)
-    ? schema.required.filter((name) => name !== "metadata" && name !== "inputSchema")
-    : [];
-  const definitions = isRecord(schema.$defs) ? schema.$defs : {};
-  delete definitions.metadata;
-  const ambiguity = isRecord(definitions.ambiguity) ? definitions.ambiguity : {};
-  const ambiguityProperties = isRecord(ambiguity.properties) ? ambiguity.properties : {};
-  ambiguityProperties.selectedOptionId = {
-    anyOf: [{ type: "string", minLength: 1 }, { type: "null" }],
-  };
-  return strictifyResponseSchema(schema) as Record<string, unknown>;
-}
-
 function loadPrompt(): string {
   return readFileSync(resolve(process.cwd(), "prompts", "interpreter.v1.md"), "utf8");
 }
@@ -188,7 +151,6 @@ function sanitizeModelValue(value: unknown): unknown {
 
 function withTrustedMetadata(
   value: unknown,
-  input: PolicyInterpretationInput,
   model: string,
   responseId: string,
   createdAt: string,
@@ -229,12 +191,7 @@ function requestParameters(
       goldenCases,
     }),
     text: {
-      format: {
-        type: "json_schema",
-        name: "policy_ir_v1",
-        strict: true,
-        schema: loadResponseSchema(),
-      },
+      format: createPolicyIRModelOutputTextFormat(),
     },
     metadata: {
       prompt_version: PROMPT_VERSION,
@@ -278,9 +235,17 @@ export async function interpretPolicyWithClient(
 
     try {
       const completedAt = now().toISOString();
-      const value = withTrustedMetadata(
+      const modelOutput = PolicyIRModelOutputSchema.safeParse(
         JSON.parse(envelope.output_text) as unknown,
-        input,
+      );
+      if (!modelOutput.success) {
+        throw new PolicyInterpreterError(
+          "OUTPUT_INVALID",
+          `Structured model output failed PolicyIR admission: ${modelOutput.error.message}`,
+        );
+      }
+      const value = withTrustedMetadata(
+        modelOutput.data,
         model,
         envelope.id,
         completedAt,

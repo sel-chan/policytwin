@@ -48,6 +48,12 @@ test("rejects dangling traceability, duplicate priority, and category/patch mism
   }, "PATCH_CATEGORY_MISMATCH");
 });
 
+test("rejects duplicate trace entries through the shared structural contract", () => {
+  expectInvalid((candidate) => {
+    candidate.rules[0].sourceClauseIds.push(candidate.rules[0].sourceClauseIds[0]);
+  }, "SCHEMA_VIOLATION");
+});
+
 test("requires request evidence for live output but not recorded fixtures", () => {
   expectInvalid((candidate) => {
     candidate.metadata.source = "LIVE_RESPONSE";

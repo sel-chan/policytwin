@@ -3,7 +3,89 @@
   "$id": "https://policytwin.local/schemas/policy-ir.v1.schema.json",
   "title": "PolicyIR v1",
   "type": "object",
-  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "policyId": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1"
+    },
+    "domain": {
+      "type": "string",
+      "const": "saas_refund"
+    },
+    "clauses": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/clause"
+      }
+    },
+    "rules": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "defaultDecision": {
+      "$ref": "#/$defs/decision"
+    },
+    "normalization": {
+      "type": "object",
+      "properties": {
+        "purchaseDayIndex": {
+          "anyOf": [
+            {
+              "type": "number",
+              "const": 0
+            },
+            {
+              "type": "number",
+              "const": 1
+            }
+          ]
+        },
+        "usageMeasuredAt": {
+          "type": "string",
+          "enum": [
+            "REQUEST_TIME",
+            "DECISION_TIME"
+          ]
+        }
+      },
+      "required": [
+        "purchaseDayIndex",
+        "usageMeasuredAt"
+      ],
+      "additionalProperties": false
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ambiguity"
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    }
+  },
   "required": [
     "id",
     "policyId",
@@ -12,126 +94,84 @@
     "domain",
     "clauses",
     "rules",
-    "ambiguities",
     "defaultDecision",
     "normalization",
+    "ambiguities",
     "inputSchema",
     "metadata"
   ],
-  "properties": {
-    "id": { "type": "string", "minLength": 1 },
-    "policyId": { "type": "string", "minLength": 1 },
-    "version": { "type": "integer", "minimum": 1 },
-    "schemaVersion": { "const": "1" },
-    "domain": { "const": "saas_refund" },
-    "clauses": {
-      "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/clause" }
-    },
-    "rules": {
-      "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/rule" }
-    },
-    "ambiguities": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/ambiguity" }
-    },
-    "defaultDecision": { "$ref": "#/$defs/decision" },
-    "normalization": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["purchaseDayIndex", "usageMeasuredAt"],
-      "properties": {
-        "purchaseDayIndex": { "enum": [0, 1] },
-        "usageMeasuredAt": { "enum": ["REQUEST_TIME", "DECISION_TIME"] }
-      }
-    },
-    "inputSchema": { "type": "object" },
-    "metadata": { "$ref": "#/$defs/metadata" }
-  },
+  "additionalProperties": false,
   "$defs": {
-    "decision": { "enum": ["ALLOW", "DENY", "REVIEW"] },
-    "inputField": {
-      "enum": [
-        "daysSincePurchase",
-        "usageBasisPoints",
-        "promotionalPurchase",
-        "finalSale",
-        "managerApproved",
-        "planType"
-      ]
-    },
-    "scalar": {
-      "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
     },
     "clause": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "text", "startOffset", "endOffset", "normalizedText"],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "text": { "type": "string", "minLength": 1 },
-        "startOffset": { "type": "integer", "minimum": 0 },
-        "endOffset": { "type": "integer", "minimum": 1 },
-        "normalizedText": { "type": "string", "minLength": 1 }
-      }
-    },
-    "predicate": {
-      "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["type", "field", "operator", "value"],
-          "properties": {
-            "type": { "const": "compare" },
-            "field": { "$ref": "#/$defs/inputField" },
-            "operator": { "enum": ["eq", "neq", "lt", "lte", "gt", "gte"] },
-            "value": { "$ref": "#/$defs/scalar" }
-          }
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
         },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["type", "field", "values"],
-          "properties": {
-            "type": { "const": "in" },
-            "field": { "$ref": "#/$defs/inputField" },
-            "values": {
-              "type": "array",
-              "minItems": 1,
-              "items": { "$ref": "#/$defs/scalar" }
-            }
-          }
+        "text": {
+          "$ref": "#/$defs/nonEmptyString"
         },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["type", "children"],
-          "properties": {
-            "type": { "enum": ["and", "or"] },
-            "children": {
-              "type": "array",
-              "minItems": 2,
-              "items": { "$ref": "#/$defs/predicate" }
-            }
-          }
+        "startOffset": {
+          "$ref": "#/$defs/nonNegativeInteger"
         },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["type", "child"],
-          "properties": {
-            "type": { "const": "not" },
-            "child": { "$ref": "#/$defs/predicate" }
-          }
+        "endOffset": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "normalizedText": {
+          "$ref": "#/$defs/nonEmptyString"
         }
-      ]
+      },
+      "required": [
+        "id",
+        "text",
+        "startOffset",
+        "endOffset",
+        "normalizedText"
+      ],
+      "additionalProperties": false
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "__schema0": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
     },
     "rule": {
       "type": "object",
-      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceClauseIds": {
+          "$ref": "#/$defs/__schema1"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "when": {
+          "$ref": "#/$defs/predicate"
+        },
+        "decision": {
+          "$ref": "#/$defs/decision"
+        },
+        "priority": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "explanationTemplate": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
       "required": [
         "id",
         "sourceClauseIds",
@@ -142,134 +182,191 @@
         "priority",
         "explanationTemplate"
       ],
-      "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "sourceClauseIds": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "title": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 },
-        "when": { "$ref": "#/$defs/predicate" },
-        "decision": { "$ref": "#/$defs/decision" },
-        "priority": { "type": "integer", "minimum": 0 },
-        "explanationTemplate": { "type": "string", "minLength": 1 }
-      }
+      "additionalProperties": false
     },
-    "refundInput": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
+    "__schema1": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "predicate": {
+      "$ref": "#/$defs/__schema2"
+    },
+    "__schema2": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "compare"
+            },
+            "field": {
+              "$ref": "#/$defs/inputField"
+            },
+            "operator": {
+              "type": "string",
+              "enum": [
+                "eq",
+                "neq",
+                "lt",
+                "lte",
+                "gt",
+                "gte"
+              ]
+            },
+            "value": {
+              "$ref": "#/$defs/scalar"
+            }
+          },
+          "required": [
+            "type",
+            "field",
+            "operator",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "in"
+            },
+            "field": {
+              "$ref": "#/$defs/inputField"
+            },
+            "values": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/scalar"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "field",
+            "values"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "and",
+                "or"
+              ]
+            },
+            "children": {
+              "minItems": 2,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "children"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "not"
+            },
+            "child": {
+              "$ref": "#/$defs/predicate"
+            }
+          },
+          "required": [
+            "type",
+            "child"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "inputField": {
+      "type": "string",
+      "enum": [
         "daysSincePurchase",
         "usageBasisPoints",
         "promotionalPurchase",
         "finalSale",
         "managerApproved",
         "planType"
-      ],
-      "properties": {
-        "daysSincePurchase": { "type": "integer", "minimum": 0 },
-        "usageBasisPoints": { "type": "integer", "minimum": 0 },
-        "promotionalPurchase": { "type": "boolean" },
-        "finalSale": { "type": "boolean" },
-        "managerApproved": { "type": "boolean" },
-        "planType": { "enum": ["MONTHLY", "ANNUAL", "ENTERPRISE"] }
-      }
+      ]
     },
-    "exampleImpact": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["input", "result"],
-      "properties": {
-        "input": { "$ref": "#/$defs/refundInput" },
-        "result": { "$ref": "#/$defs/decision" }
-      }
-    },
-    "policyPatch": {
-      "oneOf": [
+    "scalar": {
+      "anyOf": [
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["op", "field", "value"],
-          "properties": {
-            "op": { "const": "SET_NORMALIZATION" },
-            "field": { "const": "purchaseDayIndex" },
-            "value": { "enum": [0, 1] }
-          }
+          "$ref": "#/$defs/__schema3"
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["op", "field", "value"],
-          "properties": {
-            "op": { "const": "SET_NORMALIZATION" },
-            "field": { "const": "usageMeasuredAt" },
-            "value": { "enum": ["REQUEST_TIME", "DECISION_TIME"] }
-          }
+          "$ref": "#/$defs/__schema4"
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["op", "ruleId", "field", "value"],
-          "properties": {
-            "op": { "const": "SET_BOUNDARY_OPERATOR" },
-            "ruleId": { "type": "string", "minLength": 1 },
-            "field": { "enum": ["daysSincePurchase", "usageBasisPoints"] },
-            "value": { "enum": ["lt", "lte", "gt", "gte"] }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["op", "ruleId", "value"],
-          "properties": {
-            "op": { "const": "SET_RULE_DECISION" },
-            "ruleId": { "type": "string", "minLength": 1 },
-            "value": { "$ref": "#/$defs/decision" }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["op", "higherRuleId", "lowerRuleId"],
-          "properties": {
-            "op": { "const": "SET_PRECEDENCE" },
-            "higherRuleId": { "type": "string", "minLength": 1 },
-            "lowerRuleId": { "type": "string", "minLength": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["op", "value"],
-          "properties": {
-            "op": { "const": "SET_DEFAULT_DECISION" },
-            "value": { "$ref": "#/$defs/decision" }
-          }
+          "$ref": "#/$defs/__schema5"
         }
       ]
     },
-    "ambiguityOption": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "label", "description", "policyPatch", "exampleImpacts"],
-      "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "label": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 },
-        "policyPatch": { "$ref": "#/$defs/policyPatch" },
-        "exampleImpacts": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "$ref": "#/$defs/exampleImpact" }
-        }
-      }
+    "__schema3": {
+      "type": "string"
+    },
+    "__schema4": {
+      "type": "number"
+    },
+    "__schema5": {
+      "type": "boolean"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "ALLOW",
+        "DENY",
+        "REVIEW"
+      ]
     },
     "ambiguity": {
       "type": "object",
-      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceClauseIds": {
+          "$ref": "#/$defs/__schema6"
+        },
+        "category": {
+          "$ref": "#/$defs/__schema7"
+        },
+        "question": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "options": {
+          "$ref": "#/$defs/__schema8"
+        },
+        "status": {
+          "$ref": "#/$defs/__schema20"
+        },
+        "selectedOptionId": {
+          "$ref": "#/$defs/__schema21"
+        }
+      },
       "required": [
         "id",
         "sourceClauseIds",
@@ -279,46 +376,400 @@
         "options",
         "status"
       ],
-      "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "sourceClauseIds": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "string", "minLength": 1 },
-          "uniqueItems": true
-        },
-        "category": {
-          "enum": ["BOUNDARY", "PRECEDENCE", "DEFAULT", "MEASUREMENT", "MISSING_OUTCOME", "OTHER"]
-        },
-        "question": { "type": "string", "minLength": 1 },
-        "rationale": { "type": "string", "minLength": 1 },
-        "options": {
-          "type": "array",
-          "minItems": 2,
-          "items": { "$ref": "#/$defs/ambiguityOption" }
-        },
-        "status": { "enum": ["OPEN", "RESOLVED"] },
-        "selectedOptionId": { "type": "string", "minLength": 1 }
+      "additionalProperties": false
+    },
+    "__schema6": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "__schema7": {
+      "type": "string",
+      "enum": [
+        "BOUNDARY",
+        "PRECEDENCE",
+        "DEFAULT",
+        "MEASUREMENT",
+        "MISSING_OUTCOME",
+        "OTHER"
+      ]
+    },
+    "__schema8": {
+      "minItems": 2,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ambiguityOption"
       }
     },
-    "metadata": {
+    "ambiguityOption": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["model", "promptVersion", "schemaVersion", "createdAt", "source"],
       "properties": {
-        "model": { "type": "string", "minLength": 1 },
-        "promptVersion": { "type": "string", "minLength": 1 },
-        "schemaVersion": { "const": "1" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "source": { "enum": ["LIVE_RESPONSE", "RECORDED_FIXTURE"] },
-        "requestId": { "type": "string", "minLength": 1 }
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "label": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "policyPatch": {
+          "$ref": "#/$defs/policyPatch"
+        },
+        "exampleImpacts": {
+          "$ref": "#/$defs/__schema15"
+        }
       },
-      "allOf": [
+      "required": [
+        "id",
+        "label",
+        "description",
+        "policyPatch",
+        "exampleImpacts"
+      ],
+      "additionalProperties": false
+    },
+    "policyPatch": {
+      "anyOf": [
         {
-          "if": { "properties": { "source": { "const": "LIVE_RESPONSE" } } },
-          "then": { "required": ["requestId"] }
+          "$ref": "#/$defs/__schema9"
+        },
+        {
+          "$ref": "#/$defs/__schema10"
+        },
+        {
+          "$ref": "#/$defs/__schema11"
+        },
+        {
+          "$ref": "#/$defs/__schema12"
+        },
+        {
+          "$ref": "#/$defs/__schema13"
+        },
+        {
+          "$ref": "#/$defs/__schema14"
         }
       ]
+    },
+    "__schema9": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "const": "SET_NORMALIZATION"
+        },
+        "field": {
+          "type": "string",
+          "const": "purchaseDayIndex"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number",
+              "const": 0
+            },
+            {
+              "type": "number",
+              "const": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "op",
+        "field",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "__schema10": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "const": "SET_NORMALIZATION"
+        },
+        "field": {
+          "type": "string",
+          "const": "usageMeasuredAt"
+        },
+        "value": {
+          "type": "string",
+          "enum": [
+            "REQUEST_TIME",
+            "DECISION_TIME"
+          ]
+        }
+      },
+      "required": [
+        "op",
+        "field",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "__schema11": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "const": "SET_BOUNDARY_OPERATOR"
+        },
+        "ruleId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "field": {
+          "type": "string",
+          "enum": [
+            "daysSincePurchase",
+            "usageBasisPoints"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "enum": [
+            "lt",
+            "lte",
+            "gt",
+            "gte"
+          ]
+        }
+      },
+      "required": [
+        "op",
+        "ruleId",
+        "field",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "__schema12": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "const": "SET_RULE_DECISION"
+        },
+        "ruleId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "value": {
+          "$ref": "#/$defs/decision"
+        }
+      },
+      "required": [
+        "op",
+        "ruleId",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "__schema13": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "const": "SET_PRECEDENCE"
+        },
+        "higherRuleId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "lowerRuleId": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "required": [
+        "op",
+        "higherRuleId",
+        "lowerRuleId"
+      ],
+      "additionalProperties": false
+    },
+    "__schema14": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "const": "SET_DEFAULT_DECISION"
+        },
+        "value": {
+          "$ref": "#/$defs/decision"
+        }
+      },
+      "required": [
+        "op",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "__schema15": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/exampleImpact"
+      }
+    },
+    "exampleImpact": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "$ref": "#/$defs/refundInput"
+        },
+        "result": {
+          "$ref": "#/$defs/decision"
+        }
+      },
+      "required": [
+        "input",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "refundInput": {
+      "type": "object",
+      "properties": {
+        "daysSincePurchase": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "usageBasisPoints": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "promotionalPurchase": {
+          "$ref": "#/$defs/__schema16"
+        },
+        "finalSale": {
+          "$ref": "#/$defs/__schema17"
+        },
+        "managerApproved": {
+          "$ref": "#/$defs/__schema18"
+        },
+        "planType": {
+          "$ref": "#/$defs/__schema19"
+        }
+      },
+      "required": [
+        "daysSincePurchase",
+        "usageBasisPoints",
+        "promotionalPurchase",
+        "finalSale",
+        "managerApproved",
+        "planType"
+      ],
+      "additionalProperties": false
+    },
+    "__schema16": {
+      "type": "boolean"
+    },
+    "__schema17": {
+      "type": "boolean"
+    },
+    "__schema18": {
+      "type": "boolean"
+    },
+    "__schema19": {
+      "type": "string",
+      "enum": [
+        "MONTHLY",
+        "ANNUAL",
+        "ENTERPRISE"
+      ]
+    },
+    "__schema20": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "RESOLVED"
+      ]
+    },
+    "__schema21": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "metadata": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/__schema22"
+        },
+        {
+          "$ref": "#/$defs/__schema25"
+        }
+      ]
+    },
+    "__schema22": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "promptVersion": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "schemaVersion": {
+          "$ref": "#/$defs/__schema23"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/__schema24"
+        },
+        "source": {
+          "type": "string",
+          "const": "LIVE_RESPONSE"
+        },
+        "requestId": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "required": [
+        "model",
+        "promptVersion",
+        "schemaVersion",
+        "createdAt",
+        "source",
+        "requestId"
+      ],
+      "additionalProperties": false
+    },
+    "__schema23": {
+      "type": "string",
+      "const": "1"
+    },
+    "__schema24": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "__schema25": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "promptVersion": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "schemaVersion": {
+          "$ref": "#/$defs/__schema23"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/__schema24"
+        },
+        "source": {
+          "type": "string",
+          "const": "RECORDED_FIXTURE"
+        },
+        "requestId": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "required": [
+        "model",
+        "promptVersion",
+        "schemaVersion",
+        "createdAt",
+        "source"
+      ],
+      "additionalProperties": false
     }
   }
 }

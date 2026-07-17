@@ -22,6 +22,7 @@ export * from "./domain/refund-schema.js";
 export * from "./domain/cases.js";
 export * from "./domain/case-validation.js";
 export * from "./policy-ir/types.js";
+export * from "./policy-ir/zod-schema.js";
 export * from "./policy-ir/clauses.js";
 export * from "./policy-ir/validate.js";
 export * from "./policy-ir/evaluate.js";

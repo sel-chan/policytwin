@@ -11,7 +11,7 @@ The repository now includes:
 - strict `PolicyIR`, clause traceability, immutable ambiguity decisions, and SQLite-backed versions;
 - a deterministic PolicyIR-to-Rego compiler and checksum-pinned OPA 1.18.2 execution over 41 accepted cases;
 - boundary, conflict, contrast, differential, and mutation checks that expose all three seeded TypeScript defects;
-- a server-only GPT-5.6 Responses adapter contract with strict structured output, full-source traceability, golden-case contradiction blocking, bounded retries, and a token-gated HTTP route;
+- a server-only GPT-5.6 Responses adapter contract whose model-output schema, runtime structural admission, and checked-in JSON Schema derive from one strict Zod definition, with full-source traceability, golden-case contradiction blocking, bounded retries, and a token-gated HTTP route;
 - a server-only Codex SDK 0.144.3 adapter contract plus a real Node TLS 1.3 mutual-authentication transport and bounded supervisor service, with CA/name/certificate-pin/ALPN checks, canonical length frames, durable SQLite replay rejection, trusted supervisor signatures, host-known baseline/final tree-manifest comparison, a fixed two-file write set, and host live execution still disabled;
 - static supervisor-owned worker/verifier/egress plans, a shell-free ID-owned Docker driver verified against a stateful fake daemon, and an OpenAI Responses-only reverse broker that gives the worker only a short-lived capability, keeps the provider credential in an external proxy mount, and remains explicitly non-live until the real Docker and SDK paths run;
 - Policy Studio, an anonymous-session-isolated SQLite Decision Queue, Case Lab, Integration/Drift, Proof, and blocked Change Impact views in Next.js;
@@ -88,6 +88,7 @@ pnpm test:integration
 pnpm test:e2e
 pnpm eval
 pnpm build
+pnpm schema:check
 pnpm demo:reset
 pnpm demo:run
 pnpm evidence:offline
@@ -113,6 +114,8 @@ Every archive request still rereads the bounded 38-file input and hashes every c
 The SHA-256 manifest detects payload changes but is not an authenticity credential by itself. A future `LIVE_VERIFIED` package must also carry a fresh Ed25519 attestation over its evidence hash, run ID, and timestamp from a trusted `verify:live` key held outside the repository; the default verification window is 24 hours. The validator independently recomputes the compiler output, exact server-owned 41-case digest, accepted-case OPA agreement, differential records, mutation score, traceability, Codex command evidence, and structured GPT/browser/container/deployment/security proofs. Its canonical `integration.diff` must byte-for-byte match the content changes reconstructed from the attested before/after fixture receipts.
 
 `pnpm clean:check` validates a source-only copy against the current machine's existing pnpm store, verified OPA path, and Chrome installation. It is not a claim that a network-disconnected fresh machine already has those prerequisites.
+
+`pnpm schema:check` rebuilds the core and verifies that `schemas/policy-ir.v1.schema.json` is byte-for-byte generated from `PolicyIRStructureSchema`. The Responses request uses the official Zod Structured Outputs helper over the model-owned projection, which excludes server-owned `metadata` and `inputSchema` and requires nullable ambiguity selections. The same projection is validated again before trusted fields are injected. Cross-reference integrity, predicate field/value compatibility, exact refund input schema, patch targets, source coverage, and golden-case agreement remain deterministic application checks; a schema-valid model response is not proof of policy correctness.
 
 ## Safety boundary
 

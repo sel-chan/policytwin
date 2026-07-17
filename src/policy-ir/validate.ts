@@ -1,6 +1,7 @@
 import { isDecision } from "../domain/decision.js";
 import { PLAN_TYPES, validateRefundPolicyInput } from "../domain/refund.js";
 import { REFUND_INPUT_SCHEMA_V1 } from "../domain/refund-schema.js";
+import { PolicyIRStructureSchema } from "./zod-schema.js";
 import type {
   AmbiguityCategory,
   PolicyIR,
@@ -79,6 +80,16 @@ function issue(
   message: string,
 ): void {
   issues.push({ path, code, message });
+}
+
+function schemaIssuePath(path: PropertyKey[]): string {
+  return path.reduce<string>((result, segment) => {
+    if (typeof segment === "number") return `${result}[${segment}]`;
+    const name = String(segment);
+    return /^[A-Za-z_$][A-Za-z0-9_$]*$/u.test(name)
+      ? `${result}.${name}`
+      : `${result}[${JSON.stringify(name)}]`;
+  }, "$");
 }
 
 function rejectUnknownKeys(
@@ -317,6 +328,18 @@ export function validatePolicyIR(value: unknown): PolicyIRValidationResult {
       success: false,
       issues: [{ path: "$", code: "INVALID_IR", message: "PolicyIR must be an object." }],
     };
+  }
+
+  const structuralResult = PolicyIRStructureSchema.safeParse(value);
+  if (!structuralResult.success) {
+    for (const structuralIssue of structuralResult.error.issues) {
+      issue(
+        issues,
+        schemaIssuePath(structuralIssue.path),
+        "SCHEMA_VIOLATION",
+        structuralIssue.message,
+      );
+    }
   }
 
   rejectUnknownKeys(

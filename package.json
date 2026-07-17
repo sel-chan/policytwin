@@ -42,6 +42,8 @@
     "test:e2e": "playwright test",
     "eval": "node scripts/run-tests.mjs eval",
     "build": "node scripts/build.mjs",
+    "schema:check": "node scripts/policy-ir-schema.mjs --check",
+    "schema:write": "node scripts/policy-ir-schema.mjs --write",
     "verify": "node scripts/verify.mjs",
     "verify:live": "node scripts/live-gate.mjs",
     "demo:reset": "node scripts/demo-reset.mjs",

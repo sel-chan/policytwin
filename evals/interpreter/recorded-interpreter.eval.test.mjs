@@ -28,13 +28,25 @@ const evalCases = JSON.parse(
 );
 const policy = parsePolicyIR(recorded);
 
+function resolveLocalSchemaReference(value) {
+  let current = value;
+  const visited = new Set();
+  while (typeof current?.$ref === "string" && current.$ref.startsWith("#/$defs/")) {
+    assert.equal(visited.has(current.$ref), false, `Circular schema reference: ${current.$ref}`);
+    visited.add(current.$ref);
+    current = schema.$defs[current.$ref.slice("#/$defs/".length)];
+  }
+  return current;
+}
+
 test("JSON Schema is strict at the root and executable unions", () => {
   assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
   assert.equal(schema.additionalProperties, false);
   assert.equal(schema.$defs.rule.additionalProperties, false);
   assert.equal(schema.$defs.clause.additionalProperties, false);
-  assert.equal(schema.$defs.policyPatch.oneOf.length, 6);
-  assert.equal(schema.$defs.predicate.oneOf.length, 4);
+  assert.equal(schema.$defs.policyPatch.anyOf.length, 6);
+  assert.equal(resolveLocalSchemaReference(schema.$defs.predicate).anyOf.length, 4);
+  assert.ok(schema.$defs.ambiguity);
   assert.equal(ambiguitySchema.$ref, "policy-ir.v1.schema.json#/$defs/ambiguity");
 });
 
