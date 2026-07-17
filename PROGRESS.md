@@ -669,7 +669,7 @@ A blocker is valid only when the task cannot continue safely without external in
 
 | ID | Type | Exact blocker | Work already completed | One owner action | Resume condition |
 |---|---|---|---|---|---|
-| B-000 | None | No active blocker for the current offline checkpoint | All approved independent work continues | None | Continue the checkpoint |
+| B-001 | Environment and external network permission | The Docker Desktop Linux engine is stopped, immutable Node/helper-builder identities are unset, and the recorded network approval does not include Docker registry pulls. The required artifact, web, worker, egress, private cgroup-v2, finalization, live Codex, and deployment chain cannot begin truthfully without that first runtime/image boundary. | All independent offline source, schemas, refusal/retry handling, static contracts, 332 unit, 57 integration, 22 eval, 3 browser, 370-file clean-copy, 340-text-file security, build, documentation, and fail-closed reports are complete and committed. | Start the Docker Desktop Linux engine and explicitly approve Docker registry pulls for the reviewed digest-pinned Node 22.22.2 and compiler images. | `docker info` reaches the local Linux daemon and the owner grants that exact registry-pull scope. |
 
 ## Risks
 
@@ -693,19 +693,19 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`With explicit Docker registry approval and a running local Linux daemon, select digest-pinned compiler and Node bases, build/discover/pin the helper and role image identities, and exercise the schema-v15 lifecycle-v3 construction on real cgroup v2 before enabling finalization, PASS, or live admission.`
+`After the owner starts the Docker Desktop Linux engine and explicitly approves the reviewed digest-pinned Node/compiler registry pulls, build/discover/pin the helper and role image identities and exercise the schema-v15 lifecycle-v3 construction on real cgroup v2 before enabling finalization, PASS, or live admission.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; explicit Responses terminal-outcome handling is verified and committed, and remaining independent work is being re-audited`
+- Why paused: `all currently independent offline work is committed; the next required chain starts with the owner-controlled Docker Linux engine and registry scope`
 - Exact current state: `PolicyIR structure is single-sourced and the adapter now terminates explicit refusal/incomplete/error/non-completed outcomes after one attempt while reserving one bounded retry for recoverable generated-output defects; no live provider/model claim was added`
 - Last successful command: `the final pnpm verify completed every implemented step with 332/332 unit, 57/57 integration, 22/22 eval, 3/3 browser, 370-file clean-copy, 340-text-file security/history, static container, demo, and build passing, then remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm helper:verify fails before Docker at the unset immutable builder; web/worker fail at the unset Node base; egress also lacks sealed helper IDs; pnpm verify:live fails before dynamic gates/network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `none after this ledger-only checkpoint record is committed`
-- Safe resume command/action: `after the owner supplies the exact Docker/registry prerequisites, confirm clean main and run the helper artifact gate first`
-- One owner action, if any: `start the Docker Desktop Linux engine, then reply with explicit approval to pull the selected digest-pinned compiler and Node images`
+- Uncommitted files: `none after this blocker-ledger update is committed`
+- Safe resume command/action: `after the owner supplies the exact Docker/registry prerequisites, confirm clean main, verify docker info, select exact reviewed digests, and run the helper artifact gate first`
+- One owner action, if any: `start the Docker Desktop Linux engine and reply with explicit approval for the reviewed digest-pinned Node 22.22.2 and compiler image pulls`
 
 ## Final completion record
 
