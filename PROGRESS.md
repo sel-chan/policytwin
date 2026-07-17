@@ -9,7 +9,7 @@
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
 - Last updated: `2026-07-17 12:28 +09:00`
-- Latest checkpoint commit: `ccc8c00236d02bf8beda97a5424a22b979bae359`
+- Latest checkpoint commit: `46c3c188a3403b7fe314f1fc52c21d6a21004979`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -88,14 +88,14 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 |---|---|---|---|---|
 | M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | `1d7261d` | Docker daemon remains unavailable but is outside the M0 gate |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
-| M2 PolicyIR and interpretation | IN_PROGRESS | one strict Zod structure now drives runtime admission, deterministic checked-in JSON Schema, and the official-helper Responses projection; exact request/source/golden semantic checks, bounded cancellation/retry, and offline tests pass | pending | credentials and a fresh GPT-5.6 response/evidence remain; live provider acceptance is not claimed |
+| M2 PolicyIR and interpretation | IN_PROGRESS | one strict Zod structure now drives runtime admission, deterministic checked-in JSON Schema, and the official-helper Responses projection; exact request/source/golden semantic checks, bounded cancellation/retry, and offline tests pass | `46c3c18` | credentials and a fresh GPT-5.6 response/evidence remain; live provider acceptance is not claimed |
 | M3 Decision Queue and versioning | PASS | anonymous-session-isolated SQLite v1-v5, closed replay-safe HTTP writes, one-card Decision Queue, revisit, golden contradiction, restart, expiry, and production Chrome checks pass | `16c06fc` | authenticated multi-user identity and distributed coordination remain M9 release work, not an M3 gate |
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v15 lifecycle-v3 Docker/helper construction plus exact helper-artifact identity binding pass offline contracts | `447f077` | no immutable helper artifact has been built, installed, or run on Linux Docker/cgroup v2; finalized-result issuance, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, and signed live evidence remain absent |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, bounded evidence cache, and single-source PolicyIR structure pass 326 unit, 57 integration, 22 eval, static container, 340-text-file security, and 370-file clean-copy gates | pending | shared public admission/rate limiting, digest-pinned compiler/Node/role images, Docker daemon, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, bounded evidence cache, and single-source PolicyIR structure pass 326 unit, 57 integration, 22 eval, static container, 340-text-file security, and 370-file clean-copy gates | `46c3c18` | shared public admission/rate limiting, digest-pinned compiler/Node/role images, Docker daemon, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -116,7 +116,7 @@ Starting HEAD is clean `main` at ledger commit `8df0c311a1b1e8a2b301d0a4df68fa33
 - [x] Implement one dependency-free-of-new-packages Zod structure contract, deterministic full JSON Schema rendering/freshness gate, official `zodTextFormat` Responses projection, and runtime structural admission without weakening semantic issue coverage.
 - [x] Run focused tests, lint, typecheck, full unit/integration/eval/browser/build/security/clean-copy/static-container gates, and expected fail-closed live/submission commands.
 - [x] Inspect generated schema, request schema, reports, screenshots, and final diff; update D-048, README/architecture/limitations/submission wording, and this ledger.
-- [ ] Commit the verified checkpoint on current `main`, then record the commit hash in this ledger.
+- [x] Commit the verified checkpoint on current `main`, then record the commit hash in this ledger.
 
 This checkpoint may prove structural single-sourcing and deterministic schema freshness only. It cannot prove live provider acceptance, GPT-5.6 semantic correctness, fresh interpretation, Codex work, deployment, or submission; `verify:live` and the evidence package must remain fail closed.
 
@@ -131,6 +131,7 @@ This checkpoint may prove structural single-sourcing and deterministic schema fr
 - Regression evidence: lint, strict typecheck, `pnpm schema:check`, 326/326 unit, 57/57 integration, 22/22 eval, 3/3 production Chrome, Next.js build, schema-v15 static container, 340-text-file plus Git-history security, and 370-file clean-copy reproduction pass. `pnpm verify` completed every implemented gate and remained fail-closed only for the absent owner `LICENSE` and exact 29-item submission gate.
 - Container evidence: final build inputs are worker `b802e6bd…`, verifier `23cb93c6…`, egress `01040160…`, and helper `520e550d…`. Static inspection passes; helper/web/worker/egress dynamic gates all record `dockerInvoked:false` or equivalent and fail before Docker at the unset immutable builder/base/helper identities.
 - External truth boundary: `pnpm verify:live` fails before dynamic gates or network at missing `OPENAI_API_KEY` and `CODEX_MODEL`. No GPT-5.6 response, provider acceptance, Codex SDK repair, Docker/Linux runtime, deployment, upload, or submission occurred. `pnpm submission:check` still reports exactly 29 unmet requirements.
+- Checkpoint commit: `46c3c188a3403b7fe314f1fc52c21d6a21004979` (`feat: single-source PolicyIR structured schemas`).
 
 ## Quality gates
 
@@ -181,6 +182,18 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-17 12:32 +09:00 — Single-source PolicyIR structural contract verified offline
+
+- Milestones: M2 and M9 remain `IN_PROGRESS`; this checkpoint closes the offline schema/type/runtime divergence risk without claiming live GPT-5.6 provider acceptance, semantic correctness from structure, Codex work, Docker runtime, deployment, or submission.
+- Contract: reusable strict Zod components define the runtime PolicyIR shape and model-owned projection. The official `zodTextFormat` helper produces Responses `text.format`; model JSON is admitted against that projection before nullable selections are removed and trusted `metadata`/`inputSchema` are injected. The existing deterministic validator remains authoritative for references, field/value compatibility, exact input schema, source coverage, patch targets, ambiguity state, and golden-case agreement.
+- Generated schema: `pnpm schema:write` renders the full draft-2020-12 schema, explicit component IDs preserve the external `ambiguity.v1` reference, and `pnpm schema:check` plus unit tests require byte-exact freshness. The first eval failure exposed and fixed its stale manual `$defs` assumption.
+- Verification: lint, strict typecheck, exact schema check, 326/326 unit, 57/57 integration, 22/22 eval, 3/3 production Chrome, production build, schema-v15 static container, 340-text-file plus Git-history security, and 370-file clean-copy reproduction pass. `pnpm verify` exits only for the owner-selected `LICENSE` and exact 29-item non-final submission gate.
+- Dynamic boundary: `verify:live` stops before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; helper/web/worker/egress gates stop before Docker at unset immutable identities. No model call, Codex repair, Docker workload, live signer, deployment, publication, or submission occurred.
+- Build-input bindings: worker `b802e6bd976d58a3e4520cdc9a99e07df11ccdba1854f7f52b68dfe8393f8426`; verifier `23cb93c6d9a0ee12b6879b868637b7d40207a4f2dde80e22a3a6e9fed3450c67`; egress `0104016054e8659c6f68f937372ad8bc682074b51f06228cdff281ca6a1b3612`; helper `520e550ddfc6ec07a7664839ce6ee75f95130264e2fdb5eaea6d14b03913816b`.
+- Decision and documentation: D-048, README, architecture, limitations, submission draft, and this ledger distinguish structural guarantees from deterministic semantics and live evidence.
+- Checkpoint commit: `46c3c188a3403b7fe314f1fc52c21d6a21004979` (`feat: single-source PolicyIR structured schemas`).
+- Next: select the next independent M9 release risk; immutable-image and Linux runtime verification still require the owner-controlled Docker engine and explicit registry scope.
 
 ### 2026-07-17 11:35 +09:00 — Content-bound evidence archive cache verified offline
 
@@ -674,11 +687,11 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the single-source PolicyIR checkpoint is verified and being committed before the next independent risk is selected`
+- Why paused: `not paused; the single-source PolicyIR checkpoint is verified and committed, and the next independent risk is being selected`
 - Exact current state: `PolicyIR runtime admission, checked-in JSON Schema, and the model-owned Responses projection now share one strict Zod source while deterministic semantic checks remain authoritative; no live provider/model claim was added`
 - Last successful command: `the final pnpm verify completed every implemented step with 326/326 unit, 57/57 integration, 22/22 eval, 3/3 browser, 370-file clean-copy, 340-text-file security/history, static container, demo, and build passing, then remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm helper:verify fails before Docker at the unset immutable builder; web/worker fail at the unset Node base; egress also lacks sealed helper IDs; pnpm verify:live fails before dynamic gates/network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `the verified single-source PolicyIR checkpoint is pending its current-branch commit`
+- Uncommitted files: `none after this ledger-only checkpoint record is committed`
 - Safe resume command/action: `after the owner supplies the exact Docker/registry prerequisites, confirm clean main and run the helper artifact gate first`
 - One owner action, if any: `start the Docker Desktop Linux engine, then reply with explicit approval to pull the selected digest-pinned compiler and Node images`
 
