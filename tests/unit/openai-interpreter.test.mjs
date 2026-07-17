@@ -48,6 +48,23 @@ function modelOutput(policyIR = recorded) {
   return output;
 }
 
+function completedResponse(id, policyIR = recorded) {
+  const outputText = JSON.stringify(modelOutput(policyIR));
+  return {
+    id,
+    status: "completed",
+    error: null,
+    incomplete_details: null,
+    output_text: outputText,
+    output: [
+      {
+        type: "message",
+        content: [{ type: "output_text", text: outputText }],
+      },
+    ],
+  };
+}
+
 function clock() {
   const values = [
     new Date("2026-07-14T07:00:00.000Z"),
@@ -160,7 +177,7 @@ test("builds a strict GPT-5.6 Responses request and trusts only server provenanc
       responses: {
         async create(parameters) {
           requests.push(parameters);
-          return { id: "resp_live_123", output_text: JSON.stringify(modelOutput()) };
+          return completedResponse("resp_live_123");
         },
       },
     },
@@ -205,6 +222,100 @@ test("retries one recoverable structured-output failure and then succeeds", asyn
   assert.equal(result.evidence.responseId, "resp_good");
 });
 
+test("does not retry explicit refusal, incomplete, failed, or nonterminal Responses outcomes", async (t) => {
+  const outcomes = [
+    {
+      name: "model refusal",
+      code: "OUTPUT_REFUSED",
+      response: {
+        id: "resp_refusal",
+        status: "completed",
+        error: null,
+        incomplete_details: null,
+        output_text: "",
+        output: [
+          {
+            type: "message",
+            content: [{ type: "refusal", refusal: "Policy interpretation declined." }],
+          },
+        ],
+      },
+    },
+    {
+      name: "maximum output tokens",
+      code: "OUTPUT_INCOMPLETE",
+      response: {
+        id: "resp_tokens",
+        status: "incomplete",
+        error: null,
+        incomplete_details: { reason: "max_output_tokens" },
+        output_text: "{",
+        output: [],
+      },
+    },
+    {
+      name: "content filter",
+      code: "OUTPUT_INCOMPLETE",
+      response: {
+        id: "resp_filter",
+        status: "incomplete",
+        error: null,
+        incomplete_details: { reason: "content_filter" },
+        output_text: "",
+        output: [],
+      },
+    },
+    {
+      name: "failed response",
+      code: "API_ERROR",
+      response: {
+        id: "resp_failed",
+        status: "failed",
+        error: { code: "server_error", message: "upstream failed" },
+        incomplete_details: null,
+        output_text: "",
+        output: [],
+      },
+    },
+    {
+      name: "queued response",
+      code: "API_ERROR",
+      response: {
+        id: "resp_queued",
+        status: "queued",
+        error: null,
+        incomplete_details: null,
+        output_text: "",
+        output: [],
+      },
+    },
+  ];
+
+  for (const outcome of outcomes) {
+    await t.test(outcome.name, async () => {
+      let calls = 0;
+      await assert.rejects(
+        interpretPolicyWithClient(
+          {
+            responses: {
+              async create() {
+                calls += 1;
+                return outcome.response;
+              },
+            },
+          },
+          input(),
+        ),
+        (error) =>
+          error instanceof PolicyInterpreterError &&
+          error.code === outcome.code &&
+          error.attempts === 1,
+      );
+      assert.equal(calls, 1);
+    });
+  }
+});
+
 test("rejects invalid request shapes and fails closed after two bad outputs", async () => {
   await assert.rejects(
     interpretPolicyWithClient(
@@ -230,6 +341,28 @@ test("rejects invalid request shapes and fails closed after two bad outputs", as
       error.code === "OUTPUT_INVALID" &&
       error.attempts === 2,
   );
+
+  let inconsistentCalls = 0;
+  await assert.rejects(
+    interpretPolicyWithClient(
+      {
+        responses: {
+          async create() {
+            inconsistentCalls += 1;
+            const response = completedResponse("resp_inconsistent");
+            response.output[0].content[0].text = "{}";
+            return response;
+          },
+        },
+      },
+      input(),
+    ),
+    (error) =>
+      error instanceof PolicyInterpreterError &&
+      error.code === "OUTPUT_INVALID" &&
+      error.attempts === 2,
+  );
+  assert.equal(inconsistentCalls, 2);
 });
 
 test("validates input before reporting missing live credentials", async () => {

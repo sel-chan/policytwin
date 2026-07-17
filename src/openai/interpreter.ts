@@ -32,6 +32,16 @@ const ResponseEnvelopeSchema = z
   .object({
     id: z.string().min(1),
     output_text: z.string(),
+    status: z.string().min(1).optional(),
+    error: z.unknown().nullable().optional(),
+    incomplete_details: z
+      .object({
+        reason: z.string().min(1).optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+    output: z.array(z.unknown()).optional(),
   })
   .passthrough();
 
@@ -70,7 +80,13 @@ export interface ResponsesClientPort {
 
 export class PolicyInterpreterError extends Error {
   constructor(
-    readonly code: "AUTH_REQUIRED" | "INVALID_INPUT" | "API_ERROR" | "OUTPUT_INVALID",
+    readonly code:
+      | "AUTH_REQUIRED"
+      | "INVALID_INPUT"
+      | "API_ERROR"
+      | "OUTPUT_REFUSED"
+      | "OUTPUT_INCOMPLETE"
+      | "OUTPUT_INVALID",
     message: string,
     readonly attempts = 0,
   ) {
@@ -103,6 +119,93 @@ function parseInterpreterInput(rawInput: unknown): PolicyInterpretationInput {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+interface ResponseOutputInspection {
+  malformed: boolean;
+  refused: boolean;
+  outputText: string;
+}
+
+function inspectResponseOutput(output: unknown[] | undefined): ResponseOutputInspection {
+  if (output === undefined) {
+    return { malformed: false, refused: false, outputText: "" };
+  }
+
+  const textParts: string[] = [];
+  let refused = false;
+  for (const item of output) {
+    if (!isRecord(item) || typeof item.type !== "string") {
+      return { malformed: true, refused: false, outputText: "" };
+    }
+    if (item.type !== "message") continue;
+    if (!Array.isArray(item.content)) {
+      return { malformed: true, refused: false, outputText: "" };
+    }
+    for (const content of item.content) {
+      if (!isRecord(content) || typeof content.type !== "string") {
+        return { malformed: true, refused: false, outputText: "" };
+      }
+      if (content.type === "refusal") {
+        if (typeof content.refusal !== "string" || content.refusal.length === 0) {
+          return { malformed: true, refused: false, outputText: "" };
+        }
+        refused = true;
+      } else if (content.type === "output_text") {
+        if (typeof content.text !== "string") {
+          return { malformed: true, refused: false, outputText: "" };
+        }
+        textParts.push(content.text);
+      } else {
+        return { malformed: true, refused: false, outputText: "" };
+      }
+    }
+  }
+
+  return { malformed: false, refused, outputText: textParts.join("") };
+}
+
+function assertCompletedResponse(
+  envelope: z.infer<typeof ResponseEnvelopeSchema>,
+  attempt: number,
+): ResponseOutputInspection {
+  if (envelope.error !== undefined && envelope.error !== null) {
+    throw new PolicyInterpreterError(
+      "API_ERROR",
+      "Responses API returned an explicit error outcome.",
+      attempt,
+    );
+  }
+
+  const outputInspection = inspectResponseOutput(envelope.output);
+  if (outputInspection.refused) {
+    throw new PolicyInterpreterError(
+      "OUTPUT_REFUSED",
+      "Responses API returned a model refusal.",
+      attempt,
+    );
+  }
+
+  if (envelope.status === "incomplete" || envelope.incomplete_details != null) {
+    const reason = envelope.incomplete_details?.reason;
+    throw new PolicyInterpreterError(
+      "OUTPUT_INCOMPLETE",
+      reason === "max_output_tokens" || reason === "content_filter"
+        ? `Responses API output was incomplete: ${reason}.`
+        : "Responses API output was incomplete.",
+      attempt,
+    );
+  }
+
+  if (envelope.status !== undefined && envelope.status !== "completed") {
+    throw new PolicyInterpreterError(
+      "API_ERROR",
+      "Responses API returned a non-completed outcome.",
+      attempt,
+    );
+  }
+
+  return outputInspection;
 }
 
 function loadPrompt(): string {
@@ -232,6 +335,14 @@ export async function interpretPolicyWithClient(
       continue;
     }
     const envelope: z.infer<typeof ResponseEnvelopeSchema> = parsedEnvelope.data;
+    const outputInspection = assertCompletedResponse(envelope, attempt);
+    if (
+      outputInspection.malformed ||
+      (envelope.output !== undefined && outputInspection.outputText !== envelope.output_text)
+    ) {
+      lastFailure = "Responses API output items were malformed or inconsistent.";
+      continue;
+    }
 
     try {
       const completedAt = now().toISOString();

@@ -836,3 +836,20 @@ Add new entries below this line with the template above.
 - Risks: Zod/official-helper upgrades can change deterministic JSON Schema rendering and therefore require an intentional generated-schema diff. Structural success cannot prove field/value compatibility, source coverage, reference integrity, patch targets, ambiguity consistency, exact input schema, golden-case agreement, provider acceptance, or model semantic correctness; those remain explicit deterministic and live gates.
 - Reversal or migration path: A future schema technology may replace Zod only if it can generate both strict Responses and checked-in schemas deterministically, preserve the runtime structural gate and all semantic issue codes, and pass the exact freshness and interpreter request tests.
 - Related files/commits: `src/policy-ir/zod-schema.ts`, `src/policy-ir/validate.ts`, `src/openai/interpreter.ts`, `schemas/policy-ir.v1.schema.json`, `scripts/policy-ir-schema.mjs`, `tests/unit/policy-ir-zod-schema.test.mjs`, `tests/unit/policy-ir-validation.test.mjs`, `tests/unit/openai-interpreter.test.mjs`, `README.md`, `SUBMISSION.md`, `docs/architecture.md`, `docs/limitations.md`, `PROGRESS.md`.
+
+### D-049 — Treat explicit Responses terminal outcomes as non-retryable
+
+- Date: 2026-07-17
+- Status: `ACCEPTED`
+- Milestone: M2
+- Context: The adapter previously inspected only `id` and `output_text`. The pinned Responses contract also carries status, error, incomplete details, output items, and refusal content. A refusal or explicit incomplete/failed response therefore fell through to JSON parsing, was mislabeled `OUTPUT_INVALID`, and repeated the same request despite no changed recovery hypothesis.
+- Options considered:
+  1. keep all non-JSON outcomes under the existing two-attempt structured-output retry;
+  2. retry only `max_output_tokens` with the same fixed 12,000-token limit and treat the rest as generic API errors;
+  3. classify explicit refusal and incomplete outcomes separately, classify error and any non-completed status as upstream API failure, terminate each after one attempt, and reserve the second attempt for model-generated JSON/schema/semantic defects that can vary across generations.
+- Decision: Use option 3. `OUTPUT_REFUSED` and `OUTPUT_INCOMPLETE` are stable protected-route error codes; error, failed, cancelled, queued, in-progress, and unknown non-completed statuses use `API_ERROR`. Messages are inspected for well-formed `output_text`/`refusal` content, a refusal wins over text parsing, and completed output items must concatenate exactly to SDK `output_text`. Error/refusal content is never embedded in the public error payload. The fixed output-token ceiling is not silently raised.
+- Evidence: pinned OpenAI 6.46.0 Response/output type declarations, `src/openai/interpreter.ts`, and `tests/unit/openai-interpreter.test.mjs` refusal, maximum-token, content-filter, failed, queued, successful full-envelope, and output-mismatch cases.
+- Consequences: Explicit terminal outcomes consume one provider attempt and are no longer conflated with a model output that may become valid on the bounded second generation. The existing HTTP boundary returns only the stable code and maps all non-input terminal outcomes to a generic upstream failure status.
+- Risks: The local port uses fixture-shaped responses and the live provider has not been exercised. A future SDK may add incomplete reasons or statuses; unknown non-completed strings still fail closed as `API_ERROR`, while malformed envelopes remain within the bounded invalid-output path.
+- Reversal or migration path: Change retry classification only with provider evidence showing a safe, bounded, materially different recovery action. Never retry a refusal or repeat `max_output_tokens` with the same fixed limit merely to hide the terminal outcome.
+- Related files/commits: `src/openai/interpreter.ts`, `tests/unit/openai-interpreter.test.mjs`, `README.md`, `SUBMISSION.md`, `docs/architecture.md`, `docs/limitations.md`, `PROGRESS.md`.
