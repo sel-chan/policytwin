@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9 — schema-v14 sealed Docker lifecycle and owned-network verification`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-17 09:24 +09:00`
-- Latest checkpoint commit: `2668e9a22a8b0e3276c2f86963c04c47662b7a49`
+- Last updated: `2026-07-17 09:26 +09:00`
+- Latest checkpoint commit: `995b12c9bc9e1207ee5cda6b5bc31e55db47861e`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,9 +93,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v14 sealed lifecycle-plan/Docker-owner/owned-network/helper-session/system-adapter construction pass offline contracts | pending | the construction has not run on Linux Docker/cgroup v2, the static gates still bypass it, and no pinned helper image, finalized-result issuer, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v14 sealed lifecycle-plan/Docker-owner/owned-network/helper-session/system-adapter construction pass offline contracts | `995b12c` | the construction has not run on Linux Docker/cgroup v2, the static gates still bypass it, and no pinned helper image, finalized-result issuer, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v14 seals one deeply frozen supervisor lifecycle plan, creates and independently observes both owned networks, derives role plans internally, recovers ambiguous create side effects only for cleanup, and requires exact container/network absence; 309 unit, 57 integration, static container, security, and 358-file clean-copy gates pass | pending | helper packaging/runtime, immutable images, Linux Docker/cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, shared auth/quotas, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v14 seals one deeply frozen supervisor lifecycle plan, creates and independently observes both owned networks, derives role plans internally, recovers ambiguous create side effects only for cleanup, and requires exact container/network absence; 309 unit, 57 integration, static container, security, and 358-file clean-copy gates pass | `995b12c` | helper packaging/runtime, immutable images, Linux Docker/cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, shared auth/quotas, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
@@ -197,7 +197,7 @@ Never fill from estimates.
 - Native compile: direct WSL source access failed because `/mnt/f` was unavailable; streaming the same repository source to WSL `cc` passed C17 with `-Wall -Wextra -Werror -Wpedantic`, fortify, stack protection, and PIE after removing the duplicate command-line `_GNU_SOURCE` definition already present in source.
 - Dynamic fail-closed checks: `verify:live` stopped before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; container, worker, and egress verification stopped before Docker at the unset immutable Node 22.22.2 base. No model call, Codex repair, Docker workload, deployment, or submission occurred.
 - Build-input bindings: worker `06b8b69f4727e493fc760ac2aa9aeb082afdbeb7938a25efed2a595760b4123f`; verifier `a573de25b0e9d33214a6c2275051eaf282ff8bc3e8dc17106db07f251dc148d3`; egress `5f382c953b9a9c69262dcfefde99d40f5bd56632077fc26f7f84d0a9667207fd`.
-- Decision: D-045 records sealed plan admission, owner-created networks, and cleanup-only ambiguous-create recovery. Checkpoint commit remains pending final diff review.
+- Decision: D-045 records sealed plan admission, owner-created networks, and cleanup-only ambiguous-create recovery. Checkpoint commit: `995b12c9bc9e1207ee5cda6b5bc31e55db47861e`.
 - Next: package and digest-bind the native helper/supervisor and immutable role images, then exercise the exact schema-v14 construction on Linux Docker/cgroup v2 before adding any finalized-result issuer or PASS signer.
 
 ### 2026-07-17 08:42 +09:00 — Schema-v14 final gate replay resumed
@@ -649,11 +649,11 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the schema-v14 sealed lifecycle and owned-network checkpoint is offline-verified and awaiting its current-branch commit`
+- Why paused: `not paused; the schema-v14 sealed lifecycle and owned-network checkpoint is offline-verified and committed on the current branch`
 - Exact current state: `one sealed factory lifecycle plan, owner-created and independently observed networks, internally derived role plans, cleanup-only ambiguous-create recovery, full helper sessions, the ordered system adapter, and the dedicated lifecycle pass offline contracts; no Linux Docker/cgroup-v2 runtime transcript, helper image, finalized-evidence issuer, signer, PASS, or live admission exists`
 - Last successful command: `pnpm verify completed every implemented schema-v14 step with 309/309 unit, 57/57 integration, 22/22 eval, 3/3 browser, 358-file clean-copy, security/history, static container, demo, and build passing; it remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm container:verify, pnpm worker:verify, and pnpm egress:verify fail before Docker at the unset immutable Node base; pnpm verify:live fails before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `schema-v14 construction, tests, generated reports, and synchronized documentation are pending final diff review and checkpoint commit`
+- Uncommitted files: `none after the checkpoint and ledger commits`
 - Safe resume command/action: `confirm the checkpoint commits and clean status, then package the native helper and prepare a Linux Docker/cgroup-v2 dynamic gate without enabling finalization or PASS`
 - One owner action, if any: `none`
 
