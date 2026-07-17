@@ -29,6 +29,8 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "scripts/container-verify.mjs",
   "scripts/egress-container-verify.mjs",
   "scripts/live-gate.mjs",
+  "scripts/native-helper-build.mjs",
+  "scripts/native-helper-container-verify.mjs",
   "scripts/pinned-docker-cli.mjs",
   "scripts/process.mjs",
   "scripts/role-start-barrier.mjs",

@@ -44,6 +44,7 @@ test("Docker role authority is issued only after factory-owned create/start/insp
     "removePrivateLiveLinuxOwnedDockerRole",
     "removePrivateLiveLinuxOwnedDockerNetworks",
     "finalizePrivateLiveLinuxDockerCleanupReceipt",
+    "nativeHelperBinarySha256: options.lifecyclePlan.nativeHelper.binarySha256",
   ]) {
     assert.ok(source.includes(marker), `missing private Docker ownership marker ${marker}`);
   }

@@ -328,7 +328,7 @@ export function buildLiveLinuxBarrierDockerRolePlan(
   const lifecyclePlan = input.lifecyclePlan;
   const processPlan = lifecyclePlan[input.role];
   if (
-    lifecyclePlan.schemaVersion !== "2" ||
+    lifecyclePlan.schemaVersion !== "3" ||
     lifecyclePlan.status !== "STATIC_PLAN_ONLY" ||
     lifecyclePlan.dynamicIsolationVerified !== false ||
     lifecyclePlan.liveCodexExecuted !== false ||
@@ -342,7 +342,7 @@ export function buildLiveLinuxBarrierDockerRolePlan(
         input.role
       ] ||
     processPlan.labels["com.policytwin.managed"] !== "true" ||
-    processPlan.labels["com.policytwin.contract-version"] !== "2" ||
+    processPlan.labels["com.policytwin.contract-version"] !== "3" ||
     processPlan.labels["com.policytwin.binding-sha256"] !== controller.runBindingSha256 ||
     processPlan.labels["com.policytwin.request-sha256"] !==
       lifecyclePlan.ownership.requestSha256 ||

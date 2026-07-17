@@ -37,7 +37,7 @@ export function inspectEgressContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "14") failures.push("container schema v14 is required");
+  if (contract?.schemaVersion !== "15") failures.push("container schema v15 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }
@@ -46,6 +46,14 @@ export function inspectEgressContainerPrerequisites(
   }
   if (contract?.egressProxyBuildInputSha256 !== buildInputs.egress.sha256) {
     failures.push("egress proxy build inputs do not match the contract");
+  }
+  if (
+    !/^sha256:[0-9a-f]{64}$/u.test(contract?.nativeHelper?.image ?? "") ||
+    !/^[0-9a-f]{64}$/u.test(contract?.nativeHelper?.binarySha256 ?? "") ||
+    !/^[0-9a-f]{64}$/u.test(contract?.nativeHelper?.buildInputSha256 ?? "") ||
+    !/^[0-9a-f]{64}$/u.test(contract?.nativeHelper?.sourceSha256 ?? "")
+  ) {
+    failures.push("sealed native helper artifact identity is unset");
   }
   if (
     contract?.supervisorDockerExecutor?.status !== "STATIC_FAKE_RUNNER_VERIFIED" ||
@@ -558,6 +566,10 @@ async function main() {
       workerImage: facts.workerImageId,
       verifierImage: facts.workerImageId,
       egressProxyImage: facts.egressProxyImageId,
+      nativeHelperImage: contract.nativeHelper.image,
+      nativeHelperBinarySha256: contract.nativeHelper.binarySha256,
+      nativeHelperBuildInputSha256: contract.nativeHelper.buildInputSha256,
+      nativeHelperSourceSha256: contract.nativeHelper.sourceSha256,
       ownershipNonce,
       requestSha256,
       limits: {

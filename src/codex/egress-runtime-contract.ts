@@ -74,7 +74,7 @@ export interface SupervisorDockerNetworkPlan {
 }
 
 export interface SupervisorDockerLifecyclePlan {
-  schemaVersion: "2";
+  schemaVersion: "3";
   status: "STATIC_PLAN_ONLY";
   dynamicIsolationVerified: false;
   liveCodexExecuted: false;
@@ -83,6 +83,13 @@ export interface SupervisorDockerLifecyclePlan {
     nonce: string;
     requestSha256: string;
     bindingSha256: string;
+  };
+  nativeHelper: {
+    image: string;
+    imagePath: "/policytwin-linux-cgroup-helper";
+    binarySha256: string;
+    buildInputSha256: string;
+    sourceSha256: string;
   };
   workerNetwork: string;
   outboundNetwork: string;
@@ -149,6 +156,11 @@ function immutableImage(value: string, label: string): string {
   return value;
 }
 
+function requiredSha256(value: string, label: string): string {
+  if (!/^[0-9a-f]{64}$/u.test(value)) throw new Error(`${label} must be one SHA-256.`);
+  return value;
+}
+
 function bindMount(source: string, target: string): string {
   return `type=bind,source=${source},target=${target},readonly`;
 }
@@ -169,7 +181,7 @@ function networkPlan(options: {
 }): SupervisorDockerNetworkPlan {
   const labels = {
     "com.policytwin.managed": "true",
-    "com.policytwin.contract-version": "2",
+    "com.policytwin.contract-version": "3",
     "com.policytwin.binding-sha256": options.bindingSha256,
     "com.policytwin.request-sha256": options.requestSha256,
     "com.policytwin.run-id": options.runId,
@@ -265,6 +277,10 @@ export function buildSupervisorDockerLifecyclePlan(options: {
   workerImage: string;
   verifierImage: string;
   egressProxyImage: string;
+  nativeHelperImage: string;
+  nativeHelperBinarySha256: string;
+  nativeHelperBuildInputSha256: string;
+  nativeHelperSourceSha256: string;
   ownershipNonce: string;
   requestSha256: string;
   limits: WorkerRuntimeResourceLimits;
@@ -287,6 +303,19 @@ export function buildSupervisorDockerLifecyclePlan(options: {
   const workerNetwork = `policytwin-worker-${resourceSuffix}`;
   const outboundNetwork = `policytwin-egress-${resourceSuffix}`;
   const egressProxyImage = immutableImage(options.egressProxyImage, "Egress proxy image");
+  const nativeHelperImage = immutableImage(options.nativeHelperImage, "Native helper image");
+  const nativeHelperBinarySha256 = requiredSha256(
+    options.nativeHelperBinarySha256,
+    "Native helper binary SHA-256",
+  );
+  const nativeHelperBuildInputSha256 = requiredSha256(
+    options.nativeHelperBuildInputSha256,
+    "Native helper build-input SHA-256",
+  );
+  const nativeHelperSourceSha256 = requiredSha256(
+    options.nativeHelperSourceSha256,
+    "Native helper source SHA-256",
+  );
   const runtime = buildWorkerRuntimePlan({ ...options, workerNetwork });
   const layout = createWorkerRuntimeLayout(options);
   const tlsCertificatePath = assertRegularFile(
@@ -330,7 +359,7 @@ export function buildSupervisorDockerLifecyclePlan(options: {
   const egressName = `policytwin-egress-${resourceSuffix}`;
   const egressLabels = {
     "com.policytwin.managed": "true",
-    "com.policytwin.contract-version": "2",
+    "com.policytwin.contract-version": "3",
     "com.policytwin.binding-sha256": bindingSha256,
     "com.policytwin.request-sha256": options.requestSha256,
     "com.policytwin.run-id": options.runId,
@@ -402,7 +431,7 @@ export function buildSupervisorDockerLifecyclePlan(options: {
     egressProxyImage,
   ];
   const plan: SupervisorDockerLifecyclePlan = deepFreeze({
-    schemaVersion: "2",
+    schemaVersion: "3",
     status: "STATIC_PLAN_ONLY",
     dynamicIsolationVerified: false,
     liveCodexExecuted: false,
@@ -411,6 +440,13 @@ export function buildSupervisorDockerLifecyclePlan(options: {
       nonce: options.ownershipNonce,
       requestSha256: options.requestSha256,
       bindingSha256,
+    },
+    nativeHelper: {
+      image: nativeHelperImage,
+      imagePath: "/policytwin-linux-cgroup-helper",
+      binarySha256: nativeHelperBinarySha256,
+      buildInputSha256: nativeHelperBuildInputSha256,
+      sourceSha256: nativeHelperSourceSha256,
     },
     workerNetwork,
     outboundNetwork,

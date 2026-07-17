@@ -16,13 +16,50 @@ function passingReport(scope, facts = {}) {
   };
 }
 
-const worker = (facts) => passingReport(LIVE_DYNAMIC_GATES[0].scope, facts);
-const egress = () => passingReport(LIVE_DYNAMIC_GATES[1].scope);
+const helper = () => ({
+  schemaVersion: "1",
+  status: "PASS",
+  scope: LIVE_DYNAMIC_GATES[0].scope,
+  dockerInvoked: true,
+  builderImage: `gcc:15@sha256:${"a".repeat(64)}`,
+  builderImagePresent: true,
+  buildInputSha256: "b".repeat(64),
+  sourceSha256: "c".repeat(64),
+  helperImageId: `sha256:${"d".repeat(64)}`,
+  expectedHelperImageId: `sha256:${"d".repeat(64)}`,
+  binarySha256: "e".repeat(64),
+  expectedBinarySha256: "e".repeat(64),
+  binaryMode: "0555",
+  binaryOwner: "0:0",
+  elf: {
+    schemaVersion: "1",
+    elfClass: "ELF64",
+    machine: "AMD64",
+    staticPie: true,
+    interpreterPresent: false,
+    neededLibraryCount: 0,
+    executableStack: false,
+    sha256: "e".repeat(64),
+    bytes: 841_656,
+  },
+  imageBuildVerified: true,
+  hostInstallVerified: false,
+  cgroupV2RuntimeVerified: false,
+  passSigningEligible: false,
+  failures: [],
+});
+const worker = (facts) => passingReport(LIVE_DYNAMIC_GATES[1].scope, facts);
+const egress = () => passingReport(LIVE_DYNAMIC_GATES[2].scope);
 
-test("live dynamic prerequisites remain ordered worker before egress", () => {
+test("live dynamic prerequisites remain ordered helper before worker and egress", () => {
   assert.deepEqual(
     LIVE_DYNAMIC_GATES.map(({ id, script, report }) => ({ id, script, report })),
     [
+      {
+        id: "helper",
+        script: "scripts/native-helper-container-verify.mjs",
+        report: "artifacts/security/native-helper-container-report.json",
+      },
       {
         id: "worker",
         script: "scripts/worker-container-verify.mjs",
@@ -59,6 +96,7 @@ test("live gate rejects stale or semantically invalid reports", () => {
   assert.equal(
     evaluateLiveGateReadiness({
       missingHostConfiguration: [],
+      helperReport: helper(),
       workerReport: worker({ cumulativeCpuTimeEnforced: false }),
       egressReport: { ...egress(), scope: "STALE" },
     }).code,
@@ -67,16 +105,36 @@ test("live gate rejects stale or semantically invalid reports", () => {
   assert.equal(
     evaluateLiveGateReadiness({
       missingHostConfiguration: [],
+      helperReport: helper(),
       workerReport: null,
       egressReport: egress(),
     }).code,
     "WORKER_REPORT_INVALID",
+  );
+  assert.equal(
+    evaluateLiveGateReadiness({
+      missingHostConfiguration: [],
+      helperReport: { ...helper(), imageBuildVerified: false },
+      workerReport: worker({ cumulativeCpuTimeEnforced: false }),
+      egressReport: egress(),
+    }).code,
+    "HELPER_REPORT_INVALID",
+  );
+  assert.equal(
+    evaluateLiveGateReadiness({
+      missingHostConfiguration: [],
+      helperReport: { ...helper(), expectedBinarySha256: "f".repeat(64) },
+      workerReport: worker({ cumulativeCpuTimeEnforced: false }),
+      egressReport: egress(),
+    }).code,
+    "HELPER_REPORT_INVALID",
   );
 });
 
 test("live gate blocks a passing non-live isolation report without cumulative CPU enforcement", () => {
   const verdict = evaluateLiveGateReadiness({
     missingHostConfiguration: [],
+    helperReport: helper(),
     workerReport: worker({ cumulativeCpuTimeEnforced: false }),
     egressReport: egress(),
   });
@@ -87,6 +145,7 @@ test("live gate blocks a passing non-live isolation report without cumulative CP
 test("live gate rejects a forged cumulative CPU boolean instead of advancing", () => {
   const verdict = evaluateLiveGateReadiness({
     missingHostConfiguration: [],
+    helperReport: helper(),
     workerReport: worker({ cumulativeCpuTimeEnforced: true }),
     egressReport: egress(),
   });
@@ -97,6 +156,7 @@ test("live gate rejects a forged cumulative CPU boolean instead of advancing", (
 test("live gate does not admit an unverified structured CPU object", () => {
   const verdict = evaluateLiveGateReadiness({
     missingHostConfiguration: [],
+    helperReport: helper(),
     workerReport: worker({
       cumulativeCpuTimeEnforced: false,
       cpuBudgetProof: {
@@ -113,6 +173,7 @@ test("live gate does not admit an unverified structured CPU object", () => {
 test("live gate does not admit an unsigned Worker RPC v2-shaped CPU proof", () => {
   const verdict = evaluateLiveGateReadiness({
     missingHostConfiguration: [],
+    helperReport: helper(),
     workerReport: worker({
       cumulativeCpuTimeEnforced: false,
       signedWorkerRpcV2: {

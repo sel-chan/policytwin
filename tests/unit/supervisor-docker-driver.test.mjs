@@ -490,6 +490,10 @@ async function createFixture(t) {
     verifierImage: IMAGE,
     egressProxyImage: IMAGE,
     allowedWorkerImage: IMAGE,
+    nativeHelperImage: IMAGE,
+    nativeHelperBinarySha256: "d".repeat(64),
+    nativeHelperBuildInputSha256: "e".repeat(64),
+    nativeHelperSourceSha256: "f".repeat(64),
     maximumWorkerLimits: LIMITS,
     ownershipNonce: NONCE,
     egressSecrets: {

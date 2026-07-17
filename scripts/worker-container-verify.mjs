@@ -36,7 +36,7 @@ export function inspectWorkerContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "14") failures.push("container schema v14 is required");
+  if (contract?.schemaVersion !== "15") failures.push("container schema v15 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }
@@ -501,7 +501,7 @@ async function main() {
     const workerNetwork = `policytwin-worker-${bindingSha256.slice(0, 32)}`;
     const networkLabels = {
       "com.policytwin.managed": "true",
-      "com.policytwin.contract-version": "2",
+      "com.policytwin.contract-version": "3",
       "com.policytwin.binding-sha256": bindingSha256,
       "com.policytwin.request-sha256": requestSha256,
       "com.policytwin.run-id": runId,

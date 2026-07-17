@@ -82,6 +82,10 @@ export interface SupervisorDockerExecutionConfiguration {
   verifierImage: string;
   egressProxyImage: string;
   allowedWorkerImage: string;
+  nativeHelperImage: string;
+  nativeHelperBinarySha256: string;
+  nativeHelperBuildInputSha256: string;
+  nativeHelperSourceSha256: string;
   maximumWorkerLimits: WorkerRuntimeResourceLimits;
   ownershipNonce: string;
   egressSecrets: EgressProxySecretMounts;
@@ -236,7 +240,7 @@ function assertPlanBoundToRequest(
   const suffix = bindingSha256.slice(0, 32);
   const expectedCommonLabels = {
     "com.policytwin.managed": "true",
-    "com.policytwin.contract-version": "2",
+    "com.policytwin.contract-version": "3",
     "com.policytwin.binding-sha256": bindingSha256,
     "com.policytwin.request-sha256": requestSha256,
     "com.policytwin.run-id": plan.ownership.runId,
@@ -249,7 +253,7 @@ function assertPlanBoundToRequest(
     [plan.verifier, "verifier"],
   ] as const;
   if (
-    plan.schemaVersion !== "2" ||
+    plan.schemaVersion !== "3" ||
     plan.status !== "STATIC_PLAN_ONLY" ||
     plan.dynamicIsolationVerified !== false ||
     plan.liveCodexExecuted !== false ||

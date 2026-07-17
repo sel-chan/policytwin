@@ -6,6 +6,7 @@ const MAX_ARGUMENTS = 256;
 const MAX_ARGUMENT_BYTES = 8_192;
 const SIMPLE_COMMANDS = new Set([
   "build",
+  "cp",
   "create",
   "info",
   "logs",

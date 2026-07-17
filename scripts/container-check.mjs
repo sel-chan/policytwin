@@ -2,6 +2,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeContainerBuildInput } from "./container-build-inputs.mjs";
+import {
+  computeNativeHelperSource,
+  inspectNativeHelperDockerfile,
+} from "./native-helper-contract.mjs";
 import { ROOT } from "./process.mjs";
 
 const REQUIRED_DOCKERIGNORE_LINES = [
@@ -64,6 +68,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   const workerDockerfilePath = resolve(root, "Dockerfile.worker");
   const verifierDockerfilePath = resolve(root, "Dockerfile.verifier");
   const egressDockerfilePath = resolve(root, "Dockerfile.egress-proxy");
+  const nativeHelperDockerfilePath = resolve(root, "Dockerfile.cgroup-helper");
   const dockerignorePath = resolve(root, ".dockerignore");
   const nextConfigPath = resolve(root, "next.config.ts");
   const healthRoutePath = resolve(root, "app", "api", "health", "route.ts");
@@ -138,6 +143,19 @@ export function inspectStaticContainerContract(root = ROOT) {
   const containerVerifyPath = resolve(root, "scripts", "container-verify.mjs");
   const workerVerifyPath = resolve(root, "scripts", "worker-container-verify.mjs");
   const egressVerifyPath = resolve(root, "scripts", "egress-container-verify.mjs");
+  const nativeHelperContractPath = resolve(root, "scripts", "native-helper-contract.mjs");
+  const nativeHelperBuildPath = resolve(root, "scripts", "native-helper-build.mjs");
+  const nativeHelperVerifyPath = resolve(
+    root,
+    "scripts",
+    "native-helper-container-verify.mjs",
+  );
+  const nativeHelperLocalReportPath = resolve(
+    root,
+    "artifacts",
+    "security",
+    "native-helper-local-build-report.json",
+  );
   const linuxCgroupObserverPath = resolve(root, "scripts", "linux-cgroup-observer.mjs");
   const roleStartBarrierPath = resolve(root, "scripts", "role-start-barrier.mjs");
   const linuxStartBarrierPath = resolve(root, "src", "codex", "linux-start-barrier.ts");
@@ -192,16 +210,39 @@ export function inspectStaticContainerContract(root = ROOT) {
   let workerBuildInput = null;
   let verifierBuildInput = null;
   let egressBuildInput = null;
+  let helperBuildInput = null;
+  let helperSource = null;
   try {
     workerBuildInput = computeContainerBuildInput("worker", root);
     verifierBuildInput = computeContainerBuildInput("verifier", root);
     egressBuildInput = computeContainerBuildInput("egress", root);
+    helperBuildInput = computeContainerBuildInput("helper", root);
+    helperSource = computeNativeHelperSource(root);
   } catch {
     failures.push("Container build inputs are absent or unsafe.");
   }
+  const nativeHelperBuilderImagePinned =
+    typeof contract?.nativeHelper?.builderImage === "string" &&
+    /^[a-z0-9][a-z0-9._/-]*(?::[A-Za-z0-9._-]+)?@sha256:[0-9a-f]{64}$/u.test(
+      contract.nativeHelper.builderImage,
+    );
+  const nativeHelperImagePinned =
+    typeof contract?.nativeHelper?.image === "string" &&
+    /^sha256:[0-9a-f]{64}$/u.test(contract.nativeHelper.image);
+  const nativeHelperBinaryPinned =
+    typeof contract?.nativeHelper?.binarySha256 === "string" &&
+    /^[0-9a-f]{64}$/u.test(contract.nativeHelper.binarySha256);
+  const nativeHelperIdentityStateValid =
+    (contract?.nativeHelper?.builderImage === null &&
+      contract?.nativeHelper?.image === null &&
+      contract?.nativeHelper?.binarySha256 === null) ||
+    (nativeHelperBuilderImagePinned &&
+      contract?.nativeHelper?.image === null &&
+      contract?.nativeHelper?.binarySha256 === null) ||
+    (nativeHelperBuilderImagePinned && nativeHelperImagePinned && nativeHelperBinaryPinned);
   if (
     contract === null ||
-    contract.schemaVersion !== "14" ||
+    contract.schemaVersion !== "15" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -211,6 +252,24 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.applicationPort !== 3000 ||
     contract.healthPath !== "/api/health" ||
     contract.dataPath !== "/data/policytwin.sqlite" ||
+    contract.nativeHelper?.status !== "STATIC_SOURCE_AND_PACKAGE_PREPARED" ||
+    contract.nativeHelper?.dockerfile !== "Dockerfile.cgroup-helper" ||
+    contract.nativeHelper?.sourcePath !== "native/policytwin-linux-cgroup-helper.c" ||
+    contract.nativeHelper?.sourceSha256 !== helperSource?.sha256 ||
+    contract.nativeHelper?.buildInputSha256 !== helperBuildInput?.sha256 ||
+    !nativeHelperIdentityStateValid ||
+    contract.nativeHelper?.imagePath !== "/policytwin-linux-cgroup-helper" ||
+    contract.nativeHelper?.maximumBinaryBytes !== 4_194_304 ||
+    contract.nativeHelper?.localToolchainBuildStatus !==
+      "PASS_LOCAL_TOOLCHAIN_NOT_IMAGE_BOUND" ||
+    !/^[0-9a-f]{64}$/u.test(contract.nativeHelper?.localToolchainBinarySha256 ?? "") ||
+    contract.nativeHelper?.localToolchainPinned !== false ||
+    contract.nativeHelper?.localRepeatedBuildsByteIdentical !== true ||
+    contract.nativeHelper?.liveGateArtifactGateRequired !== true ||
+    contract.nativeHelper?.imageBuildVerified !== false ||
+    contract.nativeHelper?.hostInstallVerified !== false ||
+    contract.nativeHelper?.runtimeVerified !== false ||
+    contract.nativeHelper?.passSigningEligible !== false ||
     contract.webContainer?.includesLiveCodexWorker !== false ||
     contract.webContainer?.runtimeUser !== "node" ||
     contract.webContainer?.readOnlyRootRequired !== true ||
@@ -257,6 +316,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveCpuNativeHelperSourceImplemented !== true ||
     contract.workerContainer?.liveCpuNativeHelperClientImplemented !== true ||
     contract.workerContainer?.liveCpuNativeHelperFullRoleSessionImplemented !== true ||
+    contract.workerContainer?.liveCpuNativeHelperArtifactPackagingImplemented !== true ||
+    contract.workerContainer?.liveCpuNativeHelperLocalBuildReproducibilityVerified !== true ||
     contract.workerContainer?.liveCpuDockerBarrierRolePlanImplemented !== true ||
     contract.workerContainer?.liveCpuSupervisorSealedLifecyclePlanRequired !== true ||
     contract.workerContainer?.liveCpuDockerOwnerFactoryImplemented !== true ||
@@ -436,8 +497,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.egressProxy?.publicIpv4PinRequired !== true ||
     contract.egressProxy?.tlsProbeOutboundObservation !== "NOT_MEASURED" ||
     contract.supervisorDockerExecutor?.status !== "STATIC_FAKE_RUNNER_VERIFIED" ||
-    contract.supervisorDockerExecutor?.contractVersion !== "2" ||
-    contract.supervisorDockerExecutor?.bindingDomain !== "policytwin-docker-v2" ||
+    contract.supervisorDockerExecutor?.contractVersion !== "3" ||
+    contract.supervisorDockerExecutor?.bindingDomain !== "policytwin-docker-v3" ||
     contract.supervisorDockerExecutor?.resourceSuffixHexLength !== 32 ||
     contract.supervisorDockerExecutor?.shell !== false ||
     contract.supervisorDockerExecutor?.adoptExistingResources !== false ||
@@ -499,6 +560,10 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.supervisorDockerExecutor?.linuxHelperForcedTerminationRequiresAllDockerRolesAbsent !==
       true ||
     contract.supervisorDockerExecutor?.linuxNativeHelperFixedBinaryProtocolImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxNativeHelperArtifactPackagingImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxNativeHelperLocalBuildReproducibilityVerified !==
+      true ||
+    contract.supervisorDockerExecutor?.linuxNativeHelperArtifactImageBuildVerified !== false ||
     contract.supervisorDockerExecutor?.linuxNativeHelperRuntimeVerified !== false ||
     contract.supervisorDockerExecutor?.linuxCgroupCpuActuationSourceImplemented !== true ||
     contract.supervisorDockerExecutor?.linuxCgroupCpuActuationImplemented !== true ||
@@ -516,7 +581,8 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.supervisorDockerExecutor?.liveCodexExecuted !== false ||
     contract.workerBuildInputSha256 !== workerBuildInput?.sha256 ||
     contract.verifierBuildInputSha256 !== verifierBuildInput?.sha256 ||
-    contract.egressProxyBuildInputSha256 !== egressBuildInput?.sha256
+    contract.egressProxyBuildInputSha256 !== egressBuildInput?.sha256 ||
+    contract.nativeHelper?.buildInputSha256 !== helperBuildInput?.sha256
   ) {
     failures.push("Container contract does not preserve the static web/worker split.");
   }
@@ -543,6 +609,94 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (contract?.egressProxyImage !== null && !egressProxyImagePinned) {
     failures.push("Configured egress proxy image is not immutable.");
+  }
+  if (contract?.nativeHelper?.image !== null && !nativeHelperImagePinned) {
+    failures.push("Configured native helper artifact image is not immutable.");
+  }
+
+  const nativeHelperDockerfile = read(
+    nativeHelperDockerfilePath,
+    failures,
+    "Native helper Dockerfile",
+  );
+  failures.push(...inspectNativeHelperDockerfile(nativeHelperDockerfile));
+  const nativeHelperContract = read(
+    nativeHelperContractPath,
+    failures,
+    "Native helper artifact contract",
+  );
+  for (const required of [
+    "NATIVE_HELPER_COMPILER_ARGUMENTS",
+    "inspectNativeHelperBinary",
+    "interpreterPresent",
+    "neededLibraryCount",
+    "executableStack",
+    "inspectNativeHelperPrerequisites",
+  ]) {
+    requireText(nativeHelperContract, required, failures, "Native helper artifact contract");
+  }
+  const nativeHelperBuild = read(
+    nativeHelperBuildPath,
+    failures,
+    "Native helper local builder",
+  );
+  for (const required of [
+    'status: "PASS_LOCAL_TOOLCHAIN_NOT_IMAGE_BOUND"',
+    "byteIdenticalRepeat: true",
+    "toolchainPinned: false",
+    "imageBuildVerified: false",
+    "cgroupV2RuntimeVerified: false",
+    "passClaim: false",
+    "rmSync(resolve(ROOT, REPORT_RELATIVE_PATH), { force: true })",
+  ]) {
+    requireText(nativeHelperBuild, required, failures, "Native helper local builder");
+  }
+  const nativeHelperVerify = read(
+    nativeHelperVerifyPath,
+    failures,
+    "Native helper image verifier",
+  );
+  for (const required of [
+    '"--pull=false"',
+    '"--network=none"',
+    '"Dockerfile.cgroup-helper"',
+    "inspectNativeHelperBinary",
+    "expectedHelperImageId",
+    "expectedBinarySha256",
+    "hostInstallVerified: false",
+    "cgroupV2RuntimeVerified: false",
+    "passSigningEligible: false",
+  ]) {
+    requireText(nativeHelperVerify, required, failures, "Native helper image verifier");
+  }
+  const nativeHelperLocalReportBody = read(
+    nativeHelperLocalReportPath,
+    failures,
+    "Native helper local build report",
+  );
+  try {
+    const report = JSON.parse(nativeHelperLocalReportBody);
+    if (
+      report?.schemaVersion !== "1" ||
+      report?.status !== "PASS_LOCAL_TOOLCHAIN_NOT_IMAGE_BOUND" ||
+      report?.sourceSha256 !== helperSource?.sha256 ||
+      report?.binarySha256 !== contract?.nativeHelper?.localToolchainBinarySha256 ||
+      report?.byteIdenticalRepeat !== true ||
+      report?.toolchainPinned !== false ||
+      report?.elf?.staticPie !== true ||
+      report?.elf?.interpreterPresent !== false ||
+      report?.elf?.neededLibraryCount !== 0 ||
+      report?.elf?.executableStack !== false ||
+      report?.imageBuildVerified !== false ||
+      report?.hostInstallVerified !== false ||
+      report?.cgroupV2RuntimeVerified !== false ||
+      report?.liveEvidenceSigningEligible !== false ||
+      report?.passClaim !== false
+    ) {
+      failures.push("Native helper local build report overclaims or does not match its source.");
+    }
+  } catch {
+    failures.push("Native helper local build report is not valid JSON.");
   }
 
   const dockerfile = read(dockerfilePath, failures, "Dockerfile");
@@ -809,6 +963,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     "assertPrivateLiveLinuxDockerRemovalReceipt",
     "finalizePrivateLiveLinuxDockerCleanupReceipt",
     "settlePrivateLiveLinuxDockerOwnerOperations",
+    "nativeHelperBinarySha256: options.lifecyclePlan.nativeHelper.binarySha256",
     "removalPromise",
     "dynamicRuntimeVerified: false",
   ]) {
@@ -835,6 +990,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     "assertPrivateLiveLinuxDockerOwnerBarrierConfiguration",
     "removePrivateLiveLinuxOwnedDockerNetworks",
     "options.owner.runBindingSha256 !== options.barrierController.runBindingSha256",
+    "options.owner.nativeHelperBinarySha256 !== options.helperClient.helperSha256",
     "dynamicRuntimeVerified: false",
     "finalizedEvidenceIssued: false",
     "passSigningEligible: false",
@@ -1125,6 +1281,10 @@ export function inspectStaticContainerContract(root = ROOT) {
     "processObserver.processTreeIsEmpty",
     "listedById?.exitCode === 0",
     "configuration.allowedWorkerImage !== request.policy.workerImageDigest",
+    "nativeHelperImage",
+    "nativeHelperBinarySha256",
+    "nativeHelperBuildInputSha256",
+    "nativeHelperSourceSha256",
     "maximumWorkerLimits",
     "running instance changed",
     "did not remain stopped",
@@ -1449,6 +1609,9 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const liveGateContract = read(liveGateContractPath, failures, "Live gate contract");
   for (const required of [
+    "scripts/native-helper-container-verify.mjs",
+    "HELPER_REPORT_INVALID",
+    "report?.imageBuildVerified === true",
     "CUMULATIVE_CPU_PROOF_UNAVAILABLE",
     "report boolean or static fake-controller proof cannot advance the live gate",
     "report?.facts?.cumulativeCpuTimeEnforced === false",
@@ -1468,7 +1631,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "14"',
+    'contract.schemaVersion !== "15"',
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
   ]) {
@@ -1491,7 +1654,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "14"',
+    'contract?.schemaVersion !== "15"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     '"Dockerfile.worker"',
@@ -1546,7 +1709,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "14"',
+    'contract?.schemaVersion !== "15"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',
@@ -1632,7 +1795,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   return {
     schemaVersion: "1",
     status: failures.length === 0 ? "PASS" : "FAIL",
-    scope: "STATIC_WEB_WORKER_VERIFIER_EGRESS_CONTAINERS",
+    scope: "STATIC_WEB_WORKER_VERIFIER_EGRESS_HELPER_CONTAINERS",
     sourceInspectionMethod: "STRUCTURAL_JSON_AND_REQUIRED_SOURCE_MARKERS",
     behavioralVerification: "SEPARATE_UNIT_AND_INTEGRATION_TESTS",
     targetPlatform: contract?.targetPlatform ?? null,
@@ -1642,15 +1805,21 @@ export function inspectStaticContainerContract(root = ROOT) {
     workerImagePinned,
     verifierImagePinned,
     egressProxyImagePinned,
+    nativeHelperBuilderImagePinned,
+    nativeHelperImagePinned,
+    nativeHelperBinaryPinned,
     workerBuildInputSha256: workerBuildInput?.sha256 ?? null,
     verifierBuildInputSha256: verifierBuildInput?.sha256 ?? null,
     egressProxyBuildInputSha256: egressBuildInput?.sha256 ?? null,
+    nativeHelperBuildInputSha256: helperBuildInput?.sha256 ?? null,
+    nativeHelperSourceSha256: helperSource?.sha256 ?? null,
     opaVersion: contract?.opaVersion ?? null,
     webContainerIncludesLiveCodexWorker:
       contract?.webContainer?.includesLiveCodexWorker ?? null,
     workerContainerStatus: contract?.workerContainer?.status ?? null,
     verifierContainerStatus: contract?.verifierContainer?.status ?? null,
     egressProxyStatus: contract?.egressProxy?.status ?? null,
+    nativeHelperStatus: contract?.nativeHelper?.status ?? null,
     dynamicContainerVerified: false,
     releaseReady: false,
     failures,
@@ -1671,7 +1840,7 @@ function main() {
     process.exit(1);
   }
   console.log(
-    "Static web, worker, verifier, and egress proxy container contracts passed; immutable images, Docker daemon, dynamic isolation, live proxy traffic, and live Codex evidence remain required.",
+    "Static web, worker, verifier, egress proxy, and native helper contracts passed; immutable images, Docker daemon, dynamic isolation, live proxy traffic, and live Codex evidence remain required.",
   );
 }
 

@@ -141,7 +141,7 @@ export function supervisorDockerBindingSha256(
     throw new Error("Worker ownership nonce is invalid.");
   }
   return createHash("sha256")
-    .update("policytwin-docker-v2", "utf8")
+    .update("policytwin-docker-v3", "utf8")
     .update("\0", "utf8")
     .update(requestSha256, "utf8")
     .update("\0", "utf8")
@@ -525,7 +525,7 @@ export function buildWorkerRuntimePlan(options: WorkerRuntimePlanOptions): Worke
   );
   const commonLabels = {
     "com.policytwin.managed": "true",
-    "com.policytwin.contract-version": "2",
+    "com.policytwin.contract-version": "3",
     "com.policytwin.binding-sha256": bindingSha256,
     "com.policytwin.request-sha256": options.requestSha256,
     "com.policytwin.run-id": options.runId,

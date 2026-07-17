@@ -50,6 +50,7 @@ export interface PrivateLiveLinuxDockerOwner {
   readonly schemaVersion: "1";
   readonly status: "PRIVATE_DOCKER_OWNER_NOT_RUNTIME_VERIFIED";
   readonly runBindingSha256: string;
+  readonly nativeHelperBinarySha256: string;
   readonly dynamicRuntimeVerified: false;
   readonly liveEvidenceIssuanceEnabled: false;
   readonly passSigningEligible: false;
@@ -607,6 +608,7 @@ export function createPrivateLiveLinuxDockerOwner(options: {
     schemaVersion: "1" as const,
     status: "PRIVATE_DOCKER_OWNER_NOT_RUNTIME_VERIFIED" as const,
     runBindingSha256,
+    nativeHelperBinarySha256: options.lifecyclePlan.nativeHelper.binarySha256,
     dynamicRuntimeVerified: false as const,
     liveEvidenceIssuanceEnabled: false as const,
     passSigningEligible: false as const,

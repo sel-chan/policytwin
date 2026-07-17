@@ -160,6 +160,9 @@ export function createPrivateLiveLinuxDockerCgroupSystemAdapter(options: {
   ) {
     throw new Error("The private system adapter run bindings do not match.");
   }
+  if (options.owner.nativeHelperBinarySha256 !== options.helperClient.helperSha256) {
+    throw new Error("The private system adapter helper binary does not match the sealed plan.");
+  }
   for (const role of ROLE_ORDER) {
     assertPrivatePreparedLinuxStartBarrierRole(
       options.barrierController,

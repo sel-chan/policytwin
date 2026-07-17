@@ -39,6 +39,11 @@ const ROLE_INPUTS = {
     "tsconfig.build.json",
     "tsconfig.json",
   ],
+  helper: [
+    "Dockerfile.cgroup-helper",
+    "native/policytwin-linux-cgroup-helper.c",
+    "scripts/native-helper-contract.mjs",
+  ],
 };
 const MAX_FILES = 512;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
@@ -73,7 +78,7 @@ function collectInput(root, input, files) {
 }
 
 export function computeContainerBuildInput(role, root = ROOT) {
-  if (role !== "worker" && role !== "verifier" && role !== "egress") {
+  if (role !== "worker" && role !== "verifier" && role !== "egress" && role !== "helper") {
     throw new Error("Container build role is invalid.");
   }
   const repositoryRoot = resolve(root);

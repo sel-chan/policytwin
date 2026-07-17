@@ -26,6 +26,7 @@ test("private Docker/cgroup adapter rejects copied objects and preserves the non
     "removePrivateLiveLinuxOwnedDockerNetworks",
     "releasePrivateLinuxCgroupHelperRole",
     "finalizePrivateLiveLinuxDockerCleanupReceipt",
+    "options.owner.nativeHelperBinarySha256 !== options.helperClient.helperSha256",
   ]) {
     assert.ok(source.includes(marker), `missing private system-adapter marker ${marker}`);
   }

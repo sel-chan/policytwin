@@ -90,7 +90,7 @@ test("worker runtime plan fixes the two-file write set and credential-free verif
   assert.equal(plan.worker.network, WORKER_NETWORK);
   assert.deepEqual(plan.worker.labels, {
     "com.policytwin.managed": "true",
-    "com.policytwin.contract-version": "2",
+    "com.policytwin.contract-version": "3",
     "com.policytwin.binding-sha256": plan.worker.labels["com.policytwin.binding-sha256"],
     "com.policytwin.request-sha256": REQUEST_SHA256,
     "com.policytwin.run-id": fixture.runId,
@@ -375,6 +375,10 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
     workerImage: `sha256:${DIGEST}`,
     verifierImage: `sha256:${DIGEST}`,
     egressProxyImage: `sha256:${DIGEST}`,
+    nativeHelperImage: `sha256:${DIGEST}`,
+    nativeHelperBinarySha256: DIGEST,
+    nativeHelperBuildInputSha256: DIGEST,
+    nativeHelperSourceSha256: DIGEST,
     ownershipNonce: OWNERSHIP_NONCE,
     requestSha256: REQUEST_SHA256,
     limits: LIMITS,
@@ -385,7 +389,7 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
       providerCredentialPath,
     },
   });
-  assert.equal(plan.schemaVersion, "2");
+  assert.equal(plan.schemaVersion, "3");
   assert.equal(Object.isFrozen(plan), true);
   assertFactoryIssuedSupervisorDockerLifecyclePlan(plan);
   assert.throws(
@@ -413,6 +417,14 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
   assert.notEqual(plan.workerNetwork, WORKER_NETWORK);
   assert.equal(plan.ownership.requestSha256, REQUEST_SHA256);
   assert.match(plan.ownership.bindingSha256, /^[0-9a-f]{64}$/u);
+  assert.deepEqual(plan.nativeHelper, {
+    image: `sha256:${DIGEST}`,
+    imagePath: "/policytwin-linux-cgroup-helper",
+    binarySha256: DIGEST,
+    buildInputSha256: DIGEST,
+    sourceSha256: DIGEST,
+  });
+  assert.equal(Object.isFrozen(plan.nativeHelper), true);
   assert.equal(plan.networks.worker.operateByObservedId, true);
   assert.equal(plan.networks.outbound.operateByObservedId, true);
   assert.deepEqual(plan.egress.attachments, [
@@ -510,6 +522,10 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
         workerImage: `sha256:${DIGEST}`,
         verifierImage: `sha256:${DIGEST}`,
         egressProxyImage: `sha256:${DIGEST}`,
+        nativeHelperImage: `sha256:${DIGEST}`,
+        nativeHelperBinarySha256: DIGEST,
+        nativeHelperBuildInputSha256: DIGEST,
+        nativeHelperSourceSha256: DIGEST,
         ownershipNonce: OWNERSHIP_NONCE,
         requestSha256: REQUEST_SHA256,
         limits: LIMITS,

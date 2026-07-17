@@ -9,8 +9,8 @@
     "platformLocalDaemonSelected": false,
     "workerImageId": null,
     "egressProxyImageId": null,
-    "workerBuildInputSha256": "06b8b69f4727e493fc760ac2aa9aeb082afdbeb7938a25efed2a595760b4123f",
-    "egressProxyBuildInputSha256": "5f382c953b9a9c69262dcfefde99d40f5bd56632077fc26f7f84d0a9667207fd",
+    "workerBuildInputSha256": "91839f30c2ce65c6c93db149507143dc371170369daacb8bfe402b3e441988c6",
+    "egressProxyBuildInputSha256": "dd359a1723d06218ecf6cd9a7966423f6adbd5265aac5392d8d3bdc1cc945a21",
     "workerNetworkId": null,
     "outboundNetworkId": null,
     "networkOwnershipVerified": false,
@@ -36,6 +36,7 @@
   },
   "releaseReady": false,
   "failures": [
-    "immutable Node base image is unset"
+    "immutable Node base image is unset",
+    "sealed native helper artifact identity is unset"
   ]
 }

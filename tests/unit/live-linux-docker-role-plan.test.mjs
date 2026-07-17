@@ -76,6 +76,10 @@ async function fixture() {
     workerImage: `sha256:${digest}`,
     verifierImage: `sha256:${digest}`,
     egressProxyImage: `sha256:${digest}`,
+    nativeHelperImage: `sha256:${digest}`,
+    nativeHelperBinarySha256: digest,
+    nativeHelperBuildInputSha256: digest,
+    nativeHelperSourceSha256: digest,
     ownershipNonce: "b".repeat(32),
     requestSha256: "d".repeat(64),
     limits: {

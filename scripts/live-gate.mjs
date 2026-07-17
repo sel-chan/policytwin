@@ -9,7 +9,7 @@ const missingHostConfiguration = ["OPENAI_API_KEY", "CODEX_MODEL"].filter(
 );
 
 let failedDynamicGate = null;
-const reports = { worker: null, egress: null };
+const reports = { helper: null, worker: null, egress: null };
 if (missingHostConfiguration.length === 0) {
   for (const gate of LIVE_DYNAMIC_GATES) {
     const result = spawnSync(process.execPath, [gate.script], {
@@ -38,6 +38,7 @@ if (missingHostConfiguration.length === 0) {
 const verdict = evaluateLiveGateReadiness({
   missingHostConfiguration,
   failedDynamicGate,
+  helperReport: reports.helper,
   workerReport: reports.worker,
   egressReport: reports.egress,
 });

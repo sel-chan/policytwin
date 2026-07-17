@@ -16,7 +16,7 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   const report = inspectStaticContainerContract();
   assert.deepEqual(report.failures, []);
   assert.equal(report.status, "PASS");
-  assert.equal(report.scope, "STATIC_WEB_WORKER_VERIFIER_EGRESS_CONTAINERS");
+  assert.equal(report.scope, "STATIC_WEB_WORKER_VERIFIER_EGRESS_HELPER_CONTAINERS");
   assert.equal(
     report.sourceInspectionMethod,
     "STRUCTURAL_JSON_AND_REQUIRED_SOURCE_MARKERS",
@@ -33,7 +33,19 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
   assert.equal(report.releaseReady, false);
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
-  assert.equal(contract.schemaVersion, "14");
+  assert.equal(contract.schemaVersion, "15");
+  assert.equal(contract.nativeHelper.status, "STATIC_SOURCE_AND_PACKAGE_PREPARED");
+  assert.equal(contract.nativeHelper.builderImage, null);
+  assert.equal(contract.nativeHelper.image, null);
+  assert.equal(contract.nativeHelper.binarySha256, null);
+  assert.equal(contract.nativeHelper.localToolchainBuildStatus, "PASS_LOCAL_TOOLCHAIN_NOT_IMAGE_BOUND");
+  assert.equal(contract.nativeHelper.localToolchainPinned, false);
+  assert.equal(contract.nativeHelper.localRepeatedBuildsByteIdentical, true);
+  assert.equal(contract.nativeHelper.liveGateArtifactGateRequired, true);
+  assert.equal(contract.nativeHelper.imageBuildVerified, false);
+  assert.equal(contract.nativeHelper.hostInstallVerified, false);
+  assert.equal(contract.nativeHelper.runtimeVerified, false);
+  assert.equal(contract.nativeHelper.passSigningEligible, false);
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerStateMachineImplemented, true);
   assert.equal(
     contract.workerContainer.liveCpuEvidenceProducerCandidateStatus,
@@ -88,6 +100,11 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(contract.workerContainer.liveCpuNativeHelperSourceImplemented, true);
   assert.equal(contract.workerContainer.liveCpuNativeHelperClientImplemented, true);
   assert.equal(contract.workerContainer.liveCpuNativeHelperFullRoleSessionImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuNativeHelperArtifactPackagingImplemented, true);
+  assert.equal(
+    contract.workerContainer.liveCpuNativeHelperLocalBuildReproducibilityVerified,
+    true,
+  );
   assert.equal(contract.workerContainer.liveCpuDockerBarrierRolePlanImplemented, true);
   assert.equal(contract.workerContainer.liveCpuSupervisorSealedLifecyclePlanRequired, true);
   assert.equal(contract.workerContainer.liveCpuDockerOwnerFactoryImplemented, true);
@@ -147,6 +164,18 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
     contract.supervisorDockerExecutor.linuxNativeHelperFixedBinaryProtocolImplemented,
     true,
   );
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxNativeHelperArtifactPackagingImplemented,
+    true,
+  );
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxNativeHelperLocalBuildReproducibilityVerified,
+    true,
+  );
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxNativeHelperArtifactImageBuildVerified,
+    false,
+  );
   assert.equal(contract.supervisorDockerExecutor.linuxNativeHelperRuntimeVerified, false);
   assert.equal(contract.supervisorDockerExecutor.linuxCgroupCpuActuationSourceImplemented, true);
 });
@@ -173,7 +202,10 @@ test("egress dynamic verification rejects missing base and build-input tampering
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
   const report = inspectEgressContainerPrerequisites(contract);
   assert.equal(report.status, "FAIL");
-  assert.deepEqual(report.failures, ["immutable Node base image is unset"]);
+  assert.deepEqual(report.failures, [
+    "immutable Node base image is unset",
+    "sealed native helper artifact identity is unset",
+  ]);
   const worker = computeContainerBuildInput("worker");
   const egress = computeContainerBuildInput("egress");
   const tampered = inspectEgressContainerPrerequisites(contract, {
@@ -242,6 +274,7 @@ async function copyStaticContainerInputs(target) {
     "Dockerfile.worker",
     "Dockerfile.verifier",
     "Dockerfile.egress-proxy",
+    "Dockerfile.cgroup-helper",
     ".dockerignore",
     "package.json",
     "pnpm-lock.yaml",
@@ -265,8 +298,12 @@ async function copyStaticContainerInputs(target) {
     "scripts/verifier-preflight.mjs",
     "scripts/worker-container-verify.mjs",
     "scripts/egress-container-verify.mjs",
+    "scripts/native-helper-contract.mjs",
+    "scripts/native-helper-build.mjs",
+    "scripts/native-helper-container-verify.mjs",
     "scripts/linux-cgroup-observer.mjs",
     "native/policytwin-linux-cgroup-helper.c",
+    "artifacts/security/native-helper-local-build-report.json",
     "scripts/container-verify.mjs",
     "scripts/live-gate-contract.mjs",
     "scripts/pinned-docker-cli.mjs",
@@ -277,6 +314,25 @@ async function copyStaticContainerInputs(target) {
   }
 }
 
+test("static container contract admits safely pinned native helper identities", async (t) => {
+  const target = await mkdtemp(join(tmpdir(), "policytwin-container-helper-pinned-"));
+  t.after(() => rm(target, { recursive: true, force: true }));
+  await copyStaticContainerInputs(target);
+  const contractPath = join(target, "container-contract.json");
+  const contract = JSON.parse(await readFile(contractPath, "utf8"));
+  contract.nativeHelper.builderImage = `gcc:15@sha256:${"a".repeat(64)}`;
+  contract.nativeHelper.image = `sha256:${"b".repeat(64)}`;
+  contract.nativeHelper.binarySha256 = "c".repeat(64);
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
+
+  const report = inspectStaticContainerContract(target);
+  assert.deepEqual(report.failures, []);
+  assert.equal(report.status, "PASS");
+  assert.equal(report.nativeHelperBuilderImagePinned, true);
+  assert.equal(report.nativeHelperImagePinned, true);
+  assert.equal(report.nativeHelperBinaryPinned, true);
+});
+
 test("static container inspection detects weakened verifier networking and fixture bundling", async (t) => {
   const target = await mkdtemp(join(tmpdir(), "policytwin-container-contract-"));
   t.after(() => rm(target, { recursive: true, force: true }));
@@ -286,6 +342,31 @@ test("static container inspection detects weakened verifier networking and fixtu
   let report = inspectStaticContainerContract(target);
   assert.deepEqual(report.failures, []);
   assert.equal(report.status, "PASS");
+
+  const helperDockerfilePath = join(target, "Dockerfile.cgroup-helper");
+  const helperDockerfile = await readFile(helperDockerfilePath, "utf8");
+  await writeFile(
+    helperDockerfilePath,
+    helperDockerfile.replace("--chmod=0555", "--chmod=0755"),
+    "utf8",
+  );
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /native helper Dockerfile/iu);
+  await writeFile(helperDockerfilePath, helperDockerfile, "utf8");
+
+  const helperReportPath = join(
+    target,
+    "artifacts/security/native-helper-local-build-report.json",
+  );
+  const helperReport = JSON.parse(await readFile(helperReportPath, "utf8"));
+  helperReport.passClaim = true;
+  await writeFile(helperReportPath, `${JSON.stringify(helperReport, null, 2)}\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /local build report overclaims/u);
+  helperReport.passClaim = false;
+  await writeFile(helperReportPath, `${JSON.stringify(helperReport, null, 2)}\n`, "utf8");
 
   contract.workerContainer.liveRpcV2PassSigningEnabled = true;
   await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "utf8");

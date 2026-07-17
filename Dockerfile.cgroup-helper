@@ -1,0 +1,14 @@
+ARG HELPER_BUILDER_IMAGE
+FROM ${HELPER_BUILDER_IMAGE} AS builder
+
+ENV LANG=C \
+    LC_ALL=C \
+    SOURCE_DATE_EPOCH=0 \
+    TZ=UTC
+
+WORKDIR /src
+COPY native/policytwin-linux-cgroup-helper.c /src/policytwin-linux-cgroup-helper.c
+RUN cc -x c -std=c17 -D_FORTIFY_SOURCE=3 -O2 -Wall -Wextra -Werror -Wpedantic -fstack-protector-strong -fPIE -fno-plt -fno-record-gcc-switches -static-pie -Wl,-z,relro,-z,now,-z,noexecstack -o /policytwin-linux-cgroup-helper - < /src/policytwin-linux-cgroup-helper.c
+
+FROM scratch
+COPY --from=builder --chmod=0555 /policytwin-linux-cgroup-helper /policytwin-linux-cgroup-helper

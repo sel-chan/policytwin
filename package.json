@@ -55,6 +55,8 @@
     "container:verify": "node scripts/container-verify.mjs",
     "worker:verify": "node scripts/worker-container-verify.mjs",
     "egress:verify": "node scripts/egress-container-verify.mjs",
+    "helper:build:local": "node scripts/native-helper-build.mjs",
+    "helper:verify": "node scripts/native-helper-container-verify.mjs",
     "submission:draft": "node scripts/generate-submission-draft.mjs",
     "submission:architecture": "node scripts/render-architecture.mjs",
     "submission:check": "node scripts/submission-check.mjs"
