@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { assertSafeRelativePath } from "../codex/safety.js";
 import {
+  DEFAULT_EVIDENCE_MAX_ATTESTATION_AGE_MS,
   REQUIRED_EVIDENCE_FILES,
   validateEvidencePackage,
   type EvidenceValidationOptions,
@@ -42,6 +43,7 @@ export interface EvidenceArchive {
   policyVersion: number;
   fileName: string;
   entryNames: readonly string[];
+  liveAttestationExpiresAtMs: number | null;
 }
 
 function compareUtf8(left: string, right: string): number {
@@ -300,6 +302,17 @@ export function createEvidenceArchive(
   );
   const mode = manifest.evidenceMode.toLowerCase().replaceAll("_", "-");
   const status = manifest.packageStatus.toLowerCase();
+  const liveAttestationExpiresAtMs = (() => {
+    if (manifest.evidenceMode !== "LIVE_VERIFIED") return null;
+    const issuedAtMs = Date.parse(manifest.liveAttestation?.issuedAt ?? "");
+    const maxAgeMs =
+      options.maxAttestationAgeMs ?? DEFAULT_EVIDENCE_MAX_ATTESTATION_AGE_MS;
+    const expiresAtMs = issuedAtMs + maxAgeMs;
+    if (!Number.isSafeInteger(issuedAtMs) || !Number.isSafeInteger(expiresAtMs)) {
+      throw new Error("Live evidence cache expiry is outside the safe time range.");
+    }
+    return expiresAtMs;
+  })();
   return {
     bytes,
     archiveSha256: createHash("sha256").update(bytes).digest("hex"),
@@ -309,5 +322,6 @@ export function createEvidenceArchive(
     policyVersion,
     fileName: `policytwin-evidence-v${policyVersion}-${mode}-${status}-${manifest.evidenceHash.slice(0, 12)}.tar`,
     entryNames: entries.map((entry) => entry.name),
+    liveAttestationExpiresAtMs,
   };
 }

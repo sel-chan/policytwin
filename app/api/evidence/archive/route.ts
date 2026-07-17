@@ -3,32 +3,28 @@ import {
   type EvidenceArchive,
 } from "../../../../dist/evidence/archive.js";
 import {
+  createEvidenceArchiveCache,
+  evidenceArchiveCacheKey,
+} from "../../../../dist/evidence/archive-cache.js";
+import {
   EVIDENCE_RESPONSE_HEADERS,
   hashEvidenceText,
   loadEvidenceDownloadInput,
 } from "../../../lib/evidence-download";
 
 export const dynamic = "force-dynamic";
-let activeArchive: Promise<EvidenceArchive> | null = null;
+const archiveCache = createEvidenceArchiveCache();
 
-async function buildArchive(): Promise<EvidenceArchive> {
-  const input = await loadEvidenceDownloadInput();
+async function buildArchive(
+  input: Awaited<ReturnType<typeof loadEvidenceDownloadInput>>,
+): Promise<EvidenceArchive> {
   return createEvidenceArchive(input.files, hashEvidenceText, input.validationOptions);
 }
 
 async function archiveForRequest(): Promise<EvidenceArchive> {
-  if (activeArchive !== null) {
-    return activeArchive;
-  }
-  const run = buildArchive();
-  activeArchive = run;
-  try {
-    return await run;
-  } finally {
-    if (activeArchive === run) {
-      activeArchive = null;
-    }
-  }
+  const input = await loadEvidenceDownloadInput();
+  const key = evidenceArchiveCacheKey(input.files, input.validationOptions);
+  return archiveCache.getOrCreate(key, () => buildArchive(input));
 }
 
 export async function GET() {

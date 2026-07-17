@@ -19,6 +19,7 @@ import {
   computeEvidencePackageHash,
   createCanonicalFixtureDiff,
   createEvidenceArchive,
+  DEFAULT_EVIDENCE_MAX_ATTESTATION_AGE_MS,
   liveEvidenceAttestationMessage,
   MAX_EVIDENCE_DOWNLOAD_FILE_BYTES,
   REQUIRED_EVIDENCE_FILES,
@@ -218,6 +219,7 @@ test("complete evidence archive is byte-deterministic USTAR with exactly 38 veri
   assert.equal(first.evidenceMode, "PARTIAL_OFFLINE");
   assert.equal(first.packageStatus, "FAIL");
   assert.equal(first.policyVersion, 4);
+  assert.equal(first.liveAttestationExpiresAtMs, null);
   assert.match(
     first.fileName,
     /^policytwin-evidence-v4-partial-offline-fail-[0-9a-f]{12}\.tar$/u,
@@ -1008,6 +1010,10 @@ test("LIVE_VERIFIED evidence requires a valid trusted Ed25519 attestation", asyn
   const liveArchive = createEvidenceArchive(files, hashText, options);
   assert.equal(liveArchive.evidenceMode, "LIVE_VERIFIED");
   assert.equal(liveArchive.packageStatus, "FAIL");
+  assert.equal(
+    liveArchive.liveAttestationExpiresAtMs,
+    Date.parse(verification.createdAt) + DEFAULT_EVIDENCE_MAX_ATTESTATION_AGE_MS,
+  );
   assert.match(
     liveArchive.fileName,
     /^policytwin-evidence-v4-live-verified-fail-[0-9a-f]{12}\.tar$/u,

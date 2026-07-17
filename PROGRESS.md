@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7/M9 — digest-bound native helper and immutable role-image packaging`
+- Current milestone: `M9 — content-bound evidence archive cache and public-download pressure`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-17 10:54 +09:00`
+- Last updated: `2026-07-17 11:45 +09:00`
 - Latest checkpoint commit: `447f077797fdaf712f1d75d4a632a4a5c2a1b847`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -95,38 +95,40 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v15 lifecycle-v3 Docker/helper construction plus exact helper-artifact identity binding pass offline contracts | `447f077` | no immutable helper artifact has been built, installed, or run on Linux Docker/cgroup v2; finalized-result issuance, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, and signed live evidence remain absent |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 adds a no-download scratch helper-artifact recipe, fixed source/build/ELF/tar checks, byte-identical local build evidence, lifecycle-v3 hash binding, a no-pull/no-network dynamic artifact gate, and offline/live compatibility for safely pinned helper identities; 315 unit, 57 integration, 22 eval, static container, 335-file security, and 365-file clean-copy gates pass | `447f077` | digest-pinned compiler/Node/role images, Docker daemon, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries plus a 15-second content-and-validation-policy-bound one-entry evidence-archive cache pass 322 unit, 57 integration, 22 eval, static container, 337-file security, and 367-file clean-copy gates | pending current checkpoint | shared public admission/rate limiting, digest-pinned compiler/Node/role images, Docker daemon, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
 ### Objective
 
-Package the repository-owned native cgroup helper through one reproducible, digest-bound supervisor build contract, bind the exact helper source/build inputs and immutable role images into the sealed lifecycle plan, and prepare a dynamic Linux Docker/cgroup-v2 verifier that cannot promote source or static build evidence into runtime, finalized, PASS, or live claims. Attempt the locally installed Docker Desktop boundary, but keep every unobserved claim false if the daemon, immutable registry inputs, or cgroup-v2 host are unavailable.
+Close the remaining public evidence-download pressure risk with one bounded, short-lived, content-and-validation-policy-bound server cache. Sequential requests for unchanged evidence may reuse only a previously validated archive; any evidence byte, trust policy, freshness policy, live-attestation expiry, build failure, or cache bound violation must force rebuild or fail closed. Client responses remain `no-store`, and this checkpoint must not alter evidence provenance, package status, or any live/deployment claim.
 
 ### Starting failing condition
 
-Starting HEAD is clean `main` at ledger commit `32782b56018d9058120ced25b592b7f0c0f752bc` after schema-v14 implementation checkpoint `995b12c9bc9e1207ee5cda6b5bc31e55db47861e`. The prior checkpoint passes every implemented offline gate with 309/309 unit, 57/57 integration, 22/22 eval, 3/3 browser, 358-file clean-copy, security/history, static container checks, strict native compilation, demo replay, and production build; `pnpm verify` exits only for the owner-selected `LICENSE` and exact 29-item non-final submission gate. Docker CLI 29.1.5 is installed, but the Desktop Linux daemon and service are stopped, the image store is empty, `nodeBaseImage` and all role image IDs remain null, and the WSL distribution exposes tmpfs plus legacy controllers rather than a usable unified cgroup-v2 host. The helper source is strictly compilable but is not packaged in a digest-bound image or observed at runtime.
+Starting HEAD is clean `main` at ledger commit `03cd30e` after schema-v15 implementation commit `447f077797fdaf712f1d75d4a632a4a5c2a1b847`. The current baseline passes 315/315 unit tests. The archive route coalesces only one currently active build; after it settles, every sequential request rereads, semantically revalidates, scans, and rebuilds the same approximately 227 KiB 38-file archive. `PROGRESS.md` explicitly records this as an open M9 public-download pressure risk. Docker Desktop remains stopped, WSL cgroup reports `tmpfs`, all live/API settings remain unset, and no new network scope is assumed.
 
 ### Planned actions
 
-- [x] Re-read the full control documents; confirm clean `main`, Docker/WSL state, current role Dockerfiles, schema-v14 contract, and exact prior gate evidence.
-- [x] Define failing tests for the helper artifact build contract, source/compiler flags, ELF/static-PIE shape, tar ownership/mode, lifecycle identity binding, and non-promotion of build-only receipts.
-- [x] Add the minimal `scratch` helper artifact Dockerfile and deterministic build-input manifest without downloading mutable tools or accepting an unpinned builder/base.
-- [x] Bind helper image/source/build/binary identities into lifecycle v3, snapshot the binary hash in the private owner, and reject a mismatched same-FD helper client before runtime authority is issued.
-- [x] Add a dynamic artifact verifier with explicit image-build/install/cgroup/signing states, `--pull=false`, `--network=none`, fixed tar extraction, and no premature runtime/PASS claim; require it first in `verify:live`.
-- [x] Reconfirm that Docker Desktop cannot be started through the current service-control permission and that no approved compiler/Node registry image is present; perform no unapproved pull or implicit network startup.
-- [x] Run focused tests, strict repeated native compilation, lint, typecheck, unit, integration, eval, build, security, static container, clean-copy, browser, and authoritative fail-closed gates.
-- [x] Update D-046, architecture/threat/limitations/runbook/submission wording, generated reports, and this ledger from observed evidence only; complete final diff review and current-branch commits.
-- [x] Close the final-review compatibility gap so the offline static gate accepts safely pinned helper builder/image/binary identities while preserving every runtime and PASS claim as false; add a regression test and remove stale local-build evidence on failure.
+- [x] Re-read all required control documents; confirm clean `main`, 315/315 unit baseline, stopped Docker service/daemon, WSL `tmpfs` cgroup, unset live settings, and the exact sequential-rebuild risk.
+- [x] Add failing tests for deterministic content/policy keys, same-key coalescing and reuse, defensive copies, TTL/attestation expiry, content/policy invalidation, one-entry bounds, and failure non-caching.
+- [x] Implement a dependency-free server cache with one completed entry, one active build, fixed short TTL, exact archive-size bound, current live-attestation expiry, and no cached failures.
+- [x] Wire the archive route through the cache while preserving full bounded reads, content hashing, semantic validation on misses, `no-store`, response hashes, filenames, and truthful error behavior.
+- [x] Run focused tests, lint, typecheck, full unit/integration/eval/browser/build/security/clean-copy/static-container gates, and expected fail-closed live/submission commands.
+- [ ] Inspect generated artifacts and final diff; update D-047, README/threat/limitations/runbook/submission wording, this ledger, and commit the checkpoint on current `main`.
 
-This checkpoint may establish a reproducible helper/supervisor package and immutable lifecycle inputs, but a source hash, compiled binary hash, Docker build success, or static inspect result alone cannot claim helper runtime, cgroup enforcement, finalized evidence, PASS signing, live Codex work, or deployment. Those claims require the dedicated dynamic gate to observe the exact image, helper handshake, Docker PID/cgroup identity, containment, release, and cleanup together.
+This checkpoint may reduce repeated server work for already validated evidence only. It cannot turn `PARTIAL_OFFLINE/FAIL` into live proof, bypass signature/freshness checks, claim shared multi-replica rate limiting, or substitute for deployment and live verification.
 
 ### Completion evidence
 
-- Starting HEAD: clean `main` at `32782b56018d9058120ced25b592b7f0c0f752bc`; schema-v14 implementation baseline `995b12c9bc9e1207ee5cda6b5bc31e55db47861e`.
-- Initial environment: Docker CLI 29.1.5 with `desktop-linux` context; daemon pipe absent; `com.docker.service` stopped/manual; Docker Desktop executable present; WSL helper host lacks a usable unified cgroup-v2 mount.
-- Current result: schema v15/lifecycle v3 helper packaging and identity binding are implemented. Two local strict builds are byte-identical, but the toolchain is unpinned; the artifact gate fails before Docker at the unset immutable builder. Final review proved and repaired offline/live configuration compatibility: the static gate now accepts only all-unset, pinned-builder/bootstrap, or fully pinned builder/image/binary states, and a failed local build removes stale success evidence. No helper image, host installation, cgroup runtime transcript, finalized evidence, PASS, live model/Codex work, deployment, or submission is claimed.
+- Starting HEAD: clean `main` at `03cd30e`; schema-v15 implementation baseline `447f077797fdaf712f1d75d4a632a4a5c2a1b847`.
+- Initial environment: Docker CLI 29.1.5 cannot reach `dockerDesktopLinuxEngine`; `com.docker.service` is stopped/manual; WSL cgroup is `tmpfs`; `OPENAI_API_KEY`, `CODEX_MODEL`, `POLICYTWIN_DOCKER_CLI`, `POLICYTWIN_RUN_TOKEN`, and `POLICYTWIN_PUBLIC_ORIGIN` are unset.
+- Failing condition reproduced: after registering `tests/unit/evidence-archive-cache.test.mjs`, the focused test failed with `ERR_MODULE_NOT_FOUND` for the absent cache module. The initial full regression also truthfully exposed stale worker/egress build-input bindings after the new source entered those image contexts; the contract was updated only to the recomputed hashes and all five related regressions then passed.
+- Implementation: `src/evidence/archive-cache.ts` binds all 38 filenames/content bytes and the validation policy into one domain-separated SHA-256 key, coalesces one active build, retains at most one completed entry for at most 15 seconds, verifies the cached byte hash and exact size/metadata bounds, returns defensive copies, and never caches failures or extends live-attestation expiry. The route still rereads the bounded file set per request and preserves `no-store`, archive/evidence hashes, filename, and fail-closed errors.
+- Verification: lint, strict typecheck, 322/322 unit, 57/57 integration, 22/22 eval, 3/3 production Chrome, Next.js build, 337-text-file security plus Git history, 367-file clean-copy replay, and static container checks pass. `pnpm verify` exits only for the owner-selected `LICENSE` and exact 29-item non-final submission gate.
+- Dynamic boundary: `verify:live` stops before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; helper, web, worker, and egress gates stop before Docker at the unset immutable builder/Node/helper identities with `dockerInvoked:false` where recorded. No model call, Docker workload, deployment, live proof, or submission occurred.
+- Direct inspection: the regenerated Policy Studio screenshot has no visible layout defect. Static/security/clean-copy reports were inspected and contain the latest content hashes, `PASS` offline statuses, and no security findings.
+- Current result: implementation, final offline verification, generated-report inspection, screenshot inspection, and final diff review are complete; checkpoint commit bookkeeping remains. This cache is process-local work reduction only and does not claim shared public rate limiting.
 
 ## Quality gates
 
@@ -136,26 +138,26 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` with `npm_config_store_dir=C:\tmp\policytwin-pnpm-store-fresh` | exact 469-entry lock graph passes supply-chain policy; root and clean-copy dependency trees hydrate fully from the fresh NTFS store | 2026-07-17 09:12 +09:00 |
-| Lint | PASS | `pnpm lint` | schema-v15/lifecycle-v3 helper packaging, sealed Docker/network/adapter sources, generated submission notes, RPC, and repository static checks pass | 2026-07-17 10:54 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers sealed helper identity, lifecycle plans, Docker owner/networks, helper session, private system adapter/lifecycle, v1/v2 RPC, application, and policy-engine boundaries | 2026-07-17 10:54 +09:00 |
+| Lint | PASS | `pnpm lint` | evidence cache/route, schema-v15 helper packaging, generated submission notes, RPC, and repository static checks pass | 2026-07-17 11:35 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers the cache/live-expiry contract, application, sealed helper lifecycle, v1/v2 RPC, and policy-engine boundaries | 2026-07-17 11:35 +09:00 |
 | Native helper local build | PASS_LOCAL_ONLY | `pnpm helper:build:local` | repeated compilation remains byte-identical at 841,656-byte AMD64 static PIE with SHA-256 `906214d0489875ebbc718d934397fb2e43b00b5af825391c247b1efb112abdef`; compiler is explicitly unpinned, stale success evidence is removed on failure, and no image/runtime claim follows | 2026-07-17 10:54 +09:00 |
-| Unit tests | PASS | `pnpm test` | 315/315 pass, including safe pinned-helper static admission, stale local-evidence invalidation, helper source/build input, ELF/static-PIE, tar ownership/mode/checksum, lifecycle-v3 identity binding, live-gate order, and existing Docker/cgroup/RPC regressions | 2026-07-17 10:54 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 57/57 serial fixture, mTLS v1/v2, PASS-signing rejection, typed FAIL signing, replay restart, OPA, evidence, and persistence assertions pass | 2026-07-17 10:54 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, archive, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass | 2026-07-17 10:54 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass with schema-v15 implementation-only wording and truthful runtime/live exclusions | 2026-07-17 10:54 +09:00 |
-| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build and strict TypeScript pass with internal non-exported modules | 2026-07-17 10:54 +09:00 |
-| Offline full verification | FAIL_EXPECTED | `pnpm verify` | every implemented schema-v15 gate passes: 315 unit, 57 integration, 22 eval, 3 browser, 365-file clean copy, 335-text-file security plus Git history, static container, demo, and build; exit 1 is only owner `LICENSE` plus exact 29-item submission gate | 2026-07-17 10:54 +09:00 |
-| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; helper artifact is now the first required dynamic gate when configuration exists | 2026-07-17 10:54 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 365 source files; frozen offline install, lint, typecheck, 315 unit, 57 integration, 22 eval, build, 3 browser, demo replay, and evidence generation pass | 2026-07-17 10:54 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | schema-v15 validates fixed helper Dockerfile/build/ELF/report boundaries, safe unset/bootstrap/fully-pinned identity states, lifecycle-v3 hash binding, live-gate ordering, owned networks, cleanup-only recovery, and all still-false runtime/finalization/PASS claims | 2026-07-17 10:54 +09:00 |
-| Dynamic helper artifact | FAIL | `pnpm helper:verify` | immutable builder image is unset; verifier records `dockerInvoked:false`, no image/binary identity, and all install/cgroup/signing claims false | 2026-07-17 10:54 +09:00 |
-| Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-17 10:19 +09:00 |
-| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | schema v15 and role hashes match; fails before Docker at the unset immutable Node base with no runtime evidence | 2026-07-17 10:19 +09:00 |
-| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | fails before Docker at the unset immutable Node base and sealed helper artifact identities; outbound remains `NOT_MEASURED` | 2026-07-17 10:19 +09:00 |
+| Unit tests | PASS | `pnpm test` | 322/322 pass, including seven content/policy key, same/different-key concurrency, defensive-copy, TTL/live-expiry, one-entry, byte-hash/size, and failure non-caching regressions plus existing Docker/cgroup/RPC coverage | 2026-07-17 11:35 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 57/57 serial fixture, mTLS v1/v2, OPA, evidence, persistence, and exact partial/live archive-expiry assertions pass | 2026-07-17 11:35 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests; six views, complete archive download, v1-v5 writes, isolation/capacity/expiry, focus, and 390px layout pass; Policy Studio screenshot directly inspected | 2026-07-17 11:35 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass with schema-v15 and cache implementation-only wording plus truthful runtime/live exclusions | 2026-07-17 11:35 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build and strict TypeScript pass with the server-only archive route/cache integration | 2026-07-17 11:35 +09:00 |
+| Offline full verification | FAIL_EXPECTED | `pnpm verify` | every implemented gate passes: 322 unit, 57 integration, 22 eval, 3 browser, 367-file clean copy, 337-text-file security plus Git history, static container, demo, and build; exit 1 is only owner `LICENSE` plus exact 29-item submission gate | 2026-07-17 11:35 +09:00 |
+| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no model or Codex call occurred | 2026-07-17 11:35 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 367 source files; frozen offline install, lint, typecheck, 322 unit, 57 integration, 22 eval, build, 3 browser, demo replay, and evidence generation pass | 2026-07-17 11:35 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | schema-v15 validates latest worker `9afd2e…`, verifier `f688fa…`, egress `ae096b…`, and helper `2c4b74…` inputs while all runtime/finalization/PASS claims remain false | 2026-07-17 11:35 +09:00 |
+| Dynamic helper artifact | FAIL | `pnpm helper:verify` | immutable builder image is unset; verifier records `dockerInvoked:false`, no image/binary identity, and all install/cgroup/signing claims false | 2026-07-17 11:35 +09:00 |
+| Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-17 11:35 +09:00 |
+| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | latest role hashes match; fails before Docker only at the unset immutable Node base with no runtime evidence | 2026-07-17 11:35 +09:00 |
+| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | latest role hashes match; fails before Docker at the unset immutable Node base and sealed helper artifact identities; outbound remains `NOT_MEASURED` | 2026-07-17 11:35 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent with `OWNER_DECISION_REQUIRED` | 2026-07-16 16:59 +09:00 |
-| Security review | PASS | `pnpm security:check` | 335 text files plus Git history scanned; fixed local-compiler and pinned-Docker child-process boundaries reviewed; no findings | 2026-07-17 10:54 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; schema-v15 implementation-only notes remain non-final and no fabricated URL, video, license, confirmation, or Codex capture exists | 2026-07-17 10:54 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent with `OWNER_DECISION_REQUIRED` | 2026-07-17 11:35 +09:00 |
+| Security review | PASS | `pnpm security:check` | 337 text files plus Git history scanned; fixed local-compiler and pinned-Docker child-process boundaries reviewed; no findings | 2026-07-17 11:35 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; schema-v15/cache notes remain non-final and no fabricated URL, video, license, confirmation, or Codex capture exists | 2026-07-17 11:35 +09:00 |
 
 ## Product proof metrics
 
@@ -177,6 +179,19 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-17 11:35 +09:00 — Content-bound evidence archive cache verified offline
+
+- Milestones: M8 and M9 remain `IN_PROGRESS`; this checkpoint closes repeated same-process semantic-validation/archive-construction work for unchanged proof downloads without claiming client throttling, shared admission control, live evidence, deployment, or release readiness.
+- Cache contract: each request rereads the exact bounded 38-file package, then hashes every length-delimited filename/content byte plus trusted live keys, trusted OPA identities, and explicit freshness settings. One active build is allowed; one completed archive may be reused for at most 15 seconds. Different content/policy, TTL expiry, live-attestation expiry, invalid metadata/hash/size, or builder failure rebuilds or fails closed.
+- Integrity and memory: cache entries must match their declared archive SHA-256, stay below the exact USTAR overhead cap over the existing 16 MiB aggregate input limit, preserve the exact evidence entry set, and return separate buffer/name-array copies. Failures are not cached and live expiry is never extended. HTTP remains `no-store`.
+- Route behavior: `/api/evidence/archive` preserves bounded reads, semantic/sensitive-content validation on misses, deterministic bytes, semantic and archive response hashes, filename, and truthful 503 behavior. Disk reads and content hashing remain per request by design.
+- Verification: lint, strict typecheck, 322/322 unit, 57/57 integration, 22/22 eval, 3/3 browser, 337-text-file security plus Git history, 367-file clean-copy replay, static container, demo, and production Next.js build pass. `pnpm verify` exits only for the owner-selected `LICENSE` and exact 29-item non-final submission gate.
+- Dynamic boundary: `verify:live` stops before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; helper, web, worker, and egress gates stop before Docker at unset immutable identities. No model call, Codex repair, Docker workload, live signer, deployment, publication, or submission occurred.
+- Build-input bindings: worker `9afd2ef3d42ff6ef9da8159c7ee58fa7c5134c73ebcc75b7885d2527fc1b1ef3`; verifier `f688fa01fc35b377c91578e404506eb47ccf6a2eaf6c2c4a3f2162856710c3a3`; egress `ae096b8fdebedb8d6d998175f7681f6db1d9229d8c0d2f5d32a616c13eebcbfc`; helper `2c4b74f1126fb25244f449dd9ded6ad166c01d678de138bfc5b3337b0aea2d2d`.
+- Documentation: D-047, README, threat model, limitations, demo runbook, submission draft, and this ledger state the cache's exact guarantees and process-local limitation. The regenerated Policy Studio screenshot was directly inspected with no visible layout defect.
+- Checkpoint commit: pending after completed final diff review.
+- Next: with explicit Docker registry scope and a running local Linux daemon, select reviewed digest-pinned compiler and Node bases, build/discover/pin the helper and role identities, then run artifact, web, worker, egress, and private Linux cgroup-v2 failure-injection gates. Add shared edge/admission rate limits before a public multi-replica deployment.
 
 ### 2026-07-17 10:54 +09:00 — Schema-v15 native-helper artifact and lifecycle-v3 identity checkpoint
 
@@ -638,7 +653,7 @@ A blocker is valid only when the task cannot continue safely without external in
 | Hosted worker restrictions | Medium | High | Keep final-result issuance and live admission disabled; package and dynamically verify the fixture-only private Docker/cgroup construction with hard limits and teardown receipts | Codex / open |
 | Codex SDK/live adapter mismatch | Medium | High | Current package/docs are pinned; validate the real adapter with fresh SDK evidence | Codex / open |
 | Live attestation key custody | Medium | High | Keep private key outside Git/logs/evidence; inject only trusted public keys into verification | Codex / open |
-| Repeated evidence-download pressure | Low locally / Medium when public | Medium | Exact 4 MiB/16 MiB bounds and one active archive build exist; add short metadata-keyed caching or shared rate limiting before public deployment | Codex / M9 open |
+| Repeated evidence-download pressure | Low locally / Medium when public | Medium | Exact 4 MiB/16 MiB bounds plus one active and one 15-second content/policy-bound completed archive are verified; add shared edge rate limiting/admission control before public multi-replica deployment | Local cache closed / deployment open |
 | Docker daemon unavailable | High | Medium | Continue non-container gates; start Docker Desktop before the container gate | Owner/Codex / open |
 | Offline validator/Zod duplication | Medium | Medium | Cross-check both contracts and generate JSON Schema from the pinned runtime schema after network approval | Codex / open |
 | Demo recording/account blocker | Medium | Medium | Prepare script, captions, screenshots, and exact owner action | Codex / open |
@@ -657,11 +672,11 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `schema-v15 helper-artifact/lifecycle-v3 checkpoint is offline-verified and committed; the next dynamic phase requires the owner-controlled Docker Linux engine and newly approved registry scope`
-- Exact current state: `the helper has a fixed no-download scratch artifact recipe, source/build/ELF/tar validation, byte-identical unpinned local-build evidence, sealed lifecycle-v3 identity binding, and a first-in-order live artifact gate; no immutable helper image, host install, Linux Docker/cgroup-v2 transcript, finalized-evidence issuer, signer, PASS, or live admission exists`
-- Last successful command: `pnpm verify completed every implemented schema-v15 step with 315/315 unit, 57/57 integration, 22/22 eval, 3/3 browser, 365-file clean-copy, 335-file security/history, static container, demo, and build passing; it remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
+- Why paused: `not paused during this checkpoint; after its final commit, the next dynamic phase requires the owner-controlled Docker Linux engine and explicit registry scope`
+- Exact current state: `the proof route has a verified 15-second one-entry content/policy-bound archive cache while retaining per-request bounded reads/hashing and no-store responses; the helper remains statically packaged and lifecycle-bound, but no shared public rate limit, immutable helper/role image, Linux Docker/cgroup-v2 transcript, finalized-evidence issuer, signer, PASS, or live admission exists`
+- Last successful command: `the final pnpm verify completed every implemented step with 322/322 unit, 57/57 integration, 22/22 eval, 3/3 browser, 367-file clean-copy, 337-file security/history, static container, demo, and build passing, then remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm helper:verify fails before Docker at the unset immutable builder; web/worker fail at the unset Node base; egress also lacks sealed helper IDs; pnpm verify:live fails before dynamic gates/network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `none after the checkpoint and ledger commits`
+- Uncommitted files: `content-bound archive-cache checkpoint pending commit after final verification and diff review`
 - Safe resume command/action: `after the owner supplies the exact Docker/registry prerequisites, confirm clean main and run the helper artifact gate first`
 - One owner action, if any: `start the Docker Desktop Linux engine, then reply with explicit approval to pull the selected digest-pinned compiler and Node images`
 
@@ -670,7 +685,7 @@ Fill before `/goal pause` or any handoff.
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `FAIL_EXPECTED; every implemented schema-v15 gate passed and only the owner LICENSE plus the exact 29-item non-final submission gate failed`
+- `pnpm verify`: `FAIL_EXPECTED; every implemented schema-v15/cache gate passed and only the owner LICENSE plus the exact 29-item non-final submission gate failed`
 - `pnpm verify:live`: `FAIL_CLOSED_BEFORE_DYNAMIC_GATES_OR_NETWORK; OPENAI_API_KEY and CODEX_MODEL are absent, while helper/role images, real-Docker/cumulative-CPU/outbound observations, finalized evidence, fresh GPT/Codex evidence, and signer/live admission do not exist`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`

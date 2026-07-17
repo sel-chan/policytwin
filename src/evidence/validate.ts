@@ -116,8 +116,8 @@ export type TextHasher = (value: string) => string;
 
 const EVIDENCE_HASH_PLACEHOLDER = "0".repeat(64);
 const ACCEPTED_CASE_MINIMUM = 30;
-const MAX_FUTURE_SKEW_MS = 5 * 60 * 1_000;
-const MAX_ATTESTATION_AGE_MS = 24 * 60 * 60 * 1_000;
+export const DEFAULT_EVIDENCE_MAX_FUTURE_SKEW_MS = 5 * 60 * 1_000;
+export const DEFAULT_EVIDENCE_MAX_ATTESTATION_AGE_MS = 24 * 60 * 60 * 1_000;
 const CASE_SOURCES = new Set([
   "USER_GOLDEN",
   "BOUNDARY",
@@ -1119,8 +1119,10 @@ function validateLiveAttestation(
   }
   const now = options.now ?? new Date();
   const issuedAt = Date.parse(attestation.issuedAt);
-  const maxFutureSkewMs = options.maxFutureSkewMs ?? MAX_FUTURE_SKEW_MS;
-  const maxAttestationAgeMs = options.maxAttestationAgeMs ?? MAX_ATTESTATION_AGE_MS;
+  const maxFutureSkewMs =
+    options.maxFutureSkewMs ?? DEFAULT_EVIDENCE_MAX_FUTURE_SKEW_MS;
+  const maxAttestationAgeMs =
+    options.maxAttestationAgeMs ?? DEFAULT_EVIDENCE_MAX_ATTESTATION_AGE_MS;
   if (
     !Number.isFinite(now.getTime()) ||
     !Number.isSafeInteger(maxFutureSkewMs) ||
