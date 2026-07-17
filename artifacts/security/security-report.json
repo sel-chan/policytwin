@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 352,
-  "scannedTextFiles": 323,
+  "scannedFiles": 358,
+  "scannedTextFiles": 329,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [

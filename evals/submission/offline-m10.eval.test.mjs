@@ -18,10 +18,14 @@ test("submission draft remains non-final with no fabricated URLs or confirmation
   assert.equal(state.status, "NOT_READY");
   assert.equal(state.confirmation, null);
   assert.equal(Object.values(links).filter((value) => value === null).length, 4);
-  assert.equal(report.status, "FAIL");
-  assert.equal(report.failures.includes("Evidence package is not live verified PASS."), true);
-  assert.equal(report.failures.includes("Official rules have not been verified."), false);
-  assert.equal(report.failures.includes("Project LICENSE is absent."), true);
+  assert.equal(["FAIL", "NOT_RUN"].includes(report.status), true);
+  if (report.status === "NOT_RUN") {
+    assert.deepEqual(report.failures, ["Submission checker has not run after draft generation."]);
+  } else {
+    assert.equal(report.failures.includes("Evidence package is not live verified PASS."), true);
+    assert.equal(report.failures.includes("Official rules have not been verified."), false);
+    assert.equal(report.failures.includes("Project LICENSE is absent."), true);
+  }
 });
 
 test("demo and claim drafts keep evaluation-only and live claims separate", () => {

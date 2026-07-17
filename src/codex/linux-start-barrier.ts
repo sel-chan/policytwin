@@ -285,6 +285,20 @@ function requiredPreparedState(
   return state;
 }
 
+export function assertPrivatePreparedLinuxStartBarrierRole(
+  controller: PrivateLinuxStartBarrierController,
+  value: unknown,
+): asserts value is PrivatePreparedLinuxStartBarrierRole {
+  try {
+    requiredPreparedState(
+      controller,
+      value as PrivatePreparedLinuxStartBarrierRole,
+    );
+  } catch {
+    throw new Error("The value is not a private prepared Linux start-barrier role.");
+  }
+}
+
 export async function preparePrivateLinuxStartBarrierRole(
   controller: PrivateLinuxStartBarrierController,
   role: LinuxStartBarrierRole,

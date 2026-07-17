@@ -16,7 +16,6 @@ export const LINUX_CGROUP_HELPER_OPCODES = Object.freeze({
   KILL: 0x0006,
   QUIESCENT: 0x0007,
   RELEASE: 0x0008,
-  CLOSE: 0x0009,
   STOP: 0x000a,
   RESPONSE_BIT: 0x8000,
   ERROR: 0xffff,
@@ -174,16 +173,30 @@ export function decodeLinuxCgroupHelperBindResponse(payload: Buffer) {
     throw new Error("The Linux cgroup helper bind response is invalid.");
   }
   const handle = payload.readUInt32BE(0);
-  if (handle < 1) throw new Error("The Linux cgroup helper handle is invalid.");
+  const pidStartTicks = payload.readBigUInt64BE(8);
+  const cgroupDevice = payload.readBigUInt64BE(16);
+  const cgroupInode = payload.readBigUInt64BE(24);
+  const cgroupMountId = payload.readBigUInt64BE(32);
+  const monotonicRawNs = payload.readBigUInt64BE(48);
+  if (
+    handle < 1 ||
+    pidStartTicks === 0n ||
+    cgroupDevice === 0n ||
+    cgroupInode === 0n ||
+    cgroupMountId === 0n ||
+    monotonicRawNs === 0n
+  ) {
+    throw new Error("The Linux cgroup helper bound identity is invalid.");
+  }
   return Object.freeze({
     handle,
     role: codeRole(payload.readUInt8(4)),
-    pidStartTicks: payload.readBigUInt64BE(8),
-    cgroupDevice: payload.readBigUInt64BE(16),
-    cgroupInode: payload.readBigUInt64BE(24),
-    cgroupMountId: payload.readBigUInt64BE(32),
+    pidStartTicks,
+    cgroupDevice,
+    cgroupInode,
+    cgroupMountId,
     baselineUsageUsec: payload.readBigUInt64BE(40),
-    monotonicRawNs: payload.readBigUInt64BE(48),
+    monotonicRawNs,
   });
 }
 
@@ -208,12 +221,13 @@ export function decodeLinuxCgroupHelperSampleResponse(payload: Buffer) {
   const handle = payload.readUInt32BE(0);
   const populated = payload.readUInt8(20);
   const frozen = payload.readUInt8(21);
-  if (handle < 1 || populated > 1 || frozen > 1) {
+  const monotonicRawNs = payload.readBigUInt64BE(4);
+  if (handle < 1 || monotonicRawNs === 0n || populated > 1 || frozen > 1) {
     throw new Error("The Linux cgroup helper sample fields are invalid.");
   }
   return Object.freeze({
     handle,
-    monotonicRawNs: payload.readBigUInt64BE(4),
+    monotonicRawNs,
     usageUsec: payload.readBigUInt64BE(12),
     populated: populated === 1,
     frozen: frozen === 1,
@@ -225,7 +239,9 @@ export function decodeLinuxCgroupHelperRawClockResponse(payload: Buffer) {
   if (!Buffer.isBuffer(payload) || payload.byteLength !== 8) {
     throw new Error("The Linux cgroup helper RAW clock response is invalid.");
   }
-  return payload.readBigUInt64BE(0);
+  const value = payload.readBigUInt64BE(0);
+  if (value === 0n) throw new Error("The Linux cgroup helper RAW clock response is invalid.");
+  return value;
 }
 
 export function decodeLinuxCgroupHelperAckResponse(payload: Buffer, expectedHandle: number) {
@@ -243,8 +259,10 @@ export function decodeLinuxCgroupHelperError(payload: Buffer) {
   if (!Buffer.isBuffer(payload) || payload.byteLength !== 4) {
     throw new Error("The Linux cgroup helper error frame is invalid.");
   }
-  return Object.freeze({
-    failedOpcode: payload.readUInt16BE(0),
-    errorCode: payload.readUInt16BE(2),
-  });
+  const failedOpcode = payload.readUInt16BE(0);
+  const errorCode = payload.readUInt16BE(2);
+  if (!validRequestOpcode(failedOpcode) || errorCode < 1 || errorCode > 8) {
+    throw new Error("The Linux cgroup helper error frame is invalid.");
+  }
+  return Object.freeze({ failedOpcode, errorCode });
 }

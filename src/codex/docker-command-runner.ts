@@ -1,17 +1,17 @@
 import { spawn } from "node:child_process";
 import { lstatSync, realpathSync } from "node:fs";
-import { isAbsolute, resolve } from "node:path";
+import { basename, isAbsolute, resolve } from "node:path";
 
 const MAX_ARGUMENTS = 256;
 const MAX_ARGUMENT_BYTES = 8_192;
 const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
 const MAX_TIMEOUT_MS = 15 * 60_000;
+const privateDockerCliRunners = new WeakSet<object>();
 const FORBIDDEN_OPTIONS = new Set([
   "--privileged",
   "--publish",
   "--publish-all",
   "--expose",
-  "--entrypoint",
   "--env-file",
   "--device",
   "--device-cgroup-rule",
@@ -64,6 +64,143 @@ const NETWORK_COMMANDS = new Set([
   "rm",
   "ls",
 ]);
+const IMMUTABLE_IMAGE = /^sha256:[0-9a-f]{64}$/u;
+const SHA256 = /^[0-9a-f]{64}$/u;
+const BARRIER_TOKEN = /^[A-Za-z0-9_-]{43}$/u;
+
+function optionValues(args: readonly string[], name: string) {
+  const values: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === name) {
+      const value = args[index + 1];
+      if (value === undefined) throw new Error("The Docker option is missing its value.");
+      values.push(value);
+      index += 1;
+    } else if (argument?.startsWith(`${name}=`)) {
+      values.push(argument.slice(name.length + 1));
+    }
+  }
+  return values;
+}
+
+function exactBarrierTarget(role: string, target: readonly string[]) {
+  const hold = "--observation-hold-ms=5000";
+  const allowlist: Readonly<Record<string, readonly (readonly string[])[]>> = {
+    egress: [["node", "scripts/openai-egress-proxy.mjs"]],
+    worker: [
+      ["node", "scripts/worker-preflight.mjs", "--static-preflight"],
+      ["node", "scripts/worker-preflight.mjs", "--static-preflight", hold],
+      ["node", "scripts/worker-preflight.mjs", "--egress-tls-probe"],
+      ["node", "scripts/worker-preflight.mjs", "--egress-tls-probe", hold],
+      ["node", "scripts/worker-entrypoint.mjs", "--validate-only"],
+    ],
+    verifier: [
+      ["node", "scripts/verifier-preflight.mjs", "--static-preflight"],
+      ["node", "scripts/verifier-preflight.mjs", "--static-preflight", hold],
+      ["node", "scripts/verifier-preflight.mjs", "--verify"],
+      ["node", "scripts/verifier-preflight.mjs", "--verify", hold],
+    ],
+  };
+  return (allowlist[role] ?? []).some(
+    (candidate) =>
+      candidate.length === target.length &&
+      candidate.every((argument, index) => argument === target[index]),
+  );
+}
+
+function parseMount(value: string) {
+  const fields = value.split(",");
+  const entries = new Map<string, string>();
+  let readOnly = false;
+  for (const field of fields) {
+    if (field === "readonly") {
+      if (readOnly) throw new Error("The Docker barrier invocation is invalid.");
+      readOnly = true;
+      continue;
+    }
+    const separator = field.indexOf("=");
+    if (separator < 1) throw new Error("The Docker barrier invocation is invalid.");
+    const key = field.slice(0, separator);
+    const item = field.slice(separator + 1);
+    if (item.length === 0 || entries.has(key)) {
+      throw new Error("The Docker barrier invocation is invalid.");
+    }
+    entries.set(key, item);
+  }
+  return { entries, readOnly };
+}
+
+function assertDedicatedBarrierInvocation(args: readonly string[]) {
+  const entrypoints = optionValues(args, "--entrypoint");
+  if (entrypoints.length !== 1 || entrypoints[0] !== "node" || args[0] !== "create") {
+    throw new Error("The Docker barrier invocation is invalid.");
+  }
+  const imageIndexes = args
+    .map((argument, index) => (IMMUTABLE_IMAGE.test(argument) ? index : -1))
+    .filter((index) => index >= 0);
+  if (imageIndexes.length !== 1) {
+    throw new Error("The Docker barrier invocation is invalid.");
+  }
+  const imageIndex = imageIndexes[0]!;
+  const command = args.slice(imageIndex + 1);
+  if (
+    command[0] !== "scripts/role-start-barrier.mjs" ||
+    command[1] !== "--" ||
+    command.length < 4
+  ) {
+    throw new Error("The Docker barrier invocation is invalid.");
+  }
+  const environment = new Map<string, string>();
+  for (const value of optionValues(args.slice(0, imageIndex), "--env")) {
+    const separator = value.indexOf("=");
+    const name = separator < 1 ? "" : value.slice(0, separator);
+    if (name.length === 0 || environment.has(name)) {
+      throw new Error("The Docker barrier invocation is invalid.");
+    }
+    environment.set(name, value.slice(separator + 1));
+  }
+  const role = environment.get("POLICYTWIN_START_BARRIER_ROLE") ?? "";
+  const root = `/run/policytwin-start-barrier/${role}`;
+  const holdTimeout = environment.get("POLICYTWIN_START_BARRIER_HOLD_TIMEOUT_MS") ?? "";
+  const pollInterval = environment.get("POLICYTWIN_START_BARRIER_POLL_INTERVAL_MS") ?? "";
+  if (
+    environment.get("NODE_OPTIONS") !== "" ||
+    environment.get("POLICYTWIN_START_BARRIER_MODE") !== "REQUIRED_V1" ||
+    !BARRIER_TOKEN.test(environment.get("POLICYTWIN_START_BARRIER_ID") ?? "") ||
+    !SHA256.test(environment.get("POLICYTWIN_START_BARRIER_RUN_BINDING_SHA256") ?? "") ||
+    environment.get("POLICYTWIN_START_BARRIER_RECEIPT_DIRECTORY") !== `${root}/receipt` ||
+    environment.get("POLICYTWIN_START_BARRIER_CONTROL_DIRECTORY") !== `${root}/control` ||
+    !/^[1-9][0-9]{2,4}$/u.test(holdTimeout) ||
+    !/^[1-9][0-9]{0,2}$/u.test(pollInterval) ||
+    Number(pollInterval) >= Number(holdTimeout) ||
+    !exactBarrierTarget(role, command.slice(2))
+  ) {
+    throw new Error("The Docker barrier invocation is invalid.");
+  }
+  const barrierMounts = optionValues(args.slice(0, imageIndex), "--mount")
+    .map(parseMount)
+    .filter(({ entries }) => entries.get("target")?.startsWith(`${root}/`) === true);
+  const receipt = barrierMounts.filter(
+    ({ entries }) => entries.get("target") === `${root}/receipt`,
+  );
+  const control = barrierMounts.filter(
+    ({ entries }) => entries.get("target") === `${root}/control`,
+  );
+  if (
+    barrierMounts.length !== 2 ||
+    receipt.length !== 1 ||
+    control.length !== 1 ||
+    receipt[0]!.readOnly ||
+    !control[0]!.readOnly ||
+    receipt[0]!.entries.get("type") !== "bind" ||
+    control[0]!.entries.get("type") !== "bind" ||
+    receipt[0]!.entries.size !== 3 ||
+    control[0]!.entries.size !== 3
+  ) {
+    throw new Error("The Docker barrier invocation is invalid.");
+  }
+}
 
 export interface DockerCommandResult {
   exitCode: number;
@@ -80,6 +217,18 @@ export interface DockerCommandRunner {
       maximumOutputBytes?: number;
     },
   ): Promise<DockerCommandResult>;
+}
+
+export function assertPrivateDockerCliCommandRunner(
+  value: unknown,
+): asserts value is DockerCommandRunner {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !privateDockerCliRunners.has(value)
+  ) {
+    throw new Error("The Docker runner was not issued by the private CLI factory.");
+  }
 }
 
 export function assertSupervisorDockerArguments(args: readonly string[]): void {
@@ -117,6 +266,8 @@ export function assertSupervisorDockerArguments(args: readonly string[]): void {
       combinedShortOption ||
       (argument === "--network" && next === "host") ||
       argument === "--network=host" ||
+      argument === "--entrypoint" ||
+      (argument.startsWith("--entrypoint=") && argument !== "--entrypoint=node") ||
       (argument === "--security-opt" && next !== "no-new-privileges:true") ||
       (argument.startsWith("--security-opt=") &&
         argument !== "--security-opt=no-new-privileges:true") ||
@@ -147,6 +298,9 @@ export function assertSupervisorDockerArguments(args: readonly string[]): void {
     (command === "container" && subcommand === "inspect") ||
     (command === "network" && subcommand !== undefined && NETWORK_COMMANDS.has(subcommand));
   if (!allowed) throw new Error("The Docker command is not allowlisted.");
+  if (args.some((argument) => argument.startsWith("--entrypoint="))) {
+    assertDedicatedBarrierInvocation(args);
+  }
 }
 
 function exactEnvironment(source: NodeJS.ProcessEnv, localDaemonHost: string): NodeJS.ProcessEnv {
@@ -192,10 +346,12 @@ export function createDockerCliCommandRunner(options: {
   }
   const dockerExecutablePath = resolve(options.dockerExecutablePath);
   const dockerExecutableStat = lstatSync(dockerExecutablePath);
+  const executableName = basename(dockerExecutablePath).toLowerCase();
   if (
     !dockerExecutableStat.isFile() ||
     dockerExecutableStat.isSymbolicLink() ||
-    realpathSync.native(dockerExecutablePath) !== dockerExecutablePath
+    realpathSync.native(dockerExecutablePath) !== dockerExecutablePath ||
+    (executableName !== "docker" && executableName !== "docker.exe")
   ) {
     throw new Error("The Docker executable path is unsafe.");
   }
@@ -210,7 +366,7 @@ export function createDockerCliCommandRunner(options: {
     options.environment ?? process.env,
     options.localDaemonHost,
   );
-  return {
+  const runner: DockerCommandRunner = {
     async run(args, commandOptions) {
       assertSupervisorDockerArguments(args);
       if (
@@ -311,4 +467,6 @@ export function createDockerCliCommandRunner(options: {
       });
     },
   };
+  privateDockerCliRunners.add(runner);
+  return runner;
 }

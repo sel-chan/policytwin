@@ -33,7 +33,7 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
   assert.equal(report.releaseReady, false);
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
-  assert.equal(contract.schemaVersion, "12");
+  assert.equal(contract.schemaVersion, "14");
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerStateMachineImplemented, true);
   assert.equal(
     contract.workerContainer.liveCpuEvidenceProducerCandidateStatus,
@@ -87,11 +87,20 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(contract.workerContainer.liveCpuNativeHelperProtocolImplemented, true);
   assert.equal(contract.workerContainer.liveCpuNativeHelperSourceImplemented, true);
   assert.equal(contract.workerContainer.liveCpuNativeHelperClientImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuNativeHelperFullRoleSessionImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuDockerBarrierRolePlanImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuSupervisorSealedLifecyclePlanRequired, true);
+  assert.equal(contract.workerContainer.liveCpuDockerOwnerFactoryImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuDockerOwnedNetworkFactoryImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuDockerNetworkAbsenceRequired, true);
+  assert.equal(contract.workerContainer.liveCpuDockerReobservationReceiptsImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuDockerRemovalReceiptsImplemented, true);
   assert.equal(contract.workerContainer.liveCpuNativeHelperBuildVerified, false);
   assert.equal(contract.workerContainer.liveCpuNativeHelperRuntimeVerified, false);
-  assert.equal(contract.workerContainer.liveCpuStartBarrierRuntimeImplemented, false);
-  assert.equal(contract.workerContainer.liveCpuLinuxSystemAdapterImplemented, false);
-  assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleImplemented, false);
+  assert.equal(contract.workerContainer.liveCpuStartBarrierRuntimeImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuLinuxSystemAdapterImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuDedicatedLifecycleImplemented, true);
+  assert.equal(contract.workerContainer.liveCpuPrivateRuntimeDynamicVerified, false);
   assert.equal(
     contract.supervisorDockerExecutor.linuxCgroupObserverPurpose,
     "NON_LIVE_DYNAMIC_GATE_ONLY",
@@ -116,8 +125,24 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   );
   assert.equal(
     contract.supervisorDockerExecutor.linuxStartBarrierDockerIntegrationImplemented,
-    false,
+    true,
   );
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxSupervisorSealedLifecyclePlanRequired,
+    true,
+  );
+  assert.equal(contract.supervisorDockerExecutor.linuxDockerOwnerFactoryImplemented, true);
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxDockerOwnedNetworkFactoryImplemented,
+    true,
+  );
+  assert.equal(contract.supervisorDockerExecutor.linuxDockerNetworkAbsenceRequired, true);
+  assert.equal(contract.supervisorDockerExecutor.linuxDockerBindReobservationRequired, true);
+  assert.equal(
+    contract.supervisorDockerExecutor.linuxDockerRemovalReceiptRequiredBeforeCgroupRelease,
+    true,
+  );
+  assert.equal(contract.supervisorDockerExecutor.linuxCgroupCpuActuationImplemented, true);
   assert.equal(
     contract.supervisorDockerExecutor.linuxNativeHelperFixedBinaryProtocolImplemented,
     true,

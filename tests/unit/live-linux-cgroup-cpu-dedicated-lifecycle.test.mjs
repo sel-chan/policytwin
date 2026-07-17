@@ -4,7 +4,10 @@ import {
   createPrivateLiveLinuxCgroupCpuAdapterScaffold,
   createPrivateLiveLinuxCgroupCpuDedicatedLifecycleContract,
 } from "../../dist/codex/live-linux-cgroup-cpu-adapter.js";
-import { runNonPrivilegedLiveLinuxCgroupCpuDedicatedLifecycleHarness } from "../../dist/codex/live-linux-cgroup-cpu-dedicated-lifecycle.js";
+import {
+  runNonPrivilegedLiveLinuxCgroupCpuDedicatedLifecycleHarness,
+  runPrivateLiveLinuxDockerCgroupDedicatedLifecycle,
+} from "../../dist/codex/live-linux-cgroup-cpu-dedicated-lifecycle.js";
 
 const EXPECTED_NON_FINAL_STAGES = [
   "REQUEST_VALIDATED",
@@ -194,6 +197,7 @@ test("dedicated lifecycle enforces barrier/baseline order, serial samples, and c
   });
 
   assert.equal(result.status, "COMPLETED_NOT_FINALIZED");
+  assert.equal(result.executionProvenance, "NON_PRIVILEGED_TEST_PORT");
   assert.deepEqual(result.completedSuccessStages, EXPECTED_NON_FINAL_STAGES);
   assert.equal(result.dynamicRuntimeVerified, false);
   assert.equal(result.finalizedEvidenceIssued, false);
@@ -207,6 +211,18 @@ test("dedicated lifecycle enforces barrier/baseline order, serial samples, and c
   assert.equal(Object.isFrozen(result), true);
   assert.equal(Object.isFrozen(result.completedSuccessStages), true);
   assert.equal(Object.isFrozen(result.samples), true);
+});
+
+test("private dedicated lifecycle rejects a structurally copied system adapter", async () => {
+  await assert.rejects(
+    runPrivateLiveLinuxDockerCgroupDedicatedLifecycle({
+      lifecycleContract: lifecycleContract(),
+      system: { ...createFakeSystem().system, provenance: "PRIVATE_LINUX_DOCKER_CGROUP_ADAPTER" },
+      maximumCumulativeCpuUsec: 1_000n,
+      pollIntervalMs: 1,
+    }),
+    /active private capability/u,
+  );
 });
 
 test("over-budget execution contains active roles and cannot produce finalized evidence", async () => {

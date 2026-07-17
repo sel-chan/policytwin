@@ -20,6 +20,7 @@ const IMMUTABLE_IMAGE = /^sha256:[0-9a-f]{64}$/u;
 const RUN_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{7,63}$/u;
 const CAPABILITY = /^[A-Za-z0-9_-]{43}$/u;
 const OWNERSHIP_NONCE = /^[0-9a-f]{32}$/u;
+const factoryIssuedSupervisorDockerLifecyclePlans = new WeakSet<object>();
 export const OBSERVED_OUTBOUND_NETWORK_ID = "__POLICYTWIN_OUTBOUND_NETWORK_ID__" as const;
 
 export interface EgressProxySecretMounts {
@@ -94,6 +95,26 @@ export interface SupervisorDockerLifecyclePlan {
   egress: SupervisorDockerProcessPlan;
   worker: SupervisorDockerProcessPlan;
   verifier: SupervisorDockerProcessPlan;
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+export function assertFactoryIssuedSupervisorDockerLifecyclePlan(
+  value: unknown,
+): asserts value is SupervisorDockerLifecyclePlan {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !factoryIssuedSupervisorDockerLifecyclePlans.has(value)
+  ) {
+    throw new Error("The supervisor Docker lifecycle plan was not issued by its sealed factory.");
+  }
 }
 
 function assertRegularFile(path: string, maximumBytes: number, label: string): string {
@@ -380,7 +401,7 @@ export function buildSupervisorDockerLifecyclePlan(options: {
     bindMount(providerCredentialPath, "/run/secrets/policytwin-openai-key"),
     egressProxyImage,
   ];
-  return {
+  const plan: SupervisorDockerLifecyclePlan = deepFreeze({
     schemaVersion: "2",
     status: "STATIC_PLAN_ONLY",
     dynamicIsolationVerified: false,
@@ -517,5 +538,7 @@ export function buildSupervisorDockerLifecyclePlan(options: {
       [{ network: "worker", aliases: [] }],
     ),
     verifier: explicitProcessPlan(runtime.verifier, "verifier", []),
-  };
+  });
+  factoryIssuedSupervisorDockerLifecyclePlans.add(plan);
+  return plan;
 }

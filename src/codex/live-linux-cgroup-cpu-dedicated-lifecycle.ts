@@ -3,6 +3,10 @@ import type {
   PrivateLiveLinuxCgroupCpuDedicatedLifecycleContract,
 } from "./live-linux-cgroup-cpu-adapter-capability.js";
 import { LIVE_LINUX_CGROUP_CPU_DEDICATED_SUCCESS_STAGES } from "./live-linux-cgroup-cpu-adapter.js";
+import {
+  type PrivateLiveLinuxDockerCgroupSystemAdapter,
+  assertPrivateLiveLinuxDockerCgroupSystemAdapter,
+} from "./live-linux-docker-cgroup-system-adapter.js";
 
 const UINT64_MAX = (1n << 64n) - 1n;
 const FORCED_TERMINATION_SETTLE_MS = 250;
@@ -22,8 +26,7 @@ export interface DedicatedLifecyclePortSample {
  * Non-privileged harness port. This interface can exercise ordering, arithmetic, and failure
  * handling, but it is deliberately not an authority-bearing real-Linux system adapter.
  */
-export interface NonPrivilegedDedicatedLifecycleSystemPort {
-  readonly provenance: "NON_PRIVILEGED_TEST_PORT";
+interface DedicatedLifecycleSystemOperations {
   createOwnedContainers(signal: AbortSignal): Promise<void>;
   startRoleHeld(role: DedicatedLifecycleRole, signal: AbortSignal): Promise<void>;
   waitRoleBarrierHeld(role: DedicatedLifecycleRole, signal: AbortSignal): Promise<void>;
@@ -53,6 +56,11 @@ export interface NonPrivilegedDedicatedLifecycleSystemPort {
   terminateControllerAfterCleanupTimeout(): Promise<void>;
 }
 
+export interface NonPrivilegedDedicatedLifecycleSystemPort
+  extends DedicatedLifecycleSystemOperations {
+  readonly provenance: "NON_PRIVILEGED_TEST_PORT";
+}
+
 export type DedicatedLifecycleFailureCode =
   | "CPU_BUDGET_EXCEEDED"
   | "EXECUTION_ABORTED"
@@ -73,7 +81,7 @@ export interface DedicatedLifecycleSample {
 export interface NonPrivilegedDedicatedLifecycleCompletedResult {
   readonly schemaVersion: "1";
   readonly status: "COMPLETED_NOT_FINALIZED";
-  readonly harnessProvenance: "NON_PRIVILEGED_TEST_PORT";
+  readonly executionProvenance: "NON_PRIVILEGED_TEST_PORT";
   readonly liveClaim: false;
   readonly dynamicRuntimeVerified: false;
   readonly finalizedEvidenceIssued: false;
@@ -89,7 +97,7 @@ export interface NonPrivilegedDedicatedLifecycleCompletedResult {
 export interface NonPrivilegedDedicatedLifecycleFailedResult {
   readonly schemaVersion: "1";
   readonly status: "FAILED_NOT_FINALIZED";
-  readonly harnessProvenance: "NON_PRIVILEGED_TEST_PORT";
+  readonly executionProvenance: "NON_PRIVILEGED_TEST_PORT";
   readonly liveClaim: false;
   readonly dynamicRuntimeVerified: false;
   readonly finalizedEvidenceIssued: false;
@@ -113,6 +121,43 @@ export interface RunNonPrivilegedDedicatedLifecycleHarnessOptions {
   pollIntervalMs: number;
   executionSignal?: AbortSignal;
 }
+
+export interface PrivateDedicatedLifecycleCompletedResult
+  extends Omit<NonPrivilegedDedicatedLifecycleCompletedResult, "executionProvenance"> {
+  readonly executionProvenance: "PRIVATE_LINUX_DOCKER_CGROUP_ADAPTER";
+}
+
+export interface PrivateDedicatedLifecycleFailedResult
+  extends Omit<NonPrivilegedDedicatedLifecycleFailedResult, "executionProvenance"> {
+  readonly executionProvenance: "PRIVATE_LINUX_DOCKER_CGROUP_ADAPTER";
+}
+
+export type PrivateDedicatedLifecycleResult =
+  | PrivateDedicatedLifecycleCompletedResult
+  | PrivateDedicatedLifecycleFailedResult;
+
+export interface RunPrivateDedicatedLifecycleOptions {
+  lifecycleContract: PrivateLiveLinuxCgroupCpuDedicatedLifecycleContract;
+  system: PrivateLiveLinuxDockerCgroupSystemAdapter;
+  maximumCumulativeCpuUsec: bigint;
+  pollIntervalMs: number;
+  executionSignal?: AbortSignal;
+}
+
+interface RunDedicatedLifecycleCoreOptions {
+  lifecycleContract: PrivateLiveLinuxCgroupCpuDedicatedLifecycleContract;
+  system: DedicatedLifecycleSystemOperations;
+  maximumCumulativeCpuUsec: bigint;
+  pollIntervalMs: number;
+  executionSignal?: AbortSignal;
+  executionProvenance:
+    | "NON_PRIVILEGED_TEST_PORT"
+    | "PRIVATE_LINUX_DOCKER_CGROUP_ADAPTER";
+}
+
+type DedicatedLifecycleCoreResult =
+  | NonPrivilegedDedicatedLifecycleResult
+  | PrivateDedicatedLifecycleResult;
 
 class LifecycleFailure extends Error {
   constructor(
@@ -209,16 +254,15 @@ function freezeSamples(samples: readonly DedicatedLifecycleSample[]) {
   return Object.freeze(samples.map((sample) => Object.freeze({ ...sample })));
 }
 
-export async function runNonPrivilegedLiveLinuxCgroupCpuDedicatedLifecycleHarness(
-  options: RunNonPrivilegedDedicatedLifecycleHarnessOptions,
-): Promise<NonPrivilegedDedicatedLifecycleResult> {
+async function runDedicatedLifecycleCore(
+  options: RunDedicatedLifecycleCoreOptions,
+): Promise<DedicatedLifecycleCoreResult> {
   const lifecycleContract = options.lifecycleContract;
   const system = options.system;
   const maximumCumulativeCpuUsec = options.maximumCumulativeCpuUsec;
   const pollIntervalMs = options.pollIntervalMs;
   const executionSignal = options.executionSignal ?? new AbortController().signal;
   validateContract(lifecycleContract);
-  validateSystem(system);
   if (!validUint64(maximumCumulativeCpuUsec) || maximumCumulativeCpuUsec < 1n) {
     throw new Error("The dedicated lifecycle cumulative CPU budget is invalid.");
   }
@@ -588,7 +632,7 @@ export async function runNonPrivilegedLiveLinuxCgroupCpuDedicatedLifecycleHarnes
     return Object.freeze({
       schemaVersion: "1" as const,
       status: "COMPLETED_NOT_FINALIZED" as const,
-      harnessProvenance: "NON_PRIVILEGED_TEST_PORT" as const,
+      executionProvenance: options.executionProvenance,
       liveClaim: false as const,
       dynamicRuntimeVerified: false as const,
       finalizedEvidenceIssued: false as const,
@@ -632,7 +676,7 @@ export async function runNonPrivilegedLiveLinuxCgroupCpuDedicatedLifecycleHarnes
     return Object.freeze({
       schemaVersion: "1" as const,
       status: "FAILED_NOT_FINALIZED" as const,
-      harnessProvenance: "NON_PRIVILEGED_TEST_PORT" as const,
+      executionProvenance: options.executionProvenance,
       liveClaim: false as const,
       dynamicRuntimeVerified: false as const,
       finalizedEvidenceIssued: false as const,
@@ -645,4 +689,24 @@ export async function runNonPrivilegedLiveLinuxCgroupCpuDedicatedLifecycleHarnes
       cumulativeCpuUsec: cumulativeCpuUsec.toString(),
     });
   }
+}
+
+export async function runNonPrivilegedLiveLinuxCgroupCpuDedicatedLifecycleHarness(
+  options: RunNonPrivilegedDedicatedLifecycleHarnessOptions,
+): Promise<NonPrivilegedDedicatedLifecycleResult> {
+  validateSystem(options.system);
+  return (await runDedicatedLifecycleCore({
+    ...options,
+    executionProvenance: "NON_PRIVILEGED_TEST_PORT",
+  })) as NonPrivilegedDedicatedLifecycleResult;
+}
+
+export async function runPrivateLiveLinuxDockerCgroupDedicatedLifecycle(
+  options: RunPrivateDedicatedLifecycleOptions,
+): Promise<PrivateDedicatedLifecycleResult> {
+  assertPrivateLiveLinuxDockerCgroupSystemAdapter(options.system);
+  return (await runDedicatedLifecycleCore({
+    ...options,
+    executionProvenance: "PRIVATE_LINUX_DOCKER_CGROUP_ADAPTER",
+  })) as PrivateDedicatedLifecycleResult;
 }

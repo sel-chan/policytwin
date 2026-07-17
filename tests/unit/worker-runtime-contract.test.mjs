@@ -13,6 +13,7 @@ import {
 } from "../../dist/codex/worker-runtime-contract.js";
 import { createOpenAiEgressLease } from "../../dist/codex/openai-egress-contract.js";
 import {
+  assertFactoryIssuedSupervisorDockerLifecyclePlan,
   buildSupervisorDockerLifecyclePlan,
   OBSERVED_OUTBOUND_NETWORK_ID,
 } from "../../dist/codex/egress-runtime-contract.js";
@@ -385,6 +386,16 @@ test("supervisor Docker lifecycle uses explicit create/start/wait/remove and ext
     },
   });
   assert.equal(plan.schemaVersion, "2");
+  assert.equal(Object.isFrozen(plan), true);
+  assertFactoryIssuedSupervisorDockerLifecyclePlan(plan);
+  assert.throws(
+    () => assertFactoryIssuedSupervisorDockerLifecyclePlan({ ...plan }),
+    /sealed factory/u,
+  );
+  assert.throws(
+    () => assertFactoryIssuedSupervisorDockerLifecyclePlan(plan.networks.worker),
+    /sealed factory/u,
+  );
   assert.equal(plan.status, "STATIC_PLAN_ONLY");
   assert.equal(plan.dynamicIsolationVerified, false);
   assert.equal(plan.liveCodexExecuted, false);

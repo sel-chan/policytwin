@@ -62,7 +62,6 @@ enum opcode {
   OP_KILL = 0x0006,
   OP_QUIESCENT = 0x0007,
   OP_RELEASE = 0x0008,
-  OP_CLOSE = 0x0009,
   OP_STOP = 0x000a
 };
 
@@ -84,6 +83,13 @@ struct frame {
   uint8_t payload[MAX_PAYLOAD_BYTES];
 };
 
+enum role_state {
+  ROLE_STATE_BOUND_ACTIVE = 1,
+  ROLE_STATE_FROZEN = 2,
+  ROLE_STATE_KILL_SENT = 3,
+  ROLE_STATE_QUIESCENT = 4
+};
+
 struct role_handle {
   bool used;
   uint32_t id;
@@ -96,7 +102,7 @@ struct role_handle {
   uint64_t inode;
   uint64_t mount_id;
   uint64_t last_usage_usec;
-  bool quiescent_verified;
+  enum role_state state;
   uint8_t container_id[32];
   char relative_path[PATH_MAX];
 };
@@ -106,8 +112,15 @@ static struct role_handle handles[MAX_HANDLES];
 static bool role_seen[4];
 static int cgroup_root_fd = -1;
 static uint64_t cgroup_root_mount_id = 0;
+static uint64_t last_emitted_raw_ns = 0;
+static volatile sig_atomic_t termination_requested = 0;
 
 static int cgroup_mount_id(int directory_fd, uint64_t *output);
+
+static void request_termination(int signal_number) {
+  (void)signal_number;
+  termination_requested = 1;
+}
 
 static uint16_t read_u16(const uint8_t *input) {
   return (uint16_t)(((uint16_t)input[0] << 8U) | (uint16_t)input[1]);
@@ -151,7 +164,7 @@ static int read_exact(int file_descriptor, uint8_t *buffer, size_t length, bool 
     ssize_t count = read(file_descriptor, buffer + offset, length - offset);
     if (count == 0) return allow_eof && offset == 0U ? 0 : -1;
     if (count < 0) {
-      if (errno == EINTR) continue;
+      if (errno == EINTR && !termination_requested) continue;
       return -1;
     }
     offset += (size_t)count;
@@ -164,7 +177,7 @@ static int write_exact(int file_descriptor, const uint8_t *buffer, size_t length
   while (offset < length) {
     ssize_t count = write(file_descriptor, buffer + offset, length - offset);
     if (count < 0) {
-      if (errno == EINTR) continue;
+      if (errno == EINTR && !termination_requested) continue;
       return -1;
     }
     if (count == 0) return -1;
@@ -227,6 +240,24 @@ static int raw_clock_ns(uint64_t *output) {
   if (seconds > UINT64_MAX / 1000000000ULL) return -1;
   *output = seconds * 1000000000ULL + (uint64_t)value.tv_nsec;
   return 0;
+}
+
+static int emitted_raw_clock_ns(uint64_t *output) {
+  for (unsigned int attempt = 0; attempt < 1000U; attempt += 1U) {
+    uint64_t value = 0;
+    if (raw_clock_ns(&value) != 0) return -1;
+    if (value > last_emitted_raw_ns) {
+      last_emitted_raw_ns = value;
+      *output = value;
+      return 0;
+    }
+    struct timespec pause_value = {.tv_sec = 0, .tv_nsec = 1000L};
+    while (nanosleep(&pause_value, &pause_value) != 0 && errno == EINTR &&
+           !termination_requested) {
+    }
+    if (termination_requested) return -1;
+  }
+  return -1;
 }
 
 static int openat2_directory(int root_fd, const char *relative_path) {
@@ -667,9 +698,10 @@ static int bind_handle(const struct frame *request, uint8_t response[56]) {
       (unsigned long)statfs_value.f_type != (unsigned long)CGROUP2_SUPER_MAGIC ||
       cgroup_mount_id(cgroupfd, &mount_id) != 0 || membership != 1 ||
       read_events(cgroupfd, &populated, &frozen) != 0 || !populated || frozen ||
-      read_usage_usec(cgroupfd, &usage) != 0 || raw_clock_ns(&raw_ns) != 0 ||
+      read_usage_usec(cgroupfd, &usage) != 0 ||
       process_start_ticks(pid, &start_b) != 0 || start_a != start_b ||
       pidfd_is_exited(pidfd, &pid_exited) != 0 || pid_exited ||
+      direct_process_contains(cgroupfd, pid) != 1 || emitted_raw_clock_ns(&raw_ns) != 0 ||
       mount_id != cgroup_root_mount_id) {
     (void)close(cgroupfd);
     (void)close(pidfd);
@@ -696,7 +728,7 @@ static int bind_handle(const struct frame *request, uint8_t response[56]) {
   target->inode = (uint64_t)stat_value.st_ino;
   target->mount_id = mount_id;
   target->last_usage_usec = usage;
-  target->quiescent_verified = false;
+  target->state = ROLE_STATE_BOUND_ACTIVE;
   memcpy(target->container_id, request->payload + 8U, sizeof(target->container_id));
   (void)snprintf(target->relative_path, sizeof(target->relative_path), "%s", relative_path);
   role_seen[target->role] = true;
@@ -718,15 +750,14 @@ static int sample_handle(struct role_handle *handle, uint8_t response[28]) {
   bool populated = false;
   bool frozen = false;
   uint32_t process_count = 0;
-  if (verify_cgroup_fd(handle, true) != 0 || raw_clock_ns(&raw_ns) != 0 ||
+  if (verify_cgroup_fd(handle, true) != 0 ||
       read_usage_usec(handle->cgroupfd, &usage) != 0 || usage < handle->last_usage_usec ||
       read_events(handle->cgroupfd, &populated, &frozen) != 0 ||
       count_direct_processes(handle->cgroupfd, &process_count) != 0 ||
-      verify_cgroup_fd(handle, true) != 0) {
+      verify_cgroup_fd(handle, true) != 0 || emitted_raw_clock_ns(&raw_ns) != 0) {
     return -1;
   }
   handle->last_usage_usec = usage;
-  if (populated) handle->quiescent_verified = false;
   memset(response, 0, 28U);
   write_u32(response, handle->id);
   write_u64(response + 4U, raw_ns);
@@ -745,7 +776,7 @@ static int wait_for_state(struct role_handle *handle, bool require_frozen,
     bool populated = false;
     bool frozen = false;
     bool exited = false;
-    if (verify_cgroup_fd(handle, true) != 0 ||
+    if (termination_requested || verify_cgroup_fd(handle, true) != 0 ||
         read_events(handle->cgroupfd, &populated, &frozen) != 0 ||
         pidfd_is_exited(handle->pidfd, &exited) != 0) {
       return -1;
@@ -756,8 +787,10 @@ static int wait_for_state(struct role_handle *handle, bool require_frozen,
       return -2;
     }
     struct timespec pause_value = {.tv_sec = 0, .tv_nsec = 1000000L};
-    while (nanosleep(&pause_value, &pause_value) != 0 && errno == EINTR) {
+    while (nanosleep(&pause_value, &pause_value) != 0 && errno == EINTR &&
+           !termination_requested) {
     }
+    if (termination_requested) return -1;
   }
 }
 
@@ -771,8 +804,10 @@ static void best_effort_containment(void) {
   for (size_t index = 0; index < MAX_HANDLES; index += 1U) {
     struct role_handle *handle = &handles[index];
     if (!handle->used) continue;
-    (void)write_cgroup_control(handle->cgroupfd, "cgroup.freeze");
-    (void)write_cgroup_control(handle->cgroupfd, "cgroup.kill");
+    if (verify_cgroup_fd(handle, true) == 0) {
+      (void)write_cgroup_control(handle->cgroupfd, "cgroup.freeze");
+      (void)write_cgroup_control(handle->cgroupfd, "cgroup.kill");
+    }
     (void)pidfd_kill_if_alive(handle);
     close_handle(handle);
   }
@@ -783,7 +818,7 @@ static int process_request(const struct frame *request) {
   memset(response, 0, sizeof(response));
   if (request->opcode == OP_RAW_CLOCK) {
     uint64_t raw_ns = 0;
-    if (request->payload_length != 0U || raw_clock_ns(&raw_ns) != 0) {
+    if (request->payload_length != 0U || emitted_raw_clock_ns(&raw_ns) != 0) {
       return send_error(request->sequence, request->opcode, ERR_CLOCK);
     }
     write_u64(response, raw_ns);
@@ -811,48 +846,63 @@ static int process_request(const struct frame *request) {
   struct role_handle *handle = lookup_handle(handle_id);
   if (handle == NULL) return send_error(request->sequence, request->opcode, ERR_STATE);
   if (request->opcode == OP_SAMPLE) {
-    if (sample_handle(handle, response) != 0) {
+    if (handle->state != ROLE_STATE_BOUND_ACTIVE || sample_handle(handle, response) != 0) {
       return send_error(request->sequence, request->opcode, ERR_IDENTITY);
     }
     return send_frame((uint16_t)(request->opcode | RESPONSE_BIT), request->sequence, response, 28U);
   }
   if (request->opcode == OP_FREEZE) {
-    int identity_result = verify_cgroup_fd(handle, true);
+    if (handle->state != ROLE_STATE_BOUND_ACTIVE) {
+      return send_error(request->sequence, request->opcode, ERR_STATE);
+    }
+    if (verify_cgroup_fd(handle, true) != 0) {
+      return send_error(request->sequence, request->opcode, ERR_IDENTITY);
+    }
     int freeze_result = write_cgroup_control(handle->cgroupfd, "cgroup.freeze");
     int wait_result = freeze_result == 0 ? wait_for_state(handle, true, false) : -1;
     int sample_result = wait_result == 0 ? sample_handle(handle, response) : -1;
-    if (identity_result != 0 || freeze_result != 0 || wait_result != 0 || sample_result != 0) {
+    if (freeze_result != 0 || wait_result != 0 || sample_result != 0) {
       return send_error(request->sequence, request->opcode,
                         wait_result == -2 ? ERR_TIMEOUT : ERR_CGROUP);
     }
+    handle->state = ROLE_STATE_FROZEN;
     return send_frame((uint16_t)(request->opcode | RESPONSE_BIT), request->sequence, response, 28U);
   }
   if (request->opcode == OP_KILL) {
-    int identity_result = verify_cgroup_fd(handle, true);
+    if (handle->state != ROLE_STATE_FROZEN) {
+      return send_error(request->sequence, request->opcode, ERR_STATE);
+    }
+    if (verify_cgroup_fd(handle, true) != 0) {
+      return send_error(request->sequence, request->opcode, ERR_IDENTITY);
+    }
     int cgroup_kill_result = write_cgroup_control(handle->cgroupfd, "cgroup.kill");
     int pidfd_kill_result = pidfd_kill_if_alive(handle);
     int sample_result = sample_handle(handle, response);
-    if (identity_result != 0 || cgroup_kill_result != 0 || pidfd_kill_result != 0 ||
-        sample_result != 0) {
+    if (cgroup_kill_result != 0 || pidfd_kill_result != 0 || sample_result != 0) {
       return send_error(request->sequence, request->opcode, ERR_CGROUP);
     }
+    handle->state = ROLE_STATE_KILL_SENT;
     return send_frame((uint16_t)(request->opcode | RESPONSE_BIT), request->sequence, response, 28U);
   }
   if (request->opcode == OP_QUIESCENT) {
+    if (handle->state != ROLE_STATE_BOUND_ACTIVE && handle->state != ROLE_STATE_KILL_SENT) {
+      return send_error(request->sequence, request->opcode, ERR_STATE);
+    }
     int wait_result = wait_for_state(handle, false, true);
     if (wait_result != 0 || sample_handle(handle, response) != 0 ||
         response[20] != 0U || read_u32(response + 24U) != 0U) {
       return send_error(request->sequence, request->opcode,
                         wait_result == -2 ? ERR_TIMEOUT : ERR_CGROUP);
     }
-    handle->quiescent_verified = true;
+    handle->state = ROLE_STATE_QUIESCENT;
     return send_frame((uint16_t)(request->opcode | RESPONSE_BIT), request->sequence, response, 28U);
   }
   if (request->opcode == OP_RELEASE) {
     bool populated = true;
     bool frozen = false;
     bool exited = false;
-    if (!handle->quiescent_verified || pidfd_is_exited(handle->pidfd, &exited) != 0 || !exited ||
+    if (handle->state != ROLE_STATE_QUIESCENT ||
+        pidfd_is_exited(handle->pidfd, &exited) != 0 || !exited ||
         read_events(handle->cgroupfd, &populated, &frozen) != 0 || populated ||
         path_is_released(handle) != 1) {
       return send_error(request->sequence, request->opcode, ERR_STATE);
@@ -860,9 +910,6 @@ static int process_request(const struct frame *request) {
     write_u32(response, handle->id);
     close_handle(handle);
     return send_frame((uint16_t)(request->opcode | RESPONSE_BIT), request->sequence, response, 4U);
-  }
-  if (request->opcode == OP_CLOSE) {
-    return send_error(request->sequence, request->opcode, ERR_STATE);
   }
   return send_error(request->sequence, request->opcode, ERR_PROTOCOL);
 }
@@ -877,7 +924,19 @@ int main(int argc, char **argv) {
     return 64;
   }
   (void)umask(0077);
-  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR || prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
+  struct sigaction termination_action;
+  memset(&termination_action, 0, sizeof(termination_action));
+  termination_action.sa_handler = request_termination;
+  if (sigemptyset(&termination_action.sa_mask) != 0 ||
+      sigaction(SIGTERM, &termination_action, NULL) != 0 ||
+      sigaction(SIGINT, &termination_action, NULL) != 0 ||
+      sigaction(SIGHUP, &termination_action, NULL) != 0 ||
+      signal(SIGPIPE, SIG_IGN) == SIG_ERR || prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
+    return 70;
+  }
+  pid_t parent_pid = getppid();
+  if (parent_pid <= 1 || prctl(PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0) != 0 ||
+      getppid() != parent_pid || termination_requested) {
     return 70;
   }
   cgroup_root_fd = open("/sys/fs/cgroup", O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
@@ -921,7 +980,7 @@ int main(int argc, char **argv) {
     }
     if (result != 1 || request.sequence != expected_sequence) {
       best_effort_containment();
-      exit_status = 65;
+      exit_status = termination_requested ? 75 : 65;
       break;
     }
     expected_sequence += 1U;

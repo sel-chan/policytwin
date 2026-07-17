@@ -36,7 +36,7 @@ export function inspectWorkerContainerPrerequisites(
   },
 ) {
   const failures = [];
-  if (contract?.schemaVersion !== "12") failures.push("container schema v12 is required");
+  if (contract?.schemaVersion !== "14") failures.push("container schema v14 is required");
   if (!NODE_IMAGE.test(contract?.nodeBaseImage ?? "")) {
     failures.push("immutable Node base image is unset");
   }

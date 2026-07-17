@@ -147,6 +147,24 @@ export function inspectStaticContainerContract(root = ROOT) {
     "codex",
     "live-linux-cgroup-cpu-dedicated-lifecycle.ts",
   );
+  const liveLinuxDockerRolePlanPath = resolve(
+    root,
+    "src",
+    "codex",
+    "live-linux-docker-role-plan.ts",
+  );
+  const liveLinuxDockerOwnerPath = resolve(
+    root,
+    "src",
+    "codex",
+    "live-linux-docker-owned-container.ts",
+  );
+  const liveLinuxSystemAdapterPath = resolve(
+    root,
+    "src",
+    "codex",
+    "live-linux-docker-cgroup-system-adapter.ts",
+  );
   const nativeHelperProtocolPath = resolve(
     root,
     "src",
@@ -183,7 +201,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   if (
     contract === null ||
-    contract.schemaVersion !== "12" ||
+    contract.schemaVersion !== "14" ||
     contract.status !== "STATIC_PREPARED" ||
     contract.targetPlatform !== "linux/amd64" ||
     contract.dockerfileFrontend !== "DAEMON_BUILTIN_NO_EXTERNAL_FRONTEND" ||
@@ -238,11 +256,22 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveCpuNativeHelperProtocolImplemented !== true ||
     contract.workerContainer?.liveCpuNativeHelperSourceImplemented !== true ||
     contract.workerContainer?.liveCpuNativeHelperClientImplemented !== true ||
+    contract.workerContainer?.liveCpuNativeHelperFullRoleSessionImplemented !== true ||
+    contract.workerContainer?.liveCpuDockerBarrierRolePlanImplemented !== true ||
+    contract.workerContainer?.liveCpuSupervisorSealedLifecyclePlanRequired !== true ||
+    contract.workerContainer?.liveCpuDockerOwnerFactoryImplemented !== true ||
+    contract.workerContainer?.liveCpuDockerOwnedNetworkFactoryImplemented !== true ||
+    contract.workerContainer?.liveCpuDockerNetworkAbsenceRequired !== true ||
+    contract.workerContainer?.liveCpuDockerReobservationReceiptsImplemented !== true ||
+    contract.workerContainer?.liveCpuDockerRemovalReceiptsImplemented !== true ||
+    contract.workerContainer?.liveCpuPrivateRuntimeExecutionProvenance !==
+      "PRIVATE_LINUX_DOCKER_CGROUP_ADAPTER" ||
+    contract.workerContainer?.liveCpuPrivateRuntimeDynamicVerified !== false ||
     contract.workerContainer?.liveCpuNativeHelperBuildVerified !== false ||
     contract.workerContainer?.liveCpuNativeHelperRuntimeVerified !== false ||
-    contract.workerContainer?.liveCpuStartBarrierRuntimeImplemented !== false ||
-    contract.workerContainer?.liveCpuLinuxSystemAdapterImplemented !== false ||
-    contract.workerContainer?.liveCpuDedicatedLifecycleImplemented !== false ||
+    contract.workerContainer?.liveCpuStartBarrierRuntimeImplemented !== true ||
+    contract.workerContainer?.liveCpuLinuxSystemAdapterImplemented !== true ||
+    contract.workerContainer?.liveCpuDedicatedLifecycleImplemented !== true ||
     contract.workerContainer?.liveCpuLegacyProofSchema !==
       "schemas/live-linux-cgroup-cpu-proof.v1.schema.json" ||
     contract.workerContainer?.liveCpuLegacyProofType !== "LIVE_LINUX_CGROUP_V2_THREE_ROLE" ||
@@ -459,11 +488,20 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.supervisorDockerExecutor?.linuxStartBarrierHostOwnedReceiptSlotsImplemented !== true ||
     contract.supervisorDockerExecutor?.linuxStartBarrierConcurrentReleaseGuardImplemented !==
       true ||
-    contract.supervisorDockerExecutor?.linuxStartBarrierDockerIntegrationImplemented !== false ||
+    contract.supervisorDockerExecutor?.linuxStartBarrierDockerIntegrationImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxSupervisorSealedLifecyclePlanRequired !== true ||
+    contract.supervisorDockerExecutor?.linuxDockerOwnerFactoryImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxDockerOwnedNetworkFactoryImplemented !== true ||
+    contract.supervisorDockerExecutor?.linuxDockerNetworkAbsenceRequired !== true ||
+    contract.supervisorDockerExecutor?.linuxDockerBindReobservationRequired !== true ||
+    contract.supervisorDockerExecutor?.linuxDockerRemovalReceiptRequiredBeforeCgroupRelease !==
+      true ||
+    contract.supervisorDockerExecutor?.linuxHelperForcedTerminationRequiresAllDockerRolesAbsent !==
+      true ||
     contract.supervisorDockerExecutor?.linuxNativeHelperFixedBinaryProtocolImplemented !== true ||
     contract.supervisorDockerExecutor?.linuxNativeHelperRuntimeVerified !== false ||
     contract.supervisorDockerExecutor?.linuxCgroupCpuActuationSourceImplemented !== true ||
-    contract.supervisorDockerExecutor?.linuxCgroupCpuActuationImplemented !== false ||
+    contract.supervisorDockerExecutor?.linuxCgroupCpuActuationImplemented !== true ||
     contract.supervisorDockerExecutor?.publishedPortsAllowed !== false ||
     JSON.stringify(contract.supervisorDockerExecutor?.policytwinLabelKeys) !==
       JSON.stringify([
@@ -718,6 +756,96 @@ export function inspectStaticContainerContract(root = ROOT) {
       "Non-privileged dedicated CPU lifecycle harness",
     );
   }
+  const liveLinuxDockerRolePlan = read(
+    liveLinuxDockerRolePlanPath,
+    failures,
+    "Private Linux barrier Docker role plan",
+  );
+  for (const required of [
+    "const privateRolePlans = new WeakSet<object>()",
+    "REQUIRED_BIND_MOUNTS",
+    "REQUIRED_TMPFS_MOUNTS",
+    "assertPrivateLiveLinuxBarrierDockerRolePlan",
+    'status: "PRIVATE_BARRIER_PLAN_NOT_RUNTIME_VERIFIED"',
+    'entrypoint: ["node"]',
+    '"scripts/role-start-barrier.mjs"',
+    "receipt.readOnly",
+    "!control.readOnly",
+    "assertFactoryIssuedSupervisorDockerLifecyclePlan(input.lifecyclePlan)",
+    "ROLE_TARGETS",
+    "processPlan.mounts",
+    "input.observedNetworkIds",
+    "dynamicRuntimeVerified: false",
+    "passSigningEligible: false",
+  ]) {
+    requireText(
+      liveLinuxDockerRolePlan,
+      required,
+      failures,
+      "Private Linux barrier Docker role plan",
+    );
+  }
+  const liveLinuxDockerOwner = read(
+    liveLinuxDockerOwnerPath,
+    failures,
+    "Private Linux Docker owner",
+  );
+  for (const required of [
+    "assertPrivateDockerCliCommandRunner(options.runner)",
+    "assertFactoryIssuedSupervisorDockerLifecyclePlan(options.lifecyclePlan)",
+    "parseDockerNetworkOwnershipInspection",
+    "parseDockerNetworkInspection",
+    "network.plan.createArgs",
+    "buildLiveLinuxBarrierDockerRolePlan",
+    "createPrivateLiveLinuxOwnedDockerContainers",
+    "startPrivateLiveLinuxOwnedDockerRoleHeld",
+    "parseDockerContainerOwnershipInspection",
+    "issuePrivateLiveLinuxOwnedDockerRole",
+    "reobservePrivateLiveLinuxOwnedDockerRole",
+    "consumePrivateLiveLinuxDockerHelperBindIdentity",
+    "removePrivateLiveLinuxOwnedDockerRole",
+    "removePrivateLiveLinuxOwnedDockerNetworks",
+    "assertNetworkAbsent",
+    "assertPrivateLiveLinuxDockerRemovalReceipt",
+    "finalizePrivateLiveLinuxDockerCleanupReceipt",
+    "settlePrivateLiveLinuxDockerOwnerOperations",
+    "removalPromise",
+    "dynamicRuntimeVerified: false",
+  ]) {
+    requireText(liveLinuxDockerOwner, required, failures, "Private Linux Docker owner");
+  }
+  const liveLinuxSystemAdapter = read(
+    liveLinuxSystemAdapterPath,
+    failures,
+    "Private Linux Docker/cgroup system adapter",
+  );
+  for (const required of [
+    'provenance: "PRIVATE_LINUX_DOCKER_CGROUP_ADAPTER"',
+    "awaitPrivateLinuxStartBarrierHeld",
+    "reobservePrivateLiveLinuxOwnedDockerRole",
+    "bindPrivateLinuxCgroupHelperRole",
+    "releasePrivateLinuxStartBarrierRole",
+    "freezePrivateLinuxCgroupHelperRole",
+    "killPrivateLinuxCgroupHelperRole",
+    "readQuiescentPrivateLinuxCgroupHelperRole",
+    "removePrivateLiveLinuxOwnedDockerRole",
+    "releasePrivateLinuxCgroupHelperRole",
+    "finalizePrivateLiveLinuxDockerCleanupReceipt",
+    "terminatePrivateLinuxCgroupHelperAfterDockerCleanup",
+    "assertPrivateLiveLinuxDockerOwnerBarrierConfiguration",
+    "removePrivateLiveLinuxOwnedDockerNetworks",
+    "options.owner.runBindingSha256 !== options.barrierController.runBindingSha256",
+    "dynamicRuntimeVerified: false",
+    "finalizedEvidenceIssued: false",
+    "passSigningEligible: false",
+  ]) {
+    requireText(
+      liveLinuxSystemAdapter,
+      required,
+      failures,
+      "Private Linux Docker/cgroup system adapter",
+    );
+  }
   const nativeHelperProtocol = read(
     nativeHelperProtocolPath,
     failures,
@@ -747,6 +875,15 @@ export function inspectStaticContainerContract(root = ROOT) {
   for (const required of [
     "const helperClientStates = new WeakMap<object, HelperClientState>()",
     "createPrivateLinuxCgroupHelperClient",
+    "const boundRoleStates = new WeakMap<object, BoundRoleState>()",
+    "bindPrivateLinuxCgroupHelperRole",
+    "samplePrivateLinuxCgroupHelperRole",
+    "freezePrivateLinuxCgroupHelperRole",
+    "killPrivateLinuxCgroupHelperRole",
+    "readQuiescentPrivateLinuxCgroupHelperRole",
+    "releasePrivateLinuxCgroupHelperRole",
+    "terminatePrivateLinuxCgroupHelperAfterDockerCleanup",
+    "MIN_HELPER_REQUEST_TIMEOUT_MS = 6_000",
     'spawn("/proc/self/fd/3", ["--stdio-v1"]',
     'shell: false',
     'createHash("sha256")',
@@ -770,7 +907,9 @@ export function inspectStaticContainerContract(root = ROOT) {
     '"cgroup.freeze"',
     '"cgroup.kill"',
     "role_seen",
-    "quiescent_verified",
+    "ROLE_STATE_QUIESCENT",
+    "PR_SET_PDEATHSIG",
+    "sigaction(SIGINT",
   ]) {
     requireText(nativeHelperSource, required, failures, "Linux cgroup native helper");
   }
@@ -1329,7 +1468,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "12"',
+    'contract.schemaVersion !== "14"',
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
   ]) {
@@ -1352,7 +1491,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   }
   const workerVerify = read(workerVerifyPath, failures, "Worker container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "12"',
+    'contract?.schemaVersion !== "14"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     '"Dockerfile.worker"',
@@ -1407,7 +1546,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   const egressVerify = read(egressVerifyPath, failures, "Egress container verifier");
   for (const required of [
-    'contract?.schemaVersion !== "12"',
+    'contract?.schemaVersion !== "14"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',

@@ -14,6 +14,7 @@ import {
   linuxCgroupHelperFrameLength,
 } from "../../dist/codex/linux-cgroup-helper-protocol.js";
 import {
+  assertPrivateLinuxCgroupHelperBoundRole,
   assertPrivateLinuxCgroupHelperClient,
   createPrivateLinuxCgroupHelperClient,
 } from "../../dist/codex/linux-cgroup-helper-client.js";
@@ -124,6 +125,9 @@ test("protocol rejects non-canonical length, reserved bits, sequence, role, and 
   const badRole = Buffer.alloc(56);
   badRole.writeUInt32BE(1, 0);
   badRole.writeUInt8(9, 4);
+  [1n, 2n, 3n, 4n, 5n, 6n].forEach((value, index) =>
+    badRole.writeBigUInt64BE(value, 8 + index * 8),
+  );
   assert.throws(() => decodeLinuxCgroupHelperBindResponse(badRole), /role code/u);
 });
 
@@ -161,6 +165,7 @@ test("native helper source declares required Linux primitives and no shell or ne
     createPrivateLinuxCgroupHelperClient({
       helperPath: "C:\\untrusted-helper.exe",
       expectedHelperSha256: "a".repeat(64),
+      runBindingSha256: "b".repeat(64),
       requestTimeoutMs: 1_000,
     }),
     /requires a Linux supervisor/u,
@@ -169,4 +174,40 @@ test("native helper source declares required Linux primitives and no shell or ne
     () => assertPrivateLinuxCgroupHelperClient({}),
     /active private capability/u,
   );
+  assert.throws(
+    () => assertPrivateLinuxCgroupHelperBoundRole({}, {}),
+    /private bound role capability/u,
+  );
+});
+
+test("native actuation short-circuits on identity failure and the client poisons queued work", async () => {
+  const [source, clientSource] = await Promise.all([
+    readFile(new URL("../../native/policytwin-linux-cgroup-helper.c", import.meta.url), "utf8"),
+    readFile(new URL("../../src/codex/linux-cgroup-helper-client.ts", import.meta.url), "utf8"),
+  ]);
+  for (const opcode of ["OP_FREEZE", "OP_KILL"]) {
+    const branchStart = source.indexOf(`request->opcode == ${opcode}`);
+    const nextBranch = source.indexOf("request->opcode ==", branchStart + 1);
+    const branch = source.slice(branchStart, nextBranch);
+    assert.ok(branchStart >= 0, `missing ${opcode} branch`);
+    assert.match(branch, /verify_cgroup_fd\(handle, true\) != 0/u);
+    assert.match(branch, /return send_error\(request->sequence, request->opcode, ERR_IDENTITY\)/u);
+    assert.ok(
+      branch.indexOf("ERR_IDENTITY") < branch.indexOf("write_cgroup_control"),
+      `${opcode} must reject identity drift before cgroup actuation`,
+    );
+  }
+  for (const marker of [
+    "poisonHelperSession",
+    "await previous",
+    "state.stopped && !allowStopping",
+    "bindPrivateLinuxCgroupHelperRole",
+    "samplePrivateLinuxCgroupHelperRole",
+    "freezePrivateLinuxCgroupHelperRole",
+    "killPrivateLinuxCgroupHelperRole",
+    "readQuiescentPrivateLinuxCgroupHelperRole",
+    "releasePrivateLinuxCgroupHelperRole",
+  ]) {
+    assert.ok(clientSource.includes(marker), `missing helper client safety marker ${marker}`);
+  }
 });
