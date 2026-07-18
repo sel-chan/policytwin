@@ -25,6 +25,7 @@ const suites = {
     "tests/unit/codex-worker-contract.test.mjs",
     "tests/unit/codex-sdk-adapter.test.mjs",
     "tests/unit/unsigned-worker-execution-core.test.mjs",
+    "tests/unit/unsigned-verifier-corpus-candidate.test.mjs",
     "tests/unit/worker-rpc.test.mjs",
     "tests/unit/worker-runtime-contract.test.mjs",
     "tests/unit/cpu-budget-contract.test.mjs",

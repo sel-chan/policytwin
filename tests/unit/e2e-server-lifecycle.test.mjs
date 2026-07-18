@@ -23,8 +23,8 @@ test("E2E server keeps Next standalone in the Playwright-owned process", async (
     source,
     /runOrExit\(process\.execPath, \[resolve\(standaloneDirectory, "server\.js"\)\]\)/u,
   );
-  assert.match(source, /import \{ pathToFileURL \} from "node:url"/u);
-  assert.match(source, /await import\(pathToFileURL\(serverPath\)\.href\)/u);
+  assert.doesNotMatch(source, /node:url|pathToFileURL|serverPath/u);
+  assert.match(source, /await import\("\.\.\/\.next\/standalone\/server\.js"\)/u);
   assert.match(source, /startE2eShutdownWatcher\(\)/u);
   assert.match(config, /globalTeardown: "\.\/scripts\/e2e-global-teardown\.mjs"/u);
   assert.match(config, /POLICYTWIN_E2E_SHUTDOWN_PATH/u);

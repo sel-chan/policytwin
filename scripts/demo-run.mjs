@@ -1,5 +1,4 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import { ROOT } from "./process.mjs";
 import { compileCurrentFixture, resetFixture } from "./fixture.mjs";
@@ -10,11 +9,7 @@ compileCurrentFixture();
 const cases = JSON.parse(
   await readFile(resolve(ROOT, "fixtures", "refund-demo", "cases", "seeded-drift-cases.json"), "utf8"),
 );
-const moduleUrl = pathToFileURL(
-  resolve(ROOT, ".tmp", "refund-demo", "current-dist", "refund.js"),
-);
-moduleUrl.searchParams.set("run", String(Date.now()));
-const { decideRefund } = await import(moduleUrl.href);
+const { decideRefund } = await import("../.tmp/refund-demo/current-dist/refund.js");
 const results = cases.map((policyCase) => {
   const actualDecision = decideRefund(policyCase.input);
   return {

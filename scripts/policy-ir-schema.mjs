@@ -1,6 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { ROOT, runOrExit } from "./process.mjs";
 
 const mode = process.argv[2] ?? "--check";
@@ -10,8 +9,7 @@ if (!new Set(["--check", "--write"]).has(mode)) {
 }
 
 runOrExit(process.execPath, ["scripts/build-core.mjs"]);
-const moduleUrl = pathToFileURL(resolve(ROOT, "dist", "policy-ir", "zod-schema.js"));
-const { renderPolicyIRJsonSchema } = await import(`${moduleUrl.href}?v=${Date.now()}`);
+const { renderPolicyIRJsonSchema } = await import("../dist/policy-ir/zod-schema.js");
 const expected = renderPolicyIRJsonSchema();
 const schemaPath = resolve(ROOT, "schemas", "policy-ir.v1.schema.json");
 

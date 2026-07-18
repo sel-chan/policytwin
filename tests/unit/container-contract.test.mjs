@@ -20,7 +20,7 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.scope, "STATIC_WEB_WORKER_VERIFIER_EGRESS_HELPER_CONTAINERS");
   assert.equal(
     report.sourceInspectionMethod,
-    "STRUCTURAL_JSON_AND_REQUIRED_SOURCE_MARKERS",
+    "STRUCTURAL_JSON_TYPESCRIPT_AST_AND_REQUIRED_SOURCE_MARKERS",
   );
   assert.equal(report.behavioralVerification, "SEPARATE_UNIT_AND_INTEGRATION_TESTS");
   assert.equal(report.baseImagePinned, false);
@@ -32,6 +32,15 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
   assert.equal(report.workerContainerStatus, "STATIC_PREPARED");
   assert.equal(report.verifierContainerStatus, "STATIC_PREPARED");
   assert.equal(report.egressProxyStatus, "STATIC_PREPARED");
+  assert.equal(
+    report.unsignedVerifierCorpusCandidateSupportedProductionModuleEdgeDetected,
+    false,
+  );
+  assert.deepEqual(report.unsignedVerifierCorpusCandidateProductionImports, []);
+  assert.deepEqual(
+    report.unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions,
+    [],
+  );
   assert.equal(report.releaseReady, false);
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
   assert.equal(contract.schemaVersion, "15");
@@ -57,6 +66,26 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
     "SYNTHETIC_CONTRACT_ONLY",
   );
   assert.equal(contract.workerContainer.liveCpuEvidenceProducerPassSigningEligible, false);
+  assert.equal(
+    contract.workerContainer.unsignedVerifierCorpusCandidateTimeObservationAuthority,
+    "UNVERIFIED_CALLER_SUPPLIED",
+  );
+  assert.equal(
+    contract.workerContainer.unsignedVerifierCorpusCandidateCommandTreesStableRequired,
+    true,
+  );
+  assert.equal(
+    contract.workerContainer.unsignedVerifierCorpusCandidateProductionImportsAllowed,
+    false,
+  );
+  assert.equal(
+    contract.workerContainer.unsignedVerifierCorpusCandidateProductionImportInspection,
+    "TYPESCRIPT_AST_MODULE_RESOLUTION_AND_UNSUPPORTED_LOADER_REJECTION",
+  );
+  assert.equal(
+    contract.workerContainer.unsignedVerifierCorpusCandidateRuntimeConnectionStatus,
+    "STATIC_GRAPH_NO_SUPPORTED_EDGE_DETECTED_NOT_RUNTIME_PROOF",
+  );
   assert.equal(
     contract.workerContainer.liveCpuPrivateAdapterCapabilityScaffoldImplemented,
     true,
@@ -358,6 +387,158 @@ test("static container inspection rejects an external web Dockerfile frontend", 
   const report = inspectStaticContainerContract(target);
   assert.equal(report.status, "FAIL");
   assert.match(report.failures.join(" "), /daemon-built frontend/iu);
+});
+
+test("static container inspection rejects commented, indirect, and computed candidate imports", async (t) => {
+  const target = await mkdtemp(join(tmpdir(), "policytwin-container-verifier-import-"));
+  t.after(() => rm(target, { recursive: true, force: true }));
+  await copyStaticContainerInputs(target);
+  const healthRoutePath = join(target, "app/api/health/route.ts");
+  const healthRoute = await readFile(healthRoutePath, "utf8");
+  const candidateSpecifier = "../../../../src/codex/unsigned-verifier-corpus-candidate.js";
+  for (const attack of [
+    {
+      name: "candidate-import.ts",
+      source: `import { executeUnsignedVerifierCorpusCandidate } from "${candidateSpecifier}";\nvoid executeUnsignedVerifierCorpusCandidate;\n`,
+    },
+    {
+      name: "candidate-bridge.mts",
+      source: `export { executeUnsignedVerifierCorpusCandidate } from /* bridge */ "${candidateSpecifier}?bridge#v1";\n`,
+    },
+    {
+      name: "candidate-bridge.cts",
+      source: `import candidate = require("${candidateSpecifier}");\nexport = candidate;\n`,
+    },
+    {
+      name: "candidate-require.cjs",
+      source: `require("${candidateSpecifier}");\n`,
+    },
+    {
+      name: "candidate-dynamic.mjs",
+      source: `void import("${candidateSpecifier}");\n`,
+    },
+    {
+      name: "candidate-bridge.jsx",
+      source: `export { executeUnsignedVerifierCorpusCandidate } from "${candidateSpecifier}";\n`,
+    },
+  ]) {
+    const bridgePath = join(target, "app/api/health", attack.name);
+    await writeFile(bridgePath, attack.source, "utf8");
+    await writeFile(healthRoutePath, `${healthRoute}\nimport "./${attack.name}";\n`, "utf8");
+    const report = inspectStaticContainerContract(target);
+    assert.equal(report.status, "FAIL");
+    assert.equal(
+      report.unsignedVerifierCorpusCandidateSupportedProductionModuleEdgeDetected,
+      true,
+    );
+    assert.ok(
+      report.unsignedVerifierCorpusCandidateProductionImports.includes(
+        `app/api/health/${attack.name}`,
+      ),
+    );
+    assert.deepEqual(
+      report.unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions,
+      [],
+    );
+    assert.match(report.failures.join(" "), /production module references/iu);
+    await rm(bridgePath);
+  }
+
+  await writeFile(
+    healthRoutePath,
+    `${healthRoute}\nconst candidateModule = "../../../../src/codex/" + "unsigned-verifier-corpus-candidate.js";\nawait import(candidateModule);\n`,
+    "utf8",
+  );
+  let report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.equal(
+    report.unsignedVerifierCorpusCandidateSupportedProductionModuleEdgeDetected,
+    true,
+  );
+  assert.deepEqual(report.unsignedVerifierCorpusCandidateProductionImports, []);
+  assert.deepEqual(
+    report.unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions,
+    ["app/api/health/route.ts:NON_LITERAL_IMPORT"],
+  );
+  assert.match(report.failures.join(" "), /unapproved dynamic module expressions/iu);
+
+  for (const attack of [
+    {
+      source: `${healthRoute}\nmodule.require("${candidateSpecifier}");\n`,
+      marker: "PROPERTY_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nconst load = require;\nload("${candidateSpecifier}");\n`,
+      marker: "INDIRECT_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nimport { createRequire } from "node:module";\nconst load = createRequire(import.meta.url);\nload("${candidateSpecifier}");\n`,
+      marker: "CREATE_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nconst load = Reflect.get(module, "require");\nload("${candidateSpecifier}");\n`,
+      marker: "REFLECTIVE_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nawait import(candidateModule;\n`,
+      marker: "SOURCE_PARSE_ERROR",
+    },
+  ]) {
+    await writeFile(healthRoutePath, attack.source, "utf8");
+    report = inspectStaticContainerContract(target);
+    assert.equal(report.status, "FAIL");
+    assert.equal(
+      report.unsignedVerifierCorpusCandidateSupportedProductionModuleEdgeDetected,
+      true,
+    );
+    assert.ok(
+      report.unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions.includes(
+        `app/api/health/route.ts:${attack.marker}`,
+      ),
+    );
+  }
+
+  const packagePath = join(target, "package.json");
+  const originalPackageBody = await readFile(packagePath, "utf8");
+  const packageJson = JSON.parse(originalPackageBody);
+  packageJson.imports = { "#candidate": "./src/codex/unsigned-verifier-corpus-candidate.ts" };
+  await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`, "utf8");
+  await writeFile(healthRoutePath, `${healthRoute}\nimport "#candidate";\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.equal(
+    report.unsignedVerifierCorpusCandidateSupportedProductionModuleEdgeDetected,
+    true,
+  );
+  assert.ok(report.unsignedVerifierCorpusCandidateProductionImports.includes("package.json"));
+  assert.ok(
+    report.unsignedVerifierCorpusCandidateProductionImports.includes(
+      "app/api/health/route.ts",
+    ),
+  );
+
+  await writeFile(packagePath, originalPackageBody, "utf8");
+  const tsconfigPath = join(target, "tsconfig.json");
+  const originalTsconfigBody = await readFile(tsconfigPath, "utf8");
+  const tsconfig = JSON.parse(originalTsconfigBody);
+  tsconfig.compilerOptions.baseUrl = ".";
+  tsconfig.compilerOptions.paths = {
+    "@candidate": ["src/codex/unsigned-verifier-corpus-candidate.ts"],
+  };
+  await writeFile(tsconfigPath, `${JSON.stringify(tsconfig, null, 2)}\n`, "utf8");
+  await writeFile(healthRoutePath, `${healthRoute}\nimport "@candidate";\n`, "utf8");
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.equal(
+    report.unsignedVerifierCorpusCandidateSupportedProductionModuleEdgeDetected,
+    true,
+  );
+  assert.ok(report.unsignedVerifierCorpusCandidateProductionImports.includes("tsconfig.json"));
+  assert.ok(
+    report.unsignedVerifierCorpusCandidateProductionImports.includes(
+      "app/api/health/route.ts",
+    ),
+  );
 });
 
 test("static container inspection detects weakened verifier networking and fixture bundling", async (t) => {

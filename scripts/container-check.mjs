@@ -1,6 +1,14 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
+import { extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 import { computeContainerBuildInput } from "./container-build-inputs.mjs";
 import {
   computeNativeHelperSource,
@@ -26,6 +34,21 @@ const REQUIRED_DOCKERIGNORE_LINES = [
   "fixtures/refund-demo/baseline",
   "fixtures/refund-demo/expected-fixed",
 ];
+const PRODUCTION_SOURCE_ROOTS = ["src", "scripts", "app"];
+const PRODUCTION_SOURCE_EXTENSIONS = new Set([
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+]);
+const UNSIGNED_VERIFIER_CORPUS_CANDIDATE_BASENAME =
+  "unsigned-verifier-corpus-candidate";
+const MAX_PRODUCTION_SOURCE_FILES = 2_048;
+const MAX_PRODUCTION_SOURCE_BYTES = 4 * 1024 * 1024;
 
 function read(path, failures, label) {
   if (!existsSync(path)) {
@@ -63,8 +86,234 @@ function requireStageOrder(body, fragments, failures, label) {
   }
 }
 
+function collectProductionSourceFiles(path, files, failures) {
+  if (!existsSync(path)) {
+    failures.push("Unsigned verifier production-import source root is absent.");
+    return;
+  }
+  const stat = lstatSync(path);
+  if (stat.isSymbolicLink()) {
+    failures.push("Unsigned verifier production-import inspection rejects symbolic links.");
+    return;
+  }
+  if (stat.isDirectory()) {
+    for (const entry of readdirSync(path, { withFileTypes: true }).sort((left, right) =>
+      left.name.localeCompare(right.name, "en"),
+    )) {
+      collectProductionSourceFiles(join(path, entry.name), files, failures);
+    }
+    return;
+  }
+  if (stat.isFile() && PRODUCTION_SOURCE_EXTENSIONS.has(extname(path))) files.push(path);
+}
+
+function scriptKind(path) {
+  switch (extname(path)) {
+    case ".ts":
+      return ts.ScriptKind.TS;
+    case ".tsx":
+      return ts.ScriptKind.TSX;
+    case ".mts":
+      return ts.ScriptKind.TS;
+    case ".cts":
+      return ts.ScriptKind.TS;
+    case ".jsx":
+      return ts.ScriptKind.JSX;
+    default:
+      return ts.ScriptKind.JS;
+  }
+}
+
+function sameFilesystemPath(left, right) {
+  const normalizedLeft = resolve(left);
+  const normalizedRight = resolve(right);
+  return process.platform === "win32"
+    ? normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
+    : normalizedLeft === normalizedRight;
+}
+
+function readCompilerOptions(root, failures) {
+  const configPath = resolve(root, "tsconfig.json");
+  const config = ts.readConfigFile(configPath, (path) => readFileSync(path, "utf8"));
+  if (config.error !== undefined) {
+    failures.push("Unsigned verifier production-module inspection cannot read tsconfig.json.");
+    return {};
+  }
+  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
+  if (parsed.errors.length > 0) {
+    failures.push("Unsigned verifier production-module inspection found an invalid tsconfig.json.");
+    return {};
+  }
+  return parsed.options;
+}
+
+function stripModuleUrlSuffix(specifier) {
+  if (specifier.startsWith("#")) return specifier;
+  const queryIndex = specifier.indexOf("?");
+  const hashIndex = specifier.indexOf("#");
+  const offsets = [queryIndex, hashIndex].filter((index) => index >= 0);
+  return offsets.length === 0 ? specifier : specifier.slice(0, Math.min(...offsets));
+}
+
+function inspectUnsignedVerifierCorpusCandidateProductionModules(root, failures) {
+  const files = [];
+  for (const sourceRoot of PRODUCTION_SOURCE_ROOTS) {
+    collectProductionSourceFiles(resolve(root, sourceRoot), files, failures);
+  }
+  if (files.length > MAX_PRODUCTION_SOURCE_FILES) {
+    failures.push("Unsigned verifier production-import inspection exceeds its file limit.");
+    return { importers: [], unapprovedDynamicModuleExpressions: [] };
+  }
+  const compilerOptions = readCompilerOptions(root, failures);
+  const candidatePath = resolve(
+    root,
+    "src",
+    "codex",
+    "unsigned-verifier-corpus-candidate.ts",
+  );
+  const importers = new Set();
+  const unapprovedDynamicModuleExpressions = new Set();
+  for (const configurationPath of ["package.json", "tsconfig.json"]) {
+    const body = readFileSync(resolve(root, configurationPath), "utf8");
+    if (body.includes(UNSIGNED_VERIFIER_CORPUS_CANDIDATE_BASENAME)) {
+      importers.add(configurationPath);
+    }
+  }
+  for (const path of files) {
+    const stat = lstatSync(path);
+    if (stat.size > MAX_PRODUCTION_SOURCE_BYTES) {
+      failures.push("Unsigned verifier production-import inspection exceeds its file-size limit.");
+      continue;
+    }
+    const source = readFileSync(path, "utf8");
+    const sourceFile = ts.createSourceFile(
+      path,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      scriptKind(path),
+    );
+    const relativePath = relative(root, path).replaceAll("\\", "/");
+    if ((sourceFile.parseDiagnostics ?? []).length > 0) {
+      unapprovedDynamicModuleExpressions.add(`${relativePath}:SOURCE_PARSE_ERROR`);
+      continue;
+    }
+
+    function inspectSpecifier(specifier) {
+      if (specifier === "node:module" || specifier === "module") {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:MODULE_LOADER_PACKAGE`);
+      }
+      const withoutQueryOrHash = stripModuleUrlSuffix(specifier);
+      const resolvedModule = ts.resolveModuleName(
+        withoutQueryOrHash,
+        path,
+        compilerOptions,
+        ts.sys,
+      ).resolvedModule;
+      if (
+        specifier.includes(UNSIGNED_VERIFIER_CORPUS_CANDIDATE_BASENAME) ||
+        (resolvedModule !== undefined &&
+          sameFilesystemPath(resolvedModule.resolvedFileName, candidatePath))
+      ) {
+        importers.add(relativePath);
+      }
+    }
+
+    function visit(node) {
+      if (
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+        node.moduleSpecifier !== undefined &&
+        ts.isStringLiteralLike(node.moduleSpecifier)
+      ) {
+        inspectSpecifier(node.moduleSpecifier.text);
+      } else if (
+        ts.isImportEqualsDeclaration(node) &&
+        ts.isExternalModuleReference(node.moduleReference) &&
+        node.moduleReference.expression !== undefined &&
+        ts.isStringLiteralLike(node.moduleReference.expression)
+      ) {
+        inspectSpecifier(node.moduleReference.expression.text);
+      } else if (
+        ts.isCallExpression(node) &&
+        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+          (ts.isIdentifier(node.expression) && node.expression.text === "require"))
+      ) {
+        const [argument] = node.arguments;
+        if (node.arguments.length === 1 && argument !== undefined && ts.isStringLiteralLike(argument)) {
+          inspectSpecifier(argument.text);
+        } else {
+          unapprovedDynamicModuleExpressions.add(`${relativePath}:NON_LITERAL_IMPORT`);
+        }
+      }
+      if (
+        (ts.isPropertyAccessExpression(node) && node.name.text === "require") ||
+        (ts.isElementAccessExpression(node) &&
+          node.argumentExpression !== undefined &&
+          ts.isStringLiteralLike(node.argumentExpression) &&
+          node.argumentExpression.text === "require")
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:PROPERTY_REQUIRE`);
+      }
+      if (ts.isIdentifier(node) && node.text === "createRequire") {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:CREATE_REQUIRE`);
+      }
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        ts.isIdentifier(node.expression.expression) &&
+        node.expression.expression.text === "Reflect" &&
+        node.expression.name.text === "get" &&
+        node.arguments[1] !== undefined &&
+        ts.isStringLiteralLike(node.arguments[1]) &&
+        node.arguments[1].text === "require"
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:REFLECTIVE_REQUIRE`);
+      }
+      if (
+        ts.isIdentifier(node) &&
+        node.text === "require" &&
+        !(ts.isCallExpression(node.parent) && node.parent.expression === node) &&
+        !(
+          ts.isPropertyAccessExpression(node.parent) &&
+          node.parent.name === node
+        )
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:INDIRECT_REQUIRE`);
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(sourceFile);
+  }
+  return {
+    importers: [...importers].sort((left, right) => left.localeCompare(right, "en")),
+    unapprovedDynamicModuleExpressions: [...unapprovedDynamicModuleExpressions].sort(
+      (left, right) => left.localeCompare(right, "en"),
+    ),
+  };
+}
+
 export function inspectStaticContainerContract(root = ROOT) {
   const failures = [];
+  const unsignedVerifierCorpusCandidateProductionModuleInspection =
+    inspectUnsignedVerifierCorpusCandidateProductionModules(root, failures);
+  const unsignedVerifierCorpusCandidateProductionImports =
+    unsignedVerifierCorpusCandidateProductionModuleInspection.importers;
+  const unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions =
+    unsignedVerifierCorpusCandidateProductionModuleInspection.unapprovedDynamicModuleExpressions;
+  if (unsignedVerifierCorpusCandidateProductionImports.length > 0) {
+    failures.push(
+      `Unsigned verifier candidate has production module references: ${unsignedVerifierCorpusCandidateProductionImports.join(
+        ", ",
+      )}.`,
+    );
+  }
+  if (unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions.length > 0) {
+    failures.push(
+      `Unsigned verifier production inspection found unapproved dynamic module expressions: ${unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions.join(
+        ", ",
+      )}.`,
+    );
+  }
   const contractPath = resolve(root, "container-contract.json");
   const dockerfilePath = resolve(root, "Dockerfile");
   const workerDockerfilePath = resolve(root, "Dockerfile.worker");
@@ -318,6 +567,22 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.unsignedV2ExecutionCorePassSigningEligible !== false ||
     contract.workerContainer?.unsignedV2ExecutionCoreExternalSettlementEligible !== false ||
     contract.workerContainer?.unsignedV2ExecutionCoreEntrypointConnected !== false ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateImplemented !== true ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateStatus !==
+      "UNVERIFIED_INJECTED_EVALUATOR_AND_CALLER_BINDINGS_NON_ADMISSIBLE" ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateRootExported !== false ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateActiveWindowChecked !== true ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateTimeObservationAuthority !==
+      "UNVERIFIED_CALLER_SUPPLIED" ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateCanonicalPolicyHash !== true ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateCommandTreesStableRequired !== true ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateProductionImportsAllowed !== false ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateProductionImportInspection !==
+      "TYPESCRIPT_AST_MODULE_RESOLUTION_AND_UNSUPPORTED_LOADER_REJECTION" ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidatePassSigningEligible !== false ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateExternalSettlementEligible !== false ||
+    contract.workerContainer?.unsignedVerifierCorpusCandidateRuntimeConnectionStatus !==
+      "STATIC_GRAPH_NO_SUPPORTED_EDGE_DETECTED_NOT_RUNTIME_PROOF" ||
     contract.workerContainer?.liveCpuEvidenceProducerStateMachineImplemented !== true ||
     contract.workerContainer?.liveCpuEvidenceProducerCandidateStatus !==
       "UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE" ||
@@ -1645,6 +1910,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     rootIndex.includes("linux-start-barrier") ||
     rootIndex.includes("linux-cgroup-helper-protocol") ||
     rootIndex.includes("linux-cgroup-helper-client") ||
+    rootIndex.includes("unsigned-verifier-corpus-candidate") ||
     rootIndex.includes("registerMutualTlsWorkerRpcV2TransportInternal") ||
     rootIndex.includes("assertMutualTlsWorkerRpcV2Transport")
   ) {
@@ -1916,7 +2182,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     schemaVersion: "1",
     status: failures.length === 0 ? "PASS" : "FAIL",
     scope: "STATIC_WEB_WORKER_VERIFIER_EGRESS_HELPER_CONTAINERS",
-    sourceInspectionMethod: "STRUCTURAL_JSON_AND_REQUIRED_SOURCE_MARKERS",
+    sourceInspectionMethod: "STRUCTURAL_JSON_TYPESCRIPT_AST_AND_REQUIRED_SOURCE_MARKERS",
     behavioralVerification: "SEPARATE_UNIT_AND_INTEGRATION_TESTS",
     targetPlatform: contract?.targetPlatform ?? null,
     contractStatus: contract?.status ?? null,
@@ -1941,6 +2207,11 @@ export function inspectStaticContainerContract(root = ROOT) {
     verifierContainerStatus: contract?.verifierContainer?.status ?? null,
     egressProxyStatus: contract?.egressProxy?.status ?? null,
     nativeHelperStatus: contract?.nativeHelper?.status ?? null,
+    unsignedVerifierCorpusCandidateSupportedProductionModuleEdgeDetected:
+      unsignedVerifierCorpusCandidateProductionImports.length > 0 ||
+      unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions.length > 0,
+    unsignedVerifierCorpusCandidateProductionImports,
+    unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions,
     dynamicContainerVerified: false,
     releaseReady: false,
     failures,
