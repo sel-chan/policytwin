@@ -47,6 +47,12 @@ const PRODUCTION_SOURCE_EXTENSIONS = new Set([
 ]);
 const UNSIGNED_VERIFIER_CORPUS_CANDIDATE_BASENAME =
   "unsigned-verifier-corpus-candidate";
+const VERIFIER_AUTHORITY_MODULE_BASENAMES = [
+  "repair-verifier-review-bridge",
+  "verifier-exchange-authority",
+  "verifier-exchange-contract",
+  "verifier-replay-sqlite",
+];
 const MAX_PRODUCTION_SOURCE_FILES = 2_048;
 const MAX_PRODUCTION_SOURCE_BYTES = 4 * 1024 * 1024;
 
@@ -292,6 +298,240 @@ function inspectUnsignedVerifierCorpusCandidateProductionModules(root, failures)
   };
 }
 
+function inspectVerifierReviewBridgeProductionModules(root, failures) {
+  const files = [];
+  for (const sourceRoot of PRODUCTION_SOURCE_ROOTS) {
+    collectProductionSourceFiles(resolve(root, sourceRoot), files, failures);
+  }
+  if (files.length > MAX_PRODUCTION_SOURCE_FILES) {
+    failures.push("Verifier review bridge production-import inspection exceeds its file limit.");
+    return { importers: [], unapprovedDynamicModuleExpressions: [] };
+  }
+  const compilerOptions = readCompilerOptions(root, failures);
+  const bridgePaths = VERIFIER_AUTHORITY_MODULE_BASENAMES.map((basename) =>
+    resolve(root, "src", "codex", `${basename}.ts`),
+  );
+  const bridgeRelativePaths = new Set(
+    bridgePaths.map((path) => relative(root, path).replaceAll("\\", "/")),
+  );
+  const importers = new Set();
+  const unapprovedDynamicModuleExpressions = new Set();
+  for (const configurationPath of ["package.json", "tsconfig.json"]) {
+    const body = readFileSync(resolve(root, configurationPath), "utf8");
+    if (VERIFIER_AUTHORITY_MODULE_BASENAMES.some((basename) => body.includes(basename))) {
+      importers.add(configurationPath);
+    }
+  }
+  for (const path of files) {
+    const stat = lstatSync(path);
+    if (stat.size > MAX_PRODUCTION_SOURCE_BYTES) {
+      failures.push("Verifier review bridge production-import inspection exceeds its file-size limit.");
+      continue;
+    }
+    const sourceFile = ts.createSourceFile(
+      path,
+      readFileSync(path, "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+      scriptKind(path),
+    );
+    const relativePath = relative(root, path).replaceAll("\\", "/");
+    if ((sourceFile.parseDiagnostics ?? []).length > 0) {
+      unapprovedDynamicModuleExpressions.add(`${relativePath}:SOURCE_PARSE_ERROR`);
+      continue;
+    }
+
+    function inspectSpecifier(specifier) {
+      if (specifier === "node:module" || specifier === "module") {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:MODULE_LOADER_PACKAGE`);
+      }
+      const withoutQueryOrHash = stripModuleUrlSuffix(specifier);
+      const resolvedModule = ts.resolveModuleName(
+        withoutQueryOrHash,
+        path,
+        compilerOptions,
+        ts.sys,
+      ).resolvedModule;
+      const targetsVerifierAuthority =
+        VERIFIER_AUTHORITY_MODULE_BASENAMES.some((basename) => specifier.includes(basename)) ||
+        (resolvedModule !== undefined &&
+          bridgePaths.some((bridgePath) =>
+            sameFilesystemPath(resolvedModule.resolvedFileName, bridgePath)
+          ));
+      if (specifier === "node:vm" || specifier === "vm") {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:VM_CODE_GENERATION_MODULE`);
+      }
+      if (targetsVerifierAuthority && !bridgeRelativePaths.has(relativePath)) {
+        importers.add(relativePath);
+      }
+    }
+
+    function isStaticPropertyName(node) {
+      const parent = node.parent;
+      return (
+        (ts.isPropertyAssignment(parent) ||
+          ts.isMethodDeclaration(parent) ||
+          ts.isPropertyDeclaration(parent) ||
+          ts.isPropertySignature(parent) ||
+          ts.isMethodSignature(parent) ||
+          ts.isGetAccessorDeclaration(parent) ||
+          ts.isSetAccessorDeclaration(parent) ||
+          ts.isEnumMember(parent)) &&
+        parent.name === node
+      );
+    }
+
+    function staticAccessName(node) {
+      if (ts.isPropertyAccessExpression(node)) {
+        return node.name.text;
+      }
+      if (
+        ts.isElementAccessExpression(node) &&
+        node.argumentExpression !== undefined &&
+        ts.isStringLiteralLike(node.argumentExpression)
+      ) {
+        return node.argumentExpression.text;
+      }
+      return null;
+    }
+
+    function visit(node) {
+      const accessedName = staticAccessName(node);
+      if (
+        ts.isElementAccessExpression(node) &&
+        node.argumentExpression !== undefined &&
+        !ts.isStringLiteralLike(node.argumentExpression) &&
+        ts.isIdentifier(node.expression) &&
+        (node.expression.text === "globalThis" || node.expression.text === "process")
+      ) {
+        unapprovedDynamicModuleExpressions.add(
+          `${relativePath}:${node.expression.text.toUpperCase()}_COMPUTED_PROPERTY_ACCESS`,
+        );
+      }
+      if (
+        accessedName === "eval" ||
+        accessedName === "Function" ||
+        accessedName === "AsyncFunction"
+      ) {
+        unapprovedDynamicModuleExpressions.add(
+          `${relativePath}:${accessedName.toUpperCase()}_CODE_GENERATION`,
+        );
+      }
+      if (accessedName === "getBuiltinModule") {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:PROCESS_GET_BUILTIN_MODULE`);
+      }
+      if (
+        ts.isIdentifier(node) &&
+        !isStaticPropertyName(node) &&
+        (node.text === "eval" || node.text === "Function" || node.text === "AsyncFunction")
+      ) {
+        unapprovedDynamicModuleExpressions.add(
+          `${relativePath}:${node.text.toUpperCase()}_CODE_GENERATION`,
+        );
+      }
+      if (
+        ts.isIdentifier(node) &&
+        node.text === "getBuiltinModule" &&
+        !isStaticPropertyName(node)
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:PROCESS_GET_BUILTIN_MODULE`);
+      }
+      if (
+        ((ts.isPropertyAccessExpression(node) && node.name.text === "constructor") ||
+          (ts.isElementAccessExpression(node) &&
+            node.argumentExpression !== undefined &&
+            ts.isStringLiteralLike(node.argumentExpression) &&
+            node.argumentExpression.text === "constructor")) &&
+        ((ts.isCallExpression(node.parent) || ts.isNewExpression(node.parent)) &&
+          node.parent.expression === node)
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:CONSTRUCTOR_CODE_GENERATION`);
+      }
+      if (
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+        node.moduleSpecifier !== undefined &&
+        ts.isStringLiteralLike(node.moduleSpecifier)
+      ) {
+        inspectSpecifier(node.moduleSpecifier.text);
+      } else if (
+        ts.isImportEqualsDeclaration(node) &&
+        ts.isExternalModuleReference(node.moduleReference) &&
+        node.moduleReference.expression !== undefined &&
+        ts.isStringLiteralLike(node.moduleReference.expression)
+      ) {
+        inspectSpecifier(node.moduleReference.expression.text);
+      } else if (
+        ts.isCallExpression(node) &&
+        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+          (ts.isIdentifier(node.expression) && node.expression.text === "require"))
+      ) {
+        const [argument] = node.arguments;
+        if (node.arguments.length === 1 && argument !== undefined && ts.isStringLiteralLike(argument)) {
+          inspectSpecifier(argument.text);
+        } else {
+          unapprovedDynamicModuleExpressions.add(`${relativePath}:NON_LITERAL_IMPORT`);
+        }
+      }
+      if (
+        (ts.isPropertyAccessExpression(node) && node.name.text === "require") ||
+        (ts.isElementAccessExpression(node) &&
+          node.argumentExpression !== undefined &&
+          ts.isStringLiteralLike(node.argumentExpression) &&
+          node.argumentExpression.text === "require")
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:PROPERTY_REQUIRE`);
+      }
+      if (ts.isIdentifier(node) && node.text === "createRequire") {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:CREATE_REQUIRE`);
+      }
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        ts.isIdentifier(node.expression.expression) &&
+        node.expression.expression.text === "Reflect" &&
+        node.expression.name.text === "get"
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:REFLECTIVE_PROPERTY_ACCESS`);
+        const reflectedName =
+          node.arguments[1] !== undefined && ts.isStringLiteralLike(node.arguments[1])
+            ? node.arguments[1].text
+            : null;
+        if (reflectedName === "require") {
+          unapprovedDynamicModuleExpressions.add(`${relativePath}:REFLECTIVE_REQUIRE`);
+        }
+        if (
+          reflectedName === "eval" ||
+          reflectedName === "Function" ||
+          reflectedName === "AsyncFunction"
+        ) {
+          unapprovedDynamicModuleExpressions.add(
+            `${relativePath}:${reflectedName.toUpperCase()}_CODE_GENERATION`,
+          );
+        }
+        if (reflectedName === "getBuiltinModule") {
+          unapprovedDynamicModuleExpressions.add(`${relativePath}:PROCESS_GET_BUILTIN_MODULE`);
+        }
+      }
+      if (
+        ts.isIdentifier(node) &&
+        node.text === "require" &&
+        !(ts.isCallExpression(node.parent) && node.parent.expression === node) &&
+        !(ts.isPropertyAccessExpression(node.parent) && node.parent.name === node)
+      ) {
+        unapprovedDynamicModuleExpressions.add(`${relativePath}:INDIRECT_REQUIRE`);
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(sourceFile);
+  }
+  return {
+    importers: [...importers].sort((left, right) => left.localeCompare(right, "en")),
+    unapprovedDynamicModuleExpressions: [...unapprovedDynamicModuleExpressions].sort(
+      (left, right) => left.localeCompare(right, "en"),
+    ),
+  };
+}
+
 export function inspectStaticContainerContract(root = ROOT) {
   const failures = [];
   const unsignedVerifierCorpusCandidateProductionModuleInspection =
@@ -310,6 +550,26 @@ export function inspectStaticContainerContract(root = ROOT) {
   if (unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions.length > 0) {
     failures.push(
       `Unsigned verifier production inspection found unapproved dynamic module expressions: ${unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions.join(
+        ", ",
+      )}.`,
+    );
+  }
+  const verifierReviewBridgeProductionModuleInspection =
+    inspectVerifierReviewBridgeProductionModules(root, failures);
+  const verifierReviewBridgeProductionImports =
+    verifierReviewBridgeProductionModuleInspection.importers;
+  const verifierReviewBridgeUnapprovedDynamicModuleExpressions =
+    verifierReviewBridgeProductionModuleInspection.unapprovedDynamicModuleExpressions;
+  if (verifierReviewBridgeProductionImports.length > 0) {
+    failures.push(
+      `Verifier review bridge has production module references: ${verifierReviewBridgeProductionImports.join(
+        ", ",
+      )}.`,
+    );
+  }
+  if (verifierReviewBridgeUnapprovedDynamicModuleExpressions.length > 0) {
+    failures.push(
+      `Verifier review bridge inspection found unapproved dynamic module expressions: ${verifierReviewBridgeUnapprovedDynamicModuleExpressions.join(
         ", ",
       )}.`,
     );
@@ -583,6 +843,30 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.unsignedVerifierCorpusCandidateExternalSettlementEligible !== false ||
     contract.workerContainer?.unsignedVerifierCorpusCandidateRuntimeConnectionStatus !==
       "STATIC_GRAPH_NO_SUPPORTED_EDGE_DETECTED_NOT_RUNTIME_PROOF" ||
+    contract.workerContainer?.verifierExchangeContractImplemented !== true ||
+    contract.workerContainer?.verifierExchangeStatus !==
+      "SUPERVISOR_REVALIDATED_LOCAL_SNAPSHOT_NOT_RUNTIME_IMMUTABILITY_PROOF" ||
+    contract.workerContainer?.verifierExchangeDurableReplay !== "DURABLE_SQLITE" ||
+    contract.workerContainer?.verifierExchangeDurableRequestAttemptUniqueness !== true ||
+    contract.workerContainer?.verifierExchangeDurableClockHighWater !== true ||
+    contract.workerContainer?.verifierExchangeExactSqliteSchemaRequired !== true ||
+    contract.workerContainer?.verifierExchangeRootExported !== false ||
+    contract.workerContainer?.verifierExchangeRuntimeConnected !== false ||
+    contract.workerContainer?.verifierExchangePassSigningEligible !== false ||
+    contract.workerContainer?.verifierCapabilityDeliveryStatus !==
+      "IN_PROCESS_PORT_HANDOFF_TESTABLE_NOT_VERIFIER_PROCESS_PROOF" ||
+    contract.workerContainer?.verifierReviewBridgeImplemented !== true ||
+    contract.workerContainer?.verifierReviewBridgeStatus !== "BOUND_NOT_RUNTIME_FINALIZED" ||
+    contract.workerContainer?.verifierReviewBridgeReviewAuthority !==
+      "CALLER_SUPPLIED_REVIEW_ECHO_BOUND_NOT_RUNTIME_REVIEW_PROOF" ||
+    contract.workerContainer?.verifierReviewBridgeRootExported !== false ||
+    contract.workerContainer?.verifierReviewBridgeRuntimeConnected !== false ||
+    contract.workerContainer?.verifierReviewBridgeProductionImportsAllowed !== false ||
+    contract.workerContainer?.verifierReviewBridgeProductionImportInspection !==
+      "TYPESCRIPT_AST_STATIC_AND_COMMON_LOADER_EDGE_SCAN_NOT_RUNTIME_OR_CODEGEN_PROOF" ||
+    contract.workerContainer?.verifierReviewBridgePassSigningEligible !== false ||
+    verifierReviewBridgeProductionImports.length !== 0 ||
+    verifierReviewBridgeUnapprovedDynamicModuleExpressions.length !== 0 ||
     contract.workerContainer?.liveCpuEvidenceProducerStateMachineImplemented !== true ||
     contract.workerContainer?.liveCpuEvidenceProducerCandidateStatus !==
       "UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE" ||
@@ -2212,6 +2496,11 @@ export function inspectStaticContainerContract(root = ROOT) {
       unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions.length > 0,
     unsignedVerifierCorpusCandidateProductionImports,
     unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions,
+    verifierReviewBridgeSupportedProductionModuleEdgeDetected:
+      verifierReviewBridgeProductionImports.length > 0 ||
+      verifierReviewBridgeUnapprovedDynamicModuleExpressions.length > 0,
+    verifierReviewBridgeProductionImports,
+    verifierReviewBridgeUnapprovedDynamicModuleExpressions,
     dynamicContainerVerified: false,
     releaseReady: false,
     failures,

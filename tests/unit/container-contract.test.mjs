@@ -41,6 +41,9 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
     report.unsignedVerifierCorpusCandidateUnapprovedDynamicModuleExpressions,
     [],
   );
+  assert.equal(report.verifierReviewBridgeSupportedProductionModuleEdgeDetected, false);
+  assert.deepEqual(report.verifierReviewBridgeProductionImports, []);
+  assert.deepEqual(report.verifierReviewBridgeUnapprovedDynamicModuleExpressions, []);
   assert.equal(report.releaseReady, false);
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
   assert.equal(contract.schemaVersion, "15");
@@ -86,6 +89,42 @@ test("static web, worker, and verifier contracts remain non-live and fail closed
     contract.workerContainer.unsignedVerifierCorpusCandidateRuntimeConnectionStatus,
     "STATIC_GRAPH_NO_SUPPORTED_EDGE_DETECTED_NOT_RUNTIME_PROOF",
   );
+  assert.equal(contract.workerContainer.verifierExchangeContractImplemented, true);
+  assert.equal(
+    contract.workerContainer.verifierExchangeStatus,
+    "SUPERVISOR_REVALIDATED_LOCAL_SNAPSHOT_NOT_RUNTIME_IMMUTABILITY_PROOF",
+  );
+  assert.equal(contract.workerContainer.verifierExchangeDurableReplay, "DURABLE_SQLITE");
+  assert.equal(
+    contract.workerContainer.verifierExchangeDurableRequestAttemptUniqueness,
+    true,
+  );
+  assert.equal(contract.workerContainer.verifierExchangeDurableClockHighWater, true);
+  assert.equal(contract.workerContainer.verifierExchangeExactSqliteSchemaRequired, true);
+  assert.equal(contract.workerContainer.verifierExchangeRootExported, false);
+  assert.equal(contract.workerContainer.verifierExchangeRuntimeConnected, false);
+  assert.equal(contract.workerContainer.verifierExchangePassSigningEligible, false);
+  assert.equal(
+    contract.workerContainer.verifierCapabilityDeliveryStatus,
+    "IN_PROCESS_PORT_HANDOFF_TESTABLE_NOT_VERIFIER_PROCESS_PROOF",
+  );
+  assert.equal(contract.workerContainer.verifierReviewBridgeImplemented, true);
+  assert.equal(
+    contract.workerContainer.verifierReviewBridgeStatus,
+    "BOUND_NOT_RUNTIME_FINALIZED",
+  );
+  assert.equal(
+    contract.workerContainer.verifierReviewBridgeReviewAuthority,
+    "CALLER_SUPPLIED_REVIEW_ECHO_BOUND_NOT_RUNTIME_REVIEW_PROOF",
+  );
+  assert.equal(contract.workerContainer.verifierReviewBridgeRootExported, false);
+  assert.equal(contract.workerContainer.verifierReviewBridgeRuntimeConnected, false);
+  assert.equal(contract.workerContainer.verifierReviewBridgeProductionImportsAllowed, false);
+  assert.equal(
+    contract.workerContainer.verifierReviewBridgeProductionImportInspection,
+    "TYPESCRIPT_AST_STATIC_AND_COMMON_LOADER_EDGE_SCAN_NOT_RUNTIME_OR_CODEGEN_PROOF",
+  );
+  assert.equal(contract.workerContainer.verifierReviewBridgePassSigningEligible, false);
   assert.equal(
     contract.workerContainer.liveCpuPrivateAdapterCapabilityScaffoldImplemented,
     true,
@@ -539,6 +578,120 @@ test("static container inspection rejects commented, indirect, and computed cand
       "app/api/health/route.ts",
     ),
   );
+
+  await writeFile(tsconfigPath, originalTsconfigBody, "utf8");
+  const reviewBridgeSpecifier = "../../../../src/codex/repair-verifier-review-bridge.js";
+  await writeFile(
+    healthRoutePath,
+    `${healthRoute}\nimport { createRepairVerifierReviewBridge } from "${reviewBridgeSpecifier}";\nvoid createRepairVerifierReviewBridge;\n`,
+    "utf8",
+  );
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.equal(report.verifierReviewBridgeSupportedProductionModuleEdgeDetected, true);
+  assert.ok(
+    report.verifierReviewBridgeProductionImports.includes("app/api/health/route.ts"),
+  );
+  assert.match(report.failures.join(" "), /review bridge has production module references/iu);
+
+  const authoritySpecifier = "../../../../src/codex/verifier-exchange-authority.js";
+  const evalIdentifier = "ev" + "al";
+  const functionConstructor = "Fun" + "ction";
+  await writeFile(
+    healthRoutePath,
+    `${healthRoute}\nimport { takeVerifierCapability } from "${authoritySpecifier}";\nvoid takeVerifierCapability;\n`,
+    "utf8",
+  );
+  report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.ok(
+    report.verifierReviewBridgeProductionImports.includes("app/api/health/route.ts"),
+  );
+
+  for (const attack of [
+    {
+      source: `${healthRoute}\nconst bridgeTarget = "../../../../src/codex/" + "repair-verifier-review-bridge.js";\nawait import(bridgeTarget);\n`,
+      marker: "NON_LITERAL_IMPORT",
+    },
+    {
+      source: `${healthRoute}\nmodule.require("${reviewBridgeSpecifier}");\n`,
+      marker: "PROPERTY_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nconst load = require;\nload("${reviewBridgeSpecifier}");\n`,
+      marker: "INDIRECT_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nimport { createRequire } from "node:module";\nconst load = createRequire(import.meta.url);\nload("${reviewBridgeSpecifier}");\n`,
+      marker: "CREATE_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nconst load = Reflect.get(module, "require");\nload("${reviewBridgeSpecifier}");\n`,
+      marker: "REFLECTIVE_REQUIRE",
+    },
+    {
+      source: `${healthRoute}\nconst load = new ${functionConstructor}("path", "return import(path)");\nawait load("${authoritySpecifier}");\n`,
+      marker: "FUNCTION_CODE_GENERATION",
+    },
+    {
+      source: `${healthRoute}\nawait ${evalIdentifier}('import("${authoritySpecifier}")');\n`,
+      marker: "EVAL_CODE_GENERATION",
+    },
+    {
+      source: `${healthRoute}\nimport vm from "node:vm";\nvm.runInThisContext('import("${authoritySpecifier}")');\n`,
+      marker: "VM_CODE_GENERATION_MODULE",
+    },
+    {
+      source: `${healthRoute}\nconst vm = process.getBuiltinModule("vm");\nvm.runInThisContext('import("${authoritySpecifier}")');\n`,
+      marker: "PROCESS_GET_BUILTIN_MODULE",
+    },
+    {
+      source: `${healthRoute}\nconst load = (() => {}).constructor("path", "return import(path)");\nawait load("${authoritySpecifier}");\n`,
+      marker: "CONSTRUCTOR_CODE_GENERATION",
+    },
+    {
+      source: `${healthRoute}\nconst load = globalThis["Function"]("path", "return import(path)");\nawait load("${authoritySpecifier}");\n`,
+      marker: "FUNCTION_CODE_GENERATION",
+    },
+    {
+      source: `${healthRoute}\nawait globalThis["eval"]('import("${authoritySpecifier}")');\n`,
+      marker: "EVAL_CODE_GENERATION",
+    },
+    {
+      source: `${healthRoute}\nconst load = Reflect.get(globalThis, "Function");\nawait load("path", "return import(path)")("${authoritySpecifier}");\n`,
+      marker: "FUNCTION_CODE_GENERATION",
+    },
+    {
+      source: `${healthRoute}\nconst vm = process["getBuiltinModule"]("vm");\nvm.runInThisContext('import("${authoritySpecifier}")');\n`,
+      marker: "PROCESS_GET_BUILTIN_MODULE",
+    },
+    {
+      source: `${healthRoute}\nconst key = "Fun" + "ction";\nconst load = globalThis[key]("path", "return import(path)");\nawait load("${authoritySpecifier}");\n`,
+      marker: "GLOBALTHIS_COMPUTED_PROPERTY_ACCESS",
+    },
+    {
+      source: `${healthRoute}\nconst key = "get" + "BuiltinModule";\nconst vm = process[key]("vm");\nvm.runInThisContext('import("${authoritySpecifier}")');\n`,
+      marker: "PROCESS_COMPUTED_PROPERTY_ACCESS",
+    },
+    {
+      source: `${healthRoute}\nconst key = "Fun" + "ction";\nconst load = Reflect.get(globalThis, key);\nawait load("path", "return import(path)")("${authoritySpecifier}");\n`,
+      marker: "REFLECTIVE_PROPERTY_ACCESS",
+    },
+    {
+      source: `${healthRoute}\nawait import(bridgeTarget;\n`,
+      marker: "SOURCE_PARSE_ERROR",
+    },
+  ]) {
+    await writeFile(healthRoutePath, attack.source, "utf8");
+    report = inspectStaticContainerContract(target);
+    assert.equal(report.status, "FAIL");
+    assert.equal(report.verifierReviewBridgeSupportedProductionModuleEdgeDetected, true);
+    assert.ok(
+      report.verifierReviewBridgeUnapprovedDynamicModuleExpressions.includes(
+        `app/api/health/route.ts:${attack.marker}`,
+      ),
+    );
+  }
 });
 
 test("static container inspection detects weakened verifier networking and fixture bundling", async (t) => {
