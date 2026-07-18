@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9/M10 — offline completion gaps hardened`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-18 18:06 +09:00`
-- Latest checkpoint commit: `95d77e2b489a0342a47b5be1b875054ae33fbc56`
+- Last updated: `2026-07-18 18:20 +09:00`
+- Latest checkpoint commit: `397f935ea80328de111d1eca445eda01dbf703ec`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -117,7 +117,7 @@ Starting HEAD is clean `main` at ledger commit `cd3252146794c08ead8e512ac46551aa
 - [x] Harden the new seam after read-only review: the local `rr_` identity maps to the signed v2 request ID; only the exact branded client and one-use settlement can succeed; exact input/provenance/files/commands/corpus/review are required; running stays unverified; and any transport, timeout, restart, or cleanup-uncertain result remains fail-stop poisoned.
 - [x] Complete the post-hardening full regression rerun, inspect the refreshed desktop and mobile captures, and obtain the second independent security review result with no remaining P0/P1.
 - [x] Run focused and broad regression gates, inspect generated artifacts, and obtain independent read-only review.
-- [ ] Update evidence and documentation, commit on current `main`, and leave the worktree clean.
+- [x] Update evidence and documentation, commit on current `main`, and leave the worktree clean.
 
 This continuation must not perform a registry pull, model call, push/publication, deployment, upload, terms acceptance, license selection, or challenge submission without the separately required authority and credentials.
 
@@ -135,7 +135,8 @@ This continuation must not perform a registry pull, model call, push/publication
 - Recovered reproducibility defect: a clean-commit `pnpm test:e2e` passed 3/3 but changed tracked Policy Studio and Integration PNG hashes, so the release receipt could never preserve raw-byte index/worktree equality. Default E2E output now goes to ignored `.tmp/playwright-screenshots/`; only the explicit screenshot-refresh config may change tracked release assets, which remain fingerprinted and require visual review.
 - Reproducibility proof after the split: `pnpm lint`, `pnpm typecheck`, and the three E2E-lifecycle unit tests pass. The explicit refresh configuration runs 3/3 and all seven updated product captures were directly inspected with no visible defect. A subsequent default `pnpm test:e2e` passes 3/3, writes seven review copies to `.tmp/playwright-screenshots/`, and leaves all eight tracked PNG hashes unchanged, including Policy Studio `527a05f2...`, Integration `be960ed5...`, and the architecture asset.
 - The post-split clean-copy gate passes with 428 source files, and the offline security gate passes across 428 files, 397 text files, and Git history with zero findings.
-- The final pre-commit `pnpm verify` sequence passed 365 unit, 61 integration, 22 eval, 3 browser, static container, truthful draft, demo, build, and 427-file clean-copy reproduction. It failed the expected owner-selected `LICENSE` gate. Its first security pass correctly found the credential-shaped test sentinel; after changing that test-only literal to runtime composition, focused RPC 50/50 and the standalone 427-file/396-text-file plus Git-history security gate passed. The release receipt correctly remained unavailable because the intended checkpoint still differed from the Git index; it must be rerun from the committed clean tree.
+- Clean-tree authority run at commit `397f935`: `pnpm verify` records all 16 ordered steps, with lint, typecheck, 365 unit, 61 integration, evidence regeneration, static container, 428-file clean copy, truthful drafts, 22 eval, deterministic three-drift demo, 3 browser, production build, and 397-text-file plus Git-history security all passing. Only owner-selected `license:check` is nonzero, so the overall receipt remains truthfully `FAIL`. The receipt was successfully issued with evidence hash `84ed00c9...`, clean report hash `0774169b...`, security report hash `db05eb02...`, 425 tracked release inputs, zero untracked inputs, and release-tree SHA-256 `90ef574975120f6ed05e58ebcf6af2fbfc1cfb8688e945fe2beba15d8dbbdec7`.
+- The final pre-commit `pnpm verify` sequence passed 365 unit, 61 integration, 22 eval, 3 browser, static container, truthful draft, demo, build, and 427-file clean-copy reproduction. It failed the expected owner-selected `LICENSE` gate. Its first security pass correctly found the credential-shaped test sentinel; after changing that test-only literal to runtime composition, focused RPC 50/50 and the standalone 427-file/396-text-file plus Git-history security gate passed. The release receipt correctly remained unavailable because the intended checkpoint still differed from the Git index; the later clean-tree run above resolved that condition.
 - Final independent full-diff review found no P0/P1, confirmed every new unit file is registered, fixture/environment/reset paths are connected, container/static-report hashes agree, documentation matches the fail-stop/semantic-scan implementation, and `git diff --check` is clean.
 - No registry pull, model call, push/publication, deployment, upload, terms acceptance, license selection, or challenge action occurred.
 
