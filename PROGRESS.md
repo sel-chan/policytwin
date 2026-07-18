@@ -8,8 +8,8 @@
 - Current milestone: `M8/M9/M10 — offline evidence integrity and reproducibility checkpoint verified`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-18 11:34 +09:00`
-- Latest checkpoint commit: `29ea765f716b1d6c9ef90d6dcacdee56b3320137`
+- Last updated: `2026-07-18 11:38 +09:00`
+- Latest checkpoint commit: `0764ed346398fc17cc0dd0814822ad85b7cfb8d9`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -114,7 +114,7 @@ Starting HEAD remains `29ea765f716b1d6c9ef90d6dcacdee56b3320137` on `main`, with
 - [x] Reconcile the full working diff, generated evidence, screenshots, static reports, and container build-input bindings.
 - [x] Run the authoritative offline verification with the verified NTFS store; accept only explicitly owner/external submission failures.
 - [x] Replay helper, web, worker, egress, and live prerequisites without registry pulls or model traffic and inspect the resulting reports.
-- [ ] Update decisions, architecture/threat/submission/progress truth boundaries, run final diff review, and commit the verified checkpoint on `main`.
+- [x] Update decisions, architecture/threat/submission/progress truth boundaries, run final diff review, and commit the verified checkpoint on `main`.
 
 This checkpoint must not pull registry images, call OpenAI, deploy, publish, upload, accept legal terms, choose the project license, or submit the challenge without the separately required owner authority and credentials.
 
@@ -126,6 +126,7 @@ This checkpoint must not pull registry images, call OpenAI, deploy, publish, upl
 - Static identities: worker `eedea685363235d84f667856f4b1daa86f0f3e9ee795b73bf7cea910f23498e2`, verifier `23cb93c6d9a0ee12b6879b868637b7d40207a4f2dde80e22a3a6e9fed3450c67`, egress `f3dfcabc8d4d124c7ccf6aeea3c6b59296163ee04aee856fe926e2b8d1406d9c`, and helper `520e550ddfc6ec07a7664839ce6ee75f95130264e2fdb5eaea6d14b03913816b` match the contract and static report.
 - Dynamic boundary: `helper:verify`, `container:verify`, `worker:verify`, and `egress:verify` all exit 1 before Docker invocation because the immutable builder/base/helper identities are unset. Helper, worker, and egress reports explicitly retain `dockerInvoked:false`; the web report keeps all daemon/runtime facts null. `verify:live` exits before dynamic gates or network because `OPENAI_API_KEY` and `CODEX_MODEL` are absent. No registry pull, container workload, model call, Codex repair, deployment, upload, or submission occurred.
 - Review: independent read-only code/truth reviews found and then confirmed closure of the E2E shutdown race/path boundary, missing lifecycle test registration, permissive live-scorecard status prefix, stale submission-state ordering, and an initially over-broad ambiguity canonicalizer. The final canonicalizer review found no remaining P0/P1/P2 because the operation is now bound to the exact trusted seeded request/source/trace context.
+- Checkpoint commit: `0764ed346398fc17cc0dd0814822ad85b7cfb8d9` (`fix: harden offline evidence and browser lifecycle`).
 
 ## Previous checkpoint — Responses terminal outcomes
 
@@ -732,7 +733,7 @@ Fill before `/goal pause` or any handoff.
 - Exact current state: `the 15-metric partial/live scorecard contract, trusted-seed-only ambiguity canonicalization, exact live statuses, cooperative Windows E2E teardown, and byte-exact architecture render are verified offline; Docker is running but no eligible image or live provider credential is configured`
 - Last successful command: `the final pnpm verify completed every implemented step with 337/337 unit, 61/61 integration, 22/22 eval, 3/3 browser, 374-file clean-copy, 374-file/344-text-file security/history, static container, demo, and build passing, then remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm helper:verify fails before Docker at the unset immutable builder; web/worker fail at the unset Node base; egress also lacks sealed helper IDs; pnpm verify:live fails before dynamic gates/network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `the current verified checkpoint remains uncommitted until final diff review and checkpoint commit`
+- Uncommitted files: `the implementation checkpoint is committed; only this ledger update remains before its follow-up commit`
 - Safe resume command/action: `after the owner supplies the exact Docker/registry prerequisites, confirm clean main, verify docker info, select exact reviewed digests, and run the helper artifact gate first`
 - One owner action, if any: `reply with explicit approval for the reviewed digest-pinned Node 22.22.2 and compiler image pulls; the Docker Desktop Linux engine is already running`
 
