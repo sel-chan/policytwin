@@ -16,6 +16,7 @@ import { isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeContainerBuildInput } from "./container-build-inputs.mjs";
 import {
+  assertLinuxCgroupV2SupervisorPreflight,
   assertLinuxCgroupSubtreeQuiescent,
   isLinuxCgroupCpuUsageWithinBudget,
   observeLinuxCgroupV2,
@@ -409,6 +410,7 @@ async function main() {
 
   try {
     if (failures.length > 0) throw new Error("Worker container prerequisites are incomplete.");
+    assertLinuxCgroupV2SupervisorPreflight();
     const build = spawnSync(process.execPath, ["scripts/build-core.mjs"], {
       cwd: ROOT,
       stdio: "inherit",

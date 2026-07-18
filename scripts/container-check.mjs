@@ -21,6 +21,8 @@ const REQUIRED_DOCKERIGNORE_LINES = [
   "*.key",
   "artifacts/runs",
   "artifacts/tmp",
+  "artifacts/submission-draft",
+  "artifacts/demo-draft",
   "fixtures/refund-demo/baseline",
   "fixtures/refund-demo/expected-fixed",
 ];
@@ -701,6 +703,9 @@ export function inspectStaticContainerContract(root = ROOT) {
 
   const dockerfile = read(dockerfilePath, failures, "Dockerfile");
   requireText(dockerfile, "ARG NODE_BASE_IMAGE", failures, "Dockerfile");
+  if (/^#\s*syntax\s*=/gimu.test(dockerfile)) {
+    failures.push("Dockerfile must use the daemon-built frontend declared by the contract.");
+  }
   if ((dockerfile.match(/^FROM \$\{NODE_BASE_IMAGE\}/gmu) ?? []).length !== 2) {
     failures.push("Dockerfile must derive both stages from the required immutable image argument.");
   }
@@ -1657,6 +1662,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     'contract?.schemaVersion !== "15"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
+    "assertLinuxCgroupV2SupervisorPreflight",
     '"Dockerfile.worker"',
     '"Dockerfile.verifier"',
     'computeContainerBuildInput("worker")',
@@ -1690,6 +1696,16 @@ export function inspectStaticContainerContract(root = ROOT) {
   requireOrderedText(
     workerVerify,
     [
+      'if (failures.length > 0) throw new Error("Worker container prerequisites are incomplete.");',
+      "assertLinuxCgroupV2SupervisorPreflight();",
+      'const build = spawnSync(process.execPath, ["scripts/build-core.mjs"]',
+    ],
+    failures,
+    "Worker container verifier",
+  );
+  requireOrderedText(
+    workerVerify,
+    [
       "const stoppedWorkerBeforeLogs = parseDockerContainerInspection(",
       'const workerLogs = docker(["logs", workerId]);',
       "const stoppedWorkerAfterLogs = parseDockerContainerInspection(",
@@ -1712,6 +1728,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     'contract?.schemaVersion !== "15"',
     'from "./pinned-docker-cli.mjs"',
     "createPinnedDockerSync",
+    "assertLinuxCgroupV2SupervisorPreflight",
     'scope: "DYNAMIC_EGRESS_PROXY_TLS_HANDSHAKE_ONLY_OUTBOUND_NOT_MEASURED"',
     "inspectEgressContainerPrerequisites",
     "createTlsMaterial",
@@ -1730,6 +1747,16 @@ export function inspectStaticContainerContract(root = ROOT) {
   ]) {
     requireText(egressVerify, required, failures, "Egress container verifier");
   }
+  requireOrderedText(
+    egressVerify,
+    [
+      'if (failures.length > 0) throw new Error("Egress container prerequisites are incomplete.");',
+      "assertLinuxCgroupV2SupervisorPreflight();",
+      'const build = spawnSync(process.execPath, ["scripts/build-core.mjs"]',
+    ],
+    failures,
+    "Egress container verifier",
+  );
   const linuxCgroupObserver = read(
     linuxCgroupObserverPath,
     failures,
@@ -1737,6 +1764,8 @@ export function inspectStaticContainerContract(root = ROOT) {
   );
   for (const required of [
     "const observations = new WeakMap();",
+    "validateLinuxCgroupV2SupervisorPreflight",
+    "assertLinuxCgroupV2SupervisorPreflight",
     'requiredLinuxOpenFlag("O_DIRECTORY")',
     "realpathSync.native(`/proc/self/fd/${directoryFileDescriptor}`) !== path",
     "parseLinuxCgroupPopulated",

@@ -15,6 +15,7 @@ const requiredScripts = [
   "verify:live",
   "demo:reset",
   "demo:run",
+  "submission:draft:check",
   "submission:check",
 ];
 const ignoredDirectories = new Set([".git", ".next", ".tmp", "dist", "node_modules"]);

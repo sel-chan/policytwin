@@ -8,9 +8,33 @@ import {
   parseLinuxCgroupPopulated,
   readBoundedLinuxCgroupText,
   readLinuxCgroupCpuUsageUsec,
+  validateLinuxCgroupV2SupervisorPreflight,
 } from "../../scripts/linux-cgroup-observer.mjs";
 
 const CONTAINER_ID = "a".repeat(64);
+
+test("supervisor preflight requires one canonical Linux cgroup v2 hierarchy", () => {
+  const valid = {
+    platform: "linux",
+    cgroupRootRealPath: "/sys/fs/cgroup",
+    cgroupFileSystemType: 0x6367_7270n,
+    supervisorMembership: "0::/user.slice/policytwin.scope\n",
+  };
+  assert.equal(validateLinuxCgroupV2SupervisorPreflight(valid), true);
+  for (const [change, pattern] of [
+    [{ platform: "win32" }, /Linux supervisor/u],
+    [{ cgroupRootRealPath: "/mnt/cgroup" }, /root is not canonical/u],
+    [{ cgroupFileSystemType: 0x0102_1994n }, /cgroup v2 filesystem/u],
+    [{ supervisorMembership: "2:cpu:/\n" }, /single cgroup v2 hierarchy/u],
+    [{ supervisorMembership: "0::/a\n0::/b\n" }, /single cgroup v2 hierarchy/u],
+    [{ supervisorMembership: "0::/a/../b\n" }, /single cgroup v2 hierarchy/u],
+  ]) {
+    assert.throws(
+      () => validateLinuxCgroupV2SupervisorPreflight({ ...valid, ...change }),
+      pattern,
+    );
+  }
+});
 
 test("Docker cgroup membership requires one exact engine-owned identity segment", () => {
   assert.equal(

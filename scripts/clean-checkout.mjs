@@ -88,16 +88,20 @@ writeFileSync(
 const pnpm = executable("pnpm");
 const commands = [
   [pnpm, ["install", "--offline", "--frozen-lockfile"]],
+  [pnpm, ["submission:draft"]],
+  [pnpm, ["submission:draft:check"]],
   [pnpm, ["lint"]],
   [pnpm, ["typecheck"]],
   [pnpm, ["test"]],
   [pnpm, ["test:integration"]],
+  [pnpm, ["evidence:offline"]],
+  [pnpm, ["submission:draft"]],
+  [pnpm, ["submission:draft:check"]],
   [pnpm, ["eval"]],
   [pnpm, ["build"]],
   [pnpm, ["test:e2e"]],
   [pnpm, ["demo:reset"]],
   [pnpm, ["demo:run"]],
-  [pnpm, ["evidence:offline"]],
 ];
 const results = [];
 for (const [command, args] of commands) {

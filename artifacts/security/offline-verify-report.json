@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1",
+  "status": "FAIL",
+  "completedAt": "2026-07-18T06:20:31.117Z",
+  "steps": [
+    {
+      "step": "lint",
+      "status": 0
+    },
+    {
+      "step": "typecheck",
+      "status": 0
+    },
+    {
+      "step": "test",
+      "status": 0
+    },
+    {
+      "step": "test:integration",
+      "status": 0
+    },
+    {
+      "step": "evidence:offline",
+      "status": 0
+    },
+    {
+      "step": "license:check",
+      "status": 1
+    },
+    {
+      "step": "container:check",
+      "status": 0
+    },
+    {
+      "step": "clean:check",
+      "status": 0
+    },
+    {
+      "step": "submission:draft",
+      "status": 0
+    },
+    {
+      "step": "submission:draft:check",
+      "status": 0
+    },
+    {
+      "step": "eval",
+      "status": 0
+    },
+    {
+      "step": "demo:reset",
+      "status": 0
+    },
+    {
+      "step": "demo:run",
+      "status": 0
+    },
+    {
+      "step": "test:e2e",
+      "status": 0
+    },
+    {
+      "step": "build",
+      "status": 0
+    },
+    {
+      "step": "security:check",
+      "status": 0
+    }
+  ],
+  "evidenceHash": "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291",
+  "cleanReportSha256": "8a1db43894b6d219e69b4b1fa79dde108800f5087dae512e02888e95414cad4d",
+  "securityReportSha256": "a7c326712b0f526fe1c14e8f7e77406b63589e920a0e3b6c74fcf01948369675",
+  "releaseTree": {
+    "scope": "GIT_MANAGED_RELEASE_INPUTS_EXCLUDING_MUTABLE_LEDGER_AND_SELF_REPORTS",
+    "excludedPaths": [
+      "PROGRESS.md",
+      "artifacts/security/offline-verify-report.json",
+      "artifacts/submission/submission-check-report.json"
+    ],
+    "algorithm": "SHA-256",
+    "fileCount": 413,
+    "trackedFileCount": 413,
+    "untrackedFileCount": 0,
+    "totalBytes": 6183086,
+    "sha256": "68e30434a8aee681df7bf1caf049b718a5d0fc0bde5e67f0269dc2f563b3efac"
+  }
+}

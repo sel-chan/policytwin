@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "status": "DRAFT_NOT_RECORDED",
+  "evidenceHash": "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291",
+  "caseCount": 41,
+  "driftBefore": 16,
+  "postRepairDrift": null,
+  "evaluationOnlyFixedFixtureDrift": 0,
+  "mutation": {
+    "killed": 44,
+    "total": 47,
+    "excludedEquivalent": 0,
+    "killRate": 0.9361702127659575,
+    "executionMode": "REFERENCE_EVALUATOR_NOT_OPA"
+  },
+  "externalGates": {
+    "gpt56": "NOT_RUN",
+    "opa": "PASS",
+    "codex": "NOT_RUN",
+    "browser": "NOT_RUN",
+    "container": "NOT_RUN",
+    "deployment": "NOT_RUN"
+  }
+}

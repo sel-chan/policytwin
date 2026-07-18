@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 374,
-  "scannedTextFiles": 344,
+  "scannedFiles": 416,
+  "scannedTextFiles": 386,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [
@@ -17,9 +17,11 @@
     "scripts/native-helper-container-verify.mjs",
     "scripts/pinned-docker-cli.mjs",
     "scripts/process.mjs",
+    "scripts/release-tree-fingerprint.mjs",
     "scripts/repair-command.mjs",
     "scripts/role-start-barrier.mjs",
     "scripts/security-check.mjs",
+    "scripts/submission-publication-probe.mjs",
     "scripts/verifier-preflight.mjs",
     "scripts/worker-container-verify.mjs",
     "src/codex/docker-command-runner.ts",
@@ -27,7 +29,9 @@
     "src/opa/runner.ts",
     "tests/helpers/worker-rpc-tls-certificates.mjs",
     "tests/integration/refund-fixture.integration.test.mjs",
-    "tests/unit/architecture-asset.test.mjs"
+    "tests/unit/architecture-asset.test.mjs",
+    "tests/unit/submission-release-receipts.test.mjs",
+    "tests/unit/submission-validation.test.mjs"
   ],
   "findings": []
 }

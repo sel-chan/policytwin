@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 # No tag fallback is allowed. container:verify supplies the immutable image
 # reference recorded in container-contract.json.
 ARG NODE_BASE_IMAGE

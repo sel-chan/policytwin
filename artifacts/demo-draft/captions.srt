@@ -1,0 +1,31 @@
+1
+00:00:00,000 --> 00:00:18,000
+[DRAFT — not recorded] This policy includes day 14, exactly 20 percent usage, and final-sale precedence.
+
+2
+00:00:18,000 --> 00:00:45,000
+PolicyTwin is intended to use GPT-5.6 to create a strict, traceable policy model. Live call not yet verified.
+
+3
+00:00:45,000 --> 00:01:08,000
+Material ambiguity becomes an explicit versioned decision instead of a hidden guess.
+
+4
+00:01:08,000 --> 00:01:32,000
+A deterministic compiler and OPA 1.18.2 verify 41 accepted policy cases.
+
+5
+00:01:32,000 --> 00:01:52,000
+The reference-expectation comparison, which is not OPA-backed, exposes the three seeded defects.
+
+6
+00:01:52,000 --> 00:02:20,000
+The intended Codex repair path is not yet verified and must be replaced with a real run before recording.
+
+7
+00:02:20,000 --> 00:02:42,000
+Post-repair proof is not yet available; the evaluation-only fixed fixture cannot substitute.
+
+8
+00:02:42,000 --> 00:02:55,000
+A 14-to-30-day change updates rules and cases, while a contradictory golden case blocks verification.

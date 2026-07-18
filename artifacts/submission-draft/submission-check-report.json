@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1",
+  "status": "NOT_RUN",
+  "checkedSubmissionFiles": 20,
+  "checkedDemoDraftFiles": 4,
+  "requiredScreenshots": 8,
+  "failures": [
+    "Submission checker has not run after draft generation."
+  ]
+}

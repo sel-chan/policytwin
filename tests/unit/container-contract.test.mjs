@@ -333,6 +333,23 @@ test("static container contract admits safely pinned native helper identities", 
   assert.equal(report.nativeHelperBinaryPinned, true);
 });
 
+test("static container inspection rejects an external web Dockerfile frontend", async (t) => {
+  const target = await mkdtemp(join(tmpdir(), "policytwin-container-frontend-"));
+  t.after(() => rm(target, { recursive: true, force: true }));
+  await copyStaticContainerInputs(target);
+  const dockerfilePath = join(target, "Dockerfile");
+  const dockerfile = await readFile(dockerfilePath, "utf8");
+  await writeFile(
+    dockerfilePath,
+    `# syntax=docker/dockerfile:1.7\n${dockerfile}`,
+    "utf8",
+  );
+
+  const report = inspectStaticContainerContract(target);
+  assert.equal(report.status, "FAIL");
+  assert.match(report.failures.join(" "), /daemon-built frontend/iu);
+});
+
 test("static container inspection detects weakened verifier networking and fixture bundling", async (t) => {
   const target = await mkdtemp(join(tmpdir(), "policytwin-container-contract-"));
   t.after(() => rm(target, { recursive: true, force: true }));

@@ -60,6 +60,7 @@
     "helper:build:local": "node scripts/native-helper-build.mjs",
     "helper:verify": "node scripts/native-helper-container-verify.mjs",
     "submission:draft": "node scripts/generate-submission-draft.mjs",
+    "submission:draft:check": "node scripts/submission-draft-check.mjs",
     "submission:architecture": "node scripts/render-architecture.mjs",
     "submission:check": "node scripts/submission-check.mjs"
   }

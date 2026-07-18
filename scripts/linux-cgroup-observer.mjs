@@ -195,14 +195,64 @@ function canonicalCgroupPath(relativePath, containerId) {
   return candidate;
 }
 
-function validateCgroupV2Root() {
-  if (realpathSync.native(CGROUP_ROOT) !== CGROUP_ROOT) {
+function validateCgroupV2RootIdentity(realPath, fileSystemType) {
+  if (realPath !== CGROUP_ROOT) {
     throw new Error("The cgroup root is not canonical.");
   }
-  const fileSystem = statfsSync(CGROUP_ROOT, { bigint: true });
-  if (fileSystem.type !== CGROUP2_SUPER_MAGIC) {
+  if (fileSystemType !== CGROUP2_SUPER_MAGIC) {
     throw new Error("The supervisor requires a cgroup v2 filesystem.");
   }
+}
+
+function validateCgroupV2Root() {
+  validateCgroupV2RootIdentity(
+    realpathSync.native(CGROUP_ROOT),
+    statfsSync(CGROUP_ROOT, { bigint: true }).type,
+  );
+}
+
+export function validateLinuxCgroupV2SupervisorPreflight({
+  platform,
+  cgroupRootRealPath,
+  cgroupFileSystemType,
+  supervisorMembership,
+}) {
+  if (platform !== "linux") {
+    throw new Error("Cgroup process-tree observation requires a Linux supervisor.");
+  }
+  validateCgroupV2RootIdentity(cgroupRootRealPath, cgroupFileSystemType);
+  if (
+    typeof supervisorMembership !== "string" ||
+    Buffer.byteLength(supervisorMembership, "utf8") > MAX_TEXT_BYTES
+  ) {
+    throw new Error("The supervisor cgroup membership is invalid.");
+  }
+  const membership = supervisorMembership
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (
+    membership.length !== 1 ||
+    !/^0::\/[A-Za-z0-9_.:@\/-]*$/u.test(membership[0]) ||
+    membership[0].includes("//") ||
+    membership[0].includes("/../") ||
+    membership[0].endsWith("/..")
+  ) {
+    throw new Error("The supervisor requires a single cgroup v2 hierarchy.");
+  }
+  return true;
+}
+
+export function assertLinuxCgroupV2SupervisorPreflight() {
+  if (process.platform !== "linux") {
+    throw new Error("Cgroup process-tree observation requires a Linux supervisor.");
+  }
+  return validateLinuxCgroupV2SupervisorPreflight({
+    platform: process.platform,
+    cgroupRootRealPath: realpathSync.native(CGROUP_ROOT),
+    cgroupFileSystemType: statfsSync(CGROUP_ROOT, { bigint: true }).type,
+    supervisorMembership: boundedText("/proc/self/cgroup", "Supervisor cgroup membership"),
+  });
 }
 
 function openPinnedCgroupDirectory(path) {

@@ -135,11 +135,15 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   await page.getByRole("link", { name: /Case Lab/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Case Lab" })).toBeVisible();
   await expect(page.getByText("OPA 41 / 41", { exact: true })).toBeVisible();
+  await expect(page.getByText("Reference evaluator", { exact: true })).toBeVisible();
+  await expect(page.getByText(/44\/47 killed · not OPA/u)).toBeVisible();
   await expect(page.getByRole("cell", { name: "D01", exact: true })).toBeVisible();
   await page.screenshot({ path: resolve(screenshotDirectory, "03-case-lab-drift.png"), fullPage: true });
 
   await page.getByRole("link", { name: /Integration \/ Drift/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Integration / Drift" })).toBeVisible();
+  await expect(page.getByText("REFERENCE_EXPECTATION_NOT_OPA", { exact: false })).toBeVisible();
+  await expect(page.getByText(/accepted corpus expectations, not OPA results/u)).toBeVisible();
   for (const caseId of ["D01", "D02", "D03"]) {
     await expect(page.getByText(caseId, { exact: true })).toBeVisible();
   }

@@ -33,6 +33,8 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "scripts/native-helper-container-verify.mjs",
   "scripts/pinned-docker-cli.mjs",
   "scripts/process.mjs",
+  "scripts/release-tree-fingerprint.mjs",
+  "scripts/submission-publication-probe.mjs",
   "scripts/role-start-barrier.mjs",
   "scripts/repair-command.mjs",
   "scripts/security-check.mjs",
@@ -44,6 +46,8 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "tests/helpers/worker-rpc-tls-certificates.mjs",
   "tests/integration/refund-fixture.integration.test.mjs",
   "tests/unit/architecture-asset.test.mjs",
+  "tests/unit/submission-release-receipts.test.mjs",
+  "tests/unit/submission-validation.test.mjs",
 ]);
 const TEST_SECRET_SENTINELS = new Set([
   "secret-value-123456789",

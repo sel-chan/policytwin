@@ -16,6 +16,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeContainerBuildInput } from "./container-build-inputs.mjs";
 import {
+  assertLinuxCgroupV2SupervisorPreflight,
   assertLinuxCgroupSubtreeQuiescent,
   observeLinuxCgroupV2,
 } from "./linux-cgroup-observer.mjs";
@@ -413,6 +414,7 @@ async function main() {
 
   try {
     if (failures.length > 0) throw new Error("Egress container prerequisites are incomplete.");
+    assertLinuxCgroupV2SupervisorPreflight();
     const build = spawnSync(process.execPath, ["scripts/build-core.mjs"], {
       cwd: ROOT,
       stdio: "inherit",

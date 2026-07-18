@@ -1,31 +1,32 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { inspectSubmissionDraft } from "../../scripts/submission-draft-check.mjs";
 
 const [state, links, report, demoData, rules, claimAudit] = await Promise.all([
   "submission-state.json",
   "links.json",
   "submission-check-report.json",
 ].map((name) =>
-  readFile(new URL(`../../artifacts/submission/${name}`, import.meta.url), "utf8").then(JSON.parse),
+  readFile(new URL(`../../artifacts/submission-draft/${name}`, import.meta.url), "utf8").then(
+    JSON.parse,
+  ),
 ).concat([
-  readFile(new URL("../../artifacts/demo/demo-data.json", import.meta.url), "utf8").then(JSON.parse),
-  readFile(new URL("../../artifacts/submission/rules-check.md", import.meta.url), "utf8"),
-  readFile(new URL("../../artifacts/submission/claim-audit.md", import.meta.url), "utf8"),
+  readFile(new URL("../../artifacts/demo-draft/demo-data.json", import.meta.url), "utf8").then(
+    JSON.parse,
+  ),
+  readFile(new URL("../../artifacts/submission-draft/rules-check.md", import.meta.url), "utf8"),
+  readFile(new URL("../../artifacts/submission-draft/claim-audit.md", import.meta.url), "utf8"),
 ]));
 
 test("submission draft remains non-final with no fabricated URLs or confirmation", () => {
   assert.equal(state.status, "NOT_READY");
   assert.equal(state.confirmation, null);
-  assert.equal(Object.values(links).filter((value) => value === null).length, 4);
-  assert.equal(["FAIL", "NOT_RUN"].includes(report.status), true);
-  if (report.status === "NOT_RUN") {
-    assert.deepEqual(report.failures, ["Submission checker has not run after draft generation."]);
-  } else {
-    assert.equal(report.failures.includes("Evidence package is not live verified PASS."), true);
-    assert.equal(report.failures.includes("Official rules have not been verified."), false);
-    assert.equal(report.failures.includes("Project LICENSE is absent."), true);
-  }
+  assert.equal(Object.values(links).filter((value) => value === null).length, 5);
+  assert.equal(links.feedbackSessionId, null);
+  assert.equal(report.status, "NOT_RUN");
+  assert.deepEqual(report.failures, ["Submission checker has not run after draft generation."]);
+  assert.deepEqual(inspectSubmissionDraft(), []);
 });
 
 test("demo and claim drafts keep evaluation-only and live claims separate", () => {

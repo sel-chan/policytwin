@@ -5,6 +5,7 @@ import { readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
 import { inflateSync } from "node:zlib";
+import { OFFLINE_VERIFY_STEPS } from "../../scripts/offline-verify-receipt.mjs";
 
 const SVG_PATH = resolve("docs", "assets", "policytwin-architecture.svg");
 const PNG_PATH = resolve("artifacts", "screenshots", "08-architecture.png");
@@ -138,6 +139,7 @@ test("architecture source is self-contained and preserves the truthful live boun
     "Outbound traffic NOT_MEASURED",
     "No live attestation has been issued.",
     "No Codex repair, post-repair drift",
+    "worker/egress also require an eligible Linux cgroup-v2 host",
     "Reference-expectation differential",
     "16 drifts; not OPA-backed.",
     "Signed result → Proof · NOT RETURNED",
@@ -162,6 +164,12 @@ test("architecture PNG is the exact submission canvas", async () => {
 test("architecture renderer is local-only and the submission workflow refreshes clean evidence", async () => {
   const renderer = await readFile(resolve("scripts", "render-architecture.mjs"), "utf8");
   const verify = await readFile(resolve("scripts", "verify.mjs"), "utf8");
+  const submissionCheck = await readFile(resolve("scripts", "submission-check.mjs"), "utf8");
+  const publicationProbe = await readFile(
+    resolve("scripts", "submission-publication-probe.mjs"),
+    "utf8",
+  );
+  const cleanCheck = await readFile(resolve("scripts", "clean-checkout.mjs"), "utf8");
   const packageJson = JSON.parse(await readFile(resolve("package.json"), "utf8"));
   assert.equal(
     packageJson.scripts["submission:architecture"],
@@ -185,8 +193,52 @@ test("architecture renderer is local-only and the submission workflow refreshes 
       renderer.indexOf("path: temporaryOutput"),
   );
   assert.ok(renderer.indexOf("renameSync(temporaryOutput, output)") > 0);
-  assert.ok(verify.indexOf('"clean:check"') < verify.indexOf('"submission:draft"'));
-  assert.ok(verify.indexOf('"submission:draft"') < verify.indexOf('"submission:check"'));
+  assert.deepEqual(OFFLINE_VERIFY_STEPS, [
+    "lint",
+    "typecheck",
+    "test",
+    "test:integration",
+    "evidence:offline",
+    "license:check",
+    "container:check",
+    "clean:check",
+    "submission:draft",
+    "submission:draft:check",
+    "eval",
+    "demo:reset",
+    "demo:run",
+    "test:e2e",
+    "build",
+    "security:check",
+  ]);
+  assert.match(verify, /for \(const step of OFFLINE_VERIFY_STEPS\)/u);
+  assert.match(verify, /createOfflineVerifyReceipt\(ROOT, results\)/u);
+  assert.match(verify, /offline-verify-report\.json/u);
+  assert.equal(verify.includes('"submission:check"'), false);
+  assert.ok(
+    submissionCheck.indexOf('run(executable("pnpm"), ["verify"])') <
+      submissionCheck.indexOf("inspectSubmissionPackage("),
+  );
+  assert.match(publicationProbe, /GIT_CONFIG_GLOBAL/u);
+  assert.match(publicationProbe, /GIT_CONFIG_NOSYSTEM/u);
+  assert.match(publicationProbe, /cwd: directory/u);
+  assert.match(publicationProbe, /lookup:/u);
+  assert.match(publicationProbe, /autoSelectFamily: false/u);
+  assert.doesNotMatch(publicationProbe, /redirect:\s*["']follow/u);
+  assert.ok(
+    cleanCheck.indexOf('["submission:draft"]') <
+      cleanCheck.indexOf('["submission:draft:check"]'),
+  );
+  assert.ok(
+    cleanCheck.indexOf('["submission:draft:check"]') < cleanCheck.indexOf('["lint"]'),
+  );
+  const evidenceIndex = cleanCheck.indexOf('["evidence:offline"]');
+  const regeneratedDraftIndex = cleanCheck.indexOf('["submission:draft"]', evidenceIndex);
+  const recheckedDraftIndex = cleanCheck.indexOf('["submission:draft:check"]', evidenceIndex);
+  assert.ok(cleanCheck.indexOf('["test:integration"]') < evidenceIndex);
+  assert.ok(evidenceIndex < regeneratedDraftIndex);
+  assert.ok(regeneratedDraftIndex < recheckedDraftIndex);
+  assert.ok(recheckedDraftIndex < cleanCheck.indexOf('["eval"]'));
 });
 
 test("architecture PNG is reproducible from the checked-in SVG", async () => {

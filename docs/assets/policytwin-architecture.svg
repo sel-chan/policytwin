@@ -224,6 +224,6 @@
     <text class="footer-body" x="28" y="67">GPT-5.6 and live Codex were not run. No Codex repair, post-repair drift, live</text>
     <text class="footer-body" x="28" y="91">attestation, immutable image build, real-Docker isolation, OpenAI upstream traffic,</text>
     <text class="footer-body" x="28" y="115">deployment, or submission is claimed.</text>
-    <text class="footer-note" x="28" y="145">Dynamic gates stopped before Docker because the immutable Node base is unset.</text>
+    <text class="footer-note" x="28" y="145">Images are unset; worker/egress also require an eligible Linux cgroup-v2 host.</text>
   </g>
 </svg>

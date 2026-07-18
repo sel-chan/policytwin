@@ -2,11 +2,11 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { ROOT } from "./process.mjs";
 
-const submissionDirectory = resolve(ROOT, "artifacts", "submission");
-const demoDirectory = resolve(ROOT, "artifacts", "demo");
+const submissionDirectory = resolve(ROOT, "artifacts", "submission-draft");
+const demoDirectory = resolve(ROOT, "artifacts", "demo-draft");
 for (const [directory, expected] of [
-  [submissionDirectory, resolve(ROOT, "artifacts", "submission")],
-  [demoDirectory, resolve(ROOT, "artifacts", "demo")],
+  [submissionDirectory, resolve(ROOT, "artifacts", "submission-draft")],
+  [demoDirectory, resolve(ROOT, "artifacts", "demo-draft")],
 ]) {
   if (directory !== expected || relative(ROOT, directory).startsWith("..")) {
     throw new Error(`Refusing to replace unmanaged artifact directory: ${directory}`);
@@ -99,7 +99,7 @@ write(
 write(
   submissionDirectory,
   "openai-and-codex-usage.md",
-  `# OpenAI and Codex usage\n\n${draft}\n\nStatus: NOT_RUN_LIVE.\n\nThe intended live path uses GPT-5.6 through the Responses API for strict semantic interpretation and delegates one complete repair run to an external supervisor. Its concrete TLS 1.3 transport mutually authenticates CA-chained and certificate-pinned peers, fixes the server name and ALPN, bounds one canonical request/response frame, and persists one-use request-ID/nonce state in SQLite. The host RPC contract additionally binds the fixed write/command/corpus policy, host-known baseline and signed final tree manifests, trusted supervisor signature, separate immutable verification workspace, and teardown receipt. Worker RPC v2 separately reserves a new signature domain, TLS ALPN/frame, dedicated non-reused live-purpose key material, durable replay store, client execution binding, and exact Docker or partial-attempt role binding. Required CPU evidence schema v2 binds one globally ordered monotonic event transcript and closed success/failure outcomes, recomputes role overlap, verifier ordering, samples, arithmetic, containment, controller stop, and release, and rejects legacy proof v1 or nullable evidence. The current supervisor still refuses to sign PASS until a dedicated real-Linux producer is wired and dynamically verified. The repository also contains separate non-root worker, verifier, and egress Dockerfiles with static launch contracts; a shell-free supervisor Docker driver restricted to a canonical local CLI and request-bound resource IDs; supervisor-owned inspect and cleanup rules; explicit restart=no, zero restart counts, and pinned container ID/PID/start-time reobservation around worker execution; a required CPU-controller port with a fake-only three-role aggregate ledger whose proof cannot satisfy the live gate; Linux cgroup-v2 observation requirements; and a TLS 1.3-only internal probe that writes no HTTP. The real mTLS v2 loopback signs typed pre-execution \`FAIL\`, while observed success/failure evidence is synthetic under test keys. The separate Docker driver and CPU controller are tested only against fake infrastructure and are not wired to a live mTLS result. All three dynamic gates currently stop before daemon use because the immutable Node base is unset. No immutable role image, real restart/network/cgroup/teardown or CPU-enforcement observation, egress TLS probe, proxy outbound measurement, OpenAI upstream request, or live Codex SDK turn has occurred. No submission may claim live OpenAI/Codex work until \`pnpm verify:live\` captures fresh request/run evidence.`,
+  `# OpenAI and Codex usage\n\n${draft}\n\nStatus: NOT_RUN_LIVE.\n\nThe intended live path uses GPT-5.6 through the Responses API for strict semantic interpretation and delegates one complete repair run to an external supervisor. Its concrete TLS 1.3 transport mutually authenticates CA-chained and certificate-pinned peers, fixes the server name and ALPN, bounds one canonical request/response frame, and persists one-use request-ID/nonce state in SQLite. The host RPC contract additionally binds the fixed write/command/corpus policy, host-known baseline and signed final tree manifests, trusted supervisor signature, separate immutable verification workspace, and teardown receipt. Worker RPC v2 separately reserves a new signature domain, TLS ALPN/frame, dedicated non-reused live-purpose key material, durable replay store, client execution binding, and exact Docker or partial-attempt role binding. Required CPU evidence schema v2 binds one globally ordered monotonic event transcript and closed success/failure outcomes, recomputes role overlap, verifier ordering, samples, arithmetic, containment, controller stop, and release, and rejects legacy proof v1 or nullable evidence. The current supervisor still refuses to sign PASS until a dedicated real-Linux producer is wired and dynamically verified. The repository also contains separate non-root worker, verifier, and egress Dockerfiles with static launch contracts; a shell-free supervisor Docker driver restricted to a canonical local CLI and request-bound resource IDs; supervisor-owned inspect and cleanup rules; explicit restart=no, zero restart counts, and pinned container ID/PID/start-time reobservation around worker execution; a required CPU-controller port with a fake-only three-role aggregate ledger whose proof cannot satisfy the live gate; Linux cgroup-v2 observation requirements; and a TLS 1.3-only internal probe that writes no HTTP. The real mTLS v2 loopback signs typed pre-execution \`FAIL\`, while observed success/failure evidence is synthetic under test keys. The separate Docker driver and CPU controller are tested only against fake infrastructure and are not wired to a live mTLS result. Missing immutable builder/base/helper identities currently stop dynamic work before Docker workload execution. The observed local Docker 29.1.5 daemon also uses cgroup v1 and is ineligible for the worker/egress cgroup-v2 proof even after those identities are supplied. No immutable role image, real restart/network/cgroup/teardown or CPU-enforcement observation, egress TLS probe, proxy outbound measurement, OpenAI upstream request, or live Codex SDK turn has occurred. No submission may claim live OpenAI/Codex work until \`pnpm verify:live\` captures fresh request/run evidence.`,
 );
 write(
   submissionDirectory,
@@ -116,6 +116,7 @@ write(
     repositoryUrl: null,
     videoUrl: null,
     submissionUrl: null,
+    feedbackSessionId: null,
   }),
 );
 write(
@@ -150,6 +151,7 @@ write(
     cleanCopyStatus: clean.status,
     rulesStatus: challengeRules.status,
     confirmation: null,
+    ownerAction: null,
   }),
 );
 write(
@@ -188,7 +190,7 @@ for (const name of [
 write(
   demoDirectory,
   "demo-script.md",
-  `# Three-minute demo script\n\n${draft}\n\n0:00–0:20 — Show D01–D03 and explain policy drift.\n0:20–0:50 — Show strict GPT-5.6 interpretation and clause links. NOT YET RUN.\n0:50–1:15 — Resolve the three genuine ambiguity decisions.\n1:15–1:40 — Show deterministic Rego, 41 cases, and qualified ${mutationRate}% reference mutation score.\n1:40–2:00 — Show the three seeded counterexamples.\n2:00–2:30 — Show live Codex cartography, patch, tests, and review. NOT YET RUN.\n2:30–2:50 — Show actual post-repair zero drift and proof. NOT YET RUN.\n2:50–3:00 — Show 14→30 impact and the G02 contradiction block.`,
+  `# Under-three-minute demo script\n\n${draft}\n\n0:00–0:18 — Show D01–D03 and explain policy drift.\n0:18–0:45 — Show strict GPT-5.6 interpretation and clause links. NOT YET RUN.\n0:45–1:08 — Resolve the three genuine ambiguity decisions.\n1:08–1:32 — Show deterministic Rego, 41 cases, and qualified ${mutationRate}% reference mutation score.\n1:32–1:52 — Show the three seeded counterexamples.\n1:52–2:20 — Show live Codex cartography, patch, tests, and review. NOT YET RUN.\n2:20–2:42 — Show actual post-repair zero drift and proof. NOT YET RUN.\n2:42–2:55 — Show 14→30 impact and the G02 contradiction block.`,
 );
 write(
   demoDirectory,
@@ -198,7 +200,7 @@ write(
 write(
   demoDirectory,
   "captions.srt",
-  `1\n00:00:00,000 --> 00:00:20,000\n[DRAFT — not recorded] This policy includes day 14, exactly 20 percent usage, and final-sale precedence.\n\n2\n00:00:20,000 --> 00:00:50,000\nPolicyTwin is intended to use GPT-5.6 to create a strict, traceable policy model. Live call not yet verified.\n\n3\n00:00:50,000 --> 00:01:15,000\nMaterial ambiguity becomes an explicit versioned decision instead of a hidden guess.\n\n4\n00:01:15,000 --> 00:01:40,000\nA deterministic compiler and OPA 1.18.2 verify 41 accepted policy cases.\n\n5\n00:01:40,000 --> 00:02:00,000\nThe reference-expectation comparison, which is not OPA-backed, exposes the three seeded defects.\n\n6\n00:02:00,000 --> 00:02:30,000\nThe intended Codex repair path is not yet verified and must be replaced with a real run before recording.\n\n7\n00:02:30,000 --> 00:02:50,000\nPost-repair proof is not yet available; the evaluation-only fixed fixture cannot substitute.\n\n8\n00:02:50,000 --> 00:03:00,000\nA 14-to-30-day change updates rules and cases, while a contradictory golden case blocks verification.`,
+  `1\n00:00:00,000 --> 00:00:18,000\n[DRAFT — not recorded] This policy includes day 14, exactly 20 percent usage, and final-sale precedence.\n\n2\n00:00:18,000 --> 00:00:45,000\nPolicyTwin is intended to use GPT-5.6 to create a strict, traceable policy model. Live call not yet verified.\n\n3\n00:00:45,000 --> 00:01:08,000\nMaterial ambiguity becomes an explicit versioned decision instead of a hidden guess.\n\n4\n00:01:08,000 --> 00:01:32,000\nA deterministic compiler and OPA 1.18.2 verify 41 accepted policy cases.\n\n5\n00:01:32,000 --> 00:01:52,000\nThe reference-expectation comparison, which is not OPA-backed, exposes the three seeded defects.\n\n6\n00:01:52,000 --> 00:02:20,000\nThe intended Codex repair path is not yet verified and must be replaced with a real run before recording.\n\n7\n00:02:20,000 --> 00:02:42,000\nPost-repair proof is not yet available; the evaluation-only fixed fixture cannot substitute.\n\n8\n00:02:42,000 --> 00:02:55,000\nA 14-to-30-day change updates rules and cases, while a contradictory golden case blocks verification.`,
 );
 write(
   demoDirectory,
@@ -216,4 +218,6 @@ write(
   }),
 );
 
-console.log(`Generated NOT_READY submission and demo drafts for evidence ${manifest.evidenceHash}.`);
+console.log(
+  `Generated isolated NOT_READY submission and demo drafts for evidence ${manifest.evidenceHash}.`,
+);

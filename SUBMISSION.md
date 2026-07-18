@@ -23,16 +23,17 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 
 ### Current offline draft
 
-- `artifacts/submission/` contains 21 generated files, including the machine-readable state and latest checker report.
-- `artifacts/demo/` contains a draft script, shot list, caption file, and deterministic demo data.
+- `artifacts/submission-draft/` contains 21 generated files, including the machine-readable state and explicit `NOT_RUN` checker placeholder.
+- `artifacts/demo-draft/` contains a 2:55 draft script, shot list, caption file, and deterministic demo data.
+- The generator never deletes or rewrites the final `artifacts/submission/` and `artifacts/demo/` staging directories; their current legacy draft placeholders remain non-final and are rejected by the strict release check.
 - Every judge-facing draft remains marked `DRAFT_NOT_READY`; no generated file claims submission readiness.
-- `pnpm submission:check` currently fails with 29 explicit unmet requirements.
+- `pnpm submission:check` is intentionally fail-closed until live and owner evidence exists. It first runs `pnpm verify` in the same non-recursive invocation, then validates the resulting receipt. The current exact failure count is regenerated after each checker revision. The release gate fixes exact staging/screenshots/38-file evidence sets, distinct reviewable screenshots, substantial SRT coverage synchronized to a two-to-three-minute local video, a 48-hour exact-three-source rule snapshot, cross-file metric claims including README, decoded non-uniform PNGs, Chrome three-point visual/audio/tail verification, full semantic evidence plus release-pinned Ed25519-attestation validation, a raw-byte Git-index/worktree-consistent release-input-bound offline verification receipt, deployment-evidence-bound anonymous live HTTPS and repository Git probes, a YouTube publication receipt, and state-specific owner action or confirmation evidence.
 - Owner declarations, live proof, project license, one required live Codex repair capture, video, public URLs, final form fields, and confirmation remain unverified or absent.
 - The complete evidence download now rereads and content-hashes the exact bounded package on every request, then permits one content-and-validation-policy-bound in-process archive to be reused for at most 15 seconds. Failures and expired live attestations are never cached and responses remain `no-store`; shared public rate limiting is still deployment work, not a current claim.
 - PolicyIR structural admission, the checked-in JSON Schema, and the model-owned Responses schema now derive from one strict Zod contract. The official OpenAI helper produces the strict request format without server-owned metadata/input schema, and the returned JSON is checked against the same projection before trusted fields are injected. This is offline structural-contract evidence only; semantic correctness and live GPT-5.6 provider acceptance remain unproved.
 - The local Responses contract now stops after one attempt for explicit model refusal, incomplete generation, upstream error, and failed/cancelled/queued/in-progress status, while retaining one bounded retry only for recoverable JSON/schema/semantic output defects. It checks message text against SDK `output_text` when items are present and never exposes refusal or upstream-error text through the protected route. No live response outcome has been observed, so this remains offline contract evidence.
 - The partial evaluation scorecard now contains every required offline-measurable acceptance metric: all three seeded ambiguities, zero explicit-semantics mislabels, golden and boundary agreement, seeded drift, mutation, clause and case traceability, and OPA agreement. For only the exact trusted seeded policy ID/version/source hash, complete clause segmentation, ambiguity source links, and closed patch meaning, interpretation substitutes server-owned ambiguity wording/examples; other policies and changed inputs are not rewritten. The evidence validator derives each value, target, and status from PolicyIR, accepted cases, OPA results, differential evidence, mutation output, and traceability; changing and self-rehashing the scorecard no longer passes validation. Live statuses are also exact rather than prefix-matched, so an arbitrary `PASS_*` label cannot be promoted. Live-only Structured Outputs, post-repair, release-security, and browser receipt metrics remain explicitly null/`NOT_RUN`.
-- The worker/verifier/egress images, proxy-only capability authentication, request/nonce-bound ID-owned Docker driver, required CPU-controller port, and TLS-only probe are prepared and fake-runner/static tested only. The fake CPU ledger aggregates post-baseline egress, worker, and verifier values, but its proof explicitly claims no enforcement, hard limit, bounded overshoot, or containment and cannot pass the live gate. The TLS probe writes no HTTP but does not measure proxy outbound traffic. The Docker Linux daemon is running, but all three dynamic reports—web health, worker/verifier isolation, and TLS-only egress—fail before invoking it at the unset immutable base; no real CPU enforcement, egress TLS path, or Codex SDK turn has run, and no submission claim may describe them as deployed security evidence.
+- The worker/verifier/egress images, proxy-only capability authentication, request/nonce-bound ID-owned Docker driver, required CPU-controller port, and TLS-only probe are prepared and fake-runner/static tested only. The fake CPU ledger aggregates post-baseline egress, worker, and verifier values, but its proof explicitly claims no enforcement, hard limit, bounded overshoot, or containment and cannot pass the live gate. The TLS probe writes no HTTP but does not measure proxy outbound traffic. Docker 29.1.5 is running locally with `cgroupfs` and cgroup v1. Missing immutable builder/base/helper identities currently stop the dynamic gates before Docker workload execution; even after those identities are supplied, this daemon is ineligible for the required worker/egress cgroup-v2 evidence. Those gates now reject an ineligible supervisor before the expensive build. No real CPU enforcement, egress TLS path, or Codex SDK turn has run, and no submission claim may describe them as deployed security evidence.
 
 Worker RPC v2 and CPU evidence schema v2 are now prepared offline with separate signature and mTLS downgrade domains, client execution binding, deterministic role/attempt bindings, distinct live-purpose key material, durable replay, a strictly ordered global monotonic event transcript, and closed success/failure outcomes. The contract recomputes overlap, verifier ordering, role samples, arithmetic, containment state, and evidence hashes; legacy proof v1, static fake objects, nullable `cpuProof` receipts, and contradictory outcomes are rejected. An internal synthetic state-machine producer now derives parsed unsigned candidates and exercises ordering, overage, identity drift, cleanup failure, input-snapshot, abort, and overflow paths. Every candidate is frozen with `liveClaim:false` and `passSigningEligible:false`, and self-declared Linux provenance is rejected. This does not add current live proof: the loopback v2 integration signs only typed pre-execution `FAIL`, every success or observed failure fixture is synthetic, the generic supervisor still refuses PASS, and runtime-observation flags remain false. A concrete private Linux construction path now exists in source, but no Docker/cgroup-v2 execution, `cpu.stat` observation, containment action, finalized evidence, hard cap, bounded overshoot, model call, or Codex repair may be claimed from this checkpoint.
 
@@ -307,14 +308,14 @@ Requirements:
 
 ### Target
 
-A clear video no longer than the current official limit. Aim for approximately three minutes unless current rules require otherwise.
+A clear video strictly shorter than the official three-minute limit. Target 2:55 so encoding and platform metadata cannot turn an exact 3:00 cut into a rules violation.
 
 ### Required assets
 
-- [x] `artifacts/demo/demo-script.md` (truthful draft; final live numbers remain blocked)
-- [x] `artifacts/demo/shot-list.md` (truthful draft)
-- [x] `artifacts/demo/captions.srt` (truthful draft)
-- [x] `artifacts/demo/demo-data.json` (partial offline provenance)
+- [x] `artifacts/demo-draft/demo-script.md` (truthful draft; final live numbers remain blocked)
+- [x] `artifacts/demo-draft/shot-list.md` (truthful draft)
+- [x] `artifacts/demo-draft/captions.srt` (truthful 2:55 draft)
+- [x] `artifacts/demo-draft/demo-data.json` (partial offline provenance)
 - [x] deterministic reset command
 - [ ] final source recording
 - [ ] compressed upload file
@@ -325,7 +326,7 @@ A clear video no longer than the current official limit. Aim for approximately t
 
 > **TARGET VIDEO FLOW — NOT_RECORDED / NOT_RUN_LIVE.** GPT-5.6, Codex repair, post-repair zero drift, and final proof segments cannot be recorded as completed until fresh live evidence exists.
 
-#### 0:00–0:20 — Policy drift
+#### 0:00–0:18 — Policy drift
 
 Voice/caption:
 
@@ -333,43 +334,43 @@ Voice/caption:
 
 Show the three wrong decisions.
 
-#### 0:20–0:50 — Interpret policy
+#### 0:18–0:45 — Interpret policy
 
 > PolicyTwin uses GPT-5.6 to turn the text into a strict policy model. It links every rule to its source sentence and refuses to guess material ambiguity.
 
 Load/interpret policy and highlight clauses/rules.
 
-#### 0:50–1:15 — Resolve decisions
+#### 0:45–1:08 — Resolve decisions
 
 > Instead of hiding assumptions, PolicyTwin asks focused decisions and shows the cases each choice changes.
 
 Resolve purchase-day counting, usage measurement time, and the default no-match outcome. Day-14 inclusion, 20% inclusion, pending-promotion review, and final-sale precedence remain visible as explicit extracted rules rather than questions.
 
-#### 1:15–1:40 — Generate executable evidence
+#### 1:08–1:32 — Generate executable evidence
 
 > A deterministic compiler produces Rego. PolicyTwin generates golden, boundary, conflict, and minimal-contrast cases, then measures their strength with mutation testing.
 
 Show Case Lab and compilation.
 
-#### 1:40–2:00 — Detect drift
+#### 1:32–1:52 — Detect drift
 
-> The policy engine and application run the same inputs. These red rows are exact counterexamples where the software violates the accepted policy.
+> Recorded expectations from the accepted policy corpus and the application run the same inputs. These red rows are exact counterexamples where the software violates that reference; this comparison is not OPA-backed.
 
 Show day 14, 20%, and precedence drift.
 
-#### 2:00–2:30 — Repair with Codex
+#### 1:52–2:20 — Repair with Codex
 
 > Codex maps the repository, finds the eligibility path, makes the smallest repair, and enables the exact server-owned regression assertions. PolicyTwin then runs the fixed verification commands, the complete 41-case corpus, and a separate read-only review.
 
 Show timeline and diff.
 
-#### 2:30–2:50 — Prove
+#### 2:20–2:42 — Prove
 
 > After repair, drift is zero. Golden and generated cases pass, regression tests are green, and the mutation score shows that the corpus catches plausible mistakes.
 
 Show actual final metrics.
 
-#### 2:50–3:00 — Change impact
+#### 2:42–2:55 — Change impact
 
 > When the policy changes from 14 to 30 days, PolicyTwin shows the rules, cases, and code affected before another change is applied.
 
@@ -431,7 +432,9 @@ Live demo · Source · Evidence
 
 ## 12. Submission artifact directory
 
-Generate final files here:
+`pnpm submission:draft` writes only to `artifacts/submission-draft/` and `artifacts/demo-draft/`; `pnpm submission:draft:check` validates those fail-closed drafts. It never deletes or rewrites the final staging directories below.
+
+Generate final files here only after fresh live evidence exists:
 
 ```text
 artifacts/submission/
@@ -456,6 +459,8 @@ artifacts/submission/
 └── final-checklist.md
 ```
 
+Final staging also contains `submission-state.json` and the generated `submission-check-report.json`. After a successful account submission, `SUBMITTED` additionally requires `submission-confirmation.png` and the exact confirmation object; before that action, `READY_FOR_OWNER_ACTION` requires null confirmation and exactly one `SUBMIT_ON_DEVPOST` owner action.
+
 `claim-audit.md` must list every quantitative or capability claim and point to evidence.
 
 ## 13. Final form checklist
@@ -476,6 +481,7 @@ Replace with exact current fields after checking the challenge form.
 - [ ] Technologies
 - [ ] GPT-5.6 usage
 - [ ] Codex usage
+- [ ] `/feedback` Codex Session ID for the primary build task
 - [ ] Live URL
 - [ ] Repository URL
 - [ ] Demo video URL
@@ -499,15 +505,28 @@ The script must fail when:
 - proof metrics differ from submission claims;
 - README references missing images;
 - video URL is absent;
-- live URL is absent;
-- repository URL is absent;
+- `/feedback` Codex Session ID is absent or malformed;
+- final captions are absent, remain marked as a draft, or end at/after 3:00;
+- caption cue numbers, bodies, ordering, or non-overlap are invalid;
+- final staging contains an unexpected or non-regular entry;
+- the screenshot directory is not the exact reviewed set, captures are duplicated or undersized, or required PNGs do not decode as non-uniform images under the reviewed screenshot profile;
+- the MP4 is fragmented, malformed, shorter than 2:00, lacks sampled video or audio, declares 3:00 or longer, cannot be decoded, exposed with audio, visually distinguished at three timeline points, or tail-seeked by Chrome, or disagrees with Chrome duration;
+- caption timing is not structurally valid or its tail is not synchronized to the local MP4;
+- the owner-reviewed YouTube receipt is missing, stale, or not bound to the public URL and exact local video hash/duration;
+- live URL is absent, differs from validated deployment/browser evidence, or does not return anonymous same-origin HTTPS 2xx;
+- repository URL is absent, not a supported GitHub/GitLab project URL, or does not expose anonymous Git `HEAD`;
 - secret patterns are detected;
-- `pnpm verify` has no current passing offline evidence;
-- `pnpm verify:live` has no current fresh GPT/Codex integration evidence;
-- challenge rules check is stale;
+- `pnpm verify` has no fresh ordered PASS receipt bound to the current evidence, clean/security reports, raw Git-managed input bytes, index objects, safe index flags, tracked state, index/working modes, tracked self-reports, and zero untracked files;
+- the exact 38-file evidence directory has an extra, missing, non-regular, semantically invalid, stale, untrusted, or incorrectly signed entry, or the signing key is not pinned by key ID and SPKI SHA-256 in the reviewed release trust file;
+- `pnpm verify:live` has no current fresh trusted GPT/Codex integration evidence and Ed25519 attestation;
+- challenge rules check is incomplete, future-dated, or older than 48 hours;
+- a recognized case, drift, mutation, or post-repair metric conflicts anywhere in final text;
+- `SUBMITTED` lacks the exact confirmation object and decoded confirmation PNG, or `READY_FOR_OWNER_ACTION` does not contain exactly one Devpost submission action;
 - submission status is falsely set.
 
 The script cannot prove account-side submission; confirmation evidence remains required.
+
+`pnpm verify` runs the isolated draft generator and `submission:draft:check` as its deterministic submission-safe offline check. The account- and live-evidence-dependent `pnpm submission:check` remains a separate strict release gate, invokes `pnpm verify` itself, and must not be replaced by the draft check. With final live/repository URLs present it performs external network probes, so that exact scope requires owner approval before execution.
 
 ## 15. Definition of `READY_FOR_OWNER_ACTION`
 

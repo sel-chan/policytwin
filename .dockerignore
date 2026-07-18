@@ -24,5 +24,7 @@ artifacts/security
 artifacts/screenshots
 artifacts/submission
 artifacts/demo
+artifacts/submission-draft
+artifacts/demo-draft
 fixtures/refund-demo/baseline
 fixtures/refund-demo/expected-fixed
