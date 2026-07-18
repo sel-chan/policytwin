@@ -25,6 +25,7 @@ import { parseRefundPolicyInput } from "../domain/refund.js";
 import type { CodeMapping } from "../impact/types.js";
 import { generatePolicyMutants } from "../mutation/mutate.js";
 import { runOfflineMutationSuite } from "../mutation/report.js";
+import type { PolicyIR } from "../policy-ir/types.js";
 import { parsePolicyIR } from "../policy-ir/validate.js";
 import {
   buildTraceabilityReport,
@@ -160,6 +161,23 @@ const TRUSTED_REGRESSION_TEST_SHA256 =
   "b2285ae673d0d4ce164bbe896649d611462820c4c34ebce5073fdc77980ef68a";
 const TRUSTED_ACCEPTED_CORPUS_SHA256 =
   "2658993bb79e56bf5dfbc1cc762786fdd25b52afe0b63c5ffb1c0b1deb132f57";
+const REQUIRED_SEEDED_AMBIGUITIES = [
+  {
+    id: "ambiguity-purchase-day-index",
+    category: "MEASUREMENT",
+    recordedSha256: "8c075b487d9a2b6e554ccdc89416f792a4a878945ef311d671af1c2c46d85d23",
+  },
+  {
+    id: "ambiguity-usage-measurement-time",
+    category: "MEASUREMENT",
+    recordedSha256: "10fe762c4885e350f2f48a2f959bf0b567ab3688f2a873534219aaccd3df713b",
+  },
+  {
+    id: "ambiguity-default-decision",
+    category: "DEFAULT",
+    recordedSha256: "f1778692f4b6be6be29112aff302c73f5d78a3a487deeca6d6a502e6e26e7890",
+  },
+] as const;
 const TRUSTED_FIXTURE_BASELINE_PATHS = [
   ".",
   "package.json",
@@ -318,6 +336,36 @@ function canonicalValue(value: unknown): unknown {
 
 function sameJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(canonicalValue(left)) === JSON.stringify(canonicalValue(right));
+}
+
+export function deriveSeededAmbiguityFacts(
+  policy: Pick<PolicyIR, "ambiguities">,
+  hashText: TextHasher,
+): Readonly<{
+  requiredAmbiguityLabelsFound: number;
+  explicitSeededSemanticsMislabeledAsAmbiguity: number;
+}> {
+  const matchedRequirements = new Set<string>();
+  for (const ambiguity of policy.ambiguities) {
+    const requirement = REQUIRED_SEEDED_AMBIGUITIES.find((candidate) => {
+      if (candidate.category !== ambiguity.category) {
+        return false;
+      }
+      return (
+        candidate.id === ambiguity.id &&
+        hashText(JSON.stringify(canonicalValue(ambiguity))) ===
+          candidate.recordedSha256
+      );
+    });
+    if (requirement) {
+      matchedRequirements.add(requirement.id);
+    }
+  }
+  return {
+    requiredAmbiguityLabelsFound: matchedRequirements.size,
+    explicitSeededSemanticsMislabeledAsAmbiguity:
+      policy.ambiguities.length - matchedRequirements.size,
+  };
 }
 
 function sameStringSet(left: readonly string[], right: readonly string[]): boolean {
@@ -1634,34 +1682,263 @@ function validateSecurityProof(
   }
 }
 
-function validateScorecard(
+export interface ScorecardFacts {
+  requiredAmbiguityLabelsFound: number;
+  explicitSeededSemanticsMislabeledAsAmbiguity: number;
+  goldenCaseAgreement: number;
+  boundaryCaseAgreement: number;
+  seededDriftBugsDetected: number;
+  acceptedCorpusSize: number;
+  evaluationOnlyFixedFixtureDrift: number;
+  opaCaseAgreement: number;
+  mutationKillRate: number;
+  ruleClauseTraceability: number;
+  ruleCaseTraceability: number;
+}
+
+interface ExpectedScorecardMetric {
+  value: number | null;
+  target: number;
+  status: string;
+}
+
+function validateScorecardMetric(
+  metrics: Record<string, unknown>,
+  name: string,
+  expected: ExpectedScorecardMetric,
+): void {
+  const metric = record(metrics[name], `eval scorecard metric ${name}`);
+  exactKeys(metric, ["value", "target", "status"], `eval scorecard metric ${name}`);
+  if (
+    metric.value !== expected.value ||
+    metric.target !== expected.target ||
+    metric.status !== expected.status
+  ) {
+    throw new Error(`Eval scorecard metric ${name} does not match its source evidence.`);
+  }
+}
+
+function validatePartialScorecard(
+  scorecard: Record<string, unknown>,
+  facts: ScorecardFacts,
+): void {
+  exactKeys(scorecard, ["schemaVersion", "status", "evidenceMode", "runId", "metrics"], "eval scorecard");
+  if (
+    scorecard.schemaVersion !== "1" ||
+    scorecard.status !== "FAIL" ||
+    scorecard.evidenceMode !== "PARTIAL_OFFLINE" ||
+    scorecard.runId !== null
+  ) {
+    throw new Error("Partial eval scorecard metadata is invalid.");
+  }
+  const metrics = record(scorecard.metrics, "eval scorecard metrics");
+  const expected: Record<string, ExpectedScorecardMetric> = {
+    structuredOutputSchemaPass: {
+      value: null,
+      target: 1,
+      status: "NOT_RUN_LIVE",
+    },
+    requiredAmbiguityLabelsFound: {
+      value: facts.requiredAmbiguityLabelsFound,
+      target: REQUIRED_SEEDED_AMBIGUITIES.length,
+      status:
+        facts.requiredAmbiguityLabelsFound === REQUIRED_SEEDED_AMBIGUITIES.length
+          ? "PASS_RECORDED_FIXTURE"
+          : "FAIL_RECORDED_FIXTURE",
+    },
+    explicitSeededSemanticsMislabeledAsAmbiguity: {
+      value: facts.explicitSeededSemanticsMislabeledAsAmbiguity,
+      target: 0,
+      status:
+        facts.explicitSeededSemanticsMislabeledAsAmbiguity === 0
+          ? "PASS_RECORDED_FIXTURE"
+          : "FAIL_RECORDED_FIXTURE",
+    },
+    goldenCaseAgreement: {
+      value: facts.goldenCaseAgreement,
+      target: facts.goldenCaseAgreement,
+      status: "PASS_OPA",
+    },
+    boundaryCaseAgreement: {
+      value: facts.boundaryCaseAgreement,
+      target: facts.boundaryCaseAgreement,
+      status: "PASS_OPA",
+    },
+    seededDriftBugsDetected: {
+      value: facts.seededDriftBugsDetected,
+      target: 3,
+      status: "PASS_REFERENCE",
+    },
+    acceptedCorpusSize: {
+      value: facts.acceptedCorpusSize,
+      target: ACCEPTED_CASE_MINIMUM,
+      status: "PASS_REFERENCE",
+    },
+    postRepairDrift: {
+      value: null,
+      target: 0,
+      status: "NOT_RUN_LIVE",
+    },
+    evaluationOnlyFixedFixtureDrift: {
+      value: facts.evaluationOnlyFixedFixtureDrift,
+      target: 0,
+      status:
+        facts.evaluationOnlyFixedFixtureDrift === 0
+          ? "PASS_EVALUATION_ONLY"
+          : "FAIL_EVALUATION_ONLY",
+    },
+    opaCaseAgreement: {
+      value: facts.opaCaseAgreement,
+      target: facts.acceptedCorpusSize,
+      status: "PASS_OPA",
+    },
+    mutationKillRate: {
+      value: facts.mutationKillRate,
+      target: 0.9,
+      status:
+        facts.mutationKillRate >= 0.9
+          ? "PASS_REFERENCE_NOT_OPA_MUTATION"
+          : "FAIL_REFERENCE_NOT_OPA_MUTATION",
+    },
+    ruleClauseTraceability: {
+      value: facts.ruleClauseTraceability,
+      target: 1,
+      status: facts.ruleClauseTraceability === 1 ? "PASS_OFFLINE" : "FAIL_OFFLINE",
+    },
+    ruleCaseTraceability: {
+      value: facts.ruleCaseTraceability,
+      target: 1,
+      status: facts.ruleCaseTraceability === 1 ? "PASS_OFFLINE" : "FAIL_OFFLINE",
+    },
+    securityFindings: {
+      value: null,
+      target: 0,
+      status: "NOT_RUN",
+    },
+    browserHappyPath: {
+      value: null,
+      target: 1,
+      status: "NOT_RUN",
+    },
+  };
+  exactKeys(metrics, Object.keys(expected), "eval scorecard metrics");
+  for (const [name, metric] of Object.entries(expected)) {
+    validateScorecardMetric(metrics, name, metric);
+  }
+}
+
+export function validateLiveScorecard(
   scorecard: Record<string, unknown>,
   runId: string,
-  caseCount: number,
-  beforeDrifts: number,
-  mutationKillRate: number,
+  facts: ScorecardFacts,
 ): void {
   exactKeys(scorecard, ["schemaVersion", "status", "evidenceMode", "runId", "metrics"], "eval scorecard");
   if (scorecard.schemaVersion !== "1" || scorecard.status !== "PASS" || scorecard.evidenceMode !== "LIVE_VERIFIED" || scorecard.runId !== runId) {
     throw new Error("Live eval scorecard metadata is invalid.");
   }
   const metrics = record(scorecard.metrics, "eval scorecard metrics");
-  const expected = {
-    structuredOutputSchemaPass: 1,
-    seededDriftBugsDetected: Math.min(beforeDrifts, 3),
-    acceptedCorpusSize: caseCount,
-    postRepairDrift: 0,
-    opaCaseAgreement: caseCount,
-    mutationKillRate,
-    ruleClauseTraceability: 1,
-    securityFindings: 0,
-    browserHappyPath: 1,
-  } as const;
-  for (const [name, expectedValue] of Object.entries(expected)) {
-    const metric = record(metrics[name], `eval scorecard metric ${name}`);
-    if (metric.value !== expectedValue || typeof metric.status !== "string" || !metric.status.startsWith("PASS")) {
-      throw new Error(`Eval scorecard metric ${name} does not match its source evidence.`);
-    }
+  const expected: Record<string, ExpectedScorecardMetric> = {
+    structuredOutputSchemaPass: {
+      value: 1,
+      target: 1,
+      status: "PASS_LIVE_STRUCTURED_OUTPUT",
+    },
+    requiredAmbiguityLabelsFound: {
+      value: facts.requiredAmbiguityLabelsFound,
+      target: REQUIRED_SEEDED_AMBIGUITIES.length,
+      status:
+        facts.requiredAmbiguityLabelsFound === REQUIRED_SEEDED_AMBIGUITIES.length
+          ? "PASS_LIVE_INTERPRETATION"
+          : "FAIL_LIVE_INTERPRETATION",
+    },
+    explicitSeededSemanticsMislabeledAsAmbiguity: {
+      value: facts.explicitSeededSemanticsMislabeledAsAmbiguity,
+      target: 0,
+      status:
+        facts.explicitSeededSemanticsMislabeledAsAmbiguity === 0
+          ? "PASS_LIVE_INTERPRETATION"
+          : "FAIL_LIVE_INTERPRETATION",
+    },
+    goldenCaseAgreement: {
+      value: facts.goldenCaseAgreement,
+      target: facts.goldenCaseAgreement,
+      status: "PASS_OPA",
+    },
+    boundaryCaseAgreement: {
+      value: facts.boundaryCaseAgreement,
+      target: facts.boundaryCaseAgreement,
+      status: "PASS_OPA",
+    },
+    seededDriftBugsDetected: {
+      value: facts.seededDriftBugsDetected,
+      target: 3,
+      status:
+        facts.seededDriftBugsDetected === 3
+          ? "PASS_PRE_REPAIR_DIFFERENTIAL"
+          : "FAIL_PRE_REPAIR_DIFFERENTIAL",
+    },
+    acceptedCorpusSize: {
+      value: facts.acceptedCorpusSize,
+      target: ACCEPTED_CASE_MINIMUM,
+      status:
+        facts.acceptedCorpusSize >= ACCEPTED_CASE_MINIMUM
+          ? "PASS_ACCEPTED_CORPUS"
+          : "FAIL_ACCEPTED_CORPUS",
+    },
+    postRepairDrift: {
+      value: 0,
+      target: 0,
+      status: "PASS_POST_REPAIR_DIFFERENTIAL",
+    },
+    opaCaseAgreement: {
+      value: facts.opaCaseAgreement,
+      target: facts.acceptedCorpusSize,
+      status:
+        facts.opaCaseAgreement === facts.acceptedCorpusSize
+          ? "PASS_OPA"
+          : "FAIL_OPA",
+    },
+    mutationKillRate: {
+      value: facts.mutationKillRate,
+      target: 0.9,
+      status:
+        facts.mutationKillRate >= 0.9
+          ? "PASS_OPA_MUTATION"
+          : "FAIL_OPA_MUTATION",
+    },
+    ruleClauseTraceability: {
+      value: facts.ruleClauseTraceability,
+      target: 1,
+      status:
+        facts.ruleClauseTraceability === 1
+          ? "PASS_TRACEABILITY"
+          : "FAIL_TRACEABILITY",
+    },
+    ruleCaseTraceability: {
+      value: facts.ruleCaseTraceability,
+      target: 1,
+      status:
+        facts.ruleCaseTraceability === 1
+          ? "PASS_TRACEABILITY"
+          : "FAIL_TRACEABILITY",
+    },
+    securityFindings: {
+      value: 0,
+      target: 0,
+      status: "PASS_RELEASE_SECURITY",
+    },
+    browserHappyPath: {
+      value: 1,
+      target: 1,
+      status: "PASS_PLAYWRIGHT",
+    },
+  };
+  if (Object.values(expected).some((metric) => !metric.status.startsWith("PASS_"))) {
+    throw new Error("Live eval scorecard cannot pass when a derived metric misses its target.");
+  }
+  exactKeys(metrics, Object.keys(expected), "eval scorecard metrics");
+  for (const [name, metric] of Object.entries(expected)) {
+    validateScorecardMetric(metrics, name, metric);
   }
 }
 
@@ -1859,6 +2136,7 @@ export function validateEvidencePackage(
   if (!sameJson(before, appBefore) || verification.driftBefore !== before.drifts) {
     throw new Error("Pre-repair differential artifacts disagree.");
   }
+  let seededDriftBugsDetected = 0;
   for (const [caseId, defectId] of [
     ["D01", "DAY_14_INCLUSIVE"],
     ["D02", "USAGE_2000_INCLUSIVE"],
@@ -1868,6 +2146,7 @@ export function validateEvidencePackage(
     if (witness?.status !== "DRIFT" || !Array.isArray(witness.defectIds) || !witness.defectIds.includes(defectId)) {
       throw new Error(`Seeded defect witness ${caseId}/${defectId} is missing.`);
     }
+    seededDriftBugsDetected += 1;
   }
 
   const mutation = record(verification.mutation, "verification mutation");
@@ -1913,6 +2192,27 @@ export function validateEvidencePackage(
     expectedTraceability.metrics.unlinkedCodeLocations === 0 &&
     expectedTraceability.codeLocations.length > 0 &&
     Object.values(expectedTraceability.gaps).every((items) => items.length === 0);
+
+  const seededAmbiguityFacts = deriveSeededAmbiguityFacts(policy, hashText);
+  const boundaryCaseCount = cases.filter(
+    (policyCase) => policyCase.source === "BOUNDARY",
+  ).length;
+  const scorecardFacts: ScorecardFacts = {
+    ...seededAmbiguityFacts,
+    goldenCaseAgreement: goldenCases.length,
+    boundaryCaseAgreement: boundaryCaseCount,
+    seededDriftBugsDetected,
+    acceptedCorpusSize: cases.length,
+    evaluationOnlyFixedFixtureDrift: verification.evaluationOnlyFixedFixtureDrift as number,
+    opaCaseAgreement: opaResults.size,
+    mutationKillRate: mutation.killRate as number,
+    ruleClauseTraceability:
+      expectedTraceability.metrics.rulesCovered /
+      expectedTraceability.metrics.rulesTotal,
+    ruleCaseTraceability:
+      expectedTraceability.metrics.casesLinked /
+      expectedTraceability.metrics.casesTotal,
+  };
 
   const regression = record(verification.regression, "verification regression");
   exactKeys(regression, ["passed", "total", "status"], "verification regression");
@@ -2167,7 +2467,11 @@ export function validateEvidencePackage(
     }
     validateCommandLog(parseJson(files, "test-command-log.json"), runId);
     validateSecurityProof(files, securitySummary, runId);
-    validateScorecard(parseJson(files, "eval-scorecard.json"), runId, cases.length, before.drifts as number, mutation.killRate as number);
+    validateLiveScorecard(
+      parseJson(files, "eval-scorecard.json"),
+      runId,
+      scorecardFacts,
+    );
     liveArtifactsComplete = true;
   }
 
@@ -2187,6 +2491,10 @@ export function validateEvidencePackage(
     throw new Error("A partial offline package cannot pass verification.");
   }
   if (manifest.evidenceMode === "PARTIAL_OFFLINE") {
+    validatePartialScorecard(
+      parseJson(files, "eval-scorecard.json"),
+      scorecardFacts,
+    );
     const codex = parseJson(files, "codex-run-summary.json");
     exactKeys(
       codex,

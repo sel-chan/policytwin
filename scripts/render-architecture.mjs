@@ -118,7 +118,11 @@ if (existsSync(temporaryOutput)) throw new Error("Architecture temporary output 
 
 let promoted = false;
 try {
-  const browser = await chromium.launch({ channel: "chrome", headless: true });
+  const browser = await chromium.launch({
+    channel: "chrome",
+    headless: true,
+    args: ["--disable-gpu", "--disable-lcd-text", "--font-render-hinting=none"],
+  });
   try {
     const context = await browser.newContext({
       viewport: { width: WIDTH, height: HEIGHT },
@@ -128,6 +132,12 @@ try {
     });
     const page = await context.newPage();
     await page.goto(pathToFileURL(source).href, { waitUntil: "load", timeout: 30_000 });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await new Promise((resolvePaint) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolvePaint));
+      });
+    });
     const dimensions = await page.evaluate(() => {
       const root = document.documentElement;
       return {

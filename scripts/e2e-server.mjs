@@ -1,7 +1,10 @@
 import { cpSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { startE2eShutdownWatcher } from "./e2e-lifecycle.mjs";
 import { ROOT, runOrExit } from "./process.mjs";
 
+startE2eShutdownWatcher();
 runOrExit(process.execPath, ["scripts/build.mjs"]);
 const standaloneDirectory = resolve(ROOT, ".next", "standalone");
 mkdirSync(resolve(standaloneDirectory, ".next"), { recursive: true });
@@ -15,4 +18,5 @@ cpSync(resolve(ROOT, ".next", "static"), resolve(standaloneDirectory, ".next", "
 });
 process.env.HOSTNAME ??= "127.0.0.1";
 process.env.PORT ??= "3210";
-runOrExit(process.execPath, [resolve(standaloneDirectory, "server.js")]);
+const serverPath = resolve(standaloneDirectory, "server.js");
+await import(pathToFileURL(serverPath).href);

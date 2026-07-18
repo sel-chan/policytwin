@@ -29,9 +29,19 @@ import {
   validateCanonicalIntegrationDiff,
   validateFixtureTreeReceipt,
 } from "../../dist/index.js";
+import {
+  deriveSeededAmbiguityFacts,
+  validateLiveScorecard,
+} from "../../dist/evidence/validate.js";
+import { generatePolicyMutants } from "../../dist/mutation/mutate.js";
+import { canonicalizeKnownRefundAmbiguities } from "../../dist/policy-ir/canonicalize-ambiguities.js";
 
 await import("../../scripts/generate-offline-evidence.mjs");
 const EVIDENCE_DIRECTORY = fileURLToPath(new URL("../../artifacts/evidence/", import.meta.url));
+const SEEDED_SOURCE_TEXT = await readFile(
+  new URL("../../fixtures/interpreter/seeded-refund-policy.txt", import.meta.url),
+  "utf8",
+);
 
 function hashText(value) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -203,9 +213,193 @@ test("generated partial package is complete, deterministic, redacted, and fail-c
       .every(([, status]) => status === "NOT_RUN"),
     true,
   );
+  const scorecard = JSON.parse(files.get("eval-scorecard.json"));
+  assert.deepEqual(Object.keys(scorecard.metrics), [
+    "structuredOutputSchemaPass",
+    "requiredAmbiguityLabelsFound",
+    "explicitSeededSemanticsMislabeledAsAmbiguity",
+    "goldenCaseAgreement",
+    "boundaryCaseAgreement",
+    "seededDriftBugsDetected",
+    "acceptedCorpusSize",
+    "postRepairDrift",
+    "evaluationOnlyFixedFixtureDrift",
+    "opaCaseAgreement",
+    "mutationKillRate",
+    "ruleClauseTraceability",
+    "ruleCaseTraceability",
+    "securityFindings",
+    "browserHappyPath",
+  ]);
+  assert.deepEqual(scorecard.metrics.requiredAmbiguityLabelsFound, {
+    value: 3,
+    target: 3,
+    status: "PASS_RECORDED_FIXTURE",
+  });
+  assert.deepEqual(scorecard.metrics.explicitSeededSemanticsMislabeledAsAmbiguity, {
+    value: 0,
+    target: 0,
+    status: "PASS_RECORDED_FIXTURE",
+  });
+  assert.deepEqual(scorecard.metrics.goldenCaseAgreement, {
+    value: 6,
+    target: 6,
+    status: "PASS_OPA",
+  });
+  assert.deepEqual(scorecard.metrics.boundaryCaseAgreement, {
+    value: 11,
+    target: 11,
+    status: "PASS_OPA",
+  });
+  assert.deepEqual(scorecard.metrics.ruleCaseTraceability, {
+    value: 1,
+    target: 1,
+    status: "PASS_OFFLINE",
+  });
   const allContent = [...files.values()].join("\n");
   assert.equal(allContent.includes("F:\\oaibuild"), false);
   assert.equal(allContent.includes("C:\\Users"), false);
+});
+
+test("partial eval scorecard metrics are recomputed instead of trusting a self-resigned claim", async () => {
+  const files = await loadEvidence();
+  const scorecard = JSON.parse(files.get("eval-scorecard.json"));
+  scorecard.metrics.seededDriftBugsDetected.value = 2;
+  files.set("eval-scorecard.json", json(scorecard));
+  resignEvidence(files);
+
+  assert.throws(
+    () => validateEvidencePackage(files, hashText),
+    /Eval scorecard metric seededDriftBugsDetected/u,
+  );
+});
+
+test("explicit seeded semantics cannot impersonate a required ambiguity", async () => {
+  const files = await loadEvidence();
+  const policy = JSON.parse(files.get("policy-ir.json"));
+  const ambiguity = policy.ambiguities.find(
+    ({ id }) => id === "ambiguity-purchase-day-index",
+  );
+  ambiguity.question = "Is exactly day 14 eligible for a refund?";
+  ambiguity.rationale = "The source clause explicitly states that day 14 is included.";
+  files.set("policy-ir.json", json(policy));
+
+  const cases = [
+    ...JSON.parse(files.get("golden-cases.json")),
+    ...JSON.parse(files.get("generated-cases.json")),
+  ];
+  const mutationSummary = JSON.parse(files.get("mutation-run-summary.json"));
+  mutationSummary.mutantPolicyHashes = generatePolicyMutants(policy, cases).map(
+    (mutant) => ({
+      mutantId: mutant.id,
+      policySha256: hashText(JSON.stringify(mutant.policy)),
+    }),
+  );
+  files.set("mutation-run-summary.json", json(mutationSummary));
+  resignEvidence(files);
+
+  assert.throws(
+    () => validateEvidencePackage(files, hashText),
+    /Eval scorecard metric requiredAmbiguityLabelsFound/u,
+  );
+});
+
+test("live seeded ambiguity presentation is canonical before scorecard admission", async () => {
+  const files = await loadEvidence();
+  const policy = JSON.parse(files.get("policy-ir.json"));
+  policy.metadata.source = "LIVE_RESPONSE";
+  for (const [index, ambiguity] of policy.ambiguities.entries()) {
+    ambiguity.id = `live-ambiguity-${index}`;
+    ambiguity.question = `Equivalent live question ${index}`;
+    ambiguity.rationale = `Equivalent live rationale ${index}`;
+    for (const [optionIndex, option] of ambiguity.options.entries()) {
+      const selected = option.id === ambiguity.selectedOptionId;
+      option.id = `live-option-${index}-${optionIndex}`;
+      option.label = `Equivalent option ${optionIndex}`;
+      option.description = `Equivalent description ${optionIndex}`;
+      if (selected) {
+        ambiguity.selectedOptionId = option.id;
+      }
+    }
+  }
+
+  const canonicalPolicy = canonicalizeKnownRefundAmbiguities(policy, {
+    policyId: policy.policyId,
+    version: policy.version,
+    sourceText: SEEDED_SOURCE_TEXT,
+  });
+  assert.deepEqual(deriveSeededAmbiguityFacts(canonicalPolicy, hashText), {
+    requiredAmbiguityLabelsFound: 3,
+    explicitSeededSemanticsMislabeledAsAmbiguity: 0,
+  });
+
+  const presentationTamper = structuredClone(canonicalPolicy);
+  presentationTamper.ambiguities[0].question = "Is exactly day 14 eligible for a refund?";
+  assert.deepEqual(deriveSeededAmbiguityFacts(presentationTamper, hashText), {
+    requiredAmbiguityLabelsFound: 2,
+    explicitSeededSemanticsMislabeledAsAmbiguity: 1,
+  });
+
+  const patchTamper = structuredClone(canonicalPolicy);
+  patchTamper.ambiguities[0].options[1].policyPatch.value = 0;
+  assert.deepEqual(deriveSeededAmbiguityFacts(patchTamper, hashText), {
+    requiredAmbiguityLabelsFound: 2,
+    explicitSeededSemanticsMislabeledAsAmbiguity: 1,
+  });
+});
+
+test("live eval scorecard requires exact derived statuses", () => {
+  const runId = "live-scorecard-test-0001";
+  const facts = {
+    requiredAmbiguityLabelsFound: 3,
+    explicitSeededSemanticsMislabeledAsAmbiguity: 0,
+    goldenCaseAgreement: 6,
+    boundaryCaseAgreement: 11,
+    seededDriftBugsDetected: 3,
+    acceptedCorpusSize: 41,
+    evaluationOnlyFixedFixtureDrift: 0,
+    opaCaseAgreement: 41,
+    mutationKillRate: 0.95,
+    ruleClauseTraceability: 1,
+    ruleCaseTraceability: 1,
+  };
+  const metrics = {
+    structuredOutputSchemaPass: { value: 1, target: 1, status: "PASS_LIVE_STRUCTURED_OUTPUT" },
+    requiredAmbiguityLabelsFound: { value: 3, target: 3, status: "PASS_LIVE_INTERPRETATION" },
+    explicitSeededSemanticsMislabeledAsAmbiguity: { value: 0, target: 0, status: "PASS_LIVE_INTERPRETATION" },
+    goldenCaseAgreement: { value: 6, target: 6, status: "PASS_OPA" },
+    boundaryCaseAgreement: { value: 11, target: 11, status: "PASS_OPA" },
+    seededDriftBugsDetected: { value: 3, target: 3, status: "PASS_PRE_REPAIR_DIFFERENTIAL" },
+    acceptedCorpusSize: { value: 41, target: 30, status: "PASS_ACCEPTED_CORPUS" },
+    postRepairDrift: { value: 0, target: 0, status: "PASS_POST_REPAIR_DIFFERENTIAL" },
+    opaCaseAgreement: { value: 41, target: 41, status: "PASS_OPA" },
+    mutationKillRate: { value: 0.95, target: 0.9, status: "PASS_OPA_MUTATION" },
+    ruleClauseTraceability: { value: 1, target: 1, status: "PASS_TRACEABILITY" },
+    ruleCaseTraceability: { value: 1, target: 1, status: "PASS_TRACEABILITY" },
+    securityFindings: { value: 0, target: 0, status: "PASS_RELEASE_SECURITY" },
+    browserHappyPath: { value: 1, target: 1, status: "PASS_PLAYWRIGHT" },
+  };
+  const scorecard = {
+    schemaVersion: "1",
+    status: "PASS",
+    evidenceMode: "LIVE_VERIFIED",
+    runId,
+    metrics,
+  };
+
+  assert.doesNotThrow(() => validateLiveScorecard(scorecard, runId, facts));
+  for (const name of Object.keys(metrics)) {
+    const forged = structuredClone(scorecard);
+    forged.metrics[name].status = "PASS_FABRICATED";
+    assert.throws(
+      () => validateLiveScorecard(forged, runId, facts),
+      new RegExp(`Eval scorecard metric ${name}`, "u"),
+    );
+  }
+  assert.throws(
+    () => validateLiveScorecard(scorecard, runId, { ...facts, acceptedCorpusSize: 29, opaCaseAgreement: 29 }),
+    /cannot pass when a derived metric misses its target/u,
+  );
 });
 
 test("complete evidence archive is byte-deterministic USTAR with exactly 38 verified files", async () => {
@@ -215,7 +409,7 @@ test("complete evidence archive is byte-deterministic USTAR with exactly 38 veri
   const second = createEvidenceArchive(reversed, hashText);
   assert.deepEqual(first.bytes, second.bytes);
   assert.equal(first.archiveSha256, second.archiveSha256);
-  assert.equal(first.evidenceHash, "4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1");
+  assert.equal(first.evidenceHash, "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291");
   assert.equal(first.evidenceMode, "PARTIAL_OFFLINE");
   assert.equal(first.packageStatus, "FAIL");
   assert.equal(first.policyVersion, 4);

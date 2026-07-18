@@ -3,7 +3,7 @@
 ## 0. Truthful status
 
 - Submission status: `NOT_STARTED`
-- Last rules check: `2026-07-14 13:07:58 +09:00 — official OpenAI and Devpost pages fetched directly`
+- Last rules check: `2026-07-17 13:01:15 +09:00 — all three official OpenAI and Devpost pages fetched directly; no requirement change found`
 - Exact official deadline and timezone: `2026-07-21 17:00 PDT (UTC-07:00)`
 - Local deadline: `2026-07-22 09:00 KST (UTC+09:00)`
 - Selected category/track: `Developer Tools`
@@ -31,7 +31,8 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 - The complete evidence download now rereads and content-hashes the exact bounded package on every request, then permits one content-and-validation-policy-bound in-process archive to be reused for at most 15 seconds. Failures and expired live attestations are never cached and responses remain `no-store`; shared public rate limiting is still deployment work, not a current claim.
 - PolicyIR structural admission, the checked-in JSON Schema, and the model-owned Responses schema now derive from one strict Zod contract. The official OpenAI helper produces the strict request format without server-owned metadata/input schema, and the returned JSON is checked against the same projection before trusted fields are injected. This is offline structural-contract evidence only; semantic correctness and live GPT-5.6 provider acceptance remain unproved.
 - The local Responses contract now stops after one attempt for explicit model refusal, incomplete generation, upstream error, and failed/cancelled/queued/in-progress status, while retaining one bounded retry only for recoverable JSON/schema/semantic output defects. It checks message text against SDK `output_text` when items are present and never exposes refusal or upstream-error text through the protected route. No live response outcome has been observed, so this remains offline contract evidence.
-- The worker/verifier/egress images, proxy-only capability authentication, request/nonce-bound ID-owned Docker driver, required CPU-controller port, and TLS-only probe are prepared and fake-runner/static tested only. The fake CPU ledger aggregates post-baseline egress, worker, and verifier values, but its proof explicitly claims no enforcement, hard limit, bounded overshoot, or containment and cannot pass the live gate. The TLS probe writes no HTTP but does not measure proxy outbound traffic. All three dynamic reports—web health, worker/verifier isolation, and TLS-only egress—fail before Docker at the unset immutable base; no real CPU enforcement, egress TLS path, or Codex SDK turn has run, and no submission claim may describe them as deployed security evidence.
+- The partial evaluation scorecard now contains every required offline-measurable acceptance metric: all three seeded ambiguities, zero explicit-semantics mislabels, golden and boundary agreement, seeded drift, mutation, clause and case traceability, and OPA agreement. For only the exact trusted seeded policy ID/version/source hash, complete clause segmentation, ambiguity source links, and closed patch meaning, interpretation substitutes server-owned ambiguity wording/examples; other policies and changed inputs are not rewritten. The evidence validator derives each value, target, and status from PolicyIR, accepted cases, OPA results, differential evidence, mutation output, and traceability; changing and self-rehashing the scorecard no longer passes validation. Live statuses are also exact rather than prefix-matched, so an arbitrary `PASS_*` label cannot be promoted. Live-only Structured Outputs, post-repair, release-security, and browser receipt metrics remain explicitly null/`NOT_RUN`.
+- The worker/verifier/egress images, proxy-only capability authentication, request/nonce-bound ID-owned Docker driver, required CPU-controller port, and TLS-only probe are prepared and fake-runner/static tested only. The fake CPU ledger aggregates post-baseline egress, worker, and verifier values, but its proof explicitly claims no enforcement, hard limit, bounded overshoot, or containment and cannot pass the live gate. The TLS probe writes no HTTP but does not measure proxy outbound traffic. The Docker Linux daemon is running, but all three dynamic reports—web health, worker/verifier isolation, and TLS-only egress—fail before invoking it at the unset immutable base; no real CPU enforcement, egress TLS path, or Codex SDK turn has run, and no submission claim may describe them as deployed security evidence.
 
 Worker RPC v2 and CPU evidence schema v2 are now prepared offline with separate signature and mTLS downgrade domains, client execution binding, deterministic role/attempt bindings, distinct live-purpose key material, durable replay, a strictly ordered global monotonic event transcript, and closed success/failure outcomes. The contract recomputes overlap, verifier ordering, role samples, arithmetic, containment state, and evidence hashes; legacy proof v1, static fake objects, nullable `cpuProof` receipts, and contradictory outcomes are rejected. An internal synthetic state-machine producer now derives parsed unsigned candidates and exercises ordering, overage, identity drift, cleanup failure, input-snapshot, abort, and overflow paths. Every candidate is frozen with `liveClaim:false` and `passSigningEligible:false`, and self-declared Linux provenance is rejected. This does not add current live proof: the loopback v2 integration signs only typed pre-execution `FAIL`, every success or observed failure fixture is synthetic, the generic supervisor still refuses PASS, and runtime-observation flags remain false. A concrete private Linux construction path now exists in source, but no Docker/cgroup-v2 execution, `cpu.stat` observation, containment action, finalized evidence, hard cap, bounded overshoot, model call, or Codex repair may be claimed from this checkpoint.
 
@@ -224,18 +225,18 @@ Fill with final paths and URLs.
 
 | Judge question | Evidence |
 |---|---|
-| Where is GPT-5.6 used? | `UNSET` |
-| How is output constrained? | `UNSET` |
-| What is deterministic? | `UNSET` |
-| Where is OPA used? | `UNSET` |
-| How are cases generated? | `UNSET` |
-| How is mutation score calculated? | `UNSET` |
-| How is application drift measured? | `UNSET` |
-| Where is Codex used in-product? | `UNSET` |
-| What code did Codex change? | `UNSET` |
-| How is the result verified? | `UNSET` |
-| What are the safety limits? | `UNSET` |
-| Can the run be reproduced? | `UNSET` |
+| Where is GPT-5.6 used? | `src/openai/interpreter.ts`, `prompts/interpreter.v1.md`; `artifacts/evidence/gpt-run-summary.json` remains `NOT_RUN` until the fresh gate |
+| How is output constrained? | `src/policy-ir/zod-schema.ts`, generated `schemas/policy-ir.v1.schema.json`, and deterministic semantic admission in `src/policy-ir/validate.ts` |
+| What is deterministic? | Clause segmentation, PolicyIR validation/patches, Rego compilation, case generation, mutation accounting, differential reports, traceability, and evidence hashing under `src/` |
+| Where is OPA used? | `src/opa/runner.ts`, `artifacts/evidence/opa-results.json`, and checksum/version pins in `container-contract.json` |
+| How are cases generated? | `src/cases/generate.ts` and `artifacts/evidence/generated-cases.json` |
+| How is mutation score calculated? | `src/mutation/` and `artifacts/evidence/mutation-report.json`; current score is explicitly reference-evaluator evidence, not live OPA mutation proof |
+| How is application drift measured? | `src/differential/` plus `artifacts/evidence/drift-report-before.json`; post-Codex drift remains unavailable |
+| Where is Codex used in-product? | Prepared contracts under `src/codex/`, with phase prompts and external-worker RPC; `artifacts/evidence/codex-run-summary.json` truthfully remains `NOT_RUN_LIVE` |
+| What code did Codex change? | No live Codex change exists yet; the allowed future write set is `fixtures/refund-demo/baseline/src/refund.ts` and `tests/refund.test.mjs` in a disposable copy |
+| How is the result verified? | `pnpm verify`, `pnpm verify:live`, source-derived `eval-scorecard.json`, and the 38-file evidence validator/archive |
+| What are the safety limits? | `docs/threat-model.md`, `docs/limitations.md`, fixed trusted fixture, closed commands/write set, split worker/verifier, and fail-closed dynamic reports |
+| Can the run be reproduced? | `README.md`, `docs/demo-runbook.md`, `pnpm demo:reset`, `pnpm demo:run`, `pnpm verify`, and clean-copy evidence |
 
 ## 6. Required public repository contents
 
@@ -310,11 +311,11 @@ A clear video no longer than the current official limit. Aim for approximately t
 
 ### Required assets
 
-- [ ] `artifacts/demo/demo-script.md`
-- [ ] `artifacts/demo/shot-list.md`
-- [ ] `artifacts/demo/captions.srt`
-- [ ] `artifacts/demo/demo-data.json`
-- [ ] deterministic reset command
+- [x] `artifacts/demo/demo-script.md` (truthful draft; final live numbers remain blocked)
+- [x] `artifacts/demo/shot-list.md` (truthful draft)
+- [x] `artifacts/demo/captions.srt` (truthful draft)
+- [x] `artifacts/demo/demo-data.json` (partial offline provenance)
+- [x] deterministic reset command
 - [ ] final source recording
 - [ ] compressed upload file
 - [ ] uploaded public/unlisted URL

@@ -853,3 +853,37 @@ Add new entries below this line with the template above.
 - Risks: The local port uses fixture-shaped responses and the live provider has not been exercised. A future SDK may add incomplete reasons or statuses; unknown non-completed strings still fail closed as `API_ERROR`, while malformed envelopes remain within the bounded invalid-output path.
 - Reversal or migration path: Change retry classification only with provider evidence showing a safe, bounded, materially different recovery action. Never retry a refusal or repeat `max_output_tokens` with the same fixed limit merely to hide the terminal outcome.
 - Related files/commits: `src/openai/interpreter.ts`, `tests/unit/openai-interpreter.test.mjs`, `README.md`, `SUBMISSION.md`, `docs/architecture.md`, `docs/limitations.md`, `PROGRESS.md`.
+
+### D-050 — Derive every evaluation-scorecard claim from evidence
+
+- Date: 2026-07-17
+- Status: `ACCEPTED`
+- Milestone: M8/M10
+- Context: `PLAN.md` requires ambiguity, explicit-semantics, golden, boundary, drift, mutation, traceability, security, and browser metrics. The partial scorecard omitted five required metrics, while the package validator hashed but did not semantically check any partial scorecard value. An author could therefore change a metric, rebuild the self-hash, and retain an otherwise valid partial package.
+- Options considered:
+  1. keep the scorecard as descriptive copy protected only by the aggregate hash;
+  2. add the missing fields but trust their generated values;
+  3. add the complete metric surface and independently derive every value, target, and status from admitted PolicyIR, exact seeded ambiguities, accepted cases, OPA results, differential witnesses, mutation output, and traceability.
+- Decision: Use option 3. Partial and live scorecards have closed metric sets and each metric has exactly `value`, `target`, and `status`. For the exact trusted seeded input only, the interpreter maps closed patch meaning to server-owned ambiguity presentation and examples after matching the request policy ID/version, normalized source hash, complete source-clause segmentation, and ambiguity source links; any other policy or changed/mismatched source remains untouched. The validator then recomputes the exact three allowed canonical seeded ambiguity objects—not only their IDs/categories but their source links, question, rationale, options, patches, examples, resolution state, and selected option—plus zero extra ambiguity/mislabel count, golden and boundary OPA agreement, seeded defects, corpus size, evaluation-only drift, total OPA agreement, mutation rate, and both clause and case traceability. Live-only Structured Outputs, post-repair, release-security, and browser metrics remain null/`NOT_RUN` in partial evidence. A live package must use the exact provenance-specific status for every recomputed value and target; a derived miss cannot coexist with a passing live scorecard, and arbitrary prefixes such as `PASS_FABRICATED` are rejected. A self-rehashed scorecard mismatch fails package validation.
+- Evidence: `src/policy-ir/canonicalize-ambiguities.ts`, `src/openai/interpreter.ts`, `src/evidence/validate.ts`, `scripts/generate-offline-evidence.mjs`, `artifacts/evidence/eval-scorecard.json`, `tests/unit/openai-interpreter.test.mjs`, and `tests/integration/evidence-package.integration.test.mjs`.
+- Consequences: The scorecard now covers the acceptance table rather than a subset, and every displayed quantitative claim is tied to source artifacts rather than generator trust.
+- Risks: The current ambiguity/schema results still come from the recorded fixture, not a fresh GPT-5.6 response; the scorecard labels that provenance and keeps the live schema metric unset. A future live generator must emit the closed live metric set and passing external receipts.
+- Reversal or migration path: Version the scorecard only when an acceptance metric changes, and update generator, validator, tests, UI mapping, and submission claim audit together. Never fall back to hash-only or prose-only validation.
+- Related files/commits: `PLAN.md`, `README.md`, `SUBMISSION.md`, `PROGRESS.md`, `docs/architecture.md`, `src/evidence/validate.ts`, `scripts/generate-offline-evidence.mjs`, `tests/integration/evidence-package.integration.test.mjs`.
+
+### D-051 — Make browser evidence teardown and rendering reproducible on Windows
+
+- Date: 2026-07-18
+- Status: `ACCEPTED`
+- Milestone: M8/M9/M10
+- Context: The production Chrome scenarios passed, but Playwright's Windows web-server cleanup attempted a process-tree termination that returned access denied and could leave the command hanging. Separately, the architecture PNG changed by small font-antialiasing deltas when rendered from a clean NTFS copy even though the SVG and browser version were identical. Both defects made an otherwise passing offline gate non-reproducible.
+- Options considered:
+  1. document manual process cleanup and accept the checked-in PNG without regeneration;
+  2. add another shell-level process kill and permit a pixel-difference tolerance;
+  3. keep the Next standalone server in the Playwright-owned Node process, stop it through a repository-scoped signal/acknowledgement handshake with stable health-down confirmation, and retain byte-exact PNG comparison after fixing browser font/paint readiness and renderer flags.
+- Decision: Use option 3. Each E2E run receives a UUID signal directly under the real repository `.tmp` directory. The server writes an exclusive acknowledgement before exiting; global teardown requires that acknowledgement plus consecutive failed health probes, then removes only the two managed regular files. Paths outside `.tmp`, links, non-files, and collisions fail closed. Architecture rendering waits for fonts and two animation frames and uses fixed Chrome software/text-rendering flags. The unit gate still requires the regenerated PNG to be byte-identical rather than hiding drift behind a tolerance.
+- Evidence: `playwright.config.ts`, `scripts/e2e-server.mjs`, `scripts/e2e-lifecycle.mjs`, `scripts/e2e-global-teardown.mjs`, `tests/unit/e2e-server-lifecycle.test.mjs`, `scripts/render-architecture.mjs`, `tests/unit/architecture-asset.test.mjs`, and 3/3 production Chrome results.
+- Consequences: Playwright exits normally on the managed Windows host, an intermittent health request cannot be mistaken for shutdown, and the architecture asset reproduces exactly in the clean NTFS copy. The lifecycle behavior is part of the normal unit gate.
+- Risks: The cooperative signal is test-only and assumes the trusted Playwright server process remains responsive enough to observe it. Browser or font-engine upgrades can intentionally change bytes; such a change must be reviewed and checked in rather than tolerated silently.
+- Reversal or migration path: Replace the handshake only with a process supervisor that proves ownership and termination without broad kill authority. Replace byte-exact PNG comparison only if a new deterministic renderer is adopted with an equally strict reviewed-output gate.
+- Related files/commits: `playwright.config.ts`, `scripts/e2e-server.mjs`, `scripts/e2e-lifecycle.mjs`, `scripts/e2e-global-teardown.mjs`, `scripts/render-architecture.mjs`, `scripts/run-tests.mjs`, `tests/unit/e2e-server-lifecycle.test.mjs`, `tests/unit/architecture-asset.test.mjs`, `PROGRESS.md`.

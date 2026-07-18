@@ -7,6 +7,7 @@ import {
   PolicyInterpreterError,
 } from "../../dist/openai/interpreter.js";
 import { createPolicyIRModelOutputJsonSchema } from "../../dist/policy-ir/zod-schema.js";
+import { canonicalizeKnownRefundAmbiguities } from "../../dist/policy-ir/canonicalize-ambiguities.js";
 import {
   readUtf8BodyLimited,
   RequestBodyTooLargeError,
@@ -199,6 +200,91 @@ test("builds a strict GPT-5.6 Responses request and trusts only server provenanc
   assert.equal(result.policyIR.metadata.model, "gpt-5.6");
   assert.equal(result.evidence.responseId, "resp_live_123");
   assert.equal(result.evidence.attemptCount, 1);
+});
+
+test("canonicalizes known ambiguity presentation from closed patch meaning", async () => {
+  const paraphrased = structuredClone(recorded);
+  for (const [index, ambiguity] of paraphrased.ambiguities.entries()) {
+    ambiguity.id = `model-ambiguity-${index}`;
+    ambiguity.question = index === 0
+      ? "Is exactly day 14 eligible for a refund?"
+      : `Equivalent model question ${index}`;
+    ambiguity.rationale = `Equivalent model rationale ${index}`;
+    for (const [optionIndex, option] of ambiguity.options.entries()) {
+      option.id = `model-option-${index}-${optionIndex}`;
+      option.label = `Equivalent option ${optionIndex}`;
+      option.description = `Equivalent description ${optionIndex}`;
+      option.exampleImpacts[0].result = option.exampleImpacts[0].result === "ALLOW"
+        ? "DENY"
+        : "ALLOW";
+    }
+    ambiguity.options.reverse();
+  }
+
+  const result = await interpretPolicyWithClient(
+    {
+      responses: {
+        async create() {
+          return completedResponse("resp_canonical_ambiguities", paraphrased);
+        },
+      },
+    },
+    input(),
+    { model: "gpt-5.6", now: clock() },
+  );
+
+  assert.deepEqual(result.policyIR.ambiguities, recorded.ambiguities);
+});
+
+test("limits known ambiguity canonicalization to the exact trusted seeded input", () => {
+  const unrelatedPolicy = structuredClone(recorded);
+  unrelatedPolicy.policyId = "policy-other-refund";
+  unrelatedPolicy.ambiguities[0].question = "A valid question belonging to another policy?";
+  assert.deepEqual(
+    canonicalizeKnownRefundAmbiguities(unrelatedPolicy, {
+      policyId: unrelatedPolicy.policyId,
+      version: unrelatedPolicy.version,
+      sourceText,
+    }),
+    unrelatedPolicy,
+  );
+
+  const changedSourcePolicy = structuredClone(recorded);
+  changedSourcePolicy.ambiguities[0].question = "A valid question for changed source text?";
+  assert.deepEqual(
+    canonicalizeKnownRefundAmbiguities(changedSourcePolicy, {
+      policyId: changedSourcePolicy.policyId,
+      version: changedSourcePolicy.version,
+      sourceText: `${sourceText}\nRefunds may also be granted after support review.`,
+    }),
+    changedSourcePolicy,
+  );
+
+  const mismatchedClausePolicy = structuredClone(recorded);
+  mismatchedClausePolicy.clauses[0].text = "A model-supplied clause that does not match the source.";
+  mismatchedClausePolicy.ambiguities[0].question = "A question tied to a false clause?";
+  assert.deepEqual(
+    canonicalizeKnownRefundAmbiguities(mismatchedClausePolicy, {
+      policyId: mismatchedClausePolicy.policyId,
+      version: mismatchedClausePolicy.version,
+      sourceText,
+    }),
+    mismatchedClausePolicy,
+  );
+
+  const wrongTracePolicy = structuredClone(recorded);
+  wrongTracePolicy.ambiguities[0].sourceClauseIds = ["clause-68b8918e"];
+  wrongTracePolicy.ambiguities[0].question = "A question tied to the wrong source clause?";
+  const partiallyCanonicalized = canonicalizeKnownRefundAmbiguities(wrongTracePolicy, {
+    policyId: wrongTracePolicy.policyId,
+    version: wrongTracePolicy.version,
+    sourceText,
+  });
+  assert.equal(
+    partiallyCanonicalized.ambiguities[0].question,
+    wrongTracePolicy.ambiguities[0].question,
+  );
+  assert.deepEqual(partiallyCanonicalized.ambiguities.slice(1), recorded.ambiguities.slice(1));
 });
 
 test("retries one recoverable structured-output failure and then succeeds", async () => {

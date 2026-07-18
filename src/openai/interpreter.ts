@@ -6,6 +6,7 @@ import { parsePolicyCases } from "../domain/case-validation.js";
 import { REFUND_INPUT_SCHEMA_V1 } from "../domain/refund-schema.js";
 import { segmentPolicyClauses } from "../policy-ir/clauses.js";
 import { findGoldenContradictions } from "../policy-ir/evaluate.js";
+import { canonicalizeKnownRefundAmbiguities } from "../policy-ir/canonicalize-ambiguities.js";
 import { parsePolicyIR, PolicyIRValidationError } from "../policy-ir/validate.js";
 import {
   createPolicyIRModelOutputTextFormat,
@@ -361,7 +362,13 @@ export async function interpretPolicyWithClient(
         envelope.id,
         completedAt,
       );
-      const policyIR = parsePolicyIR(value);
+      const policyIR = parsePolicyIR(
+        canonicalizeKnownRefundAmbiguities(parsePolicyIR(value), {
+          policyId: input.policyId,
+          version: input.version,
+          sourceText: input.sourceText,
+        }),
+      );
       if (policyIR.policyId !== input.policyId || policyIR.version !== input.version) {
         throw new PolicyInterpreterError(
           "OUTPUT_INVALID",

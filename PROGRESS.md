@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M2 — explicit Responses terminal-outcome handling verified offline`
+- Current milestone: `M8/M9/M10 — offline evidence integrity and reproducibility checkpoint verified`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-17 12:52 +09:00`
-- Latest checkpoint commit: `c33d587c3d269fdc40266bb67b9bec62999b5f13`
+- Last updated: `2026-07-18 11:34 +09:00`
+- Latest checkpoint commit: `29ea765f716b1d6c9ef90d6dcacdee56b3320137`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -37,7 +37,7 @@ Fill with actual evidence.
 | Git | 2.49.0.windows.1; initialized on `main` | `git --version`; `git status --short --branch` | `F:/oaibuild` registered as a safe directory because the drive does not report ownership |
 | Node.js | v22.22.2 | `node --version` | Supported LTS/newer baseline |
 | pnpm | 11.9.0 | `pnpm --version` | Available globally; rechecked at this continuation |
-| Docker | 29.1.5 CLI; daemon unavailable | `docker --version`; `docker info --format '{{.ServerVersion}}'` | Docker Desktop Linux engine pipe is absent |
+| Docker | 29.1.5 CLI and Linux server; daemon running locally | `docker desktop status`; `docker info --format '{{json .ServerVersion}}'`; local image inventory | Desktop was started locally without a registry pull. Existing images are ineligible: the only Node-bearing image is v18.19.1 and another has no Node. |
 | OPA | 1.18.2, Rego v1, windows/amd64 | `.tools/opa/1.18.2/opa.exe version`; SHA-256 verification | Official binary is repository-ignored; checksum `b9022224ee660c87cc35ce957c21c352fa57b267d71fb4e1ce779a38e107c9df` |
 | Codex client | codex-cli 0.144.0 | `codex --version` |  |
 | Goal mode | stable/enabled | `codex features list` | `goals stable true` |
@@ -67,7 +67,7 @@ Replace placeholders after checking current official sources.
 - Repository visibility requirement: `public with relevant licensing, or private and shared with testing@devpost.com and build-week-event@openai.com`
 - Demo video constraints: `public YouTube, less than 3 minutes, clear audio, show the project and use of Codex/GPT-5.6, no unlicensed third-party marks/music/material`
 - Required submission fields: `category; description; demo video; repository; README Codex collaboration narrative; /feedback session ID; developer-tool installation/platform/testing path; working access and testing instructions`
-- Rules checked at: `2026-07-14 13:07:58 +09:00`
+- Rules checked at: `2026-07-17 13:01:15 +09:00`
 - Source links: `https://openai.com/build-week/`; `https://openai.devpost.com/`; `https://openai.devpost.com/rules`
 
 ## Baseline
@@ -86,7 +86,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 | Milestone | Status | Gate evidence | Commit | Remaining risk |
 |---|---|---|---|---|
-| M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | `1d7261d` | Docker daemon remains unavailable but is outside the M0 gate |
+| M0 Preflight and baseline | PASS | official rules/current implementation facts verified; exact stack and frozen offline install pass; checksum-pinned OPA 1.18.2 executes 41 accepted cases; security and clean-copy replay pass | `1d7261d` | Docker daemon is now available; immutable runtime images remain outside the M0 gate |
 | M1 Domain core and seeded fixture | PASS | strict validation; 4 unit tests; 5 integration tests; fixture-local 4-test suite; deterministic reset and exactly 3 seeded drifts | `e509486` | Evaluation-only fixed fixture must remain outside future Codex repair context |
 | M2 PolicyIR and interpretation | IN_PROGRESS | shared Zod structure drives runtime/schema/request admission; explicit refusal, incomplete, error, and non-completed Responses outcomes terminate after one attempt while recoverable output defects retain one bounded retry | `c33d587` | credentials and a fresh GPT-5.6 response/evidence remain; live provider/outcome acceptance is not claimed |
 | M3 Decision Queue and versioning | PASS | anonymous-session-isolated SQLite v1-v5, closed replay-safe HTTP writes, one-card Decision Queue, revisit, golden contradiction, restart, expiry, and production Chrome checks pass | `16c06fc` | authenticated multi-user identity and distributed coordination remain M9 release work, not an M3 gate |
@@ -95,10 +95,39 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v15 lifecycle-v3 Docker/helper construction plus exact helper-artifact identity binding pass offline contracts | `447f077` | no immutable helper artifact has been built, installed, or run on Linux Docker/cgroup v2; finalized-result issuance, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, and signed live evidence remain absent |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, bounded evidence cache, and hardened PolicyIR/Responses admission pass 332 unit, 57 integration, 22 eval, static container, 340-text-file security, and 370-file clean-copy gates | `c33d587` | shared public admission/rate limiting, digest-pinned compiler/Node/role images, Docker daemon, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, and deterministic architecture rendering pass 337 unit, 61 integration, 22 eval, static container, 374-file/344-text security, and 374-file clean-copy gates | pending | shared public admission/rate limiting, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; reproducible 1800x1200 architecture SVG/PNG reviewed; generated draft remains fail-closed with 29 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
+
+### Objective
+
+Finish the interrupted scorecard-integrity, Playwright-lifecycle, and architecture-reproducibility checkpoint from authoritative current files. Reconcile every generated artifact and build-input hash, rerun the full offline gate with the verified NTFS package store, replay the four fail-closed dynamic prerequisites against the running Docker daemon, review the complete diff, and commit the coherent checkpoint on `main`. Then reduce the remaining work to truthful external prerequisites without claiming a live model, Codex, container, deployment, or submission result.
+
+### Starting condition
+
+Starting HEAD remains `29ea765f716b1d6c9ef90d6dcacdee56b3320137` on `main`, with the intended checkpoint changes uncommitted. Node v22.22.2, pnpm 11.9.0, and Docker Linux server 29.1.5 are reachable; `OPENAI_API_KEY`, `CODEX_MODEL`, immutable Node image, and helper-builder image remain unset. The source-derived complete eval scorecard, trusted-seed-only ambiguity canonicalization, and tamper rejection are implemented. Playwright exits cleanly through a run-scoped cooperative shutdown signal after 3/3 browser tests. Architecture rendering uses deterministic font/paint waits plus software/text rendering flags. The authoritative `pnpm verify` now passes every implemented gate, including the 374-file source-only replay, and remains fail-closed only for the owner-selected license and exact 29-item submission checklist. One ignored pnpm-fetch diagnostic directory remains after the user interrupted cleanup; the larger temporary install was removed. The approved external scope still excludes Docker registry pulls, deployment, publication, media upload, terms acceptance, license choice, and submission.
+
+### Planned actions
+
+- [x] Re-read every required control document and recheck Git, tool, Docker, credential-name, and interrupted temporary-directory state.
+- [x] Reconcile the full working diff, generated evidence, screenshots, static reports, and container build-input bindings.
+- [x] Run the authoritative offline verification with the verified NTFS store; accept only explicitly owner/external submission failures.
+- [x] Replay helper, web, worker, egress, and live prerequisites without registry pulls or model traffic and inspect the resulting reports.
+- [ ] Update decisions, architecture/threat/submission/progress truth boundaries, run final diff review, and commit the verified checkpoint on `main`.
+
+This checkpoint must not pull registry images, call OpenAI, deploy, publish, upload, accept legal terms, choose the project license, or submit the challenge without the separately required owner authority and credentials.
+
+### Verification evidence
+
+- Evidence integrity: the partial scorecard exposes all 15 offline/live-boundary metrics, and the validator derives every value, target, and exact status. Self-rehashed metric changes and arbitrary live `PASS_*` statuses are rejected. Known ambiguity presentation is canonicalized only for the exact trusted seeded ID, requested version, normalized source hash, fully resegmented clauses, source links, and closed patch meaning; other policies and changed/mismatched sources remain untouched. The aggregate evidence hash is `84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291` with `PARTIAL_OFFLINE/FAIL` provenance.
+- Browser and asset reproducibility: the standalone server is imported into the Playwright-owned process and exits through a UUID-scoped `.tmp` signal/acknowledgement handshake with stable health-down confirmation. Lifecycle behavior is in the unit gate; 3/3 production Chrome scenarios pass and exit normally. Fixed font/paint waits and renderer flags make the 1800x1200 architecture PNG byte-identical in the clean NTFS copy. The final Policy Studio, Proof, and architecture images were directly inspected with no clipping or overlap.
+- Authoritative local gate: `pnpm verify` passes lint, strict typecheck, 337/337 unit, 61/61 integration, 22/22 eval, 3/3 Chrome, 374-file clean-copy reproduction, 374-file/344-text-file plus Git-history security, static container contracts, demo replay, and the production build. It exits 1 only for the owner-selected `LICENSE` and the exact 29-item non-final submission gate.
+- Static identities: worker `eedea685363235d84f667856f4b1daa86f0f3e9ee795b73bf7cea910f23498e2`, verifier `23cb93c6d9a0ee12b6879b868637b7d40207a4f2dde80e22a3a6e9fed3450c67`, egress `f3dfcabc8d4d124c7ccf6aeea3c6b59296163ee04aee856fe926e2b8d1406d9c`, and helper `520e550ddfc6ec07a7664839ce6ee75f95130264e2fdb5eaea6d14b03913816b` match the contract and static report.
+- Dynamic boundary: `helper:verify`, `container:verify`, `worker:verify`, and `egress:verify` all exit 1 before Docker invocation because the immutable builder/base/helper identities are unset. Helper, worker, and egress reports explicitly retain `dockerInvoked:false`; the web report keeps all daemon/runtime facts null. `verify:live` exits before dynamic gates or network because `OPENAI_API_KEY` and `CODEX_MODEL` are absent. No registry pull, container workload, model call, Codex repair, deployment, upload, or submission occurred.
+- Review: independent read-only code/truth reviews found and then confirmed closure of the E2E shutdown race/path boundary, missing lifecycle test registration, permissive live-scorecard status prefix, stale submission-state ordering, and an initially over-broad ambiguity canonicalizer. The final canonicalizer review found no remaining P0/P1/P2 because the operation is now bound to the exact trusted seeded request/source/trace context.
+
+## Previous checkpoint — Responses terminal outcomes
 
 ### Objective
 
@@ -140,26 +169,26 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` with `npm_config_store_dir=C:\tmp\policytwin-pnpm-store-fresh` | exact 469-entry lock graph passes supply-chain policy; root and clean-copy dependency trees hydrate fully from the fresh NTFS store | 2026-07-17 09:12 +09:00 |
-| Lint | PASS | `pnpm lint` | shared PolicyIR schema, terminal Responses outcome handling, schema-v15 packaging, and repository static checks pass | 2026-07-17 12:49 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers shared schemas, response envelope/output inspection, application, sealed helper lifecycle, and v1/v2 RPC | 2026-07-17 12:49 +09:00 |
+| Lint | PASS | `pnpm lint` | shared PolicyIR schema, trusted-seed ambiguity boundary, exact scorecard statuses, E2E lifecycle, schema-v15 packaging, and repository static checks pass | 2026-07-18 11:34 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers shared schemas, ambiguity canonicalization, evidence validation, application, sealed helper lifecycle, and v1/v2 RPC | 2026-07-18 11:34 +09:00 |
 | Native helper local build | PASS_LOCAL_ONLY | `pnpm helper:build:local` | repeated compilation remains byte-identical at 841,656-byte AMD64 static PIE with SHA-256 `906214d0489875ebbc718d934397fb2e43b00b5af825391c247b1efb112abdef`; compiler is explicitly unpinned, stale success evidence is removed on failure, and no image/runtime claim follows | 2026-07-17 10:54 +09:00 |
-| Unit tests | PASS | `pnpm test` | 332/332 pass, including six explicit terminal-outcome/retry-accounting cases, completed output-text binding, shared schema freshness, and existing archive/Docker/cgroup/RPC coverage | 2026-07-17 12:49 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 57/57 serial fixture, mTLS v1/v2, OPA, evidence, persistence, and exact partial/live archive-expiry assertions pass | 2026-07-17 12:49 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass; regenerated Policy Studio screenshot was directly inspected with no visible defect | 2026-07-17 12:49 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass, including stable external ambiguity-schema reference and generated executable-union checks | 2026-07-17 12:49 +09:00 |
-| Production build | PASS | `pnpm build` | Next.js 16 Turbopack standalone build and strict TypeScript pass with terminal Responses outcome classification | 2026-07-17 12:49 +09:00 |
-| Offline full verification | FAIL_EXPECTED | `pnpm verify` | every implemented gate passes: 332 unit, 57 integration, 22 eval, 3 browser, 370-file clean copy, 340-text-file security plus Git history, static container, demo, and build; `VERIFY_EXIT=1` is only owner `LICENSE` plus exact 29-item submission gate | 2026-07-17 12:49 +09:00 |
-| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no model or Codex call occurred | 2026-07-17 12:49 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 370 source files; frozen offline install, lint, typecheck, 332 unit, 57 integration, 22 eval, build, 3 browser, demo replay, and evidence generation pass | 2026-07-17 12:49 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | schema-v15 validates worker `f5f75864…`, verifier `23cb93c6…`, egress `af784f95…`, and helper `520e550d…` inputs while all runtime/finalization/PASS claims remain false | 2026-07-17 12:49 +09:00 |
-| Dynamic helper artifact | FAIL | `pnpm helper:verify` | immutable builder image is unset; verifier records `dockerInvoked:false`, no image/binary identity, and all install/cgroup/signing claims false | 2026-07-17 12:49 +09:00 |
-| Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-17 12:49 +09:00 |
-| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | final role hashes match; fails before Docker only at the unset immutable Node base with no runtime evidence | 2026-07-17 12:49 +09:00 |
-| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | final role hashes match; fails before Docker at the unset immutable Node base and sealed helper artifact identities; outbound remains `NOT_MEASURED` | 2026-07-17 12:49 +09:00 |
+| Unit tests | PASS | `pnpm test` | 337/337 pass, including exact scorecard statuses, trusted-seed-only ambiguity canonicalization, cooperative E2E acknowledgement/health-down behavior, managed-path rejection, byte-exact architecture reproduction, and existing archive/Docker/cgroup/RPC coverage | 2026-07-18 11:34 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 61/61 serial fixture, mTLS v1/v2, OPA, evidence, persistence, canonical seeded-ambiguity semantics, post-canonical tamper rejection, self-rehashed scorecard, and exact live-status assertions pass | 2026-07-18 11:34 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass and the acknowledged teardown exits normally; final Policy Studio, Proof, and architecture images were directly inspected | 2026-07-18 11:34 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass after current security and clean-copy reports | 2026-07-18 11:34 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16.2.10 Turbopack standalone build and strict TypeScript pass | 2026-07-18 11:34 +09:00 |
+| Offline full verification | PASS_IMPLEMENTED_FAIL_CLOSED_EXTERNAL | `pnpm verify` | every implemented gate passes; command exits 1 only for owner-selected `LICENSE` and the exact 29-item non-final submission gate | 2026-07-18 11:34 +09:00 |
+| Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no model or Codex call occurred | 2026-07-18 11:34 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 374 source files; frozen offline install, lint, typecheck, 337 unit, 61 integration, 22 eval, build, 3 browser, demo replay, and evidence generation pass | 2026-07-18 11:34 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | worker `eedea685…`, verifier `23cb93c6…`, egress `f3dfcabc…`, and helper `520e550d…` match the checked contract | 2026-07-18 11:34 +09:00 |
+| Dynamic helper artifact | FAIL | `pnpm helper:verify` | immutable builder image is unset; verifier records `dockerInvoked:false`, no image/binary identity, and all install/cgroup/signing claims false | 2026-07-18 11:34 +09:00 |
+| Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so all daemon/runtime facts remain null and Docker build/runtime/SQLite restart checks did not run | 2026-07-18 11:34 +09:00 |
+| Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | final role hashes match; `dockerInvoked:false` and failure is only the unset immutable Node base | 2026-07-18 11:34 +09:00 |
+| Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | final role hashes match; `dockerInvoked:false` at the unset immutable Node base and sealed helper artifact identities; outbound remains `NOT_MEASURED` | 2026-07-18 11:34 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
 | Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent with `OWNER_DECISION_REQUIRED` | 2026-07-17 12:49 +09:00 |
-| Security review | PASS | `pnpm security:check` | 340 text files plus Git history scanned; fixed local-compiler and pinned-Docker child-process boundaries reviewed; no findings | 2026-07-17 12:49 +09:00 |
-| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; Responses/schema notes remain non-final and no fabricated URL, video, license, confirmation, or Codex capture exists | 2026-07-17 12:49 +09:00 |
+| Security review | PASS | `pnpm security:check` | 374 files/344 text files plus Git history scanned; reviewed child-process boundaries remain allowlisted and no findings exist | 2026-07-18 11:34 +09:00 |
+| Submission consistency | FAIL | `pnpm submission:check` | exactly 29 unmet requirements; security and clean-copy are PASS while no fabricated URL, video, license, confirmation, or Codex capture exists | 2026-07-18 11:34 +09:00 |
 
 ## Product proof metrics
 
@@ -169,7 +198,7 @@ Never fill from estimates.
 |---|---:|---:|---|
 | Structured-output schema pass | 100% | 100% shared offline structural contract and exact request projection; live provider result UNSET | `tests/unit/policy-ir-zod-schema.test.mjs`, `tests/unit/openai-interpreter.test.mjs` |
 | Required ambiguity labels found | 100% | 3/3 recorded candidate ambiguities | `fixtures/interpreter/recorded-policy-ir.v1.json` |
-| Explicit seeded semantics mislabeled as ambiguity | 0 | UNSET |  |
+| Explicit seeded semantics mislabeled as ambiguity | 0 | 0 in the recorded candidate; the exact three canonical ambiguity objects are source-derived and tamper-checked in the scorecard | `evals/interpreter/recorded-interpreter.eval.test.mjs`, `artifacts/evidence/eval-scorecard.json` |
 | Golden cases passed | 100% | 6/6 (OPA CLI 1.18.2) | `artifacts/evidence/verification-summary.json` |
 | Accepted corpus size | ≥30 | 41 (offline reference corpus including D01–D03) | `tests/snapshots/offline-m5-summary.json` |
 | Seeded app bugs detected | 3/3 | 3/3 | `pnpm demo:run`; `tests/integration/refund-fixture.integration.test.mjs` |
@@ -669,7 +698,7 @@ A blocker is valid only when the task cannot continue safely without external in
 
 | ID | Type | Exact blocker | Work already completed | One owner action | Resume condition |
 |---|---|---|---|---|---|
-| B-001 | Environment and external network permission | The Docker Desktop Linux engine is stopped, immutable Node/helper-builder identities are unset, and the recorded network approval does not include Docker registry pulls. The required artifact, web, worker, egress, private cgroup-v2, finalization, live Codex, and deployment chain cannot begin truthfully without that first runtime/image boundary. | All independent offline source, schemas, refusal/retry handling, static contracts, 332 unit, 57 integration, 22 eval, 3 browser, 370-file clean-copy, 340-text-file security, build, documentation, and fail-closed reports are complete and committed. | Start the Docker Desktop Linux engine and explicitly approve Docker registry pulls for the reviewed digest-pinned Node 22.22.2 and compiler images. | `docker info` reaches the local Linux daemon and the owner grants that exact registry-pull scope. |
+| B-001 | External network permission | The Docker Desktop Linux server is now running, but immutable Node/helper-builder identities remain unset and the recorded network approval does not include Docker registry pulls. The locally present images are not eligible (Node 18.19.1 or no Node), so the required artifact, web, worker, egress, private cgroup-v2, finalization, live Codex, and deployment chain still cannot begin truthfully. | Docker was started locally without a pull; server 29.1.5 responds. All four dynamic commands were replayed and fail before Docker invocation at the unset immutable identities. The offline scorecard-integrity gap and initially over-broad ambiguity canonicalizer were reproduced and closed with source-derived metrics, exact trusted-input binding, and tamper rejection. | Explicitly approve Docker registry pulls for the reviewed digest-pinned Node 22.22.2 and compiler images. | The owner grants that exact registry-pull scope; the Linux daemon is already reachable. |
 
 ## Risks
 
@@ -681,7 +710,7 @@ A blocker is valid only when the task cannot continue safely without external in
 | Codex SDK/live adapter mismatch | Medium | High | Current package/docs are pinned; validate the real adapter with fresh SDK evidence | Codex / open |
 | Live attestation key custody | Medium | High | Keep private key outside Git/logs/evidence; inject only trusted public keys into verification | Codex / open |
 | Repeated evidence-download pressure | Low locally / Medium when public | Medium | Exact 4 MiB/16 MiB bounds plus one active and one 15-second content/policy-bound completed archive are verified; add shared edge rate limiting/admission control before public multi-replica deployment | Local cache closed / deployment open |
-| Docker daemon unavailable | High | Medium | Continue non-container gates; start Docker Desktop before the container gate | Owner/Codex / open |
+| Immutable container images unavailable | High | High | Keep dynamic gates fail-closed; after scoped registry approval, review and pin exact Node/compiler digests before any build | Owner/Codex / open; Docker daemon itself is running |
 | Offline validator/Zod duplication | Low | Medium | One Zod structure now generates the checked-in schema and model projection and runs before deterministic semantic validation; exact freshness is gated | Closed by D-048; live provider acceptance remains open separately |
 | Demo recording/account blocker | Medium | Medium | Prepare script, captions, screenshots, and exact owner action | Codex / open |
 
@@ -693,19 +722,19 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`After the owner starts the Docker Desktop Linux engine and explicitly approves the reviewed digest-pinned Node/compiler registry pulls, build/discover/pin the helper and role image identities and exercise the schema-v15 lifecycle-v3 construction on real cgroup v2 before enabling finalization, PASS, or live admission.`
+`After the owner explicitly approves the reviewed digest-pinned Node/compiler registry pulls, build/discover/pin the helper and role image identities and exercise the schema-v15 lifecycle-v3 construction on real cgroup v2 before enabling finalization, PASS, or live admission.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `all currently independent offline work is committed; the next required chain starts with the owner-controlled Docker Linux engine and registry scope`
-- Exact current state: `PolicyIR structure is single-sourced and the adapter now terminates explicit refusal/incomplete/error/non-completed outcomes after one attempt while reserving one bounded retry for recoverable generated-output defects; no live provider/model claim was added`
-- Last successful command: `the final pnpm verify completed every implemented step with 332/332 unit, 57/57 integration, 22/22 eval, 3/3 browser, 370-file clean-copy, 340-text-file security/history, static container, demo, and build passing, then remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
+- Why paused: `all currently independent offline work is verified and the next required chain starts with owner-approved digest-pinned registry access`
+- Exact current state: `the 15-metric partial/live scorecard contract, trusted-seed-only ambiguity canonicalization, exact live statuses, cooperative Windows E2E teardown, and byte-exact architecture render are verified offline; Docker is running but no eligible image or live provider credential is configured`
+- Last successful command: `the final pnpm verify completed every implemented step with 337/337 unit, 61/61 integration, 22/22 eval, 3/3 browser, 374-file clean-copy, 374-file/344-text-file security/history, static container, demo, and build passing, then remained fail-closed only for owner LICENSE and the exact 29-item submission gate`
 - Current failing command: `pnpm helper:verify fails before Docker at the unset immutable builder; web/worker fail at the unset Node base; egress also lacks sealed helper IDs; pnpm verify:live fails before dynamic gates/network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `none after this blocker-ledger update is committed`
+- Uncommitted files: `the current verified checkpoint remains uncommitted until final diff review and checkpoint commit`
 - Safe resume command/action: `after the owner supplies the exact Docker/registry prerequisites, confirm clean main, verify docker info, select exact reviewed digests, and run the helper artifact gate first`
-- One owner action, if any: `start the Docker Desktop Linux engine and reply with explicit approval for the reviewed digest-pinned Node 22.22.2 and compiler image pulls`
+- One owner action, if any: `reply with explicit approval for the reviewed digest-pinned Node 22.22.2 and compiler image pulls; the Docker Desktop Linux engine is already running`
 
 ## Final completion record
 
@@ -718,6 +747,6 @@ Do not fill until the end.
 - Public repository: `NOT_VERIFIED`
 - Demo video: `NOT_VERIFIED`
 - Challenge submission: `NOT_VERIFIED`
-- Final evidence hash: `4b046b707d238da3d5de04e86bcf3e7218af81d301f0f3186e041a5c0b4cdbf1` (`PARTIAL_OFFLINE/FAIL`, not final live proof)
+- Final evidence hash: `84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291` (`PARTIAL_OFFLINE/FAIL`, not final live proof)
 - Final commit/tag: `UNSET`
 - Final truthful state: `IN_PROGRESS`

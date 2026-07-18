@@ -9,6 +9,26 @@
       "target": 1,
       "status": "NOT_RUN_LIVE"
     },
+    "requiredAmbiguityLabelsFound": {
+      "value": 3,
+      "target": 3,
+      "status": "PASS_RECORDED_FIXTURE"
+    },
+    "explicitSeededSemanticsMislabeledAsAmbiguity": {
+      "value": 0,
+      "target": 0,
+      "status": "PASS_RECORDED_FIXTURE"
+    },
+    "goldenCaseAgreement": {
+      "value": 6,
+      "target": 6,
+      "status": "PASS_OPA"
+    },
+    "boundaryCaseAgreement": {
+      "value": 11,
+      "target": 11,
+      "status": "PASS_OPA"
+    },
     "seededDriftBugsDetected": {
       "value": 3,
       "target": 3,
@@ -40,6 +60,11 @@
       "status": "PASS_REFERENCE_NOT_OPA_MUTATION"
     },
     "ruleClauseTraceability": {
+      "value": 1,
+      "target": 1,
+      "status": "PASS_OFFLINE"
+    },
+    "ruleCaseTraceability": {
       "value": 1,
       "target": 1,
       "status": "PASS_OFFLINE"

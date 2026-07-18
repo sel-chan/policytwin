@@ -1,12 +1,109 @@
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
+import { inflateSync } from "node:zlib";
 
 const SVG_PATH = resolve("docs", "assets", "policytwin-architecture.svg");
 const PNG_PATH = resolve("artifacts", "screenshots", "08-architecture.png");
+
+function paeth(left, up, upperLeft) {
+  const estimate = left + up - upperLeft;
+  const leftDistance = Math.abs(estimate - left);
+  const upDistance = Math.abs(estimate - up);
+  const upperLeftDistance = Math.abs(estimate - upperLeft);
+  if (leftDistance <= upDistance && leftDistance <= upperLeftDistance) return left;
+  return upDistance <= upperLeftDistance ? up : upperLeft;
+}
+
+function decodeRgbPng(png) {
+  assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  let offset = 8;
+  let width;
+  let height;
+  const compressed = [];
+  while (offset < png.length) {
+    const length = png.readUInt32BE(offset);
+    const type = png.subarray(offset + 4, offset + 8).toString("ascii");
+    const data = png.subarray(offset + 8, offset + 8 + length);
+    offset += 12 + length;
+    if (type === "IHDR") {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      assert.deepEqual([...data.subarray(8, 13)], [8, 2, 0, 0, 0]);
+    } else if (type === "IDAT") {
+      compressed.push(data);
+    } else if (type === "IEND") {
+      break;
+    }
+  }
+  assert.ok(width && height && compressed.length > 0);
+  const scanlines = inflateSync(Buffer.concat(compressed));
+  const stride = width * 3;
+  assert.equal(scanlines.length, height * (stride + 1));
+  const pixels = Buffer.alloc(height * stride);
+  let inputOffset = 0;
+  for (let row = 0; row < height; row += 1) {
+    const filter = scanlines[inputOffset];
+    inputOffset += 1;
+    assert.ok(filter >= 0 && filter <= 4, `Unsupported PNG filter ${filter}.`);
+    const rowOffset = row * stride;
+    for (let column = 0; column < stride; column += 1) {
+      const encoded = scanlines[inputOffset];
+      inputOffset += 1;
+      const left = column >= 3 ? pixels[rowOffset + column - 3] : 0;
+      const up = row > 0 ? pixels[rowOffset - stride + column] : 0;
+      const upperLeft = row > 0 && column >= 3 ? pixels[rowOffset - stride + column - 3] : 0;
+      const predictor =
+        filter === 0
+          ? 0
+          : filter === 1
+            ? left
+            : filter === 2
+              ? up
+              : filter === 3
+                ? Math.floor((left + up) / 2)
+                : paeth(left, up, upperLeft);
+      pixels[rowOffset + column] = (encoded + predictor) & 0xff;
+    }
+  }
+  return { width, height, pixels };
+}
+
+function describePixelDifference(firstPng, secondPng) {
+  const first = decodeRgbPng(firstPng);
+  const second = decodeRgbPng(secondPng);
+  assert.deepEqual(
+    { width: first.width, height: first.height },
+    { width: second.width, height: second.height },
+  );
+  let changedPixels = 0;
+  let changedChannels = 0;
+  let maxChannelDelta = 0;
+  let totalChannelDelta = 0;
+  for (let offset = 0; offset < first.pixels.length; offset += 3) {
+    let pixelChanged = false;
+    for (let channel = 0; channel < 3; channel += 1) {
+      const delta = Math.abs(first.pixels[offset + channel] - second.pixels[offset + channel]);
+      if (delta > 0) {
+        pixelChanged = true;
+        changedChannels += 1;
+        maxChannelDelta = Math.max(maxChannelDelta, delta);
+        totalChannelDelta += delta;
+      }
+    }
+    if (pixelChanged) changedPixels += 1;
+  }
+  return {
+    changedPixels,
+    totalPixels: first.width * first.height,
+    changedChannels,
+    maxChannelDelta,
+    totalChannelDelta,
+  };
+}
 
 function runRenderer(relativeOutput) {
   // Security-reviewed test boundary: fixed local Node executable and repository script,
@@ -72,6 +169,14 @@ test("architecture renderer is local-only and the submission workflow refreshes 
   );
   assert.match(renderer, /pathToFileURL\(source\)\.href/u);
   assert.match(renderer, /channel: "chrome"/u);
+  for (const stableRenderingArgument of [
+    "--disable-gpu",
+    "--disable-lcd-text",
+    "--font-render-hinting=none",
+  ]) {
+    assert.ok(renderer.includes(stableRenderingArgument));
+  }
+  assert.match(renderer, /document\.fonts\.ready/u);
   assert.doesNotMatch(renderer, /page\.goto\(["']https?:/u);
   assert.match(renderer, /stat\.isSymbolicLink\(\)/u);
   assert.match(renderer, /path: temporaryOutput/u);
@@ -91,7 +196,13 @@ test("architecture PNG is reproducible from the checked-in SVG", async () => {
     const result = runRenderer(relativeOutput);
     assert.equal(result.code, 0, result.stderr || result.stdout);
     const [checkedIn, regenerated] = await Promise.all([readFile(PNG_PATH), readFile(output)]);
-    assert.ok(checkedIn.equals(regenerated), "Checked-in architecture PNG is stale.");
+    const checkedInHash = createHash("sha256").update(checkedIn).digest("hex");
+    const regeneratedHash = createHash("sha256").update(regenerated).digest("hex");
+    const pixelDifference = describePixelDifference(checkedIn, regenerated);
+    assert.ok(
+      checkedIn.equals(regenerated),
+      `Checked-in architecture PNG is stale: ${checkedInHash} != ${regeneratedHash}; ${JSON.stringify(pixelDifference)}.`,
+    );
   } finally {
     await rm(resolve("artifacts", ".architecture-test"), { recursive: true, force: true });
   }

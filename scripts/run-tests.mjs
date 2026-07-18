@@ -8,6 +8,7 @@ const suites = {
     "tests/unit/native-helper-artifact.test.mjs",
     "tests/unit/evidence-archive-cache.test.mjs",
     "tests/unit/architecture-asset.test.mjs",
+    "tests/unit/e2e-server-lifecycle.test.mjs",
     "tests/unit/refund-domain.test.mjs",
     "tests/unit/clause-segmentation.test.mjs",
     "tests/unit/policy-ir-zod-schema.test.mjs",

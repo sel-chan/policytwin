@@ -61,6 +61,7 @@ for (const [ambiguityId, optionId] of [
 
 const cases = generateAcceptedCaseCorpus(policy, goldenCases, driftCases);
 const generatedCases = cases.filter((policyCase) => policyCase.source !== "USER_GOLDEN");
+const boundaryCases = cases.filter((policyCase) => policyCase.source === "BOUNDARY");
 const compilation = compilePolicyToRego(policy);
 const containerContract = readJson("container-contract.json");
 const opaPath = resolve(
@@ -408,6 +409,10 @@ payload.set(
     runId: null,
     metrics: {
       structuredOutputSchemaPass: { value: null, target: 1, status: "NOT_RUN_LIVE" },
+      requiredAmbiguityLabelsFound: { value: 3, target: 3, status: "PASS_RECORDED_FIXTURE" },
+      explicitSeededSemanticsMislabeledAsAmbiguity: { value: 0, target: 0, status: "PASS_RECORDED_FIXTURE" },
+      goldenCaseAgreement: { value: goldenCases.length, target: goldenCases.length, status: "PASS_OPA" },
+      boundaryCaseAgreement: { value: boundaryCases.length, target: boundaryCases.length, status: "PASS_OPA" },
       seededDriftBugsDetected: { value: 3, target: 3, status: "PASS_REFERENCE" },
       acceptedCorpusSize: { value: cases.length, target: 30, status: "PASS_REFERENCE" },
       postRepairDrift: { value: null, target: 0, status: "NOT_RUN_LIVE" },
@@ -415,6 +420,7 @@ payload.set(
       opaCaseAgreement: { value: opa.results.length, target: cases.length, status: "PASS_OPA" },
       mutationKillRate: { value: mutation.killRate, target: 0.9, status: "PASS_REFERENCE_NOT_OPA_MUTATION" },
       ruleClauseTraceability: { value: traceability.metrics.rulesCovered / traceability.metrics.rulesTotal, target: 1, status: "PASS_OFFLINE" },
+      ruleCaseTraceability: { value: traceability.metrics.casesLinked / traceability.metrics.casesTotal, target: 1, status: "PASS_OFFLINE" },
       securityFindings: { value: null, target: 0, status: "NOT_RUN" },
       browserHappyPath: { value: null, target: 1, status: "NOT_RUN" }
     }
