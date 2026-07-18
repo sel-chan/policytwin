@@ -95,8 +95,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v15 lifecycle-v3 Docker/helper construction plus exact helper-artifact identity binding pass offline contracts | `447f077` | no immutable helper artifact has been built, installed, or run on Linux Docker/cgroup v2; finalized-result issuance, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, and signed live evidence remain absent |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 358 unit, 61 integration, 22 eval, static container, 416-file/386-text security, and 416-file clean-copy gates | pending | shared public admission/rate limiting, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
-| M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; isolated fail-closed draft and strict final gates are separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed; same-run verification and the strict final gate expose 42 unmet requirements | `130c355` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 358 unit, 61 integration, 22 eval, static container, 416-file/386-text security, and 416-file clean-copy gates | `54d2aed` | shared public admission/rate limiting, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; isolated fail-closed draft and strict final gates are separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed; same-run verification and the strict final gate expose 42 unmet requirements | `54d2aed` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
 
@@ -114,7 +114,7 @@ Starting HEAD is clean `main` at ledger commit `d6f360f068c312a56d26d82f6c8fed32
 - [x] Audit every incomplete acceptance item against current source, artifacts, reports, and local Docker inventory.
 - [x] Complete remaining independent implementation, documentation, submission-copy, and local preflight work that does not require new authority.
 - [x] Run proportionate full gates, inspect generated artifacts, and obtain independent read-only reviews.
-- [ ] Commit the checkpoint on `main` and confirm a clean working tree.
+- [x] Commit the checkpoint on `main` and confirm a clean working tree.
 - [x] Reduce the remainder to one concrete owner action without weakening the engineering or submission definition of done.
 
 This checkpoint must not pull registry images, call OpenAI, push/publish, deploy, upload media, accept legal terms, choose the project license, or submit the challenge without the separately required owner authority and credentials.
@@ -129,6 +129,7 @@ This checkpoint must not pull registry images, call OpenAI, push/publish, deploy
 - Fail-closed gates: helper/web/worker/egress commands exit before Docker workload execution at unset immutable identities; `verify:live` exits before dynamic gates or network at missing `OPENAI_API_KEY` and `CODEX_MODEL`. No pull, model call, Codex repair, deployment, upload, publication, or submission occurred.
 - Static identities: worker `1f0df815935a17e166fe66b04204d11d90c9a2e670c2730303266ba92a5fe787`, verifier `6a38ec763e29029a1605c56f394931161d6eea164af1de29ee608331986bf8d0`, egress `d7e39c528e72a277cd493a765af09f52f8a6697f4bd92d4513f985f5328169b6`, and helper `dcba15c2e7e93bc9862d2027ca4d47272666851b63fd19455d3d7fc05eef8ad4` match the static contract and generated report.
 - Independent review: focused receipt, claim/media/package, and holistic publication-boundary reviews found and drove closure of stale-receipt, Git-filter/index-mode, final-copy claim, local Git rewrite, redirect/SSRF, DNS-rebinding, and special-purpose IPv6 gaps. The latest read-only re-reviews report no remaining P0/P1.
+- Checkpoint commit: `54d2aed5c52db9e629ee431fc3a9c0201916dba6` (`feat: harden offline submission release gate`).
 
 ## Previous checkpoint — Offline evidence integrity and reproducibility
 
@@ -764,11 +765,11 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not yet paused; independent review and checkpoint commit are being completed, after which the first unavailable step is the scoped registry action below`
+- Why paused: `not yet paused; the offline-hardening checkpoint is committed and the first unavailable step is the scoped registry action below`
 - Exact current state: `358 unit, 61 integration, 22 eval, 3 browser, 416-file clean-copy, 416-file/386-text security/history, static container, release-tree fingerprint, 2:55 isolated drafts, demo, and build pass; Docker is cgroup v1, immutable images and live credentials are absent`
 - Last successful command: `the same-run pnpm verify inside pnpm submission:check passed every implemented deterministic step and generated a 413-file, zero-untracked release fingerprint; it remained FAIL only for LICENSE`
 - Current failing command: `pnpm submission:check reports 42 final requirements after pnpm verify exits only for owner LICENSE; helper/web/worker/egress stop before Docker workload execution at unset immutable identities; verify:live stops before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `current offline-hardening checkpoint is staged on main; only the excluded ledger and two self-reports changed after the same-run release check and are being restaged before commit`
+- Uncommitted files: `none after the ledger commit; main is clean`
 - Safe resume command/action: `after the exact registry scope is approved, confirm clean main, select reviewed immutable Node/compiler digests, and run the helper artifact gate first; do not attempt worker/egress until an eligible Linux cgroup-v2 supervisor is available`
 - One owner action, if any: `reply with explicit approval for linux/amd64 manifest lookup and digest-blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only`
 
