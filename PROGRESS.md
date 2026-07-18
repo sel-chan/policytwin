@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7/M9/M10 — offline completion gaps hardened`
+- Current milestone: `M7 — v2-bound unsigned worker execution core`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-18 18:33 +09:00`
-- Latest checkpoint commit: `9f0c91a957fba7aeec399ea393b3999152780b20`
+- Last updated: `2026-07-18 20:29 +09:00`
+- Latest checkpoint commit: `f7bda474bd069a4a2382b79231d4155b2a8c4725`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,12 +93,41 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, and a session-bound SQLite repair-run/event ledger with CSRF/idempotency/SSE/fail-stop UI pass offline contracts | `447f077` | the product execution port deliberately remains unavailable; no immutable helper artifact has run on Linux Docker/cgroup v2, finalized-result issuer/v2 PASS signer is enabled, or fresh SDK repair, zero live post-repair drift, live review, and signed live evidence exist |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, a session-bound SQLite repair-run/event ledger with CSRF/idempotency/SSE/fail-stop UI, and a v2-bound deeply frozen unsigned execution candidate pass offline contracts | `447f077` | the unsigned candidate is deliberately unverified and non-admissible; the production entrypoint remains validate-only, and no immutable helper artifact has run on Linux Docker/cgroup v2, finalized-result issuer/v2 PASS signer is enabled, or fresh SDK repair, zero live post-repair drift, live review, and signed live evidence exist |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, reviewed-CLI hash gate, owned standalone web lifecycle, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 374 unit, 61 integration, 22 eval, static container, 430-file/399-text security, and 430-file clean-copy gates | `86bd1f0` | shared public admission/rate limiting, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, reviewed-CLI hash gate, owned standalone web lifecycle, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 381 unit, 61 integration, 22 eval, 3 browser, static container, 432-file/401-text security, and 432-file clean-copy gates | `86bd1f0` | shared public admission/rate limiting, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements were refreshed at 2026-07-18 18:37:46 +09:00 with no change; isolated fail-closed draft and strict final gates remain separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed | `86bd1f0` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
+
+### Objective
+
+Implement the smallest safe M7 execution slice still possible without model credentials, Docker registry traffic, an eligible Linux cgroup-v2 supervisor, a finalized evidence issuer, or a live signer: bind one canonical Worker RPC v2 request to the existing repair orchestrator and return only a deeply frozen, explicitly non-admissible unsigned candidate.
+
+### Starting condition
+
+Starting HEAD is clean `main` at `f7bda474bd069a4a2382b79231d4155b2a8c4725`. The current worker entrypoint remains `--validate-only` and still validates a legacy v1 request; the host live SDK constructor remains disabled; the v2 client, verifier separation, coordinator one-use settlement, and PASS-signing refusal remain fail-closed. No production path currently binds a v2 request to the implemented cartography/repair/review orchestrator.
+
+### Planned actions
+
+- [x] Reconfirm the clean Git state, current official Codex SDK surface, M7 acceptance contract, and existing v2 RPC/orchestrator/verifier boundaries; obtain two independent read-only implementation reviews.
+- [x] Add failing tests for v1/hash/time-window rejection, request mutation, fixed verification ordering, deep-frozen non-admissible output, redaction, and inability to parse or settle the candidate as a v2 PASS.
+- [x] Implement a non-root-exported v2 unsigned execution core using only an injected offline test-double backend and supervisor/verifier ports; do not connect the live SDK, worker entrypoint, Docker role plan, signer, or finalized evidence path.
+- [x] Run focused tests, lint, typecheck, unit, integration, eval, browser, build, static/security/reproducibility gates, and the authoritative offline verification sequence.
+- [ ] Obtain an independent read-only final diff/truth/security review, update decisions/docs/evidence, commit on `main`, and leave the worktree clean.
+
+This slice must not emit a `WorkerRpcV2Response`, create or consume a validated external-worker settlement, claim `LIVE_CODEX_SDK`, run verification inside the networked worker, enable a new entrypoint mode, perform a model/network/container action, or weaken the unconditional v2 PASS-signing refusal.
+
+### Checkpoint evidence in progress
+
+- Reproduction: registering the new focused suite before implementation failed with `ERR_MODULE_NOT_FOUND` for `src/codex/unsigned-worker-execution-core.ts`, establishing the missing production seam rather than a fixture-only assertion.
+- Implementation: `src/codex/unsigned-worker-execution-core.ts` accepts only canonical active RPC v2 requests and injected `OFFLINE_TEST_DOUBLE` orchestration ports, rechecks request integrity between every phase, fixes typecheck/test/corpus/review order, scans original report strings before JSON escaping, and returns only a deeply frozen `UNVERIFIED_INJECTED_BACKEND` candidate with `liveClaim`, `passSigningEligible`, and `externalSettlementEligible` all false. It is not exported from the package root and does not import the live SDK constructor, worker entrypoint, Docker, signer, finalized evidence, credentials, or settlement path.
+- Focused evidence: `node --test tests/unit/unsigned-worker-execution-core.test.mjs` passes 7/7; the suite rejects v1, hash/binding/time-window/request mutation, live-shaped or authority-extended ports, credential-shaped metadata, command-error leakage, and JSON-escaped Windows private paths, and proves the candidate cannot parse as a v2 response.
+- Broad evidence before commit: `pnpm lint`, `pnpm typecheck`, 381/381 unit, 61/61 integration, 22/22 eval, 3/3 production Chrome E2E, production build, static container, 432-file clean-copy replay, and 432-file/401-text-file security/history checks pass. The authoritative `pnpm verify` reaches every implemented gate and remains nonzero only for the owner-selected `LICENSE`; its release receipt also correctly refuses issuance while tracked contents differ from the Git index before this checkpoint commit.
+- Review: three bounded read-only reviews mapped the execution seam and test gaps, then audited the implementation twice after hardening. Findings for whole-report secret metadata, unverified provenance, mutable injected port references, and JSON-escaped Windows paths were fixed; the final whole-diff review reports no remaining code/authority P0/P1, confirms worker/egress build hashes `f1d4caca174fc51bd4122912e5407a81a04261f36cf15e68b3496df5fc01c588` / `8b935d5b16fc1b84036ed119073c5f4e309bdcc77c6a5c2a2219d744480b03da`, and identifies only this previously stale progress record.
+- Scope: no model call, container execution, registry request, new credential use, publication, deployment, upload, license selection, or challenge-account action occurred. A clean-index verification and checkpoint/ledger commits remain before this slice is complete.
+
+## Previous checkpoint - Standalone web container hardening
 
 ### Objective
 

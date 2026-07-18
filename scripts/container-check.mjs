@@ -311,6 +311,13 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.workerContainer?.liveRpcProtocolPrepared !== "policytwin.codex.repair.v2" ||
     contract.workerContainer?.liveRpcV2Status !== "CONTRACT_ONLY_NO_LINUX_CONTROLLER" ||
     contract.workerContainer?.liveRpcV2PassSigningEnabled !== false ||
+    contract.workerContainer?.unsignedV2ExecutionCoreImplemented !== true ||
+    contract.workerContainer?.unsignedV2ExecutionCoreStatus !==
+      "UNVERIFIED_INJECTED_BACKEND_NON_ADMISSIBLE" ||
+    contract.workerContainer?.unsignedV2ExecutionCoreRootExported !== false ||
+    contract.workerContainer?.unsignedV2ExecutionCorePassSigningEligible !== false ||
+    contract.workerContainer?.unsignedV2ExecutionCoreExternalSettlementEligible !== false ||
+    contract.workerContainer?.unsignedV2ExecutionCoreEntrypointConnected !== false ||
     contract.workerContainer?.liveCpuEvidenceProducerStateMachineImplemented !== true ||
     contract.workerContainer?.liveCpuEvidenceProducerCandidateStatus !==
       "UNSIGNED_CPU_EVIDENCE_V2_CANDIDATE" ||
