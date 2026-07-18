@@ -102,6 +102,7 @@ pnpm typecheck
 pnpm test
 pnpm test:integration
 pnpm test:e2e
+pnpm exec playwright test --config=playwright.screenshots.config.ts
 pnpm eval
 pnpm build
 pnpm schema:check
@@ -118,6 +119,8 @@ pnpm worker:verify
 pnpm egress:verify
 pnpm submission:check
 ```
+
+Normal `pnpm test:e2e` and `pnpm verify` capture all seven browser views under ignored `.tmp/playwright-screenshots/`, so verification never rewrites Git-managed release assets. Run `pnpm exec playwright test --config=playwright.screenshots.config.ts` only when intentionally refreshing `artifacts/screenshots/`; inspect every resulting image before committing it.
 
 The account-dependent final checker first runs `pnpm verify` itself in the same non-recursive release-check process. It then fixes exact submission, demo, screenshot, and 38-file evidence sets; state-specific owner action or content-bound confirmation evidence; complete SRT cues synchronized to the local video with bounded start, gap, cue count, and timeline coverage; a 48-hour, exact-three-source official-rules window; evidence-backed metrics across every final text including README; distinct decoded non-uniform PNG captures at reviewable dimensions; and a non-fragmented two-to-three-minute audio/video MP4 that installed Chrome can demux, decode, expose as an audio-bearing stream, sample at three timeline points, visually distinguish, and seek at the tail. It independently re-runs semantic evidence and trusted Ed25519-attestation validation; an environment key is admitted only when its key ID and SPKI SHA-256 match the reviewed fixed release policy in `config/attestation-trust.v1.json`. The submitted live URL must equal the validated deployment/browser evidence URL and return an anonymous HTTPS 2xx response at the declared origin. The live probe rejects credentials, non-default ports, fragments, redirects, and any literal or resolved non-public address; it pins one already-validated address while preserving the declared hostname for TLS and `Host`. The GitHub or GitLab repository must expose anonymous `HEAD` through `git ls-remote` from a fresh non-repository directory with system/global configuration, credential helpers, and prompts disabled. These two probes are external network actions, run only when final URLs are present, and are skipped when the same invocation's offline gate fails. The checker also requires a fresh owner-reviewed YouTube publication receipt and binds the exact ordered offline verification results plus evidence/clean/security hashes to Git-managed release-input bytes, index object IDs, tracked state, index mode, and working mode with zero untracked files and exact raw-byte index/worktree equality. Unsafe assume-unchanged, skip-worktree, fsmonitor-clean, symlink, and external clean-filter shortcuts are rejected. That fingerprint is explicitly scoped to exclude the mutable `PROGRESS.md` ledger and its two self-reports; all three excluded paths must themselves remain tracked, and their hashes or semantics are checked separately where applicable. Every recognized numeric claim is compared with current evidence even when phrased as a future target. It does not discover or execute a system `ffmpeg` or `ffprobe`.
 

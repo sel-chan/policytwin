@@ -16,6 +16,8 @@ pnpm container:check
 pnpm verify
 ```
 
+Normal E2E verification writes review copies only under ignored `.tmp/playwright-screenshots/`. To intentionally refresh the seven tracked submission captures, run `pnpm exec playwright test --config=playwright.screenshots.config.ts`, inspect every image, and commit the reviewed bytes. Do not run the refresh configuration as an incidental verification step.
+
 Expected current behavior:
 
 - `demo:run` reports D01, D02, and D03 as drift;
@@ -25,6 +27,7 @@ Expected current behavior:
 - `container:check` validates the daemon-free split images, lifecycle-v3/Docker-v3 ownership contract, native-helper artifact contract, ID-only supervisor driver, and separate TLS-only gate while confirming every live/dynamic flag remains false;
 - after resolving the three seeded decisions to v4, Integration can create a session-bound run record. In the current environment it must display `BLOCKED`, `NOT_STARTED`, two persisted events, and “No model or Codex call occurred”; reload and SSE cursor replay must preserve that result;
 - `verify` executes local Chrome E2E and all other implemented offline gates, while the owner-selected license and non-final submission package still fail. Dynamic container health remains a separate release gate.
+- normal `verify` and `test:e2e` never rewrite `artifacts/screenshots/`; only the explicit refresh configuration may update those reviewed release inputs.
 
 ## Future dynamic container verification
 

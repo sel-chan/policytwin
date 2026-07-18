@@ -972,3 +972,20 @@ Add new entries below this line with the template above.
 - Risks: Pattern scanning is defense in depth, not secret classification. Any future semantic RPC field must be included in the scanned projection, while any new opaque cryptographic field must remain outside it and receive an explicit format/binding check.
 - Reversal or migration path: Replace pattern scanning with a typed taint/redaction system only if it preserves the same pre-transport and post-parse guarantees. Never return to unbounded whole-envelope regex scanning or unscanned semantic payloads.
 - Related files/commits: `README.md`, `docs/threat-model.md`, `PROGRESS.md`.
+
+### D-057 — Separate verification screenshots from intentional release-asset refresh
+
+- Date: 2026-07-18
+- Status: `ACCEPTED`
+- Milestone: M8/M9/M10
+- Context: The production E2E suite wrote directly into tracked `artifacts/screenshots/`. A blocked repair record contains a real update time, and Chrome can also produce small reviewed-image byte changes, so rerunning `pnpm verify` on a clean commit changed Git-managed release inputs before the offline receipt was issued. That made the same-run index/worktree equality gate impossible even though the browser assertions passed.
+- Options considered:
+  1. exclude screenshots from the release fingerprint;
+  2. stop capturing screenshots during E2E;
+  3. keep every capture but route normal verification to ignored temporary review files and require an explicit configuration to refresh tracked release assets.
+- Decision: Use option 3. Default `pnpm test:e2e` and `pnpm verify` capture all seven views under `.tmp/playwright-screenshots/`. The closed Playwright metadata admits only that path or `artifacts/screenshots/`. The separate `playwright.screenshots.config.ts` selects the tracked directory and is invoked explicitly with `pnpm exec playwright test --config=playwright.screenshots.config.ts`. The strict submission checker continues to validate the tracked PNG allowlist, dimensions, profile, visual range, and distinctness; screenshots remain inside the release-tree fingerprint.
+- Evidence: `playwright.config.ts`, `playwright.screenshots.config.ts`, `tests/e2e/workspace.spec.ts`, `tests/unit/e2e-server-lifecycle.test.mjs`, and a clean-tree E2E run that leaves tracked screenshot hashes unchanged.
+- Consequences: Browser verification still produces inspectable screenshots on every run, while a same-run offline receipt can prove exact index/worktree equality. Updating judge-facing captures becomes an intentional review-and-commit action rather than a verification side effect.
+- Risks: Tracked screenshots can become stale if the explicit refresh is skipped after a UI change. Final publication therefore requires running the refresh configuration, directly reviewing every image, committing the bytes, and rerunning the clean-tree gate.
+- Reversal or migration path: Adopt a byte-deterministic renderer only if it can preserve the same explicit review and release binding. Never exclude screenshots from the release fingerprint or let ordinary verification mutate tracked release inputs.
+- Related files/commits: `README.md`, `SUBMISSION.md`, `docs/demo-runbook.md`, `PROGRESS.md`.

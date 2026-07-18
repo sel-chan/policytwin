@@ -1,10 +1,21 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type TestInfo } from "@playwright/test";
 import { Buffer } from "node:buffer";
 import { mkdir, readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { resolve } from "node:path";
 
-const screenshotDirectory = resolve(process.cwd(), "artifacts", "screenshots");
+const admittedScreenshotDirectories = new Set([
+  ".tmp/playwright-screenshots",
+  "artifacts/screenshots",
+]);
+
+function screenshotDirectoryFor(testInfo: TestInfo): string {
+  const configured = testInfo.config.metadata.policyTwinScreenshotDirectory;
+  if (typeof configured !== "string" || !admittedScreenshotDirectories.has(configured)) {
+    throw new Error("Playwright screenshot output directory is not admitted.");
+  }
+  return resolve(process.cwd(), configured);
+}
 
 function tarEntryNames(bytes: Buffer): string[] {
   const names: string[] = [];
@@ -25,15 +36,13 @@ function tarEntryNames(bytes: Buffer): string[] {
   throw new Error("Downloaded USTAR archive has no termination blocks.");
 }
 
-test.beforeAll(async () => {
-  await mkdir(screenshotDirectory, { recursive: true });
-});
-
 test("persisted decisions, evidence views, and blocked change impact remain truthful", async ({
   browser,
   page,
   request,
-}) => {
+}, testInfo) => {
+  const screenshotDirectory = screenshotDirectoryFor(testInfo);
+  await mkdir(screenshotDirectory, { recursive: true });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Policy Studio" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Policy Studio/u })).toHaveAttribute(
@@ -416,7 +425,9 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   }
 });
 
-test("keyboard focus and mobile layout remain usable", async ({ page }) => {
+test("keyboard focus and mobile layout remain usable", async ({ page }, testInfo) => {
+  const screenshotDirectory = screenshotDirectoryFor(testInfo);
+  await mkdir(screenshotDirectory, { recursive: true });
   await page.goto("/");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "PolicyTwin home" })).toBeFocused();

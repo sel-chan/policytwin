@@ -10,9 +10,11 @@ import {
 } from "../../scripts/e2e-lifecycle.mjs";
 
 test("E2E server keeps Next standalone in the Playwright-owned process", async () => {
-  const [source, config, teardown] = await Promise.all([
+  const [source, config, screenshotConfig, workspaceSpec, teardown] = await Promise.all([
     readFile(resolve("scripts", "e2e-server.mjs"), "utf8"),
     readFile(resolve("playwright.config.ts"), "utf8"),
+    readFile(resolve("playwright.screenshots.config.ts"), "utf8"),
+    readFile(resolve("tests", "e2e", "workspace.spec.ts"), "utf8"),
     readFile(resolve("scripts", "e2e-global-teardown.mjs"), "utf8"),
   ]);
 
@@ -26,6 +28,19 @@ test("E2E server keeps Next standalone in the Playwright-owned process", async (
   assert.match(source, /startE2eShutdownWatcher\(\)/u);
   assert.match(config, /globalTeardown: "\.\/scripts\/e2e-global-teardown\.mjs"/u);
   assert.match(config, /POLICYTWIN_E2E_SHUTDOWN_PATH/u);
+  assert.match(
+    config,
+    /policyTwinScreenshotDirectory: "\.tmp\/playwright-screenshots"/u,
+  );
+  assert.match(
+    screenshotConfig,
+    /policyTwinScreenshotDirectory: "artifacts\/screenshots"/u,
+  );
+  assert.match(workspaceSpec, /testInfo\.config\.metadata\.policyTwinScreenshotDirectory/u);
+  assert.doesNotMatch(
+    workspaceSpec,
+    /const screenshotDirectory = resolve\(process\.cwd\(\), "artifacts", "screenshots"\)/u,
+  );
   assert.match(teardown, /requestE2eShutdown\(\)/u);
 });
 

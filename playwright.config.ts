@@ -14,6 +14,9 @@ process.env.POLICYTWIN_E2E_HEALTH_URL = e2eHealthUrl;
 export default defineConfig({
   testDir: "./tests/e2e",
   outputDir: ".tmp/playwright-results",
+  metadata: {
+    policyTwinScreenshotDirectory: ".tmp/playwright-screenshots",
+  },
   fullyParallel: false,
   workers: 1,
   retries: 0,
