@@ -41,6 +41,7 @@ const suites = {
     "tests/unit/worker-os-lifecycle.test.mjs",
     "tests/unit/supervisor-docker-driver.test.mjs",
     "tests/unit/pinned-docker-cli.test.mjs",
+    "tests/unit/web-container-verify.test.mjs",
     "tests/unit/live-gate-contract.test.mjs",
     "tests/unit/worker-sdk-runtime.test.mjs",
     "tests/unit/openai-egress-contract.test.mjs",

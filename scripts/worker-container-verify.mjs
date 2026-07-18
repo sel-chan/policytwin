@@ -359,6 +359,7 @@ async function main() {
     dockerServerVersion: null,
     canonicalDockerCliVerified: false,
     platformLocalDaemonSelected: false,
+    dockerCliSha256: null,
     nodeBaseImagePresent: false,
     workerImageBuilt: false,
     workerImageId: null,
@@ -423,9 +424,11 @@ async function main() {
     pinnedDocker = createPinnedDockerSync({
       repositoryRoot: ROOT,
       dockerExecutablePath: process.env.POLICYTWIN_DOCKER_CLI,
+      dockerExecutableSha256: contract.supervisorDockerExecutor?.dockerCliSha256,
     });
     facts.canonicalDockerCliVerified = true;
     facts.platformLocalDaemonSelected = true;
+    facts.dockerCliSha256 = contract.supervisorDockerExecutor.dockerCliSha256;
     dockerInvoked = true;
     facts.dockerServerVersion = docker(["info", "--format", "{{.ServerVersion}}"], 10_000)
       .stdout.trim();

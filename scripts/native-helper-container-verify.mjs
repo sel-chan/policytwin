@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,11 +9,7 @@ import {
   inspectNativeHelperBinary,
   inspectNativeHelperPrerequisites,
 } from "./native-helper-contract.mjs";
-import {
-  assertDynamicDockerArguments,
-  createPinnedDockerSync,
-  exactDockerEnvironment,
-} from "./pinned-docker-cli.mjs";
+import { createPinnedDockerSync } from "./pinned-docker-cli.mjs";
 import { ROOT } from "./process.mjs";
 
 function parseOctal(field, label) {
@@ -58,23 +53,9 @@ export function extractNativeHelperTar(value) {
   return helper;
 }
 
-function binaryDockerCopy(dockerExecutablePath, containerId) {
+function binaryDockerCopy(docker, containerId) {
   const args = ["cp", `${containerId}:${NATIVE_HELPER_IMAGE_PATH}`, "-"];
-  assertDynamicDockerArguments(args);
-  // Security-reviewed artifact-only boundary: createPinnedDockerSync already validated the
-  // canonical local CLI, and this fixed binary-output call uses the same closed environment.
-  const result = spawnSync(dockerExecutablePath, args, {
-    cwd: ROOT,
-    env: exactDockerEnvironment(process.env),
-    encoding: null,
-    timeout: 60_000,
-    maxBuffer: 8 * 1024 * 1024,
-    shell: false,
-    windowsHide: true,
-  });
-  if (result.error !== undefined || result.status !== 0) {
-    throw new Error("Docker helper artifact extraction failed.");
-  }
+  const result = docker.binary(args, 60_000);
   return extractNativeHelperTar(result.stdout);
 }
 
@@ -114,6 +95,7 @@ function main() {
       docker = createPinnedDockerSync({
         repositoryRoot: ROOT,
         dockerExecutablePath: process.env.POLICYTWIN_DOCKER_CLI,
+        dockerExecutableSha256: contract.supervisorDockerExecutor?.dockerCliSha256,
       });
       report.dockerInvoked = true;
       report.dockerServerVersion = docker(
@@ -165,7 +147,7 @@ function main() {
       if (!/^[0-9a-f]{64}$/u.test(containerId)) {
         throw new Error("Native helper extraction container ID is invalid.");
       }
-      const binary = binaryDockerCopy(process.env.POLICYTWIN_DOCKER_CLI, containerId);
+      const binary = binaryDockerCopy(docker, containerId);
       const elf = inspectNativeHelperBinary(binary);
       report.binarySha256 = elf.sha256;
       report.binaryMode = "0555";

@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9/M10 — offline completion gaps hardened`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-18 18:20 +09:00`
-- Latest checkpoint commit: `397f935ea80328de111d1eca445eda01dbf703ec`
+- Last updated: `2026-07-18 18:33 +09:00`
+- Latest checkpoint commit: `9f0c91a957fba7aeec399ea393b3999152780b20`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -67,7 +67,7 @@ Replace placeholders after checking current official sources.
 - Repository visibility requirement: `public with relevant licensing, or private and shared with testing@devpost.com and build-week-event@openai.com`
 - Demo video constraints: `public YouTube, less than 3 minutes, clear audio, show the project and use of Codex/GPT-5.6, no unlicensed third-party marks/music/material`
 - Required submission fields: `category; description; demo video; repository; README Codex collaboration narrative; /feedback session ID; developer-tool installation/platform/testing path; working access and testing instructions`
-- Rules checked at: `2026-07-17 13:01:15 +09:00`
+- Rules checked at: `2026-07-18 18:37:46 +09:00`
 - Source links: `https://openai.com/build-week/`; `https://openai.devpost.com/`; `https://openai.devpost.com/rules`
 
 ## Baseline
@@ -95,10 +95,38 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, and a session-bound SQLite repair-run/event ledger with CSRF/idempotency/SSE/fail-stop UI pass offline contracts | `447f077` | the product execution port deliberately remains unavailable; no immutable helper artifact has run on Linux Docker/cgroup v2, finalized-result issuer/v2 PASS signer is enabled, or fresh SDK repair, zero live post-repair drift, live review, and signed live evidence exist |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 365 unit, 61 integration, 22 eval, static container, 428-file/397-text security, and 428-file clean-copy gates | `54d2aed` | shared public admission/rate limiting, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, reviewed-CLI hash gate, owned standalone web lifecycle, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 374 unit, 61 integration, 22 eval, static container, 430-file/399-text security, and 430-file clean-copy gates | pending | shared public admission/rate limiting, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; isolated fail-closed draft and strict final gates are separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed; same-run verification and the strict final gate expose 42 unmet requirements | `54d2aed` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
+
+### Objective
+
+Resume from the clean guarded-repair checkpoint and perform a requirement-by-requirement completion audit against the current repository rather than the previous handoff summary. Select and complete the highest-value remaining source, verification, or release slice that can be finished without unapproved registry traffic, unavailable model credentials, an ineligible cgroup-v1 supervisor, owner license acceptance, publication, deployment, upload, or challenge-account action.
+
+### Starting condition
+
+Starting HEAD is clean `main` at `9f0c91a957fba7aeec399ea393b3999152780b20`. Node v22.22.2, pnpm 11.9.0, Git 2.49.0, Codex CLI 0.144.0, and Docker 29.1.5 are reachable. Docker still reports `cgroupfs` and cgroup v1. `OPENAI_API_KEY`, `CODEX_MODEL`, `POLICYTWIN_NODE_IMAGE`, `POLICYTWIN_HELPER_BUILDER_IMAGE`, `POLICYTWIN_HELPER_IMAGE`, and `POLICYTWIN_LIVE_SIGNING_KEY` are unset. The active goal remains full completion; no completion claim is inferred from the prior offline checkpoint.
+
+### Planned actions
+
+- [x] Re-read `AGENTS.md`, `PLAN.md`, `PROGRESS.md`, `DECISIONS.md`, and `SUBMISSION.md` completely; recheck the clean Git state, active goal, root scripts, tool versions, Docker eligibility, and credential/configuration names.
+- [x] Independently audit M7 live execution, M9 runtime/deployment, and M10 release/submission requirements against current source and artifacts; identify evidence that is complete, contradicted, weak, or missing.
+- [x] Reproduce the next selected missing condition and implement one coherent, non-weakened slice that materially advances the full completion definition.
+- [x] Run focused tests followed by every applicable root gate, inspect generated artifacts directly, and obtain a final read-only diff/security/truth review.
+- [ ] Update control documents and evidence, commit on `main`, and leave the worktree clean with exact remaining blockers and one concrete unblock action if owner input is genuinely required.
+
+This continuation must not perform a Docker registry manifest/blob request, model call, push/publication, deployment, media upload, terms acceptance, license selection, or challenge submission without the separately required authority and credentials.
+
+### Checkpoint evidence in progress
+
+- Audit: independent read-only M7, M9, and M10 reviews confirmed that the live executor/finalized evidence, eligible Linux cgroup-v2 runtime, immutable image inputs, owner license, deployment/media/account actions, and submission confirmation remain real blockers. M10 has no additional independent offline feature beyond refreshing the current rule-bound drafts. The highest-value bounded M9 defect was the standalone web verifier's inherited `PATH`/daemon routing, `--pull`, name-based authority, ambiguous side-effect tracking, and missing restart/swap/file/log observations.
+- Reproduction: the new stateful fake-Docker test initially failed because no web resource-owner module existed. The prior `scripts/container-verify.mjs` directly called `spawnSync("docker", ...)`, passed `--pull`, used `run --rm`, and removed image/container names without independently binding returned identities.
+- Implementation: schema-v15 now records the web gate's canonical local CLI, reviewed executable-hash requirement, no-base-pull, nonce-bound ownership, `restart=no`, zero-restart, PID, equal memory/swap, CPU, file-size, and local-log contract. The shared pinned runner hashes the non-link executable at construction and again before every invocation; all dynamic callers consume the single reviewed contract hash, which remains null until the release-host binary is reviewed. Its frozen binary-output method admits only one canonical owned-container copy and the native-helper extractor no longer calls `spawnSync` or rereads the environment path. `scripts/web-container-runtime.mjs` owns unique labeled image/volume/four-role resources, treats ambiguous side effects as cleanup-only, verifies role-specific root/CHOWN and node resource facts before start, operates on observed IDs where available, and proves final absence. `scripts/container-verify.mjs` is import-safe, uses `POLICYTWIN_DOCKER_CLI`, creates explicit setup/probe/first/second roles, and keeps its refreshed report fail-closed at the unset immutable base before any Docker invocation.
+- Verification: lint and typecheck pass; the final unit suite passes 374/374; integration passes 61/61; eval passes 22/22; production Chrome passes 3/3; production build, static container contract, current isolated submission draft, and demo gates pass. The latest 430-file clean copy passes all 15 replay commands, and the offline security/history scan passes 430 files/399 text files with no finding. `license:check` exits 1 only for `OWNER_DECISION_REQUIRED`; helper/web/worker/egress dynamic gates all exit 1 before Docker at unset immutable identities, while `verify:live` exits before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`. The web report records every Docker/identity/runtime fact false or null, including the unprovisioned reviewed CLI hash. The rules timestamp change initially produced one truthful draft-freshness failure; regenerating only the isolated draft fixed it. Three rounds of independent read-only review found and then verified fixes for role-mismatched volume inspection, arbitrary Docker executable trust, and the native-helper binary-copy bypass; the final review reports no P0/P1. Clean-tree authoritative verification remains after the checkpoint commit.
+- Network/account truth: the three approved official challenge pages were fetched at `2026-07-18 18:37:46 +09:00` with no rule change. No registry request, model call, push/publication, deployment, upload, terms acceptance, license selection, or challenge action occurred.
+
+## Previous checkpoint - Guarded repair-run orchestration
 
 ### Objective
 
@@ -775,7 +803,7 @@ A blocker is valid only when the task cannot continue safely without external in
 
 | ID | Type | Exact blocker | Work already completed | One owner action | Resume condition |
 |---|---|---|---|---|---|
-| B-001 | External network permission | Immutable Node/helper-builder identities remain unset and the recorded approval does not include Docker registry manifest/blob pulls. Local images do not satisfy the contract. | Docker 29.1.5 was started without a pull; all four dynamic commands fail before workload execution at the unset immutable identities. Static build-input and helper-source identities are pinned. | Explicitly approve linux/amd64 manifest lookup and digest-blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only. | That exact scope is granted; helper artifact and web/image identity work may proceed without implying worker cgroup proof. |
+| B-001 | External network permission | Immutable Node/helper-builder identities remain unset and the recorded approval does not include Docker registry manifest/blob pulls. Local images do not satisfy the contract. `--pull=false` prevents a base pull, but a cold Dockerfile build also requires Corepack pnpm 11.7.0, lock-pinned npm packages, and the official OPA 1.18.2 binary/checksum through the already approved package/OPA scope. | Docker 29.1.5 was started without a pull; all four dynamic commands fail before workload execution at the unset immutable identities. Static build-input and helper-source identities are pinned, and every dynamic gate now also requires the release-host Docker CLI to match a reviewed contract hash before invocation. | Explicitly approve linux/amd64 manifest lookup and digest-pinned blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only; no image push, deployment, model call, repository publication, or other external action. | That exact registry scope is granted; the reviewed package/OPA scope remains available; Codex can review and pin the exact release-host Docker CLI bytes, then helper artifact and web/image identity work may proceed without implying worker cgroup proof. |
 | B-002 | Execution environment | A manual local Docker diagnostic reports `cgroupfs` and cgroup v1, while worker/egress proof requires a Linux supervisor in the same local cgroup-v2 namespace as the observed Docker PIDs. | The manual observation is recorded only as environment context, not a machine evidence artifact; an early Linux/cgroup-v2 supervisor preflight now runs after immutable prerequisite admission and before builds, while exact per-container observations remain mandatory. | Provide or enable an eligible local Linux cgroup-v2 Docker supervisor for the dynamic worker/egress run. | The supervisor preflight passes and Docker-ID-bound cgroup observation is possible; Docker `info` text alone is not sufficient. |
 
 ## Risks
@@ -801,7 +829,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`First, explicitly approve linux/amd64 manifest lookup and digest-blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only. This can unblock helper/web/image identity work; worker/egress execution still requires the separate measured cgroup-v2 supervisor condition before finalization, PASS, or live admission.`
+`First, explicitly approve linux/amd64 manifest lookup and digest-pinned blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only. The already approved pinned package/OPA scope covers cold-build pnpm 11.7.0, lockfile packages, and OPA 1.18.2; image push, deployment, model calls, publication, and other external actions remain excluded. This can unblock helper/web/image identity work, while worker/egress execution still requires the separate measured cgroup-v2 supervisor condition before finalization, PASS, or live admission.`
 
 ## Pause handoff
 

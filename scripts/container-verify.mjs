@@ -1,128 +1,116 @@
-import { spawnSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createPinnedDockerSync } from "./pinned-docker-cli.mjs";
 import { ROOT } from "./process.mjs";
+import {
+  WEB_CONTAINER_MEMORY_BYTES,
+  WEB_CONTAINER_OUTPUT_BYTES,
+  WEB_CONTAINER_PIDS,
+  assertWebContainerRuntimeObservation,
+  createWebContainerResourceOwner,
+  inspectWebContainerPrerequisites,
+} from "./web-container-runtime.mjs";
 
-const contract = JSON.parse(
-  readFileSync(resolve(ROOT, "container-contract.json"), "utf8"),
-);
-const suffix = randomUUID().replaceAll("-", "").slice(0, 16);
-const imageTag = `policytwin-verify:${suffix}`;
-const containerName = `policytwin-verify-${suffix}`;
-const volumeName = `policytwin-verify-data-${suffix}`;
-const failures = [];
-const facts = {
-  dockerServerVersion: null,
-  imageId: null,
-  baseImage: null,
-  opaVersion: null,
-  opaSha256: null,
-  runtimeUid: null,
-  readOnlyRoot: false,
-  healthStatus: null,
-  healthResponse: null,
-  persistentVolume: false,
-  sqliteStatePersisted: false,
-  volumeOwnerUid: null,
-};
-let cleanupStarted = false;
-let imageCreated = false;
-let volumeCreated = false;
-let containerCreated = false;
-
-function docker(args, timeoutMs = 60_000, allowFailure = false) {
-  const result = spawnSync("docker", args, {
-    cwd: ROOT,
-    encoding: "utf8",
-    timeout: timeoutMs,
-    maxBuffer: 16 * 1024 * 1024,
-    windowsHide: true,
-  });
-  if (!allowFailure && (result.error !== undefined || result.status !== 0)) {
-    throw new Error(`docker ${args[0] ?? "command"} failed with exit code ${result.status ?? 1}.`);
-  }
-  return result;
-}
-
-function startContainer() {
-  docker(
-    [
-      "run",
-      "--detach",
-      "--name",
-      containerName,
-      "--read-only",
-      "--tmpfs",
-      "/tmp:rw,noexec,nosuid,size=67108864",
-      "--mount",
-      `type=volume,source=${volumeName},target=/data`,
-      "--cap-drop",
-      "ALL",
-      "--security-opt",
-      "no-new-privileges:true",
-      "--pids-limit",
-      "64",
-      "--memory",
-      "1g",
-      "--cpus",
-      "1",
-      "--env",
-      "HOME=/tmp",
-      "--env",
-      "POLICYTWIN_PUBLIC_ORIGIN=https://policytwin.invalid",
-      "--publish",
-      "127.0.0.1::3000",
-      imageTag,
-    ],
-    60_000,
-  );
-  containerCreated = true;
-}
-
-function initializeVolume() {
-  docker([
-    "run",
-    "--rm",
-    "--user",
-    "0:0",
+function boundedRuntimeArguments() {
+  return [
     "--read-only",
     "--cap-drop",
     "ALL",
-    "--cap-add",
-    "CHOWN",
     "--security-opt",
     "no-new-privileges:true",
+    "--pids-limit",
+    String(WEB_CONTAINER_PIDS),
+    "--memory",
+    String(WEB_CONTAINER_MEMORY_BYTES),
+    "--memory-swap",
+    String(WEB_CONTAINER_MEMORY_BYTES),
+    "--cpus",
+    "1",
+    "--ulimit",
+    `fsize=${WEB_CONTAINER_OUTPUT_BYTES}:${WEB_CONTAINER_OUTPUT_BYTES}`,
+    "--log-driver",
+    "local",
+    "--log-opt",
+    `max-size=${WEB_CONTAINER_OUTPUT_BYTES}`,
+    "--log-opt",
+    "max-file=1",
+  ];
+}
+
+export function webRuntimeArguments(owner) {
+  return [
+    "--user",
+    "node",
+    ...boundedRuntimeArguments(),
+    "--tmpfs",
+    "/tmp:rw,noexec,nosuid,size=67108864",
     "--mount",
-    `type=volume,source=${volumeName},target=/data`,
+    `type=volume,source=${owner.identity.volumeName},target=/data`,
+    "--env",
+    "HOME=/tmp",
+    "--env",
+    "POLICYTWIN_PUBLIC_ORIGIN=https://policytwin.invalid",
+    "--publish",
+    "127.0.0.1::3000",
+    owner.identity.imageTag,
+  ];
+}
+
+export function initializeVolume(owner, facts) {
+  owner.createContainer("volume-init", [
+    "--user",
+    "0:0",
+    ...boundedRuntimeArguments(),
+    "--cap-add",
+    "CHOWN",
+    "--mount",
+    `type=volume,source=${owner.identity.volumeName},target=/data`,
     "--entrypoint",
     "chown",
-    imageTag,
+    owner.identity.imageTag,
     "node:node",
     "/data",
   ]);
-  facts.volumeOwnerUid = docker([
-    "run",
-    "--rm",
+  owner.startContainer("volume-init", false);
+  if (owner.waitContainer("volume-init") !== 0) {
+    throw new Error("Web verification volume initialization failed.");
+  }
+  assertWebContainerRuntimeObservation(
+    owner.observeContainer("volume-init", false),
+    "volume-init",
+  );
+  owner.removeContainer("volume-init");
+
+  owner.createContainer("volume-probe", [
     "--user",
     "node",
-    "--read-only",
-    "--cap-drop",
-    "ALL",
-    "--security-opt",
-    "no-new-privileges:true",
+    ...boundedRuntimeArguments(),
     "--mount",
-    `type=volume,source=${volumeName},target=/data`,
+    `type=volume,source=${owner.identity.volumeName},target=/data`,
     "--entrypoint",
     "node",
-    imageTag,
+    owner.identity.imageTag,
     "-e",
     "process.stdout.write(String(require('node:fs').statSync('/data').uid))",
-  ]).stdout.trim();
+  ]);
+  owner.startContainer("volume-probe", false);
+  if (owner.waitContainer("volume-probe") !== 0) {
+    throw new Error("Web verification volume ownership probe failed.");
+  }
+  assertWebContainerRuntimeObservation(
+    owner.observeContainer("volume-probe", false),
+    "volume-probe",
+  );
+  facts.volumeOwnerUid = owner.logsContainer("volume-probe").trim();
+  owner.removeContainer("volume-probe");
+  facts.initializationResourceLimitsVerified = true;
 }
 
-async function waitForHealth() {
-  const portResult = docker(["port", containerName, "3000/tcp"]);
+async function waitForHealth(docker, owner, role) {
+  const containerId = owner.containerId(role);
+  const portResult = docker(["port", containerId, "3000/tcp"]);
   const match = /127\.0\.0\.1:(\d+)/u.exec(portResult.stdout);
   if (match === null) throw new Error("Docker did not publish the health port on loopback.");
   const url = `http://127.0.0.1:${match[1]}/api/health`;
@@ -138,16 +126,15 @@ async function waitForHealth() {
         body.service === "policytwin" &&
         body.schemaVersion === "1"
       ) {
-        const health = docker([
-          "inspect",
-          "--format",
-          "{{.State.Health.Status}}",
-          containerName,
-        ]).stdout.trim();
+        const observation = assertWebContainerRuntimeObservation(
+          owner.observeContainer(role, true),
+          role,
+        );
+        const health = observation?.State?.Health?.Status;
         if (health !== "healthy") {
           lastError = `Docker health status is ${health || "unset"}`;
         } else {
-          return { body, health, url };
+          return { body, health, observation, url };
         }
       } else {
         lastError = "health endpoint returned an unexpected body";
@@ -158,68 +145,6 @@ async function waitForHealth() {
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
   }
   throw new Error(`Container health timed out: ${lastError}.`);
-}
-
-function removeContainerForRestart() {
-  if (!containerCreated) return;
-  const result = docker(["rm", "--force", containerName], 30_000, true);
-  if (result.error !== undefined || result.status !== 0) {
-    throw new Error(`docker container cleanup failed with exit code ${result.status ?? 1}.`);
-  }
-  containerCreated = false;
-}
-
-function cleanup() {
-  if (cleanupStarted) return [];
-  cleanupStarted = true;
-  const cleanupFailures = [];
-  for (const resource of [
-    {
-      created: containerCreated,
-      label: "container",
-      args: ["rm", "--force", containerName],
-      timeoutMs: 30_000,
-      cleared: () => { containerCreated = false; },
-    },
-    {
-      created: volumeCreated,
-      label: "volume",
-      args: ["volume", "rm", "--force", volumeName],
-      timeoutMs: 30_000,
-      cleared: () => { volumeCreated = false; },
-    },
-    {
-      created: imageCreated,
-      label: "image",
-      args: ["image", "rm", "--force", imageTag],
-      timeoutMs: 60_000,
-      cleared: () => { imageCreated = false; },
-    },
-  ]) {
-    if (!resource.created) continue;
-    const result = docker(resource.args, resource.timeoutMs, true);
-    if (result.error !== undefined || result.status !== 0) {
-      cleanupFailures.push(
-        `Docker ${resource.label} cleanup failed with exit code ${result.status ?? 1}.`,
-      );
-    } else {
-      resource.cleared();
-    }
-  }
-  return cleanupFailures;
-}
-
-for (const [signal, exitCode] of [
-  ["SIGINT", 130],
-  ["SIGTERM", 143],
-]) {
-  process.once(signal, () => {
-    const cleanupFailures = cleanup();
-    if (cleanupFailures.length > 0) {
-      console.error(`Container verification signal cleanup failed: ${cleanupFailures.join(" ")}`);
-    }
-    process.exit(exitCode);
-  });
 }
 
 function cookieHeader(response) {
@@ -307,106 +232,207 @@ async function verifyWorkspaceDecision(baseUrl, session) {
   }
 }
 
-try {
-  if (
-    contract.schemaVersion !== "15" ||
-    typeof contract.nodeBaseImage !== "string" ||
-    !/^node:22\.22\.2-[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$/u.test(
-      contract.nodeBaseImage,
-    )
-  ) {
-    throw new Error("Container verification requires a verified immutable Node 22.22.2 image.");
-  }
-  facts.baseImage = contract.nodeBaseImage;
-  const info = docker(["info", "--format", "{{.ServerVersion}}"], 10_000);
-  facts.dockerServerVersion = info.stdout.trim();
-  docker(
-    [
-      "build",
-      "--pull",
-      "--platform",
-      contract.targetPlatform,
-      "--build-arg",
-      `NODE_BASE_IMAGE=${contract.nodeBaseImage}`,
-      "--tag",
-      imageTag,
-      ".",
-    ],
-    20 * 60_000,
+async function main() {
+  const contract = JSON.parse(
+    readFileSync(resolve(ROOT, "container-contract.json"), "utf8"),
   );
-  imageCreated = true;
-  facts.imageId = docker(["image", "inspect", "--format", "{{.Id}}", imageTag]).stdout.trim();
-  docker(["volume", "create", volumeName]);
-  volumeCreated = true;
-  initializeVolume();
-  startContainer();
-  const firstHealth = await waitForHealth();
-  facts.healthStatus = firstHealth.health;
-  facts.healthResponse = firstHealth.body;
-  facts.readOnlyRoot =
-    docker(["inspect", "--format", "{{.HostConfig.ReadonlyRootfs}}", containerName])
-      .stdout.trim() === "true";
-  facts.runtimeUid = docker([
-    "exec",
-    containerName,
-    "node",
-    "-p",
-    "process.getuid()",
-  ]).stdout.trim();
-  const opaVersion = docker(["exec", containerName, "/usr/local/bin/opa", "version"]).stdout;
-  facts.opaVersion = /^Version:\s*(\S+)/mu.exec(opaVersion)?.[1] ?? null;
-  facts.opaSha256 = docker([
-    "exec",
-    containerName,
-    "node",
-    "-e",
-    "const fs=require('node:fs');const c=require('node:crypto');process.stdout.write(c.createHash('sha256').update(fs.readFileSync('/usr/local/bin/opa')).digest('hex'))",
-  ]).stdout.trim();
-  const persistedSession = await persistWorkspaceDecision(firstHealth.url);
-  removeContainerForRestart();
-  startContainer();
-  const secondHealth = await waitForHealth();
-  await verifyWorkspaceDecision(secondHealth.url, persistedSession);
-  facts.persistentVolume = true;
-  facts.sqliteStatePersisted = true;
-  if (
-    facts.opaVersion !== contract.opaVersion ||
-    facts.opaSha256 !== contract.opaLinuxAmd64StaticSha256 ||
-    facts.runtimeUid === "0" ||
-    facts.volumeOwnerUid === "0" ||
-    facts.volumeOwnerUid !== facts.runtimeUid ||
-    !facts.readOnlyRoot ||
-    !facts.persistentVolume ||
-    !facts.sqliteStatePersisted
-  ) {
-    throw new Error("Container runtime evidence does not satisfy the pinned security contract.");
+  const readiness = inspectWebContainerPrerequisites(contract);
+  const failures = [...readiness.failures];
+  const facts = {
+    dockerServerVersion: null,
+    canonicalDockerCliVerified: false,
+    platformLocalDaemonSelected: false,
+    dockerCliSha256: null,
+    nodeBaseImagePresent: false,
+    imageId: null,
+    baseImage: contract.nodeBaseImage ?? null,
+    resourceIdentityBindingVerified: false,
+    firstContainerId: null,
+    secondContainerId: null,
+    initializationResourceLimitsVerified: false,
+    boundedRuntimeResourcesVerified: false,
+    restartPolicyVerified: false,
+    opaVersion: null,
+    opaSha256: null,
+    runtimeUid: null,
+    readOnlyRoot: false,
+    healthStatus: null,
+    healthResponse: null,
+    persistentVolume: false,
+    sqliteStatePersisted: false,
+    volumeOwnerUid: null,
+    cleanupPassed: false,
+  };
+  let pinnedDocker = null;
+  let owner = null;
+  let cleanupStarted = false;
+
+  function docker(args, timeoutMs = 60_000, allowFailure = false) {
+    if (pinnedDocker === null) throw new Error("The pinned Docker CLI is not initialized.");
+    return pinnedDocker(args, timeoutMs, allowFailure);
   }
-} catch (error) {
-  failures.push(error instanceof Error ? error.message : String(error));
-} finally {
-  failures.push(...cleanup());
+
+  function cleanup() {
+    if (cleanupStarted) return [];
+    cleanupStarted = true;
+    return owner?.cleanup() ?? [];
+  }
+
+  const signalHandlers = new Map();
+  for (const [signal, exitCode] of [
+    ["SIGINT", 130],
+    ["SIGTERM", 143],
+  ]) {
+    const handler = () => {
+      const cleanupFailures = cleanup();
+      if (cleanupFailures.length > 0) {
+        console.error(
+          `Container verification signal cleanup failed: ${cleanupFailures.join(" ")}`,
+        );
+      }
+      process.exit(exitCode);
+    };
+    signalHandlers.set(signal, handler);
+    process.once(signal, handler);
+  }
+
+  try {
+    if (failures.length > 0) {
+      throw new Error("Web container prerequisites are incomplete.");
+    }
+    pinnedDocker = createPinnedDockerSync({
+      repositoryRoot: ROOT,
+      dockerExecutablePath: process.env.POLICYTWIN_DOCKER_CLI,
+      dockerExecutableSha256: contract.supervisorDockerExecutor?.dockerCliSha256,
+    });
+    facts.canonicalDockerCliVerified = true;
+    facts.platformLocalDaemonSelected = true;
+    facts.dockerCliSha256 = contract.supervisorDockerExecutor.dockerCliSha256;
+    owner = createWebContainerResourceOwner({
+      docker,
+      contract,
+      nonce: randomBytes(16).toString("hex"),
+    });
+    owner.preflight();
+    facts.nodeBaseImagePresent = true;
+    facts.dockerServerVersion = docker([
+      "info",
+      "--format",
+      "{{.ServerVersion}}",
+    ], 10_000).stdout.trim();
+    facts.imageId = owner.buildImage();
+    owner.createVolume();
+    initializeVolume(owner, facts);
+
+    facts.firstContainerId = owner.createContainer(
+      "web-first",
+      webRuntimeArguments(owner),
+    );
+    owner.startContainer("web-first");
+    const firstObservation = assertWebContainerRuntimeObservation(
+      owner.observeContainer("web-first", true),
+      "web-first",
+    );
+    const firstHealth = await waitForHealth(docker, owner, "web-first");
+    facts.healthStatus = firstHealth.health;
+    facts.healthResponse = firstHealth.body;
+    facts.readOnlyRoot = firstObservation.HostConfig.ReadonlyRootfs === true;
+    facts.resourceIdentityBindingVerified = true;
+    facts.restartPolicyVerified = true;
+    facts.boundedRuntimeResourcesVerified = true;
+
+    const firstContainerId = owner.containerId("web-first");
+    facts.runtimeUid = docker([
+      "exec",
+      firstContainerId,
+      "node",
+      "-p",
+      "process.getuid()",
+    ]).stdout.trim();
+    const opaVersion = docker([
+      "exec",
+      firstContainerId,
+      "/usr/local/bin/opa",
+      "version",
+    ]).stdout;
+    facts.opaVersion = /^Version:\s*(\S+)/mu.exec(opaVersion)?.[1] ?? null;
+    facts.opaSha256 = docker([
+      "exec",
+      firstContainerId,
+      "node",
+      "-e",
+      "const fs=require('node:fs');const c=require('node:crypto');process.stdout.write(c.createHash('sha256').update(fs.readFileSync('/usr/local/bin/opa')).digest('hex'))",
+    ]).stdout.trim();
+    const persistedSession = await persistWorkspaceDecision(firstHealth.url);
+    owner.removeContainer("web-first");
+
+    facts.secondContainerId = owner.createContainer(
+      "web-second",
+      webRuntimeArguments(owner),
+    );
+    owner.startContainer("web-second");
+    assertWebContainerRuntimeObservation(
+      owner.observeContainer("web-second", true),
+      "web-second",
+    );
+    const secondHealth = await waitForHealth(docker, owner, "web-second");
+    await verifyWorkspaceDecision(secondHealth.url, persistedSession);
+    facts.persistentVolume = true;
+    facts.sqliteStatePersisted = true;
+    if (
+      facts.opaVersion !== contract.opaVersion ||
+      facts.opaSha256 !== contract.opaLinuxAmd64StaticSha256 ||
+      facts.runtimeUid === "0" ||
+      facts.volumeOwnerUid === "0" ||
+      facts.volumeOwnerUid !== facts.runtimeUid ||
+      !facts.readOnlyRoot ||
+      !facts.persistentVolume ||
+      !facts.sqliteStatePersisted ||
+      !facts.resourceIdentityBindingVerified ||
+      !facts.restartPolicyVerified ||
+      !facts.boundedRuntimeResourcesVerified
+    ) {
+      throw new Error("Container runtime evidence does not satisfy the pinned security contract.");
+    }
+  } catch (error) {
+    if (failures.length === 0) {
+      failures.push(error instanceof Error ? error.message : String(error));
+    }
+  } finally {
+    const cleanupFailures = cleanup();
+    failures.push(...cleanupFailures);
+    facts.cleanupPassed = owner !== null && cleanupFailures.length === 0;
+    for (const [signal, handler] of signalHandlers) {
+      process.removeListener(signal, handler);
+    }
+  }
+
+  const report = {
+    schemaVersion: "3",
+    status: failures.length === 0 ? "PASS" : "FAIL",
+    scope: "DYNAMIC_WEB_CONTAINER",
+    workerContainerVerified: false,
+    releaseReady: false,
+    facts,
+    failures: [...new Set(failures)],
+  };
+  const directory = resolve(ROOT, "artifacts", "security");
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    resolve(directory, "container-report.json"),
+    `${JSON.stringify(report, null, 2)}\n`,
+    "utf8",
+  );
+  if (report.status !== "PASS") {
+    console.error(`Dynamic container verification failed: ${report.failures.join(" ")}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(
+    "Dynamic web-container verification passed; the separate Codex worker and deployment remain unverified.",
+  );
 }
 
-const report = {
-  schemaVersion: "3",
-  status: failures.length === 0 ? "PASS" : "FAIL",
-  scope: "DYNAMIC_WEB_CONTAINER",
-  workerContainerVerified: false,
-  releaseReady: false,
-  facts,
-  failures,
-};
-const directory = resolve(ROOT, "artifacts", "security");
-mkdirSync(directory, { recursive: true });
-writeFileSync(
-  resolve(directory, "container-report.json"),
-  `${JSON.stringify(report, null, 2)}\n`,
-  "utf8",
-);
-if (failures.length > 0) {
-  console.error(`Dynamic container verification failed: ${failures.join(" ")}`);
-  process.exit(1);
+if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main();
 }
-console.log(
-  "Dynamic web-container verification passed; the separate Codex worker and deployment remain unverified.",
-);

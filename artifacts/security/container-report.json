@@ -6,8 +6,18 @@
   "releaseReady": false,
   "facts": {
     "dockerServerVersion": null,
+    "canonicalDockerCliVerified": false,
+    "platformLocalDaemonSelected": false,
+    "dockerCliSha256": null,
+    "nodeBaseImagePresent": false,
     "imageId": null,
     "baseImage": null,
+    "resourceIdentityBindingVerified": false,
+    "firstContainerId": null,
+    "secondContainerId": null,
+    "initializationResourceLimitsVerified": false,
+    "boundedRuntimeResourcesVerified": false,
+    "restartPolicyVerified": false,
     "opaVersion": null,
     "opaSha256": null,
     "runtimeUid": null,
@@ -16,9 +26,10 @@
     "healthResponse": null,
     "persistentVolume": false,
     "sqliteStatePersisted": false,
-    "volumeOwnerUid": null
+    "volumeOwnerUid": null,
+    "cleanupPassed": false
   },
   "failures": [
-    "Container verification requires a verified immutable Node 22.22.2 image."
+    "immutable Node base image is unset"
   ]
 }

@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 428,
-  "scannedTextFiles": 397,
+  "scannedFiles": 430,
+  "scannedTextFiles": 399,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [
@@ -23,6 +23,7 @@
     "scripts/security-check.mjs",
     "scripts/submission-publication-probe.mjs",
     "scripts/verifier-preflight.mjs",
+    "scripts/web-container-runtime.mjs",
     "scripts/worker-container-verify.mjs",
     "src/codex/docker-command-runner.ts",
     "src/codex/linux-cgroup-helper-client.ts",

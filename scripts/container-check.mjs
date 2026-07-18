@@ -143,6 +143,7 @@ export function inspectStaticContainerContract(root = ROOT) {
   const liveGateContractPath = resolve(root, "scripts", "live-gate-contract.mjs");
   const pinnedDockerCliPath = resolve(root, "scripts", "pinned-docker-cli.mjs");
   const containerVerifyPath = resolve(root, "scripts", "container-verify.mjs");
+  const webContainerRuntimePath = resolve(root, "scripts", "web-container-runtime.mjs");
   const workerVerifyPath = resolve(root, "scripts", "worker-container-verify.mjs");
   const egressVerifyPath = resolve(root, "scripts", "egress-container-verify.mjs");
   const nativeHelperContractPath = resolve(root, "scripts", "native-helper-contract.mjs");
@@ -234,6 +235,9 @@ export function inspectStaticContainerContract(root = ROOT) {
   const nativeHelperBinaryPinned =
     typeof contract?.nativeHelper?.binarySha256 === "string" &&
     /^[0-9a-f]{64}$/u.test(contract.nativeHelper.binarySha256);
+  const dockerCliSha256Pinned =
+    typeof contract?.supervisorDockerExecutor?.dockerCliSha256 === "string" &&
+    /^[0-9a-f]{64}$/u.test(contract.supervisorDockerExecutor.dockerCliSha256);
   const nativeHelperIdentityStateValid =
     (contract?.nativeHelper?.builderImage === null &&
       contract?.nativeHelper?.image === null &&
@@ -275,6 +279,25 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.webContainer?.includesLiveCodexWorker !== false ||
     contract.webContainer?.runtimeUser !== "node" ||
     contract.webContainer?.readOnlyRootRequired !== true ||
+    contract.webContainer?.canonicalDockerExecutableRequired !== true ||
+    contract.webContainer?.reviewedDockerExecutableSha256Required !== true ||
+    contract.webContainer?.platformLocalDaemonRequired !== true ||
+    contract.webContainer?.dockerCliEnvironmentVariable !== "POLICYTWIN_DOCKER_CLI" ||
+    contract.webContainer?.pathSearchAllowed !== false ||
+    contract.webContainer?.remoteDaemonAllowed !== false ||
+    contract.webContainer?.baseImagePullAllowed !== false ||
+    contract.webContainer?.resourceOwnership !==
+      "NONCE_BOUND_LABELS_AND_OBSERVED_IDENTITIES" ||
+    contract.webContainer?.restartPolicy !== "no" ||
+    contract.webContainer?.restartCountMustRemainZero !== true ||
+    contract.webContainer?.pidsLimit !== 64 ||
+    contract.webContainer?.memoryBytes !== 1_073_741_824 ||
+    contract.webContainer?.memorySwapBytes !== 1_073_741_824 ||
+    contract.webContainer?.cpus !== 1 ||
+    contract.webContainer?.fileSizeLimitBytes !== 16_777_216 ||
+    contract.webContainer?.logDriver !== "local" ||
+    contract.webContainer?.maximumLogFiles !== 1 ||
+    contract.webContainer?.maximumLogBytes !== 16_777_216 ||
     contract.webContainer?.volumeInitialization !== "ROOT_CHOWN_THEN_NODE_RUNTIME" ||
     contract.webContainer?.persistenceVerification !== "API_MUTATION_RESTART_READ" ||
     JSON.stringify(contract.webContainer?.handledCleanupSignals) !==
@@ -510,6 +533,10 @@ export function inspectStaticContainerContract(root = ROOT) {
     contract.supervisorDockerExecutor?.platformLocalDaemonRequired !== true ||
     contract.supervisorDockerExecutor?.dynamicGateDockerCliEnvironmentVariable !==
       "POLICYTWIN_DOCKER_CLI" ||
+    contract.supervisorDockerExecutor?.dockerCliSha256Requirement !==
+      "reviewed canonical Docker CLI binary SHA-256 as 64 lowercase hex" ||
+    (contract.supervisorDockerExecutor?.dockerCliSha256 !== null &&
+      !dockerCliSha256Pinned) ||
     contract.supervisorDockerExecutor?.dynamicGatePathSearchAllowed !== false ||
     contract.supervisorDockerExecutor?.dynamicGateRemoteDaemonAllowed !== false ||
     contract.supervisorDockerExecutor?.sealedWorkerImageRequired !== true ||
@@ -665,11 +692,15 @@ export function inspectStaticContainerContract(root = ROOT) {
     "inspectNativeHelperBinary",
     "expectedHelperImageId",
     "expectedBinarySha256",
+    "docker.binary(args, 60_000)",
     "hostInstallVerified: false",
     "cgroupV2RuntimeVerified: false",
     "passSigningEligible: false",
   ]) {
     requireText(nativeHelperVerify, required, failures, "Native helper image verifier");
+  }
+  if (nativeHelperVerify.includes("spawnSync")) {
+    failures.push("Native helper image verifier must not bypass the pinned Docker runner.");
   }
   const nativeHelperLocalReportBody = read(
     nativeHelperLocalReportPath,
@@ -1626,21 +1657,74 @@ export function inspectStaticContainerContract(root = ROOT) {
   const pinnedDockerCli = read(pinnedDockerCliPath, failures, "Pinned dynamic Docker CLI");
   for (const required of [
     "realpathSync.native(dockerExecutablePath) !== dockerExecutablePath",
+    "dockerExecutableSha256",
+    "assertReviewedDockerExecutable()",
+    'createHash("sha256")',
+    "The dynamic Docker CLI does not match the reviewed SHA-256.",
+    "assertBinaryDockerArguments(args)",
+    "encoding: binary ? null : \"utf8\"",
+    'Object.defineProperty(docker, "binary"',
     "DOCKER_HOST: localDaemonHost",
     'DOCKER_CLI_HINTS: "false"',
     "spawnSync(dockerExecutablePath, args",
     "shell: false",
+    '"exec",',
+    'volume: new Set(["create", "inspect", "ls", "rm"])',
     'throw new Error("The dynamic Docker command is not allowlisted.")',
   ]) {
     requireText(pinnedDockerCli, required, failures, "Pinned dynamic Docker CLI");
   }
+  const webContainerRuntime = read(
+    webContainerRuntimePath,
+    failures,
+    "Web container resource owner",
+  );
+  for (const required of [
+    "inspectWebContainerPrerequisites",
+    "createWebContainerResourceOwner",
+    'update("policytwin-web-container-verify-v1", "utf8")',
+    '"com.policytwin.binding-sha256"',
+    '"--pull=false"',
+    "Immutable Node base image is not present locally; no pull was attempted.",
+    "assertWebContainerRuntimeObservation(value, role",
+    "host?.MemorySwap !== WEB_CONTAINER_MEMORY_BYTES",
+    "host?.RestartPolicy?.Name !== \"no\"",
+    "host?.LogConfig?.Type !== \"local\"",
+    "ulimit?.Soft !== WEB_CONTAINER_OUTPUT_BYTES",
+    "recoverContainerForCleanup",
+    '["image", "rm", "--force", ownedImageId]',
+  ]) {
+    requireText(webContainerRuntime, required, failures, "Web container resource owner");
+  }
   const containerVerify = read(containerVerifyPath, failures, "Web container verifier");
   for (const required of [
-    'contract.schemaVersion !== "15"',
+    'from "./pinned-docker-cli.mjs"',
+    'from "./web-container-runtime.mjs"',
+    "createPinnedDockerSync",
+    "process.env.POLICYTWIN_DOCKER_CLI",
+    "owner.preflight()",
+    '"volume-init"',
+    '"volume-probe"',
+    '"web-first"',
+    '"web-second"',
+    "resourceIdentityBindingVerified",
+    "boundedRuntimeResourcesVerified",
+    "restartPolicyVerified",
+    "cleanupPassed",
     "Container restart did not preserve the SQLite workspace decision.",
     'scope: "DYNAMIC_WEB_CONTAINER"',
+    "fileURLToPath(import.meta.url)",
   ]) {
     requireText(containerVerify, required, failures, "Web container verifier");
+  }
+  for (const forbidden of [
+    'spawnSync("docker"',
+    '"run",',
+    '"--pull",',
+  ]) {
+    if (containerVerify.includes(forbidden)) {
+      failures.push(`Web container verifier must not contain ${JSON.stringify(forbidden)}.`);
+    }
   }
   const verifierPreflight = read(verifierPreflightPath, failures, "Verifier preflight");
   for (const required of [
@@ -1830,6 +1914,7 @@ export function inspectStaticContainerContract(root = ROOT) {
     targetPlatform: contract?.targetPlatform ?? null,
     contractStatus: contract?.status ?? null,
     baseImagePinned,
+    dockerCliSha256Pinned,
     nodeBaseImage: baseImagePinned ? contract.nodeBaseImage : null,
     workerImagePinned,
     verifierImagePinned,

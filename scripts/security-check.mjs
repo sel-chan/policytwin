@@ -27,6 +27,7 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "scripts/clean-checkout.mjs",
   "scripts/container-check.mjs",
   "scripts/container-verify.mjs",
+  "scripts/web-container-runtime.mjs",
   "scripts/egress-container-verify.mjs",
   "scripts/live-gate.mjs",
   "scripts/native-helper-build.mjs",

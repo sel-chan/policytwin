@@ -88,6 +88,16 @@ test("native helper local build invalidates stale evidence when compilation fail
   );
 });
 
+test("native helper binary extraction cannot bypass the pinned Docker runner", async () => {
+  const verifier = await readFile(
+    resolve("scripts/native-helper-container-verify.mjs"),
+    "utf8",
+  );
+  assert.match(verifier, /docker\.binary\(args, 60_000\)/u);
+  assert.doesNotMatch(verifier, /spawnSync/u);
+  assert.doesNotMatch(verifier, /process\.env\.POLICYTWIN_DOCKER_CLI, containerId/u);
+});
+
 test("native helper prerequisites fail closed before Docker and detect input tampering", async () => {
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
   const report = inspectNativeHelperPrerequisites(contract);

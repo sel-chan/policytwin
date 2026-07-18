@@ -6,6 +6,7 @@ import test from "node:test";
 import { computeContainerBuildInput } from "../../scripts/container-build-inputs.mjs";
 import { inspectStaticContainerContract } from "../../scripts/container-check.mjs";
 import { inspectEgressContainerPrerequisites } from "../../scripts/egress-container-verify.mjs";
+import { inspectWebContainerPrerequisites } from "../../scripts/web-container-runtime.mjs";
 import {
   inspectWorkerContainerPrerequisites,
   prepareWorkerRunRoot,
@@ -198,6 +199,14 @@ test("worker dynamic verification rejects missing base and build-input tampering
   assert.match(tampered.failures.join(" "), /worker build inputs do not match/u);
 });
 
+test("web dynamic verification rejects an unset base before Docker", async () => {
+  const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
+  const report = inspectWebContainerPrerequisites(contract);
+  assert.equal(report.status, "FAIL");
+  assert.equal(report.dockerInvoked, false);
+  assert.deepEqual(report.failures, ["immutable Node base image is unset"]);
+});
+
 test("egress dynamic verification rejects missing base and build-input tampering before Docker", async () => {
   const contract = JSON.parse(await readFile(resolve("container-contract.json"), "utf8"));
   const report = inspectEgressContainerPrerequisites(contract);
@@ -305,6 +314,7 @@ async function copyStaticContainerInputs(target) {
     "native/policytwin-linux-cgroup-helper.c",
     "artifacts/security/native-helper-local-build-report.json",
     "scripts/container-verify.mjs",
+    "scripts/web-container-runtime.mjs",
     "scripts/live-gate-contract.mjs",
     "scripts/pinned-docker-cli.mjs",
   ]) {

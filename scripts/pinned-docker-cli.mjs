@@ -1,13 +1,16 @@
 import { spawnSync } from "node:child_process";
-import { lstatSync, realpathSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 
 const MAX_ARGUMENTS = 256;
 const MAX_ARGUMENT_BYTES = 8_192;
+const SHA256 = /^[0-9a-f]{64}$/u;
 const SIMPLE_COMMANDS = new Set([
   "build",
   "cp",
   "create",
+  "exec",
   "info",
   "logs",
   "port",
@@ -21,6 +24,7 @@ const SUBCOMMANDS = {
   container: new Set(["inspect"]),
   image: new Set(["inspect", "ls", "rm"]),
   network: new Set(["connect", "create", "disconnect", "inspect", "ls", "rm"]),
+  volume: new Set(["create", "inspect", "ls", "rm"]),
 };
 
 export function exactDockerEnvironment(source) {
@@ -68,14 +72,35 @@ export function assertDynamicDockerArguments(args) {
   if (!allowed) throw new Error("The dynamic Docker command is not allowlisted.");
 }
 
+function assertBinaryDockerArguments(args) {
+  assertDynamicDockerArguments(args);
+  const source = args?.[1] ?? "";
+  const separator = source.indexOf(":");
+  const containerId = separator < 0 ? "" : source.slice(0, separator);
+  const containerPath = separator < 0 ? "" : source.slice(separator + 1);
+  if (
+    args.length !== 3 ||
+    args[0] !== "cp" ||
+    args[2] !== "-" ||
+    !/^[0-9a-f]{64}$/u.test(containerId) ||
+    !/^\/[A-Za-z0-9._/-]+$/u.test(containerPath) ||
+    containerPath.split("/").some((segment) => segment === "." || segment === "..")
+  ) {
+    throw new Error("Binary Docker output is restricted to one owned-container copy.");
+  }
+}
+
 export function createPinnedDockerSync(options) {
   if (
     typeof options?.repositoryRoot !== "string" ||
     !isAbsolute(options.repositoryRoot) ||
     typeof options?.dockerExecutablePath !== "string" ||
-    !isAbsolute(options.dockerExecutablePath)
+    !isAbsolute(options.dockerExecutablePath) ||
+    !SHA256.test(options?.dockerExecutableSha256 ?? "")
   ) {
-    throw new Error("Dynamic Docker requires absolute repository and CLI paths.");
+    throw new Error(
+      "Dynamic Docker requires absolute repository and CLI paths plus a reviewed CLI SHA-256.",
+    );
   }
   const repositoryRoot = resolve(options.repositoryRoot);
   const repositoryStat = lstatSync(repositoryRoot);
@@ -87,24 +112,35 @@ export function createPinnedDockerSync(options) {
     throw new Error("The dynamic Docker repository root is unsafe.");
   }
   const dockerExecutablePath = resolve(options.dockerExecutablePath);
-  const executableStat = lstatSync(dockerExecutablePath);
-  if (
-    !executableStat.isFile() ||
-    executableStat.isSymbolicLink() ||
-    realpathSync.native(dockerExecutablePath) !== dockerExecutablePath
-  ) {
-    throw new Error("The dynamic Docker CLI path is unsafe.");
+  const expectedDockerExecutableSha256 = options.dockerExecutableSha256;
+  function assertReviewedDockerExecutable() {
+    const executableStat = lstatSync(dockerExecutablePath);
+    if (
+      !executableStat.isFile() ||
+      executableStat.isSymbolicLink() ||
+      realpathSync.native(dockerExecutablePath) !== dockerExecutablePath
+    ) {
+      throw new Error("The dynamic Docker CLI path is unsafe.");
+    }
+    const observedSha256 = createHash("sha256")
+      .update(readFileSync(dockerExecutablePath))
+      .digest("hex");
+    if (observedSha256 !== expectedDockerExecutableSha256) {
+      throw new Error("The dynamic Docker CLI does not match the reviewed SHA-256.");
+    }
   }
+  assertReviewedDockerExecutable();
   const environment = exactDockerEnvironment(options.environment ?? process.env);
-  return function docker(args, timeoutMs = 60_000, allowFailure = false) {
+  function executeDocker(args, timeoutMs, allowFailure, binary) {
     assertDynamicDockerArguments(args);
     if (!Number.isInteger(timeoutMs) || timeoutMs < 1_000 || timeoutMs > 30 * 60_000) {
       throw new Error("The dynamic Docker timeout is invalid.");
     }
+    assertReviewedDockerExecutable();
     const result = spawnSync(dockerExecutablePath, args, {
       cwd: repositoryRoot,
       env: environment,
-      encoding: "utf8",
+      encoding: binary ? null : "utf8",
       timeout: timeoutMs,
       maxBuffer: 8 * 1024 * 1024,
       shell: false,
@@ -114,5 +150,18 @@ export function createPinnedDockerSync(options) {
       throw new Error(`Docker ${args[0] ?? "command"} failed.`);
     }
     return result;
-  };
+  }
+  function docker(args, timeoutMs = 60_000, allowFailure = false) {
+    return executeDocker(args, timeoutMs, allowFailure, false);
+  }
+  Object.defineProperty(docker, "binary", {
+    configurable: false,
+    enumerable: false,
+    writable: false,
+    value(args, timeoutMs = 60_000) {
+      assertBinaryDockerArguments(args);
+      return executeDocker(args, timeoutMs, false, true);
+    },
+  });
+  return Object.freeze(docker);
 }

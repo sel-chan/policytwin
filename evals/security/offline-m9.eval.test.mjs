@@ -38,9 +38,17 @@ test("license and container remain fail-closed for explicit owner/external work"
   assert.equal(container.workerContainerVerified, false);
   assert.equal(container.releaseReady, false);
   assert.equal(container.facts.baseImage, null);
+  assert.equal(container.facts.canonicalDockerCliVerified, false);
+  assert.equal(container.facts.platformLocalDaemonSelected, false);
+  assert.equal(container.facts.dockerCliSha256, null);
+  assert.equal(container.facts.nodeBaseImagePresent, false);
+  assert.equal(container.facts.resourceIdentityBindingVerified, false);
+  assert.equal(container.facts.boundedRuntimeResourcesVerified, false);
+  assert.equal(container.facts.restartPolicyVerified, false);
+  assert.equal(container.facts.cleanupPassed, false);
   assert.equal(container.facts.healthStatus, null);
   assert.equal(
-    container.failures.some((failure) => failure.includes("immutable Node 22.22.2 image")),
+    container.failures.some((failure) => failure.includes("immutable Node base image is unset")),
     true,
   );
 });

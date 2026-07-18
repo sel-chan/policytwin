@@ -3,7 +3,7 @@
 DRAFT_NOT_READY — generated from partial offline evidence; do not submit.
 
 Status: VERIFIED_OFFICIAL_SOURCES
-Checked at: 2026-07-17T13:01:15+09:00
+Checked at: 2026-07-18T18:37:46+09:00
 
 Official deadline: 2026-07-21T17:00:00-07:00 (2026-07-22T09:00:00+09:00).
 
