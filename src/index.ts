@@ -60,3 +60,7 @@ export * from "./workspace/service.js";
 export * from "./workspace/http.js";
 export * from "./openai/interpreter.js";
 export * from "./openai/request-guard.js";
+export * from "./repair-runs/types.js";
+export * from "./repair-runs/sqlite.js";
+export * from "./repair-runs/coordinator.js";
+export * from "./repair-runs/validated-result.js";

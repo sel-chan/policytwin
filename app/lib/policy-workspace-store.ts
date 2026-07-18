@@ -5,6 +5,11 @@ import { SQLitePolicyRepository } from "../../dist/persistence/sqlite.js";
 import { SingleRunGate } from "../../dist/openai/request-guard.js";
 import { PolicyWorkspaceService } from "../../dist/workspace/service.js";
 import {
+  RepairRunCoordinator,
+  SQLiteRepairRunRepository,
+  createUnavailableRepairRunExecutionPort,
+} from "../../dist/index.js";
+import {
   WorkspaceHttpError,
   isWorkspaceCsrfToken,
   isWorkspaceSessionExpired,
@@ -19,6 +24,9 @@ export interface SeededWorkspaceStore {
   service: PolicyWorkspaceService;
   mutationGate: SingleRunGate;
   databasePath: string;
+  repairRunRepository: SQLiteRepairRunRepository;
+  repairRunCoordinator: RepairRunCoordinator;
+  repairRunDatabasePath: string;
 }
 
 const globalStore = globalThis as typeof globalThis & {
@@ -58,12 +66,41 @@ function configuredDatabasePath(): string {
   return resolve(process.cwd(), ".data", "policytwin.sqlite");
 }
 
+function configuredRepairRunDatabasePath(policyDatabasePath: string): string {
+  const configured = process.env.POLICYTWIN_REPAIR_RUN_DATABASE_PATH?.trim();
+  if (configured?.includes("\0")) {
+    throw new Error("POLICYTWIN_REPAIR_RUN_DATABASE_PATH contains an invalid character.");
+  }
+  let selected: string;
+  if (configured) {
+    if (!isAbsolute(configured)) {
+      throw new Error("POLICYTWIN_REPAIR_RUN_DATABASE_PATH must be an absolute path.");
+    }
+    selected = resolve(configured);
+  } else {
+    selected = `${policyDatabasePath}.repair-runs.sqlite`;
+  }
+  const samePath =
+    process.platform === "win32"
+      ? selected.toLowerCase() === resolve(policyDatabasePath).toLowerCase()
+      : selected === resolve(policyDatabasePath);
+  if (samePath) {
+    throw new Error("Policy and repair-run SQLite databases must use distinct paths.");
+  }
+  return selected;
+}
+
 export function seededPolicyIdForSession(sessionToken: string): string {
   if (!isWorkspaceCsrfToken(sessionToken)) {
     throw new Error("Workspace session token is invalid.");
   }
   const sessionHash = createHash("sha256").update(sessionToken, "utf8").digest("hex").slice(0, 24);
   return `${SEEDED_POLICY_ID}-${sessionHash}`;
+}
+
+function deleteExpiredAnonymousWorkspace(store: SeededWorkspaceStore, policyId: string): void {
+  store.repairRunRepository.pruneTerminalRunsForPolicy(policyId);
+  store.repository.deleteProject(policyId);
 }
 
 export function ensureSeededSessionWorkspace(
@@ -82,7 +119,7 @@ export function ensureSeededSessionWorkspace(
       project.id.startsWith(sessionPrefix) &&
       isWorkspaceSessionExpired(project.createdAt, now, ANONYMOUS_WORKSPACE_TTL_MS)
     ) {
-      store.repository.deleteProject(project.id);
+      deleteExpiredAnonymousWorkspace(store, project.id);
     }
   }
   if (store.repository.getProject(policyId)) {
@@ -144,7 +181,7 @@ export function getSessionPolicyId(
     throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session project is absent.");
   }
   if (isWorkspaceSessionExpired(project.createdAt, now, ANONYMOUS_WORKSPACE_TTL_MS)) {
-    store.repository.deleteProject(policyId);
+    deleteExpiredAnonymousWorkspace(store, policyId);
     throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session has expired.");
   }
   return policyId;
@@ -152,20 +189,40 @@ export function getSessionPolicyId(
 
 export function getSeededWorkspaceStore(): SeededWorkspaceStore {
   const databasePath = configuredDatabasePath();
+  const repairRunDatabasePath = configuredRepairRunDatabasePath(databasePath);
   const existing = globalStore.__policyTwinSeededWorkspace;
-  if (existing && existing.databasePath === databasePath) {
+  if (
+    existing &&
+    existing.databasePath === databasePath &&
+    existing.repairRunDatabasePath === repairRunDatabasePath
+  ) {
     return existing;
   }
   if (existing) {
+    existing.repairRunRepository.close();
     existing.repository.close();
   }
   mkdirSync(dirname(databasePath), { recursive: true });
+  mkdirSync(dirname(repairRunDatabasePath), { recursive: true });
   const repository = new SQLitePolicyRepository(databasePath);
+  let repairRunRepository: SQLiteRepairRunRepository;
+  try {
+    repairRunRepository = new SQLiteRepairRunRepository(repairRunDatabasePath);
+  } catch (error) {
+    repository.close();
+    throw error;
+  }
   const store: SeededWorkspaceStore = {
     repository,
     service: new PolicyWorkspaceService(repository),
     mutationGate: new SingleRunGate(),
     databasePath,
+    repairRunRepository,
+    repairRunCoordinator: new RepairRunCoordinator(
+      repairRunRepository,
+      createUnavailableRepairRunExecutionPort(),
+    ),
+    repairRunDatabasePath,
   };
   globalStore.__policyTwinSeededWorkspace = store;
   return store;

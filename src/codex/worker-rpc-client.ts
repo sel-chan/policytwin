@@ -93,6 +93,9 @@ export interface WorkerRpcTrustBundleInput {
 }
 
 const WORKER_RPC_TRUST_BUNDLES = new WeakSet<object>();
+const EXTERNAL_WORKER_RPC_V2_CLIENTS = new WeakSet<object>();
+const VALIDATED_EXTERNAL_WORKER_V2_RUNS = new WeakSet<object>();
+const CONSUMED_EXTERNAL_WORKER_V2_RUNS = new WeakSet<object>();
 const WORKER_RPC_TRUST_METADATA = new WeakMap<
   object,
   {
@@ -114,12 +117,83 @@ export interface ValidatedExternalWorkerV2Run {
   requestId: string;
   runNonce: string;
   requestSha256: string;
+  inputSha256: string;
   executionBindingSha256: string;
   completedAt: string;
   report: RepairWorkerReport;
   receipt: WorkerRpcV2SupervisorReceipt & {
     cpuEvidence: LiveLinuxCgroupCpuObservedSuccessEvidenceV2;
   };
+}
+
+export interface ExternalWorkerRpcV2RunContext {
+  repairRunId?: string;
+  signal?: AbortSignal;
+}
+
+export interface ExternalWorkerRpcV2Client {
+  runRepair(
+    input: unknown,
+    context?: ExternalWorkerRpcV2RunContext,
+  ): Promise<ValidatedExternalWorkerV2Run>;
+}
+
+export function assertExternalWorkerRpcV2Client(
+  value: unknown,
+): asserts value is ExternalWorkerRpcV2Client {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !EXTERNAL_WORKER_RPC_V2_CLIENTS.has(value)
+  ) {
+    throw new Error("Authenticated repair execution requires the exact external worker v2 client.");
+  }
+}
+
+export function workerRpcRequestIdForRepairRun(value: unknown): string {
+  if (typeof value !== "string" || !/^rr_[0-9a-f]{32}$/u.test(value)) {
+    throw new Error("External worker v2 repair-run ID is invalid.");
+  }
+  return value.slice(3);
+}
+
+function deepFreezeValidatedRun<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreezeValidatedRun(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+export function consumeValidatedExternalWorkerV2Run(
+  value: unknown,
+): asserts value is ValidatedExternalWorkerV2Run {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !VALIDATED_EXTERNAL_WORKER_V2_RUNS.has(value) ||
+    CONSUMED_EXTERNAL_WORKER_V2_RUNS.has(value)
+  ) {
+    throw new Error(
+      "Repair-run success requires one fresh result issued by the authenticated external worker v2 client.",
+    );
+  }
+  CONSUMED_EXTERNAL_WORKER_V2_RUNS.add(value);
+}
+
+export function assertConsumedExternalWorkerV2Run(
+  value: unknown,
+): asserts value is ValidatedExternalWorkerV2Run {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !VALIDATED_EXTERNAL_WORKER_V2_RUNS.has(value) ||
+    !CONSUMED_EXTERNAL_WORKER_V2_RUNS.has(value)
+  ) {
+    throw new Error(
+      "Repair-run persistence requires one consumed authenticated external worker v2 result.",
+    );
+  }
 }
 
 function safeDiagnostic(value: unknown): string {
@@ -289,6 +363,24 @@ function randomToken(
   return Buffer.from(value).toString(encoding);
 }
 
+function externalWorkerV2RunContext(
+  value: ExternalWorkerRpcV2RunContext | undefined,
+): ExternalWorkerRpcV2RunContext {
+  if (value === undefined) return {};
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error("External worker v2 run context is invalid.");
+  }
+  const allowed = new Set(["repairRunId", "signal"]);
+  if (Object.keys(value).some((key) => !allowed.has(key))) {
+    throw new Error("External worker v2 run context has unknown fields.");
+  }
+  if (value.repairRunId !== undefined) workerRpcRequestIdForRepairRun(value.repairRunId);
+  if (value.signal !== undefined && !(value.signal instanceof AbortSignal)) {
+    throw new Error("External worker v2 run context signal is invalid.");
+  }
+  return value;
+}
+
 function buildPolicy(
   options: ExternalWorkerRpcBaseOptions,
   input: RepairWorkerInput,
@@ -418,13 +510,20 @@ function decodeResponse(bytes: Uint8Array): string {
   if (!Buffer.from(text, "utf8").equals(bytes) || text.includes("\0")) {
     throw new Error("External worker response is not canonical NUL-free UTF-8.");
   }
-  assertNoSensitiveWorkerText(
-    text,
-    "external worker response",
-    WORKER_RPC_MAX_RESPONSE_BYTES,
-  );
   assertNoWorkerRpcHostPath(text, "external worker response");
   return text;
+}
+
+function assertResponseSemanticSafety(
+  response: Pick<WorkerRpcResponse | WorkerRpcV2Response, "report" | "error">,
+  label: string,
+): void {
+  const semanticText = canonicalWorkerRpcJson({
+    report: response.report,
+    error: response.error,
+  });
+  assertNoSensitiveWorkerText(semanticText, label, WORKER_RPC_MAX_RESPONSE_BYTES);
+  assertNoWorkerRpcHostPath(semanticText, label);
 }
 
 function parseCanonicalResponse(text: string): WorkerRpcResponse {
@@ -435,6 +534,7 @@ function parseCanonicalResponse(text: string): WorkerRpcResponse {
     throw new Error(`External worker response is not JSON: ${safeDiagnostic(error)}`);
   }
   const response = parseWorkerRpcResponse(value);
+  assertResponseSemanticSafety(response, "external worker response semantic payload");
   if (canonicalWorkerRpcJson(response) !== text) {
     throw new Error("External worker response must use the canonical JSON encoding.");
   }
@@ -449,6 +549,7 @@ function parseCanonicalV2Response(text: string): WorkerRpcV2Response {
     throw new Error(`External worker v2 response is not JSON: ${safeDiagnostic(error)}`);
   }
   const response = parseWorkerRpcV2Response(value);
+  assertResponseSemanticSafety(response, "external worker v2 response semantic payload");
   if (canonicalWorkerRpcJson(response) !== text) {
     throw new Error("External worker v2 response must use the canonical JSON encoding.");
   }
@@ -927,9 +1028,9 @@ export function createExternalWorkerRpcClient(options: ExternalWorkerRpcClientOp
   };
 }
 
-export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2ClientOptions): {
-  runRepair(input: unknown): Promise<ValidatedExternalWorkerV2Run>;
-} {
+export function createExternalWorkerRpcV2Client(
+  options: ExternalWorkerRpcV2ClientOptions,
+): ExternalWorkerRpcV2Client {
   assertMutualTlsWorkerRpcV2Transport(options.transport);
   safeIdentifier(options.transport.id, "external worker v2 transport ID");
   safeIdentifier(options.expectedSupervisorId, "external worker v2 supervisor ID");
@@ -966,13 +1067,19 @@ export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2Clie
   const usedDockerBindings = new Set<string>();
   let active = false;
 
-  return {
-    async runRepair(inputValue: unknown): Promise<ValidatedExternalWorkerV2Run> {
+  const client: ExternalWorkerRpcV2Client = {
+    async runRepair(
+      inputValue: unknown,
+      contextValue?: ExternalWorkerRpcV2RunContext,
+    ): Promise<ValidatedExternalWorkerV2Run> {
       if (active) throw new Error("External worker v2 client permits only one active run.");
       active = true;
       try {
+        const context = externalWorkerV2RunContext(contextValue);
         const input = parseRepairWorkerInput(inputValue);
-        const requestId = randomToken(16, random, "hex");
+        const requestId = context.repairRunId
+          ? workerRpcRequestIdForRepairRun(context.repairRunId)
+          : randomToken(16, random, "hex");
         const runNonce = randomToken(32, random, "base64url");
         if (usedRequestIds.has(requestId) || usedNonces.has(runNonce)) {
           throw new Error("External worker v2 random source reused a request capability.");
@@ -1013,15 +1120,26 @@ export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2Clie
         const canonicalRequest = canonicalWorkerRpcJson(request);
         const requestSha256 = workerRpcSha256(request);
         const controller = new AbortController();
+        const forwardCallerAbort = () => controller.abort(context.signal?.reason);
+        if (context.signal?.aborted) {
+          forwardCallerAbort();
+        } else {
+          context.signal?.addEventListener("abort", forwardCallerAbort, { once: true });
+        }
         const timeout = setTimeout(() => controller.abort(), options.rpcTimeoutMs);
         let rawResponse: Uint8Array;
+        let rejectAbort: (() => void) | undefined;
         try {
           const aborted = new Promise<never>((_resolve, reject) => {
-            controller.signal.addEventListener(
-              "abort",
-              () => reject(new Error("External worker v2 RPC timed out.")),
-              { once: true },
-            );
+            rejectAbort = () => {
+              reject(
+                controller.signal.reason instanceof Error
+                  ? controller.signal.reason
+                  : new Error("External worker v2 RPC timed out or was cancelled."),
+              );
+            };
+            if (controller.signal.aborted) rejectAbort();
+            else controller.signal.addEventListener("abort", rejectAbort, { once: true });
           });
           const responseStream = await Promise.race([
             options.transport.call(canonicalRequest, {
@@ -1037,6 +1155,8 @@ export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2Clie
           throw new Error(`External worker v2 transport failed: ${safeDiagnostic(error)}`);
         } finally {
           clearTimeout(timeout);
+          if (rejectAbort) controller.signal.removeEventListener("abort", rejectAbort);
+          context.signal?.removeEventListener("abort", forwardCallerAbort);
         }
         const response = parseCanonicalV2Response(decodeResponse(rawResponse));
         verifyV2ReceiptSignature(response, options);
@@ -1068,10 +1188,11 @@ export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2Clie
           request.policy.baselineExecutionTreeManifest,
           response.receipt.finalExecutionTreeManifest,
         );
-        return {
+        const validatedRun = deepFreezeValidatedRun({
           requestId,
           runNonce,
           requestSha256,
+          inputSha256,
           executionBindingSha256,
           completedAt: response.completedAt,
           report: response.report,
@@ -1079,10 +1200,14 @@ export function createExternalWorkerRpcV2Client(options: ExternalWorkerRpcV2Clie
             ...response.receipt,
             cpuEvidence: response.receipt.cpuEvidence,
           },
-        };
+        });
+        VALIDATED_EXTERNAL_WORKER_V2_RUNS.add(validatedRun);
+        return validatedRun;
       } finally {
         active = false;
       }
     },
   };
+  EXTERNAL_WORKER_RPC_V2_CLIENTS.add(client);
+  return Object.freeze(client);
 }

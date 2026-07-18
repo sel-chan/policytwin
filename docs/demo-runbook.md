@@ -23,6 +23,7 @@ Expected current behavior:
 - the package status is `FAIL`; OPA is `PASS`, while GPT-5.6, Codex, live browser, container, and deployment remain `NOT_RUN`;
 - `helper:build:local` recompiles the native helper twice and requires byte-identical AMD64 static-PIE output, but explicitly records the compiler as unpinned and every image/runtime/signing claim as false;
 - `container:check` validates the daemon-free split images, lifecycle-v3/Docker-v3 ownership contract, native-helper artifact contract, ID-only supervisor driver, and separate TLS-only gate while confirming every live/dynamic flag remains false;
+- after resolving the three seeded decisions to v4, Integration can create a session-bound run record. In the current environment it must display `BLOCKED`, `NOT_STARTED`, two persisted events, and “No model or Codex call occurred”; reload and SSE cursor replay must preserve that result;
 - `verify` executes local Chrome E2E and all other implemented offline gates, while the owner-selected license and non-final submission package still fail. Dynamic container health remains a separate release gate.
 
 ## Future dynamic container verification
@@ -39,8 +40,9 @@ Before any future v2 client run, construct its transport only with `createMutual
 
 ## Recovery
 
-- Stop `pnpm dev`, then run `pnpm demo:reset` to remove only the ignored default `.data/policytwin.sqlite` files and replace `.tmp/refund-demo/current` from the canonical baseline. If `POLICYTWIN_DATABASE_PATH` points to any custom location, the command fails and never deletes that file; unset the variable before resetting the repository-local demo.
+- Stop `pnpm dev`, then run `pnpm demo:reset` to remove only the ignored default policy SQLite files plus `.data/policytwin.sqlite.repair-runs.sqlite*`, and replace `.tmp/refund-demo/current` from the canonical baseline. If `POLICYTWIN_DATABASE_PATH` or `POLICYTWIN_REPAIR_RUN_DATABASE_PATH` points to a custom location, the command fails and never deletes that file; unset the variable before resetting the repository-local demo.
 - Open Decision Queue to create v2, v3, and v4 through the SQLite-backed API; reload to confirm the ledger persists.
+- Open Integration, start the guarded repair, and confirm it records `BLOCKED / NOT_STARTED` because the execution port is deliberately unavailable. Reload, create a new guarded attempt, and confirm the prior result did not wedge the session. A `POISONED` run is different: it records unproved cleanup and intentionally blocks new work until reset/operator recovery.
 - Open Change Impact to persist the exact 14-to-30 source edit as v5 `DRAFT`; confirm G02 blocks verification and no code repair is claimed.
 - If alternate purchase-day or usage-time choices were accepted, confirm Proof labels the mismatch and Change Impact disables v5 instead of reusing the seeded reference evidence.
 - Repair runs must use unique safe IDs under `.tmp/refund-demo/repair-runs`.

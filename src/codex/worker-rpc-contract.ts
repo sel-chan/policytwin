@@ -447,6 +447,18 @@ function assertSafeRpcText(value: string, label: string, maximum: number): strin
   return value;
 }
 
+function assertSafeRpcSemanticRequest(
+  model: string,
+  input: RepairWorkerInput,
+  label: string,
+): void {
+  // Cryptographic envelope fields can randomly resemble credential prefixes. Scan only the
+  // parsed semantic payload here; the complete canonical envelope is still size- and path-checked.
+  const encoded = canonicalWorkerRpcJson({ model, input });
+  assertNoSensitiveWorkerText(encoded, label, WORKER_RPC_MAX_REQUEST_BYTES);
+  assertNoWorkerRpcHostPath(encoded, label);
+}
+
 function parseLimits(value: unknown): WorkerRpcResourceLimits {
   const result = record(value, "worker RPC resource limits");
   exactKeys(
@@ -614,6 +626,7 @@ export function parseWorkerRpcRequest(value: unknown): WorkerRpcRequest {
   }
   const policy = parseWorkerRpcPolicy(result.policy);
   const input = parseRepairWorkerInput(result.input);
+  assertSafeRpcSemanticRequest(result.model, input, "worker RPC semantic request");
   if (
     sha256(result.inputSha256, "worker RPC input digest") !== workerRpcSha256(input) ||
     sha256(result.policySha256, "worker RPC policy digest") !== workerRpcSha256(policy) ||
@@ -641,7 +654,7 @@ export function parseWorkerRpcRequest(value: unknown): WorkerRpcRequest {
   if (Buffer.byteLength(encoded, "utf8") > WORKER_RPC_MAX_REQUEST_BYTES) {
     throw new Error("Worker RPC request exceeds the byte limit.");
   }
-  assertSafeRpcText(encoded, "worker RPC request", WORKER_RPC_MAX_REQUEST_BYTES);
+  assertNoWorkerRpcHostPath(encoded, "worker RPC request");
   return parsed;
 }
 
@@ -953,6 +966,7 @@ export function parseWorkerRpcV2Request(value: unknown): WorkerRpcV2Request {
   }
   const policy = parseWorkerRpcPolicy(result.policy);
   const input = parseRepairWorkerInput(result.input);
+  assertSafeRpcSemanticRequest(result.model, input, "worker RPC v2 semantic request");
   const inputSha256 = sha256(result.inputSha256, "worker RPC v2 input digest");
   const policySha256 = sha256(result.policySha256, "worker RPC v2 policy digest");
   if (
@@ -999,7 +1013,7 @@ export function parseWorkerRpcV2Request(value: unknown): WorkerRpcV2Request {
   if (Buffer.byteLength(encoded, "utf8") > WORKER_RPC_MAX_REQUEST_BYTES) {
     throw new Error("Worker RPC v2 request exceeds the byte limit.");
   }
-  assertSafeRpcText(encoded, "worker RPC v2 request", WORKER_RPC_MAX_REQUEST_BYTES);
+  assertNoWorkerRpcHostPath(encoded, "worker RPC v2 request");
   return parsed;
 }
 

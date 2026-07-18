@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9/M10 — offline completion gaps hardened`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-18 12:45 +09:00`
-- Latest checkpoint commit: `d6f360f068c312a56d26d82f6c8fed3224228ee2`
+- Last updated: `2026-07-18 17:45 +09:00`
+- Latest checkpoint commit: `cd3252146794c08ead8e512ac46551aa53a674a2`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -93,12 +93,50 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M4 Compiler and OPA | PASS | official OPA 1.18.2 strict compile/evaluation, deterministic compiler, invalid-input rejection, 41/41 accepted cases, and compilation status UI pass | pending | none for the milestone gate; live package still depends on later milestones |
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
-| M7 Codex repair and review | IN_PROGRESS | pinned SDK-compatible phase adapter, signed v1 RPC client, real TLS 1.3 mTLS transport, durable replay rejection, Worker RPC v2 CPU evidence schema v2, and schema-v15 lifecycle-v3 Docker/helper construction plus exact helper-artifact identity binding pass offline contracts | `447f077` | no immutable helper artifact has been built, installed, or run on Linux Docker/cgroup v2; finalized-result issuance, v2 PASS signing, fresh SDK repair, zero live post-repair drift, live review, and signed live evidence remain absent |
+| M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, and a session-bound SQLite repair-run/event ledger with CSRF/idempotency/SSE/fail-stop UI pass offline contracts | `447f077` | the product execution port deliberately remains unavailable; no immutable helper artifact has run on Linux Docker/cgroup v2, finalized-result issuer/v2 PASS signer is enabled, or fresh SDK repair, zero live post-repair drift, live review, and signed live evidence exist |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 358 unit, 61 integration, 22 eval, static container, 416-file/386-text security, and 416-file clean-copy gates | `54d2aed` | shared public admission/rate limiting, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 365 unit, 61 integration, 22 eval, static container, 427-file/396-text security, and 427-file clean-copy gates | `54d2aed` | shared public admission/rate limiting, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements verified; isolated fail-closed draft and strict final gates are separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed; same-run verification and the strict final gate expose 42 unmet requirements | `54d2aed` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
+
+### Objective
+
+Re-audit the full completion definition after the submission-release hardening checkpoint, identify the highest-value remaining work that is still possible without registry pulls, a new cgroup-v2 host, model credentials, legal acceptance, publication, deployment, upload, or submission authority, then implement and verify that slice without weakening any live or owner boundary.
+
+### Starting condition
+
+Starting HEAD is clean `main` at ledger commit `cd3252146794c08ead8e512ac46551aa53a674a2`. Node v22.22.2, pnpm 11.9.0, and Docker Linux server 29.1.5 are reachable. `OPENAI_API_KEY`, `CODEX_MODEL`, immutable Node image, and helper-builder image remain unset; the current Docker environment remains cgroup v1. The same-run final release check has 42 truthful unmet requirements and the offline gate fails only the owner-selected `LICENSE`. The recorded external scope still excludes Docker registry access, model calls, Git publication, deployment, media upload, challenge actions, legal acceptance, license choice, and submission.
+
+### Planned actions
+
+- [x] Re-read every required control document completely and recheck Git, runtime, Docker, credential names, and the active goal.
+- [x] Audit M7/M9/M10 and the 42 release failures against authoritative source, tests, and evidence; three independent read-only reviews selected the absent server-to-UI repair-run orchestration spine as the highest-value reusable P0 slice.
+- [x] Reproduce the selected missing condition: `verify:live` has no success branch, the worker entrypoint is validate-only, and the application has no repair-run API, durable run/event state, SSE stream, or live-state Integration UI.
+- [x] Implement session-bound SQLite run/event persistence, a fail-closed execution port, idempotent repair-run API, reconnectable SSE, and explicit Integration empty/loading/blocked/fail/live states without adding a finalized issuer or PASS signer.
+- [x] Harden the new seam after read-only review: the local `rr_` identity maps to the signed v2 request ID; only the exact branded client and one-use settlement can succeed; exact input/provenance/files/commands/corpus/review are required; running stays unverified; and any transport, timeout, restart, or cleanup-uncertain result remains fail-stop poisoned.
+- [x] Complete the post-hardening full regression rerun, inspect the refreshed desktop and mobile captures, and obtain the second independent security review result with no remaining P0/P1.
+- [x] Run focused and broad regression gates, inspect generated artifacts, and obtain independent read-only review.
+- [ ] Update evidence and documentation, commit on current `main`, and leave the worktree clean.
+
+This continuation must not perform a registry pull, model call, push/publication, deployment, upload, terms acceptance, license selection, or challenge submission without the separately required authority and credentials.
+
+### Verification and review
+
+- `node scripts/build-core.mjs`: initial callback typing and exact-optional-field defects were corrected; the final build passes with the local-run/signed-request binding and private settlement boundary.
+- `node --test tests/unit/repair-run-coordinator.test.mjs`: final 5/5 pass, including shaped-result poisoning, restart recovery, abort-ignoring timeout, ordinary transport rejection, running-state `markFailed` rejection, and overlap blocking.
+- `node --test tests/unit/worker-rpc.test.mjs`: final 50/50 pass; a real branded v2 client binds the coordinator-created run ID, stores signed provenance, rejects a structural client, cannot replay a consumed/pre-issued result, permits a token-shaped random nonce, and rejects request/response semantic credentials before transport or trust.
+- `tests/unit/repair-run-session-pruning.test.mjs`: pass; expiry removes only safe terminal run/event history and retains queued, running, cleanup-pending, and poisoned rows as the cross-session fail-stop latch.
+- `pnpm lint` and `pnpm typecheck`: pass. `pnpm test`: 365/365 pass. `pnpm test:integration`: 61/61 pass. `pnpm eval`: 22/22 pass.
+- Worker and egress build-input hashes were recomputed after the final source change; `tests/unit/container-contract.test.mjs` passes 7/7.
+- `pnpm build`: passes with both dynamic repair-run routes. `pnpm test:e2e`: passes 3/3 after hardening, including CSRF rejection, durable `BLOCKED / NOT_STARTED`, SSE cursor replay, reload, terminal retry, and idempotent request replay. The refreshed Integration desktop and 390px mobile captures were inspected directly with no visible defect.
+- Two post-fix independent reviews found no remaining P0/P1. They confirmed signed run identity, global fail-stop retention, private one-use client/settlement objects, verified-settlement-only unlock, restricted `markFailed`, persisted provenance, and the final RPC boundary that scans only semantic fields while preserving full-envelope framing/path/binding/signature checks.
+- Recovered defect: whole-envelope credential scanning could randomly reject a valid Ed25519/base64url capability that resembled `sk-...`. A first narrow removal exposed a real outbound policy-text leak in independent review. The final fix scans canonical semantic `{model,input}` plus parsed `report/error`, directly rejects secrets in `sourcePolicy`/`policySummary`, and leaves opaque cryptographic fields to format/binding/signature validation. Focused and full suites passed after the correction.
+- The final pre-commit `pnpm verify` sequence passed 365 unit, 61 integration, 22 eval, 3 browser, static container, truthful draft, demo, build, and 427-file clean-copy reproduction. It failed the expected owner-selected `LICENSE` gate. Its first security pass correctly found the credential-shaped test sentinel; after changing that test-only literal to runtime composition, focused RPC 50/50 and the standalone 427-file/396-text-file plus Git-history security gate passed. The release receipt correctly remained unavailable because the intended checkpoint still differed from the Git index; it must be rerun from the committed clean tree.
+- Final independent full-diff review found no P0/P1, confirmed every new unit file is registered, fixture/environment/reset paths are connected, container/static-report hashes agree, documentation matches the fail-stop/semantic-scan implementation, and `git diff --check` is clean.
+- No registry pull, model call, push/publication, deployment, upload, terms acceptance, license selection, or challenge action occurred.
+
+## Previous checkpoint - Submission release gate hardening
 
 ### Objective
 

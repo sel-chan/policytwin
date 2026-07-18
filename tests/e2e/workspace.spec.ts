@@ -147,6 +147,69 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   for (const caseId of ["D01", "D02", "D03"]) {
     await expect(page.getByText(caseId, { exact: true })).toBeVisible();
   }
+  const untrustedRepair = await request.post(
+    "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+    { data: { clientRequestId: "44444444-4444-4444-8444-444444444444" } },
+  );
+  expect(untrustedRepair.status()).toBe(403);
+  const startRepair = page.getByRole("button", { name: "Start guarded Codex repair" });
+  await expect(startRepair).toBeEnabled();
+  await startRepair.click();
+  await expect(page.getByText("BLOCKED", { exact: true })).toBeVisible();
+  await expect(page.getByText("Run created", { exact: true })).toBeVisible();
+  await expect(page.getByText("Run blocked", { exact: true })).toBeVisible();
+  await expect(page.getByText("No model or Codex call occurred for this blocked run.")).toBeVisible();
+  const replayedTimeline = await page.evaluate(async () => {
+    const latestResponse = await fetch(
+      "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+      { cache: "no-store" },
+    );
+    const latest = (await latestResponse.json()) as { run: { id: string } };
+    const response = await fetch(
+      `/api/policies/policy-seeded-refund/versions/4/repair-runs/${latest.run.id}/events`,
+      { headers: { "Last-Event-ID": "1" } },
+    );
+    return { status: response.status, body: await response.text() };
+  });
+  expect(replayedTimeline.status).toBe(200);
+  expect(replayedTimeline.body).not.toContain("id: 1\n");
+  expect(replayedTimeline.body).toContain("id: 2\n");
+  expect(replayedTimeline.body).toContain('"type":"RUN_BLOCKED"');
+  await page.reload();
+  await expect(page.getByText("BLOCKED", { exact: true })).toBeVisible();
+  await expect(page.getByText("Run blocked", { exact: true })).toBeVisible();
+  const firstRunHeading = await page.locator(".repair-run-panel h2").innerText();
+  await page.getByRole("button", { name: "Create new guarded attempt" }).click();
+  await expect(page.getByText("BLOCKED", { exact: true })).toBeVisible();
+  await expect.poll(() => page.locator(".repair-run-panel h2").innerText()).not.toBe(firstRunHeading);
+  const idempotentRepairReplay = await page.evaluate(async () => {
+    const workspaceResponse = await fetch(
+      "/api/policies/policy-seeded-refund/workspace",
+      { cache: "no-store" },
+    );
+    const workspace = (await workspaceResponse.json()) as { csrfToken: string };
+    const latestResponse = await fetch(
+      "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+      { cache: "no-store" },
+    );
+    const latest = (await latestResponse.json()) as {
+      run: { clientRequestId: string };
+    };
+    const response = await fetch(
+      "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-PolicyTwin-CSRF": workspace.csrfToken,
+        },
+        body: JSON.stringify({ clientRequestId: latest.run.clientRequestId }),
+      },
+    );
+    return { status: response.status, body: await response.json() };
+  });
+  expect(idempotentRepairReplay.status).toBe(200);
+  expect(idempotentRepairReplay.body.created).toBe(false);
   await page.screenshot({ path: resolve(screenshotDirectory, "04-integration-drift.png"), fullPage: true });
 
   await page.getByRole("link", { name: /Proof/u }).click();

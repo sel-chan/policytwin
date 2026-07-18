@@ -319,13 +319,13 @@ export function parseRepairWorkerInput(value: unknown): RepairWorkerInput {
   if (result.maxRepairAttempts !== 1 && result.maxRepairAttempts !== 2) {
     throw new Error("Repair attempts must be bounded to one or two.");
   }
-  const sourcePolicy = boundedString(
-    result.sourcePolicy,
+  const sourcePolicy = assertNoSensitiveWorkerText(
+    boundedString(result.sourcePolicy, "repair input.sourcePolicy", MAX_SOURCE_POLICY_LENGTH),
     "repair input.sourcePolicy",
     MAX_SOURCE_POLICY_LENGTH,
   );
-  const policySummary = boundedString(
-    result.policySummary,
+  const policySummary = assertNoSensitiveWorkerText(
+    boundedString(result.policySummary, "repair input.policySummary", MAX_POLICY_SUMMARY_LENGTH),
     "repair input.policySummary",
     MAX_POLICY_SUMMARY_LENGTH,
   );

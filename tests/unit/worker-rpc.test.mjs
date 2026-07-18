@@ -15,6 +15,7 @@ import {
   canonicalWorkerRpcJson,
   createExternalWorkerRpcClient,
   createExternalWorkerRpcV2Client,
+  consumeValidatedExternalWorkerV2Run,
   createMutualTlsWorkerRpcTransport,
   createMutualTlsWorkerRpcV2Transport,
   createWorkerRpcTrustBundle,
@@ -636,6 +637,74 @@ test("signed external-worker RPC binds one validated repair run without secrets 
   assert.equal(Object.hasOwn(observedRequest, "command"), false);
 });
 
+test("RPC secret scanning separates opaque nonce bytes from semantic request and response text", async () => {
+  const opaqueNonce = `sk-${"A".repeat(40)}`;
+  const opaqueNonceBytes = Buffer.from(opaqueNonce, "base64url");
+  const transport = {
+    id: "opaque-nonce-secret-shape",
+    authenticationMode: "MUTUAL_TLS",
+    async call(canonicalRequest) {
+      const request = parseWorkerRpcRequest(JSON.parse(canonicalRequest));
+      assert.equal(request.runNonce, opaqueNonce);
+      return streamedResponse(signedResponse(request));
+    },
+  };
+  const result = await createExternalWorkerRpcClient(
+    clientOptions(transport, {
+      randomBytes(size) {
+        if (size === 16) return Buffer.alloc(16, 1);
+        if (size === 32) return opaqueNonceBytes;
+        throw new Error("Unexpected random-byte request.");
+      },
+    }),
+  ).runRepair(input);
+  assert.equal(result.runNonce, opaqueNonce);
+
+  let outboundCalls = 0;
+  const semanticOutboundTransport = {
+    id: "semantic-outbound-secret-rejected",
+    authenticationMode: "MUTUAL_TLS",
+    async call() {
+      outboundCalls += 1;
+      throw new Error("Semantic secrets must be rejected before transport.");
+    },
+  };
+  const outboundClient = createExternalWorkerRpcClient(clientOptions(semanticOutboundTransport));
+  const credentialAssignmentName = ["OPENAI", "API", "KEY"].join("_");
+  await assert.rejects(
+    outboundClient.runRepair({
+      ...input,
+      policySummary: `${credentialAssignmentName}=sk-${"S".repeat(24)}`,
+    }),
+    /sensitive or personal-path content/u,
+  );
+  await assert.rejects(
+    outboundClient.runRepair({
+      ...input,
+      sourcePolicy: `${input.sourcePolicy}\nBearer ${"T".repeat(24)}`,
+    }),
+    /sensitive or personal-path content/u,
+  );
+  assert.equal(outboundCalls, 0);
+
+  const semanticSecretTransport = {
+    id: "semantic-secret-rejected",
+    authenticationMode: "MUTUAL_TLS",
+    async call(canonicalRequest) {
+      const request = parseWorkerRpcRequest(JSON.parse(canonicalRequest));
+      const report = liveReport(request);
+      report.review.summary = `sk-${"Z".repeat(24)}`;
+      return streamedResponse(
+        signedResponse(request, { reportOverrides: { review: report.review } }),
+      );
+    },
+  };
+  await assert.rejects(
+    createExternalWorkerRpcClient(clientOptions(semanticSecretTransport)).runRepair(input),
+    /sensitive or personal-path content/u,
+  );
+});
+
 test("RPC rejects tampering, untrusted keys, weakened teardown, and phase metadata mismatch", async (t) => {
   const cases = [
     {
@@ -1009,26 +1078,115 @@ test("RPC permits only one in-flight run and aborts an unresponsive transport", 
   await assert.rejects(first, /timed out|aborted/u);
 });
 
-test("Worker RPC v2 accepts one signed live-purpose CPU-bound repair result", async (t) => {
-  let observedRequest;
+test("Worker RPC v2 accepts one signed live result and binds a coordinator run identity", async (t) => {
+  const observedRequests = [];
   const transport = await createScriptedV2Transport(
     t,
     async (request) => {
-      observedRequest = request;
-      return signedV2Response(request);
+      observedRequests.push(request);
+      return signedV2Response(request, {
+        supervisorRunId: `live-${request.requestId}`,
+      });
     },
     "signed-v2-test-transport",
   );
-  const result = await createExternalWorkerRpcV2Client(v2ClientOptions(transport)).runRepair(
-    input,
+  const client = createExternalWorkerRpcV2Client(
+    v2ClientOptions(transport, { now: () => new Date("2026-07-18T08:00:00.000Z") }),
   );
+  const result = await client.runRepair(input);
+  const observedRequest = observedRequests[0];
   assert.equal(observedRequest.schemaVersion, "2");
   assert.equal(observedRequest.protocol, "policytwin.codex.repair.v2");
   assert.equal(result.executionBindingSha256, observedRequest.executionBindingSha256);
+  assert.equal(result.inputSha256, workerRpcSha256(input));
   assert.equal(result.receipt.cpuEvidence.outcome, "OBSERVED_WITHIN_BUDGET");
   assert.equal(result.receipt.cpuEvidence.aggregateUsageUsec, "100");
   assert.equal(result.receipt.cpuEvidence.hardLimitEnforced, false);
   assert.equal(result.receipt.cpuEvidence.overshootBounded, false);
+  assert.throws(
+    () => consumeValidatedExternalWorkerV2Run(structuredClone(result)),
+    /fresh result issued by the authenticated external worker/u,
+  );
+  consumeValidatedExternalWorkerV2Run(result);
+  assert.throws(
+    () => consumeValidatedExternalWorkerV2Run(result),
+    /fresh result issued by the authenticated external worker/u,
+  );
+  assert.throws(
+    () =>
+      policyTwin.createAuthenticatedExternalWorkerRepairRunExecutionPort({
+        async runRepair() {
+          return result;
+        },
+      }),
+    /exact external worker v2 client/u,
+  );
+  const repository = new policyTwin.SQLiteRepairRunRepository(":memory:");
+  const authenticatedPort = policyTwin.createAuthenticatedExternalWorkerRepairRunExecutionPort(client);
+  const clock = (() => {
+    let milliseconds = Date.parse("2026-07-18T08:00:00.000Z");
+    return () => new Date(milliseconds++);
+  })();
+  const coordinator = new policyTwin.RepairRunCoordinator(
+    repository,
+    authenticatedPort,
+    { now: clock },
+  );
+  const started = coordinator.start({
+    clientRequestId: "77777777-7777-4777-8777-777777777777",
+    sessionToken: Buffer.alloc(32, 9).toString("base64url"),
+    input,
+  });
+  await coordinator.waitForRun(started.run.id);
+  const completed = repository.getRunForSession(
+    started.run.id,
+    policyTwin.repairRunSessionSha256(Buffer.alloc(32, 9).toString("base64url")),
+  );
+  assert.equal(
+    completed.status,
+    "SUCCEEDED",
+    JSON.stringify({
+      completed,
+      observedRequestIds: observedRequests.map((request) => request.requestId),
+      events: repository.listEventsForSession(
+        started.run.id,
+        policyTwin.repairRunSessionSha256(Buffer.alloc(32, 9).toString("base64url")),
+      ),
+    }),
+  );
+  assert.equal(completed.executionMode, "LIVE_CODEX_SDK");
+  assert.equal(observedRequests[1].requestId, started.run.id.slice(3));
+  assert.equal(completed.result.externalRequestId, started.run.id.slice(3));
+  assert.equal(
+    completed.result.executionBindingSha256,
+    observedRequests[1].executionBindingSha256,
+  );
+  assert.equal(completed.result.verification.total, 41);
+  assert.equal(completed.result.review.verdict, "APPROVE");
+  const replayCoordinator = new policyTwin.RepairRunCoordinator(
+    repository,
+    {
+      readiness: () => ({ ready: true }),
+      async execute() {
+        return result;
+      },
+    },
+    { now: clock },
+  );
+  const replay = replayCoordinator.start({
+    clientRequestId: "78787878-7878-4787-8787-787878787878",
+    sessionToken: Buffer.alloc(32, 9).toString("base64url"),
+    input,
+  });
+  await replayCoordinator.waitForRun(replay.run.id);
+  assert.equal(
+    repository.getRunForSession(
+      replay.run.id,
+      policyTwin.repairRunSessionSha256(Buffer.alloc(32, 9).toString("base64url")),
+    ).status,
+    "POISONED",
+  );
+  repository.close();
 });
 
 test("Worker RPC v2 rejects local-socket transport and reused v1 key material at construction", async () => {
