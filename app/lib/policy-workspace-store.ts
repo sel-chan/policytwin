@@ -1,7 +1,12 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
-import { SQLitePolicyRepository } from "../../dist/persistence/sqlite.js";
+import {
+  ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX,
+  PolicyPersistenceError,
+  SQLitePolicyRepository,
+  type StoredAnonymousWorkspaceProject,
+} from "../../dist/persistence/sqlite.js";
 import { SingleRunGate } from "../../dist/openai/request-guard.js";
 import { PolicyWorkspaceService } from "../../dist/workspace/service.js";
 import {
@@ -15,7 +20,7 @@ import {
   isWorkspaceSessionExpired,
 } from "../../dist/workspace/http.js";
 
-export const SEEDED_POLICY_ID = "policy-seeded-refund";
+export const SEEDED_POLICY_ID = ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX.slice(0, -1);
 export const ANONYMOUS_WORKSPACE_TTL_MS = 24 * 60 * 60 * 1000;
 export const MAX_ANONYMOUS_WORKSPACES = 128;
 
@@ -98,9 +103,18 @@ export function seededPolicyIdForSession(sessionToken: string): string {
   return `${SEEDED_POLICY_ID}-${sessionHash}`;
 }
 
-function deleteExpiredAnonymousWorkspace(store: SeededWorkspaceStore, policyId: string): void {
-  store.repairRunRepository.pruneTerminalRunsForPolicy(policyId);
-  store.repository.deleteProject(policyId);
+function deleteExpiredAnonymousWorkspace(
+  store: SeededWorkspaceStore,
+  project: StoredAnonymousWorkspaceProject,
+): boolean {
+  return store.repository.deleteAnonymousWorkspaceIfGeneration(
+    project.id,
+    project.storageGeneration,
+    () => {
+      const pruned = store.repairRunRepository.pruneTerminalRunsForPolicy(project.id);
+      return pruned.retainedFailStopRuns === 0;
+    },
+  );
 }
 
 export function ensureSeededSessionWorkspace(
@@ -113,27 +127,20 @@ export function ensureSeededSessionWorkspace(
   if (!Number.isFinite(nowMs)) {
     throw new Error("Workspace session time is invalid.");
   }
-  const sessionPrefix = `${SEEDED_POLICY_ID}-`;
-  for (const project of store.repository.listProjects()) {
+  const sessionPrefix = ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX;
+  for (const project of store.repository.listAnonymousWorkspaceProjects()) {
     if (
-      project.id.startsWith(sessionPrefix) &&
       isWorkspaceSessionExpired(project.createdAt, now, ANONYMOUS_WORKSPACE_TTL_MS)
     ) {
-      deleteExpiredAnonymousWorkspace(store, project.id);
+      deleteExpiredAnonymousWorkspace(store, project);
     }
   }
-  if (store.repository.getProject(policyId)) {
+  const existing = store.repository.getAnonymousWorkspaceProject(policyId);
+  if (existing) {
+    if (isWorkspaceSessionExpired(existing.createdAt, now, ANONYMOUS_WORKSPACE_TTL_MS)) {
+      throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session has expired.");
+    }
     return policyId;
-  }
-  const activeSessionCount = store.repository
-    .listProjects()
-    .filter((project) => project.id.startsWith(sessionPrefix)).length;
-  if (activeSessionCount >= anonymousWorkspaceCapacity()) {
-    throw new WorkspaceHttpError(
-      429,
-      "WORKSPACE_CAPACITY",
-      "Anonymous workspace capacity is temporarily exhausted.",
-    );
   }
   const sourceText = readFileSync(
     resolve(process.cwd(), "fixtures", "interpreter", "seeded-refund-policy.txt"),
@@ -154,18 +161,43 @@ export function ensureSeededSessionWorkspace(
   policyIR.policyId = policyId;
   policyIR.id = `${policyId}-v1`;
   try {
-    store.service.createProject({
-      id: policyId,
-      title: "Seeded SaaS refund policy",
-      sourceText,
-      goldenCases,
-      policyIR,
-      createdAt: now.toISOString(),
-    });
+    store.repository.createProjectWithinCapacity(
+      {
+        id: policyId,
+        title: "Seeded SaaS refund policy",
+        sourceText,
+        goldenCases,
+        policyIR,
+        createdAt: now.toISOString(),
+      },
+      {
+        idPrefix: sessionPrefix,
+        maximumProjects: anonymousWorkspaceCapacity(),
+      },
+    );
   } catch (error) {
-    if (!store.repository.getProject(policyId)) {
-      throw error;
+    if (
+      error instanceof PolicyPersistenceError &&
+      error.code === "PROJECT_RETIRED"
+    ) {
+      throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session has expired.");
     }
+    if (
+      error instanceof PolicyPersistenceError &&
+      error.code === "PROJECT_EXISTS"
+    ) {
+      const concurrent = store.repository.getAnonymousWorkspaceProject(policyId);
+      if (
+        concurrent &&
+        !isWorkspaceSessionExpired(concurrent.createdAt, now, ANONYMOUS_WORKSPACE_TTL_MS)
+      ) {
+        return policyId;
+      }
+      if (concurrent) {
+        throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session has expired.");
+      }
+    }
+    throw error;
   }
   return policyId;
 }
@@ -176,12 +208,21 @@ export function getSessionPolicyId(
   now = new Date(),
 ): string {
   const policyId = seededPolicyIdForSession(sessionToken);
-  const project = store.repository.getProject(policyId);
+  const project = store.repository.getAnonymousWorkspaceProject(policyId);
   if (!project) {
     throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session project is absent.");
   }
   if (isWorkspaceSessionExpired(project.createdAt, now, ANONYMOUS_WORKSPACE_TTL_MS)) {
-    deleteExpiredAnonymousWorkspace(store, policyId);
+    const deleted = deleteExpiredAnonymousWorkspace(store, project);
+    if (!deleted) {
+      const refreshed = store.repository.getAnonymousWorkspaceProject(policyId);
+      if (
+        refreshed &&
+        !isWorkspaceSessionExpired(refreshed.createdAt, now, ANONYMOUS_WORKSPACE_TTL_MS)
+      ) {
+        return policyId;
+      }
+    }
     throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session has expired.");
   }
   return policyId;

@@ -69,7 +69,7 @@ test("real OPA compiles Rego v1 and agrees with the accepted 41-case corpus", ()
   }
 });
 
-test("OPA runner rejects malformed policy, invalid input, and an unapproved query", () => {
+test("OPA runner rejects malformed policy, invalid input, unapproved query, and a spent run budget", () => {
   const validInput = goldenCases[0].input;
   assert.throws(
     () =>
@@ -118,5 +118,22 @@ test("OPA runner rejects malformed policy, invalid input, and an unapproved quer
         cases: [{ id: "bad-checksum", input: validInput }],
       }),
     /checksum mismatch/u,
+  );
+  assert.throws(
+    () =>
+      runOpaCases({
+        executablePath: opaPath,
+        expectedVersion: contract.opaVersion,
+        expectedExecutableSha256: opaSha256,
+        regoSource: compilePolicyToRego(acceptedPolicy()).source,
+        query: "data.policytwin.refund.decision",
+        cases: Array.from({ length: 1_000 }, (_, index) => ({
+          id: `overall-timeout-${index}`,
+          input: validInput,
+        })),
+        timeoutMs: 30_000,
+        overallTimeoutMs: 100,
+      }),
+    /OPA run exceeded the 100ms overall timeout/u,
   );
 });

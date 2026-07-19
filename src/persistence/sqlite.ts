@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { randomBytes } from "node:crypto";
 import { parsePolicyCases } from "../domain/case-validation.js";
 import type { PolicyCase } from "../domain/cases.js";
 import { findGoldenContradictions } from "../policy-ir/evaluate.js";
@@ -11,8 +12,11 @@ import {
 import type { PolicyIR } from "../policy-ir/types.js";
 import { parsePolicyIR } from "../policy-ir/validate.js";
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 3;
 const IDENTIFIER = /^[a-z0-9][a-z0-9._-]{0,127}$/u;
+const STORAGE_GENERATION = /^[a-f0-9]{32}$/u;
+const ANONYMOUS_CAPACITY_SCOPE = "anonymous-workspace-v1";
+export const ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX = "policy-seeded-refund-";
 const LIFECYCLE_STATES = new Set<PolicyLifecycleState>([
   "DRAFT",
   "INTERPRETING",
@@ -40,6 +44,10 @@ export interface StoredPolicyProject {
   updatedAt: string;
 }
 
+export interface StoredAnonymousWorkspaceProject extends StoredPolicyProject {
+  storageGeneration: string;
+}
+
 export interface StoredPolicyVersion {
   policyId: string;
   version: number;
@@ -60,6 +68,11 @@ export interface CreatePolicyProjectInput {
   createdAt?: string;
 }
 
+export interface PolicyProjectCapacityScope {
+  idPrefix: string;
+  maximumProjects: number;
+}
+
 export interface AppendPolicyVersionInput {
   policyId: string;
   expectedParentVersion: number;
@@ -75,6 +88,8 @@ export class PolicyPersistenceError extends Error {
     readonly code:
       | "INVALID_INPUT"
       | "PROJECT_EXISTS"
+      | "PROJECT_CAPACITY"
+      | "PROJECT_RETIRED"
       | "PROJECT_NOT_FOUND"
       | "VERSION_NOT_FOUND"
       | "STALE_VERSION"
@@ -88,6 +103,13 @@ export class PolicyPersistenceError extends Error {
   ) {
     super(message);
     this.name = "PolicyPersistenceError";
+  }
+}
+
+class PolicyTransactionCallbackError extends Error {
+  constructor(readonly callbackCause: unknown) {
+    super("Policy transaction callback failed.");
+    this.name = "PolicyTransactionCallbackError";
   }
 }
 
@@ -278,6 +300,57 @@ function createInput(value: unknown): {
   };
 }
 
+function projectCapacityScope(
+  value: unknown,
+  projectId: string,
+): PolicyProjectCapacityScope {
+  if (!isRecord(value)) {
+    throw new PolicyPersistenceError("INVALID_INPUT", "Project capacity scope must be an object.");
+  }
+  assertKeys(value, ["idPrefix", "maximumProjects"], "$capacity");
+  const idPrefix = identifier(value.idPrefix, "$capacity.idPrefix");
+  if (idPrefix !== ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX) {
+    throw new PolicyPersistenceError(
+      "INVALID_INPUT",
+      "$capacity.idPrefix must select the reserved anonymous workspace namespace.",
+    );
+  }
+  if (
+    typeof value.maximumProjects !== "number" ||
+    !Number.isSafeInteger(value.maximumProjects) ||
+    value.maximumProjects < 1
+  ) {
+    throw new PolicyPersistenceError(
+      "INVALID_INPUT",
+      "$capacity.maximumProjects must be a positive safe integer.",
+    );
+  }
+  if (!projectId.startsWith(idPrefix)) {
+    throw new PolicyPersistenceError(
+      "INVALID_INPUT",
+      "$project.id must belong to $capacity.idPrefix.",
+    );
+  }
+  return { idPrefix, maximumProjects: value.maximumProjects };
+}
+
+function storageGeneration(value: unknown, path: string): string {
+  if (typeof value !== "string" || !STORAGE_GENERATION.test(value)) {
+    throw new PolicyPersistenceError("INVALID_INPUT", `${path} is not a storage generation.`);
+  }
+  return value;
+}
+
+function storedStorageGeneration(value: unknown, path: string): string {
+  if (typeof value !== "string" || !STORAGE_GENERATION.test(value)) {
+    throw new PolicyPersistenceError(
+      "CORRUPTED_STORAGE",
+      `${path} is not a stored storage generation.`,
+    );
+  }
+  return value;
+}
+
 function appendInput(value: unknown): {
   policyId: string;
   expectedParentVersion: number;
@@ -459,7 +532,7 @@ export class SQLitePolicyRepository {
     this.#database.exec("PRAGMA busy_timeout = 5000");
     const versionRow = this.#database.prepare("PRAGMA user_version").get();
     const currentVersion = versionRow ? rowInteger(versionRow, "user_version") : 0;
-    if (currentVersion !== 0 && currentVersion !== SCHEMA_VERSION) {
+    if (currentVersion < 0 || currentVersion > SCHEMA_VERSION) {
       throw new PolicyPersistenceError(
         "UNSUPPORTED_SCHEMA",
         `Unsupported persistence schema version: ${currentVersion}.`,
@@ -468,49 +541,358 @@ export class SQLitePolicyRepository {
     if (currentVersion === SCHEMA_VERSION) {
       return;
     }
-    this.#database.exec(`
-      CREATE TABLE policy_projects (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        current_version INTEGER NOT NULL CHECK (current_version >= 1),
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      );
-      CREATE TABLE policy_versions (
-        policy_id TEXT NOT NULL,
-        version INTEGER NOT NULL CHECK (version >= 1),
-        parent_version INTEGER,
-        source_text TEXT NOT NULL,
-        golden_cases_json TEXT NOT NULL,
-        policy_ir_json TEXT,
-        lifecycle_state TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        PRIMARY KEY (policy_id, version),
-        FOREIGN KEY (policy_id) REFERENCES policy_projects(id) ON DELETE RESTRICT,
-        FOREIGN KEY (policy_id, parent_version)
-          REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT
-      );
-      CREATE TABLE policy_decisions (
-        id TEXT PRIMARY KEY,
-        policy_id TEXT NOT NULL,
-        from_version INTEGER NOT NULL,
-        to_version INTEGER NOT NULL,
-        ambiguity_id TEXT NOT NULL,
-        selected_option_id TEXT NOT NULL,
-        policy_patch_json TEXT NOT NULL,
-        decided_at TEXT NOT NULL,
-        UNIQUE (policy_id, to_version),
-        FOREIGN KEY (policy_id, from_version)
-          REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT,
-        FOREIGN KEY (policy_id, to_version)
-          REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT
-      );
-      CREATE INDEX policy_versions_created_idx
-        ON policy_versions(policy_id, created_at);
-      CREATE INDEX policy_decisions_policy_idx
-        ON policy_decisions(policy_id, to_version);
-      PRAGMA user_version = 1;
-    `);
+    this.#transaction(() => {
+      const lockedVersionRow = this.#database.prepare("PRAGMA user_version").get();
+      const lockedVersion = lockedVersionRow
+        ? rowInteger(lockedVersionRow, "user_version")
+        : 0;
+      if (lockedVersion === SCHEMA_VERSION) {
+        return;
+      }
+      if (lockedVersion === 1) {
+        this.#database.exec(`
+          ALTER TABLE policy_projects ADD COLUMN storage_generation TEXT;
+          ALTER TABLE policy_projects ADD COLUMN capacity_scope TEXT;
+          UPDATE policy_projects
+            SET storage_generation = lower(hex(randomblob(16))),
+                capacity_scope = CASE
+                  WHEN substr(id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+                    THEN '${ANONYMOUS_CAPACITY_SCOPE}'
+                  ELSE NULL
+                END;
+          CREATE UNIQUE INDEX policy_projects_generation_idx
+            ON policy_projects(storage_generation);
+          CREATE TABLE policy_project_delete_authority (
+            policy_id TEXT PRIMARY KEY,
+            storage_generation TEXT NOT NULL
+              CHECK (length(storage_generation) = 32 AND storage_generation NOT GLOB '*[^0-9a-f]*'),
+            FOREIGN KEY (policy_id) REFERENCES policy_projects(id) ON DELETE CASCADE
+          );
+          CREATE TABLE anonymous_workspace_tombstones (
+            policy_id TEXT PRIMARY KEY
+              CHECK (substr(policy_id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'),
+            storage_generation TEXT NOT NULL UNIQUE
+              CHECK (length(storage_generation) = 32 AND storage_generation NOT GLOB '*[^0-9a-f]*')
+          );
+          CREATE TRIGGER anonymous_workspace_tombstones_insert_guard
+            BEFORE INSERT ON anonymous_workspace_tombstones
+            WHEN NOT EXISTS (
+              SELECT 1 FROM policy_projects
+              WHERE id = NEW.policy_id
+                AND storage_generation = NEW.storage_generation
+                AND capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'invalid anonymous workspace tombstone');
+            END;
+          CREATE TRIGGER policy_projects_retired_anonymous_insert_guard
+            BEFORE INSERT ON policy_projects
+            WHEN EXISTS (
+              SELECT 1 FROM anonymous_workspace_tombstones
+              WHERE policy_id = NEW.id
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'retired anonymous workspace cannot be recreated');
+            END;
+          CREATE TRIGGER policy_projects_retired_anonymous_update_guard
+            BEFORE UPDATE OF id ON policy_projects
+            WHEN EXISTS (
+              SELECT 1 FROM anonymous_workspace_tombstones
+              WHERE policy_id = NEW.id
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'retired anonymous workspace cannot be recreated');
+            END;
+          CREATE TRIGGER policy_projects_generation_insert_guard
+            BEFORE INSERT ON policy_projects
+            WHEN NEW.storage_generation IS NULL
+              OR length(NEW.storage_generation) != 32
+              OR NEW.storage_generation GLOB '*[^0-9a-f]*'
+            BEGIN
+              SELECT RAISE(ABORT, 'invalid policy project storage generation');
+            END;
+          CREATE TRIGGER policy_projects_generation_update_guard
+            BEFORE UPDATE OF storage_generation ON policy_projects
+            WHEN NEW.storage_generation != OLD.storage_generation
+              OR NEW.storage_generation IS NULL
+              OR length(NEW.storage_generation) != 32
+              OR NEW.storage_generation GLOB '*[^0-9a-f]*'
+            BEGIN
+              SELECT RAISE(ABORT, 'invalid policy project storage generation');
+            END;
+          CREATE TRIGGER policy_projects_capacity_scope_insert_guard
+            BEFORE INSERT ON policy_projects
+            WHEN (
+              substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+              AND coalesce(NEW.capacity_scope, '') != '${ANONYMOUS_CAPACITY_SCOPE}'
+            ) OR (
+              substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) != '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+              AND NEW.capacity_scope IS NOT NULL
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'invalid policy project capacity scope');
+            END;
+          CREATE TRIGGER policy_projects_capacity_scope_update_guard
+            BEFORE UPDATE OF id, capacity_scope ON policy_projects
+            WHEN (
+              substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+              AND coalesce(NEW.capacity_scope, '') != '${ANONYMOUS_CAPACITY_SCOPE}'
+            ) OR (
+              substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) != '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+              AND NEW.capacity_scope IS NOT NULL
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'invalid policy project capacity scope');
+            END;
+          CREATE TRIGGER policy_project_delete_authority_insert_guard
+            BEFORE INSERT ON policy_project_delete_authority
+            WHEN NOT EXISTS (
+              SELECT 1 FROM policy_projects
+              WHERE id = NEW.policy_id
+                AND storage_generation = NEW.storage_generation
+                AND capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'invalid anonymous project delete authority');
+            END;
+          CREATE TRIGGER policy_projects_anonymous_delete_guard
+            BEFORE DELETE ON policy_projects
+            WHEN OLD.capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+              AND (
+                NOT EXISTS (
+                  SELECT 1 FROM policy_project_delete_authority
+                  WHERE policy_id = OLD.id
+                    AND storage_generation = OLD.storage_generation
+                )
+                OR NOT EXISTS (
+                  SELECT 1 FROM anonymous_workspace_tombstones
+                  WHERE policy_id = OLD.id
+                    AND storage_generation = OLD.storage_generation
+                )
+              )
+            BEGIN
+              SELECT RAISE(ABORT, 'anonymous project retirement authority required');
+            END;
+          PRAGMA user_version = 3;
+        `);
+        return;
+      }
+      if (lockedVersion === 2) {
+        this.#database.exec(`
+          CREATE TABLE anonymous_workspace_tombstones (
+            policy_id TEXT PRIMARY KEY
+              CHECK (substr(policy_id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'),
+            storage_generation TEXT NOT NULL UNIQUE
+              CHECK (length(storage_generation) = 32 AND storage_generation NOT GLOB '*[^0-9a-f]*')
+          );
+          CREATE TRIGGER anonymous_workspace_tombstones_insert_guard
+            BEFORE INSERT ON anonymous_workspace_tombstones
+            WHEN NOT EXISTS (
+              SELECT 1 FROM policy_projects
+              WHERE id = NEW.policy_id
+                AND storage_generation = NEW.storage_generation
+                AND capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'invalid anonymous workspace tombstone');
+            END;
+          CREATE TRIGGER policy_projects_retired_anonymous_insert_guard
+            BEFORE INSERT ON policy_projects
+            WHEN EXISTS (
+              SELECT 1 FROM anonymous_workspace_tombstones
+              WHERE policy_id = NEW.id
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'retired anonymous workspace cannot be recreated');
+            END;
+          CREATE TRIGGER policy_projects_retired_anonymous_update_guard
+            BEFORE UPDATE OF id ON policy_projects
+            WHEN EXISTS (
+              SELECT 1 FROM anonymous_workspace_tombstones
+              WHERE policy_id = NEW.id
+            )
+            BEGIN
+              SELECT RAISE(ABORT, 'retired anonymous workspace cannot be recreated');
+            END;
+          DROP TRIGGER policy_projects_anonymous_delete_guard;
+          CREATE TRIGGER policy_projects_anonymous_delete_guard
+            BEFORE DELETE ON policy_projects
+            WHEN OLD.capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+              AND (
+                NOT EXISTS (
+                  SELECT 1 FROM policy_project_delete_authority
+                  WHERE policy_id = OLD.id
+                    AND storage_generation = OLD.storage_generation
+                )
+                OR NOT EXISTS (
+                  SELECT 1 FROM anonymous_workspace_tombstones
+                  WHERE policy_id = OLD.id
+                    AND storage_generation = OLD.storage_generation
+                )
+              )
+            BEGIN
+              SELECT RAISE(ABORT, 'anonymous project retirement authority required');
+            END;
+          PRAGMA user_version = 3;
+        `);
+        return;
+      }
+      if (lockedVersion !== 0) {
+        throw new PolicyPersistenceError(
+          "UNSUPPORTED_SCHEMA",
+          `Unsupported persistence schema version: ${lockedVersion}.`,
+        );
+      }
+      this.#database.exec(`
+        CREATE TABLE policy_projects (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          current_version INTEGER NOT NULL CHECK (current_version >= 1),
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          storage_generation TEXT NOT NULL UNIQUE
+            CHECK (length(storage_generation) = 32 AND storage_generation NOT GLOB '*[^0-9a-f]*'),
+          capacity_scope TEXT CHECK (capacity_scope IS NULL OR capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}')
+        );
+        CREATE TABLE policy_versions (
+          policy_id TEXT NOT NULL,
+          version INTEGER NOT NULL CHECK (version >= 1),
+          parent_version INTEGER,
+          source_text TEXT NOT NULL,
+          golden_cases_json TEXT NOT NULL,
+          policy_ir_json TEXT,
+          lifecycle_state TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (policy_id, version),
+          FOREIGN KEY (policy_id) REFERENCES policy_projects(id) ON DELETE RESTRICT,
+          FOREIGN KEY (policy_id, parent_version)
+            REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT
+        );
+        CREATE TABLE policy_decisions (
+          id TEXT PRIMARY KEY,
+          policy_id TEXT NOT NULL,
+          from_version INTEGER NOT NULL,
+          to_version INTEGER NOT NULL,
+          ambiguity_id TEXT NOT NULL,
+          selected_option_id TEXT NOT NULL,
+          policy_patch_json TEXT NOT NULL,
+          decided_at TEXT NOT NULL,
+          UNIQUE (policy_id, to_version),
+          FOREIGN KEY (policy_id, from_version)
+            REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT,
+          FOREIGN KEY (policy_id, to_version)
+            REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT
+        );
+        CREATE TABLE policy_project_delete_authority (
+          policy_id TEXT PRIMARY KEY,
+          storage_generation TEXT NOT NULL
+            CHECK (length(storage_generation) = 32 AND storage_generation NOT GLOB '*[^0-9a-f]*'),
+          FOREIGN KEY (policy_id) REFERENCES policy_projects(id) ON DELETE CASCADE
+        );
+        CREATE TABLE anonymous_workspace_tombstones (
+          policy_id TEXT PRIMARY KEY
+            CHECK (substr(policy_id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'),
+          storage_generation TEXT NOT NULL UNIQUE
+            CHECK (length(storage_generation) = 32 AND storage_generation NOT GLOB '*[^0-9a-f]*')
+        );
+        CREATE INDEX policy_versions_created_idx
+          ON policy_versions(policy_id, created_at);
+        CREATE INDEX policy_decisions_policy_idx
+          ON policy_decisions(policy_id, to_version);
+        CREATE TRIGGER anonymous_workspace_tombstones_insert_guard
+          BEFORE INSERT ON anonymous_workspace_tombstones
+          WHEN NOT EXISTS (
+            SELECT 1 FROM policy_projects
+            WHERE id = NEW.policy_id
+              AND storage_generation = NEW.storage_generation
+              AND capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'invalid anonymous workspace tombstone');
+          END;
+        CREATE TRIGGER policy_projects_retired_anonymous_insert_guard
+          BEFORE INSERT ON policy_projects
+          WHEN EXISTS (
+            SELECT 1 FROM anonymous_workspace_tombstones
+            WHERE policy_id = NEW.id
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'retired anonymous workspace cannot be recreated');
+          END;
+        CREATE TRIGGER policy_projects_retired_anonymous_update_guard
+          BEFORE UPDATE OF id ON policy_projects
+          WHEN EXISTS (
+            SELECT 1 FROM anonymous_workspace_tombstones
+            WHERE policy_id = NEW.id
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'retired anonymous workspace cannot be recreated');
+          END;
+        CREATE TRIGGER policy_projects_capacity_scope_insert_guard
+          BEFORE INSERT ON policy_projects
+          WHEN (
+            substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+            AND coalesce(NEW.capacity_scope, '') != '${ANONYMOUS_CAPACITY_SCOPE}'
+          ) OR (
+            substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) != '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+            AND NEW.capacity_scope IS NOT NULL
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'invalid policy project capacity scope');
+          END;
+        CREATE TRIGGER policy_projects_generation_update_guard
+          BEFORE UPDATE OF storage_generation ON policy_projects
+          WHEN NEW.storage_generation != OLD.storage_generation
+            OR NEW.storage_generation IS NULL
+            OR length(NEW.storage_generation) != 32
+            OR NEW.storage_generation GLOB '*[^0-9a-f]*'
+          BEGIN
+            SELECT RAISE(ABORT, 'policy project storage generation is immutable');
+          END;
+        CREATE TRIGGER policy_projects_capacity_scope_update_guard
+          BEFORE UPDATE OF id, capacity_scope ON policy_projects
+          WHEN (
+            substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) = '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+            AND coalesce(NEW.capacity_scope, '') != '${ANONYMOUS_CAPACITY_SCOPE}'
+          ) OR (
+            substr(NEW.id,1,length('${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}')) != '${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}'
+            AND NEW.capacity_scope IS NOT NULL
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'invalid policy project capacity scope');
+          END;
+        CREATE TRIGGER policy_project_delete_authority_insert_guard
+          BEFORE INSERT ON policy_project_delete_authority
+          WHEN NOT EXISTS (
+            SELECT 1 FROM policy_projects
+            WHERE id = NEW.policy_id
+              AND storage_generation = NEW.storage_generation
+              AND capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+          )
+          BEGIN
+            SELECT RAISE(ABORT, 'invalid anonymous project delete authority');
+          END;
+        CREATE TRIGGER policy_projects_anonymous_delete_guard
+          BEFORE DELETE ON policy_projects
+          WHEN OLD.capacity_scope = '${ANONYMOUS_CAPACITY_SCOPE}'
+            AND (
+              NOT EXISTS (
+                SELECT 1 FROM policy_project_delete_authority
+                WHERE policy_id = OLD.id
+                  AND storage_generation = OLD.storage_generation
+              )
+              OR NOT EXISTS (
+                SELECT 1 FROM anonymous_workspace_tombstones
+                WHERE policy_id = OLD.id
+                  AND storage_generation = OLD.storage_generation
+              )
+            )
+          BEGIN
+            SELECT RAISE(ABORT, 'anonymous project retirement authority required');
+          END;
+        PRAGMA user_version = 3;
+      `);
+    });
   }
 
   #ensureOpen(): void {
@@ -520,15 +902,27 @@ export class SQLitePolicyRepository {
   }
 
   #transaction<T>(operation: () => T): T {
-    this.#database.exec("BEGIN IMMEDIATE");
+    let began = false;
     try {
+      this.#database.exec("BEGIN IMMEDIATE");
+      began = true;
       const result = operation();
       this.#database.exec("COMMIT");
+      began = false;
       return result;
     } catch (error) {
-      this.#database.exec("ROLLBACK");
+      if (began) {
+        try {
+          this.#database.exec("ROLLBACK");
+        } catch {
+          throw new PolicyPersistenceError("STORAGE_FAILURE", "SQLite rollback failed.");
+        }
+      }
       if (error instanceof PolicyPersistenceError) {
         throw error;
+      }
+      if (error instanceof PolicyTransactionCallbackError) {
+        throw error.callbackCause;
       }
       throw new PolicyPersistenceError("STORAGE_FAILURE", "SQLite transaction failed.");
     }
@@ -541,6 +935,16 @@ export class SQLitePolicyRepository {
       currentVersion: rowInteger(row, "current_version"),
       createdAt: storedTimestamp(rowString(row, "created_at"), "created_at"),
       updatedAt: storedTimestamp(rowString(row, "updated_at"), "updated_at"),
+    };
+  }
+
+  #anonymousProjectFromRow(row: Row): StoredAnonymousWorkspaceProject {
+    return {
+      ...this.#projectFromRow(row),
+      storageGeneration: storedStorageGeneration(
+        rowString(row, "storage_generation"),
+        "$stored.storageGeneration",
+      ),
     };
   }
 
@@ -579,19 +983,57 @@ export class SQLitePolicyRepository {
     }
   }
 
-  createProject(value: unknown): StoredPolicyProject {
-    this.#ensureOpen();
-    const input = createInput(value);
-    if (this.getProject(input.id) !== null) {
-      throw new PolicyPersistenceError("PROJECT_EXISTS", `Project already exists: ${input.id}.`);
-    }
+  #createProject(
+    input: ReturnType<typeof createInput>,
+    capacity: PolicyProjectCapacityScope | null,
+  ): StoredPolicyProject {
     const state = input.policyIR ? stateForPolicyCandidate(input.policyIR) : "DRAFT";
+    const goldenCasesJson = JSON.stringify(input.goldenCases);
+    const policyIrJson = input.policyIR ? JSON.stringify(input.policyIR) : null;
+    const generation = randomBytes(16).toString("hex");
     return this.#transaction(() => {
+      const existing = this.#database
+        .prepare("SELECT 1 AS present FROM policy_projects WHERE id = ?")
+        .get(input.id);
+      if (existing) {
+        throw new PolicyPersistenceError("PROJECT_EXISTS", `Project already exists: ${input.id}.`);
+      }
+      if (capacity) {
+        const retired = this.#database
+          .prepare("SELECT 1 AS present FROM anonymous_workspace_tombstones WHERE policy_id = ?")
+          .get(input.id);
+        if (retired) {
+          throw new PolicyPersistenceError(
+            "PROJECT_RETIRED",
+            `Anonymous workspace session has permanently expired: ${input.id}.`,
+          );
+        }
+        const countRow = this.#database
+          .prepare(
+            "SELECT COUNT(*) AS project_count FROM policy_projects WHERE substr(id,1,length(?)) = ?",
+          )
+          .get(capacity.idPrefix, capacity.idPrefix);
+        const projectCount = countRow ? rowInteger(countRow, "project_count") : 0;
+        if (projectCount >= capacity.maximumProjects) {
+          throw new PolicyPersistenceError(
+            "PROJECT_CAPACITY",
+            `Project capacity is exhausted for prefix: ${capacity.idPrefix}.`,
+          );
+        }
+      }
       this.#database
         .prepare(
-          "INSERT INTO policy_projects(id,title,current_version,created_at,updated_at) VALUES (?,?,?,?,?)",
+          "INSERT INTO policy_projects(id,title,current_version,created_at,updated_at,storage_generation,capacity_scope) VALUES (?,?,?,?,?,?,?)",
         )
-        .run(input.id, input.title, 1, input.createdAt, input.createdAt);
+        .run(
+          input.id,
+          input.title,
+          1,
+          input.createdAt,
+          input.createdAt,
+          generation,
+          capacity ? ANONYMOUS_CAPACITY_SCOPE : null,
+        );
       this.#database
         .prepare(
           "INSERT INTO policy_versions(policy_id,version,parent_version,source_text,golden_cases_json,policy_ir_json,lifecycle_state,created_at) VALUES (?,?,?,?,?,?,?,?)",
@@ -601,17 +1043,43 @@ export class SQLitePolicyRepository {
           1,
           null,
           input.sourceText,
-          JSON.stringify(input.goldenCases),
-          input.policyIR ? JSON.stringify(input.policyIR) : null,
+          goldenCasesJson,
+          policyIrJson,
           state,
           input.createdAt,
         );
-      const project = this.getProject(input.id);
-      if (!project) {
+      const row = this.#database
+        .prepare(
+          "SELECT id,title,current_version,created_at,updated_at FROM policy_projects WHERE id = ?",
+        )
+        .get(input.id);
+      if (!row) {
         throw new PolicyPersistenceError("STORAGE_FAILURE", "Created project cannot be read.");
       }
-      return project;
+      return this.#projectFromRow(row);
     });
+  }
+
+  createProject(value: unknown): StoredPolicyProject {
+    this.#ensureOpen();
+    const input = createInput(value);
+    if (input.id.startsWith(ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX)) {
+      throw new PolicyPersistenceError(
+        "INVALID_INPUT",
+        "Reserved anonymous workspace projects require capacity admission.",
+      );
+    }
+    return this.#createProject(input, null);
+  }
+
+  createProjectWithinCapacity(
+    value: unknown,
+    capacityValue: unknown,
+  ): StoredPolicyProject {
+    this.#ensureOpen();
+    const input = createInput(value);
+    const capacity = projectCapacityScope(capacityValue, input.id);
+    return this.#createProject(input, capacity);
   }
 
   getProject(policyIdValue: unknown): StoredPolicyProject | null {
@@ -635,10 +1103,110 @@ export class SQLitePolicyRepository {
       .map((row) => this.#projectFromRow(row));
   }
 
-  deleteProject(policyIdValue: unknown): boolean {
+  getAnonymousWorkspaceProject(
+    policyIdValue: unknown,
+  ): StoredAnonymousWorkspaceProject | null {
     this.#ensureOpen();
     const policyId = identifier(policyIdValue, "$policyId");
+    if (!policyId.startsWith(ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX)) {
+      throw new PolicyPersistenceError(
+        "INVALID_INPUT",
+        "Project ID is outside the anonymous workspace namespace.",
+      );
+    }
+    const row = this.#database
+      .prepare(
+        "SELECT id,title,current_version,created_at,updated_at,storage_generation FROM policy_projects WHERE id = ? AND capacity_scope = ?",
+      )
+      .get(policyId, ANONYMOUS_CAPACITY_SCOPE);
+    return row ? this.#anonymousProjectFromRow(row) : null;
+  }
+
+  listAnonymousWorkspaceProjects(): StoredAnonymousWorkspaceProject[] {
+    this.#ensureOpen();
+    return this.#database
+      .prepare(
+        "SELECT id,title,current_version,created_at,updated_at,storage_generation FROM policy_projects WHERE capacity_scope = ? ORDER BY created_at,id",
+      )
+      .all(ANONYMOUS_CAPACITY_SCOPE)
+      .map((row) => this.#anonymousProjectFromRow(row));
+  }
+
+  withAnonymousWorkspaceGeneration<T>(
+    policyIdValue: unknown,
+    expectedGenerationValue: unknown,
+    operation: (project: StoredAnonymousWorkspaceProject) => T,
+  ): { matched: false } | { matched: true; value: T } {
+    this.#ensureOpen();
+    const policyId = identifier(policyIdValue, "$policyId");
+    if (!policyId.startsWith(ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX)) {
+      throw new PolicyPersistenceError(
+        "INVALID_INPUT",
+        "Project ID is outside the anonymous workspace namespace.",
+      );
+    }
+    const expectedGeneration = storageGeneration(
+      expectedGenerationValue,
+      "$expectedGeneration",
+    );
+    if (typeof operation !== "function") {
+      throw new PolicyPersistenceError("INVALID_INPUT", "$operation must be a function.");
+    }
     return this.#transaction(() => {
+      const row = this.#database
+        .prepare(
+          "SELECT id,title,current_version,created_at,updated_at,storage_generation FROM policy_projects WHERE id = ? AND capacity_scope = ?",
+        )
+        .get(policyId, ANONYMOUS_CAPACITY_SCOPE);
+      if (
+        !row ||
+        rowString(row, "storage_generation") !== expectedGeneration
+      ) {
+        return { matched: false };
+      }
+      try {
+        return {
+          matched: true,
+          value: operation(this.#anonymousProjectFromRow(row)),
+        };
+      } catch (error) {
+        throw new PolicyTransactionCallbackError(error);
+      }
+    });
+  }
+
+  #deleteProject(
+    policyId: string,
+    expectedGeneration: string | null,
+    beforeDelete: (() => boolean) | null,
+  ): boolean {
+    return this.#transaction(() => {
+      if (expectedGeneration !== null) {
+        const observed = this.#database
+          .prepare("SELECT storage_generation FROM policy_projects WHERE id = ?")
+          .get(policyId);
+        if (
+          !observed ||
+          rowString(observed, "storage_generation") !== expectedGeneration
+        ) {
+          return false;
+        }
+      }
+      if (beforeDelete && !beforeDelete()) {
+        return false;
+      }
+      if (expectedGeneration !== null) {
+        this.#database
+          .prepare(
+            "INSERT INTO anonymous_workspace_tombstones(policy_id,storage_generation) VALUES (?,?)",
+          )
+          .run(policyId, expectedGeneration);
+        this.#database
+          .prepare(
+            "INSERT INTO policy_project_delete_authority(policy_id,storage_generation) VALUES (?,?)",
+          )
+          .run(policyId, expectedGeneration);
+      }
       this.#database.prepare("DELETE FROM policy_decisions WHERE policy_id = ?").run(policyId);
       const versions = this.#database
         .prepare("SELECT version FROM policy_versions WHERE policy_id = ? ORDER BY version DESC")
@@ -650,11 +1218,55 @@ export class SQLitePolicyRepository {
       for (const version of versions) {
         deleteVersion.run(policyId, version);
       }
-      const deletion = this.#database
-        .prepare("DELETE FROM policy_projects WHERE id = ?")
-        .run(policyId);
+      const deletion =
+        expectedGeneration === null
+          ? this.#database.prepare("DELETE FROM policy_projects WHERE id = ?").run(policyId)
+          : this.#database
+              .prepare("DELETE FROM policy_projects WHERE id = ? AND storage_generation = ?")
+              .run(policyId, expectedGeneration);
+      if (expectedGeneration !== null && Number(deletion.changes) !== 1) {
+        throw new PolicyPersistenceError(
+          "STORAGE_FAILURE",
+          "Generation-fenced project deletion did not delete exactly one row.",
+        );
+      }
       return Number(deletion.changes) === 1;
     });
+  }
+
+  deleteProject(policyIdValue: unknown): boolean {
+    this.#ensureOpen();
+    const policyId = identifier(policyIdValue, "$policyId");
+    if (policyId.startsWith(ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX)) {
+      throw new PolicyPersistenceError(
+        "INVALID_INPUT",
+        "Reserved anonymous workspace projects require generation-fenced deletion.",
+      );
+    }
+    return this.#deleteProject(policyId, null, null);
+  }
+
+  deleteAnonymousWorkspaceIfGeneration(
+    policyIdValue: unknown,
+    expectedGenerationValue: unknown,
+    beforeDelete: () => boolean,
+  ): boolean {
+    this.#ensureOpen();
+    const policyId = identifier(policyIdValue, "$policyId");
+    if (!policyId.startsWith(ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX)) {
+      throw new PolicyPersistenceError(
+        "INVALID_INPUT",
+        "Project ID is outside the anonymous workspace namespace.",
+      );
+    }
+    const expectedGeneration = storageGeneration(
+      expectedGenerationValue,
+      "$expectedGeneration",
+    );
+    if (typeof beforeDelete !== "function") {
+      throw new PolicyPersistenceError("INVALID_INPUT", "$beforeDelete must be a function.");
+    }
+    return this.#deleteProject(policyId, expectedGeneration, beforeDelete);
   }
 
   getVersion(policyIdValue: unknown, versionValue: unknown): StoredPolicyVersion | null {

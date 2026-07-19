@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 444,
-  "scannedTextFiles": 413,
+  "scannedFiles": 447,
+  "scannedTextFiles": 416,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [
@@ -29,6 +29,7 @@
     "src/codex/linux-cgroup-helper-client.ts",
     "src/opa/runner.ts",
     "tests/helpers/worker-rpc-tls-certificates.mjs",
+    "tests/integration/policy-workspace-capacity.integration.test.mjs",
     "tests/integration/refund-fixture.integration.test.mjs",
     "tests/unit/architecture-asset.test.mjs",
     "tests/unit/submission-release-receipts.test.mjs",

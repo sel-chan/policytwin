@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { resolvePolicyAmbiguity } from "../../dist/index.js";
 import {
+  ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX,
   PolicyPersistenceError,
   SQLitePolicyRepository,
 } from "../../dist/persistence/sqlite.js";
@@ -257,4 +258,262 @@ test("fails closed when persisted JSON is corrupted", async (testContext) => {
     () => reopened.getVersion(recorded.policyId, 1),
     (error) => error instanceof PolicyPersistenceError && error.code === "CORRUPTED_STORAGE",
   );
+});
+
+test("migrates schema v1 projects to fenced generations and durable retirement tombstones", async (testContext) => {
+  const directory = await mkdtemp(join(tmpdir(), "policytwin-persistence-migration-"));
+  const databasePath = join(directory, "policytwin.sqlite");
+  let database;
+  let repository;
+  testContext.after(async () => {
+    repository?.close();
+    database?.close();
+    await rm(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+  });
+  const policyId = `${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}legacy`;
+  const createdAt = "2026-07-14T02:00:00.000Z";
+  database = new DatabaseSync(databasePath);
+  database.exec("PRAGMA foreign_keys = ON");
+  database.exec(`
+    CREATE TABLE policy_projects (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      current_version INTEGER NOT NULL CHECK (current_version >= 1),
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE policy_versions (
+      policy_id TEXT NOT NULL,
+      version INTEGER NOT NULL CHECK (version >= 1),
+      parent_version INTEGER,
+      source_text TEXT NOT NULL,
+      golden_cases_json TEXT NOT NULL,
+      policy_ir_json TEXT,
+      lifecycle_state TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (policy_id, version),
+      FOREIGN KEY (policy_id) REFERENCES policy_projects(id) ON DELETE RESTRICT,
+      FOREIGN KEY (policy_id, parent_version)
+        REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT
+    );
+    CREATE TABLE policy_decisions (
+      id TEXT PRIMARY KEY,
+      policy_id TEXT NOT NULL,
+      from_version INTEGER NOT NULL,
+      to_version INTEGER NOT NULL,
+      ambiguity_id TEXT NOT NULL,
+      selected_option_id TEXT NOT NULL,
+      policy_patch_json TEXT NOT NULL,
+      decided_at TEXT NOT NULL,
+      UNIQUE (policy_id, to_version),
+      FOREIGN KEY (policy_id, from_version)
+        REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT,
+      FOREIGN KEY (policy_id, to_version)
+        REFERENCES policy_versions(policy_id, version) ON DELETE RESTRICT
+    );
+    CREATE INDEX policy_versions_created_idx
+      ON policy_versions(policy_id, created_at);
+    CREATE INDEX policy_decisions_policy_idx
+      ON policy_decisions(policy_id, to_version);
+    PRAGMA user_version = 1;
+  `);
+  database
+    .prepare(
+      "INSERT INTO policy_projects(id,title,current_version,created_at,updated_at) VALUES (?,?,?,?,?)",
+    )
+    .run(policyId, "Legacy anonymous project", 1, createdAt, createdAt);
+  database
+    .prepare(
+      "INSERT INTO policy_versions(policy_id,version,parent_version,source_text,golden_cases_json,policy_ir_json,lifecycle_state,created_at) VALUES (?,?,?,?,?,?,?,?)",
+    )
+    .run(policyId, 1, null, "Draft", "[]", null, "DRAFT", createdAt);
+  repository = new SQLitePolicyRepository(databasePath);
+  const migrated = repository.getAnonymousWorkspaceProject(policyId);
+  assert.ok(migrated);
+  assert.match(migrated.storageGeneration, /^[a-f0-9]{32}$/u);
+  assert.equal(repository.getVersion(policyId, 1)?.sourceText, "Draft");
+  assert.throws(() =>
+    database
+      .prepare("UPDATE policy_projects SET storage_generation = ? WHERE id = ?")
+      .run("f".repeat(32), policyId),
+  );
+  assert.throws(() =>
+    database
+      .prepare(
+        "INSERT INTO policy_project_delete_authority(policy_id,storage_generation) VALUES (?,?)",
+      )
+      .run(policyId, "e".repeat(32)),
+  );
+  assert.equal(
+    repository.deleteAnonymousWorkspaceIfGeneration(
+      policyId,
+      migrated.storageGeneration,
+      () => true,
+    ),
+    true,
+  );
+  const tombstone = database
+    .prepare(
+      "SELECT policy_id,storage_generation FROM anonymous_workspace_tombstones WHERE policy_id = ?",
+    )
+    .get(policyId);
+  assert.equal(tombstone?.policy_id, policyId);
+  assert.equal(tombstone?.storage_generation, migrated.storageGeneration);
+  const retiredProject = {
+    id: policyId,
+    title: "Recreated anonymous project",
+    sourceText: "Draft",
+    goldenCases: [],
+    createdAt,
+  };
+  assert.throws(
+    () =>
+      repository.createProjectWithinCapacity(retiredProject, {
+        idPrefix: ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX,
+        maximumProjects: 1,
+      }),
+    (error) => error instanceof PolicyPersistenceError && error.code === "PROJECT_RETIRED",
+  );
+  assert.throws(() =>
+    database
+      .prepare(
+        "INSERT INTO policy_projects(id,title,current_version,created_at,updated_at,storage_generation,capacity_scope) VALUES (?,?,?,?,?,?,?)",
+      )
+      .run(
+        policyId,
+        "Raw recreation",
+        1,
+        createdAt,
+        createdAt,
+        "d".repeat(32),
+        "anonymous-workspace-v1",
+      ),
+  );
+  repository.close();
+  repository = new SQLitePolicyRepository(databasePath);
+  assert.throws(
+    () =>
+      repository.createProjectWithinCapacity(retiredProject, {
+        idPrefix: ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX,
+        maximumProjects: 1,
+      }),
+    (error) => error instanceof PolicyPersistenceError && error.code === "PROJECT_RETIRED",
+  );
+  const replacementPolicyId = `${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}replacement`;
+  repository.createProjectWithinCapacity(
+    { ...retiredProject, id: replacementPolicyId, title: "Replacement anonymous project" },
+    { idPrefix: ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX, maximumProjects: 1 },
+  );
+  const replacement = repository.getAnonymousWorkspaceProject(replacementPolicyId);
+  assert.ok(replacement);
+  assert.throws(() => {
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      database.prepare("DELETE FROM policy_decisions WHERE policy_id = ?").run(replacementPolicyId);
+      database.prepare("DELETE FROM policy_versions WHERE policy_id = ?").run(replacementPolicyId);
+      database.prepare("DELETE FROM policy_projects WHERE id = ?").run(replacementPolicyId);
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  });
+  assert.equal(
+    repository.getAnonymousWorkspaceProject(replacementPolicyId)?.storageGeneration,
+    replacement.storageGeneration,
+  );
+  assert.ok(repository.getVersion(replacementPolicyId, 1));
+  assert.equal(database.prepare("PRAGMA user_version").get().user_version, 3);
+  database.exec("DROP TRIGGER policy_projects_generation_update_guard");
+  database
+    .prepare("UPDATE policy_projects SET storage_generation = ? WHERE id = ?")
+    .run("corrupted", replacementPolicyId);
+  assert.throws(
+    () => repository.getAnonymousWorkspaceProject(replacementPolicyId),
+    (error) => error instanceof PolicyPersistenceError && error.code === "CORRUPTED_STORAGE",
+  );
+});
+
+test("migrates schema v2 databases to durable anonymous retirement", async (testContext) => {
+  const directory = await mkdtemp(join(tmpdir(), "policytwin-persistence-v2-migration-"));
+  const databasePath = join(directory, "policytwin.sqlite");
+  let database;
+  let repository;
+  testContext.after(async () => {
+    repository?.close();
+    database?.close();
+    await rm(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+  });
+
+  repository = new SQLitePolicyRepository(databasePath);
+  repository.close();
+  repository = null;
+  database = new DatabaseSync(databasePath);
+  database.exec(`
+    DROP TRIGGER policy_projects_retired_anonymous_insert_guard;
+    DROP TRIGGER policy_projects_retired_anonymous_update_guard;
+    DROP TRIGGER anonymous_workspace_tombstones_insert_guard;
+    DROP TRIGGER policy_projects_anonymous_delete_guard;
+    DROP TABLE anonymous_workspace_tombstones;
+    CREATE TRIGGER policy_projects_anonymous_delete_guard
+      BEFORE DELETE ON policy_projects
+      WHEN OLD.capacity_scope = 'anonymous-workspace-v1'
+        AND NOT EXISTS (
+          SELECT 1 FROM policy_project_delete_authority
+          WHERE policy_id = OLD.id
+            AND storage_generation = OLD.storage_generation
+        )
+      BEGIN
+        SELECT RAISE(ABORT, 'anonymous project delete authority required');
+      END;
+    PRAGMA user_version = 2;
+  `);
+  database.close();
+  database = null;
+
+  repository = new SQLitePolicyRepository(databasePath);
+  database = new DatabaseSync(databasePath);
+  assert.equal(database.prepare("PRAGMA user_version").get().user_version, 3);
+  assert.ok(
+    database
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'anonymous_workspace_tombstones'",
+      )
+      .get(),
+  );
+  database.close();
+  database = null;
+
+  const policyId = `${ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX}v2-migrated`;
+  const input = {
+    id: policyId,
+    title: "Migrated anonymous project",
+    sourceText: "Draft",
+    goldenCases: [],
+    createdAt: "2026-07-20T00:00:00.000Z",
+  };
+  repository.createProjectWithinCapacity(input, {
+    idPrefix: ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX,
+    maximumProjects: 1,
+  });
+  const project = repository.getAnonymousWorkspaceProject(policyId);
+  assert.ok(project);
+  assert.equal(
+    repository.deleteAnonymousWorkspaceIfGeneration(
+      policyId,
+      project.storageGeneration,
+      () => true,
+    ),
+    true,
+  );
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    assert.throws(
+      () =>
+        repository.createProjectWithinCapacity(input, {
+          idPrefix: ANONYMOUS_WORKSPACE_POLICY_ID_PREFIX,
+          maximumProjects: 1,
+        }),
+      (error) => error instanceof PolicyPersistenceError && error.code === "PROJECT_RETIRED",
+    );
+  }
 });

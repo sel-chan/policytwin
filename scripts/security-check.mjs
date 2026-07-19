@@ -46,6 +46,7 @@ const ALLOWED_CHILD_PROCESS_FILES = new Set([
   "src/opa/runner.ts",
   "tests/helpers/worker-rpc-tls-certificates.mjs",
   "tests/integration/refund-fixture.integration.test.mjs",
+  "tests/integration/policy-workspace-capacity.integration.test.mjs",
   "tests/unit/architecture-asset.test.mjs",
   "tests/unit/submission-release-receipts.test.mjs",
   "tests/unit/submission-validation.test.mjs",

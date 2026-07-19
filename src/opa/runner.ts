@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   closeSync,
   existsSync,
+  fstatSync,
   mkdtempSync,
   openSync,
   readSync,
@@ -11,26 +12,44 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
+import { performance } from "node:perf_hooks";
 import { isDecision } from "../domain/decision.js";
 import { parseRefundPolicyInput, type PolicyDecisionResult } from "../domain/refund.js";
 import type { OpaCaseResult, OpaRunReport, OpaRunnerInput } from "./types.js";
 
 const QUERY = "data.policytwin.refund.decision" as const;
 const MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
+const MAX_EXECUTABLE_BYTES = 256 * 1024 * 1024;
+const DEFAULT_PROCESS_TIMEOUT_MS = 30_000;
+const DEFAULT_OVERALL_TIMEOUT_MS = 5 * 60_000;
 
 function hash(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function hashFile(path: string): string {
+function assertOverallBudget(overallDeadlineMs: number, overallTimeoutMs: number): void {
+  if (performance.now() >= overallDeadlineMs) {
+    throw new Error(`OPA run exceeded the ${overallTimeoutMs}ms overall timeout.`);
+  }
+}
+
+function hashFile(path: string, overallDeadlineMs: number, overallTimeoutMs: number): string {
+  assertOverallBudget(overallDeadlineMs, overallTimeoutMs);
   const digest = createHash("sha256");
   const descriptor = openSync(path, "r");
   const buffer = Buffer.allocUnsafe(1024 * 1024);
   try {
-    let bytesRead = 0;
-    while ((bytesRead = readSync(descriptor, buffer, 0, buffer.length, null)) > 0) {
-      digest.update(buffer.subarray(0, bytesRead));
+    const metadata = fstatSync(descriptor);
+    if (!metadata.isFile() || metadata.size <= 0 || metadata.size > MAX_EXECUTABLE_BYTES) {
+      throw new Error("OPA executable must be a non-empty regular file no larger than 268435456 bytes.");
     }
+    let bytesRead = 0;
+    do {
+      assertOverallBudget(overallDeadlineMs, overallTimeoutMs);
+      bytesRead = readSync(descriptor, buffer, 0, buffer.length, null);
+      digest.update(buffer.subarray(0, bytesRead));
+      assertOverallBudget(overallDeadlineMs, overallTimeoutMs);
+    } while (bytesRead > 0);
   } finally {
     closeSync(descriptor);
   }
@@ -61,20 +80,39 @@ function execute(
   executablePath: string,
   args: readonly string[],
   timeoutMs: number,
+  overallDeadlineMs: number,
+  overallTimeoutMs: number,
   input = "",
   cwd = process.cwd(),
 ): { stdout: string; stderr: string } {
+  const remainingMs = Math.ceil(overallDeadlineMs - performance.now());
+  if (remainingMs <= 0) {
+    assertOverallBudget(overallDeadlineMs, overallTimeoutMs);
+  }
+  const effectiveTimeoutMs = Math.min(timeoutMs, remainingMs);
+  const overallBudgetLimited = effectiveTimeoutMs < timeoutMs;
   const result = spawnSync(executablePath, [...args], {
     cwd,
     encoding: "utf8",
     env: safeEnvironment(),
     input,
+    killSignal: "SIGKILL",
     maxBuffer: MAX_OUTPUT_BYTES,
     shell: false,
-    timeout: timeoutMs,
+    timeout: effectiveTimeoutMs,
     windowsHide: true,
   });
   if (result.error) {
+    const code = (result.error as NodeJS.ErrnoException).code;
+    if (code === "ETIMEDOUT") {
+      if (overallBudgetLimited || performance.now() >= overallDeadlineMs) {
+        throw new Error(`OPA run exceeded the ${overallTimeoutMs}ms overall timeout.`);
+      }
+      throw new Error(`OPA process timed out after ${effectiveTimeoutMs}ms.`);
+    }
+    if (code === "ENOBUFS") {
+      throw new Error(`OPA process exceeded the ${MAX_OUTPUT_BYTES}-byte output limit.`);
+    }
     throw new Error(`OPA process failed: ${result.error.message}`);
   }
   if (result.status !== 0) {
@@ -144,19 +182,30 @@ export function runOpaCases(input: OpaRunnerInput): OpaRunReport {
     throw new Error("Expected OPA executable SHA-256 is invalid.");
   }
 
-  const timeoutMs = input.timeoutMs ?? 5_000;
+  const timeoutMs = input.timeoutMs ?? DEFAULT_PROCESS_TIMEOUT_MS;
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30_000) {
     throw new Error("OPA timeout must be an integer between 100 and 30000 milliseconds.");
   }
+  const overallTimeoutMs = input.overallTimeoutMs ?? DEFAULT_OVERALL_TIMEOUT_MS;
+  if (
+    !Number.isSafeInteger(overallTimeoutMs) ||
+    overallTimeoutMs < 100 ||
+    overallTimeoutMs > DEFAULT_OVERALL_TIMEOUT_MS
+  ) {
+    throw new Error("OPA overall timeout must be an integer between 100 and 300000 milliseconds.");
+  }
+  const overallDeadlineMs = performance.now() + overallTimeoutMs;
 
-  const executableSha256 = hashFile(executablePath);
+  const executableSha256 = hashFile(executablePath, overallDeadlineMs, overallTimeoutMs);
   if (executableSha256 !== input.expectedExecutableSha256) {
     throw new Error(
       `OPA executable checksum mismatch: expected ${input.expectedExecutableSha256}, received ${executableSha256}.`,
     );
   }
 
-  const version = parseVersion(execute(executablePath, ["version"], timeoutMs).stdout);
+  const version = parseVersion(
+    execute(executablePath, ["version"], timeoutMs, overallDeadlineMs, overallTimeoutMs).stdout,
+  );
   if (version !== input.expectedVersion) {
     throw new Error(`OPA version mismatch: expected ${input.expectedVersion}, received ${version}.`);
   }
@@ -167,7 +216,15 @@ export function runOpaCases(input: OpaRunnerInput): OpaRunReport {
   try {
     writeFileSync(policyPath, input.regoSource, { encoding: "utf8", flag: "wx" });
     try {
-      execute(executablePath, ["check", "--strict", policyName], timeoutMs, "", workspace);
+      execute(
+        executablePath,
+        ["check", "--strict", policyName],
+        timeoutMs,
+        overallDeadlineMs,
+        overallTimeoutMs,
+        "",
+        workspace,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(message.replaceAll(workspace, "<opa-workspace>"));
@@ -185,6 +242,8 @@ export function runOpaCases(input: OpaRunnerInput): OpaRunReport {
         executablePath,
         ["eval", "--format", "json", "--stdin-input", "--data", policyName, QUERY],
         timeoutMs,
+        overallDeadlineMs,
+        overallTimeoutMs,
         canonicalInput,
         workspace,
       );

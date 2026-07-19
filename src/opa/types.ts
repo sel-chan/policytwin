@@ -13,6 +13,7 @@ export interface OpaRunnerInput {
   query: "data.policytwin.refund.decision";
   cases: readonly OpaExecutionCase[];
   timeoutMs?: number;
+  overallTimeoutMs?: number;
 }
 
 export interface OpaCaseResult {

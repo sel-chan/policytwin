@@ -134,13 +134,16 @@ test("host-owned one-shot barrier holds role code until an atomic control releas
 test("a fake release in the receipt mount cannot self-release the barrier", async () => {
   await withController(async (controller) => {
     const prepared = await preparePrivateLinuxStartBarrierRole(controller, "verifier");
-    const roleWait = awaitPolicyTwinRoleStartBarrier({
-      ...prepared.roleProtocol,
-      receiptDirectory: prepared.hostPaths.receiptDirectory,
-      controlDirectory: prepared.hostPaths.controlDirectory,
-      holdTimeoutMs: 150,
-      pollIntervalMs: 5,
-    });
+    const roleWait = assert.rejects(
+      awaitPolicyTwinRoleStartBarrier({
+        ...prepared.roleProtocol,
+        receiptDirectory: prepared.hostPaths.receiptDirectory,
+        controlDirectory: prepared.hostPaths.controlDirectory,
+        holdTimeoutMs: 150,
+        pollIntervalMs: 5,
+      }),
+      /timed out/u,
+    );
     await awaitPrivateLinuxStartBarrierHeld(controller, prepared);
     try {
       await writeFile(
@@ -151,7 +154,7 @@ test("a fake release in the receipt mount cannot self-release the barrier", asyn
     } catch (error) {
       assert.match(error.code, /^(?:EACCES|EPERM)$/u);
     }
-    await assert.rejects(roleWait, /timed out/u);
+    await roleWait;
   });
 });
 

@@ -366,6 +366,13 @@ export function mapWorkspaceHttpError(error: unknown): WorkspaceHttpError {
     return new WorkspaceHttpError(500, "INTERNAL_ERROR", "Stored decision contract is invalid.");
   }
   if (error instanceof PolicyPersistenceError) {
+    if (error.code === "PROJECT_CAPACITY") {
+      return new WorkspaceHttpError(
+        429,
+        "WORKSPACE_CAPACITY",
+        "Anonymous workspace capacity is temporarily exhausted.",
+      );
+    }
     if (error.code === "PROJECT_NOT_FOUND" || error.code === "VERSION_NOT_FOUND") {
       return new WorkspaceHttpError(404, "PROJECT_NOT_FOUND", "Policy project was not found.");
     }

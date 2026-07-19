@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M9 — replica-safe repair executor ownership lease`
+- Current milestone: `M9 — atomic anonymous admission and durable session retirement`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-19 14:22 +09:00`
+- Last updated: `2026-07-20 08:39 +09:00`
 - Latest checkpoint commit: `25c55c98fc4cd4e12a11162f42a49b44730f27cd`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -95,10 +95,40 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, the repair-run ledger/UI, both non-admissible v2/verifier candidates, and a non-runtime verifier exchange with exact source/build manifests, one-use HMAC capability, sealed SQLite replay/tombstone/clock state, bounded retry, and receipt-bound structural review pass offline contracts | `ddf4076` | capability delivery remains in-process, tree inspection is not runtime immutability, review is a caller-supplied bound echo, the production entrypoint remains validate-only, and no eligible Linux Docker/cgroup-v2 run, fresh SDK repair/review, finalized-result issuer, PASS signer, zero live post-repair drift, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, reviewed-CLI hash gate, owned standalone web lifecycle, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, publication-probe isolation, and the shared repair executor lease pass 432 unit, 77 integration, 22 eval, 3 browser, static container, 444-file/413-text security, and 444-file clean-copy gates | `25c55c9` | shared public admission/rate limiting, atomic anonymous workspace capacity, SSE connection bounds, terminal-orphan pruning, authenticated poison recovery, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | policy schema v3 now combines atomic cross-process anonymous capacity with durable expired-ID tombstones; OPA has separate 30-second process and five-minute whole-run budgets; schema-v15 helper/lifecycle, release-tree, repair lease, and other prior M9 boundaries pass 441 unit, 82 integration, 22 eval, 3 browser, static container, 447-file/416-text security, 447-file clean-copy, and a 444-input release receipt | pending | shared public request/rate limiting, SSE connection bounds, authenticated poison recovery, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements were refreshed at 2026-07-18 18:37:46 +09:00 with no change; isolated fail-closed draft and strict final gates remain separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed | `86bd1f0` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
+
+### Objective
+
+Make anonymous seeded-workspace admission atomic across every process that shares the same durable policy SQLite file, then ensure a safely deleted expired session identity can never be revived by replaying the same copied token. Capacity observation, duplicate handling, project plus v1 creation, generation-fenced deletion, and durable retirement must remain serialized and fail closed.
+
+### Starting condition
+
+Starting HEAD is clean `main` at receipt commit `fbe91462878beef405e14c79301288be0dd9cf60`; the completed repair-executor lease implementation is `25c55c98fc4cd4e12a11162f42a49b44730f27cd`. The clean-HEAD receipt recorded 15/16 steps passing with only the owner-selected `LICENSE` nonzero. Initial audit found split count-then-insert over-admission. Final review then found that safe expiry deletion forgot the token-derived identity, allowing the same copied token to recreate the same project ID after deletion or restart.
+
+### Planned actions
+
+- [x] Audit the public workspace session path, persistence transaction boundary, expiry cleanup, HTTP mapping, and existing capacity E2E coverage; select the narrow shared-database invariant.
+- [x] Reproduce the cross-connection over-admission race and cover exact-session idempotency, capacity exhaustion, TTL slot reuse, and project/v1 rollback.
+- [x] Add a closed capacity scope and one `BEGIN IMMEDIATE` admission transaction that counts the exact ID prefix and inserts project plus v1 atomically.
+- [x] Route the seeded helper through the atomic repository API, narrow duplicate recovery to the exact duplicate error, and preserve fail-closed cleanup behavior.
+- [x] Run focused and full offline gates, obtain independent final review, and update decisions/docs/evidence.
+- [ ] Commit on current `main`, record the implementation commit, and leave the worktree clean.
+
+This slice must not claim coordination across separate database files or network filesystems, make policy and repair-run database cleanup falsely atomic, weaken session expiry, add general multi-tenant identity, or enable the live repair port.
+
+### Checkpoint evidence in progress
+
+- A read-only repository audit classified the split count-then-insert path as P1 and recommended a single repository-owned writer transaction. Shared public rate limiting, SSE connection budgets, terminal-orphan pruning, and authenticated poison recovery remain separate M9 slices.
+- Resumed on `2026-07-20 07:26 +09:00` after the Samsung USB workspace briefly lost its `F:` mount. The repository and all intended uncommitted changes were recovered intact. The interrupted full integration result is discarded. Direct `opa.exe version` cold starts exceeded the old 5-second default. D-064 now retains a 30-second direct-process `SIGKILL` ceiling, limits the executable to a 256 MiB local regular file, applies a five-minute monotonic hash/process budget, and distinguishes process timeout, overall timeout, and output exhaustion. The budget is not an OS hard wall around one blocked filesystem syscall or final temporary cleanup. The focused real OPA suite passes 2/2, including 41 accepted cases and a forced 1,000-case/100-millisecond budget failure; the authoritative offline gate still requires a fresh uninterrupted rerun.
+- Implementation: policy schema v3 migrates v1/v2, reserves the anonymous scope, assigns immutable random storage generations, fences stale deletion, and commits exact-duplicate precedence, scoped count, project, and v1 atomically. Generation-fenced deletion records a permanent ID/generation tombstone and delete authority in the same policy transaction before removing the project; triggers require retirement authority and reject retired-ID insert or reassignment. `PROJECT_RETIRED` becomes generic `403 INVALID_SESSION`. Tombstones are excluded from active capacity and retained for replay rejection, with growth bounded by the configured capacity per 24-hour expiry cycle. Policy cleanup and repair POST retain policy-writer-then-repair-writer ordering; the two databases remain non-atomic. Only nonterminal or poisoned repair rows retain an expired slot; terminal `BLOCKED` history remains safely prunable. Capacity exhaustion remains a non-cacheable generic 429 with `Retry-After`.
+- Authoritative staged evidence: `pnpm verify` completed at `2026-07-20 08:39:02 +09:00` with 15/16 steps passing. Lint, strict typecheck, 441/441 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, production build, static container, 447-file clean-copy, and 447-file/416-text security plus Git history pass. Only `license:check` is nonzero for `OWNER_DECISION_REQUIRED`. The 444 tracked release inputs contain zero untracked files and hash to `2934ce519f7b940ac5283c7a2a544fd5e3359e06c6388fde91f1b763c4b01e42`; clean and security report hashes are `2ae6ec007c6d0f3ad6ca1bfbc2d0bb2522ddaa12d16d72788e68bbd1dc3527d9` and `c32ac841a1f00e94ea45f6f64d608bc3e478e4ec2c7f818dd40ca5297ab11935`.
+- Container build inputs are worker `eaad8b64...`, verifier `6a38ec76...`, egress `0d66b9bf...`, and helper `dcba15c2...`; static inspection passes while dynamic reports remain fail-closed before Docker because immutable identities are unset. `verify:live` stops before network at missing `OPENAI_API_KEY` and `CODEX_MODEL`.
+- Independent capacity, tombstone, migration, security, documentation, and OPA re-reviews report no remaining P0/P1/P2 after D-064/D-065, schema-v3 migration/replay tests, raw-SQL trigger tests, and the final receipt refresh.
+
+## Previous checkpoint - replica-safe repair executor ownership lease
 
 ### Objective
 
@@ -411,25 +441,25 @@ Record latest actual result.
 |---|---|---|---|---|
 | Document contract validation | PASS | PowerShell manifest/hash/fence/milestone validator | 10 manifest entries and 11 root Markdown files | 2026-07-14 11:50 +09:00 |
 | Install/lockfile | PASS | `pnpm install --offline --frozen-lockfile` with `npm_config_store_dir=C:\tmp\policytwin-pnpm-store-fresh` | exact 469-entry lock graph passes supply-chain policy; root and clean-copy dependency trees hydrate fully from the fresh NTFS store | 2026-07-17 09:12 +09:00 |
-| Lint | PASS | `pnpm lint` | isolated submission-draft workflow, release receipts, publication-probe isolation, cgroup-v2 preflight, schema-v15 packaging, and repository static checks pass | 2026-07-18 15:21 +09:00 |
-| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers shared schemas, evidence/release validation, application, sealed helper lifecycle, and v1/v2 RPC | 2026-07-18 15:21 +09:00 |
+| Lint | PASS | `pnpm lint` | repository static checks pass with schema-v3 retirement and reviewed capacity subprocess coverage | 2026-07-20 08:39 +09:00 |
+| Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers policy schema v3, OPA budgets, application, evidence, and RPC contracts | 2026-07-20 08:39 +09:00 |
 | Native helper local build | PASS_LOCAL_ONLY | `pnpm helper:build:local` | repeated compilation remains byte-identical at 841,656-byte AMD64 static PIE with SHA-256 `906214d0489875ebbc718d934397fb2e43b00b5af825391c247b1efb112abdef`; compiler is explicitly unpinned, stale success evidence is removed on failure, and no image/runtime claim follows | 2026-07-17 10:54 +09:00 |
-| Unit tests | PASS | `pnpm test` | 358/358 pass, including release-tree/index tamper, same-run submission, public-address/Git-isolation, media/claims, cgroup-v2, archive, and RPC coverage | 2026-07-18 15:21 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 61/61 serial fixture, mTLS v1/v2, OPA, evidence, persistence, canonical seeded-ambiguity semantics, post-canonical tamper rejection, self-rehashed scorecard, and exact live-status assertions pass | 2026-07-18 15:21 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass; regenerated Integration/Drift and architecture captures were directly inspected | 2026-07-18 15:21 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass against isolated drafts and current security/clean-copy reports | 2026-07-18 15:21 +09:00 |
-| Production build | PASS | `pnpm build` | Next.js 16.2.10 Turbopack standalone build and strict TypeScript pass | 2026-07-18 15:21 +09:00 |
-| Offline full verification | FAIL_OWNER_DECISION_ONLY | `pnpm submission:check` -> same-run `pnpm verify` | all 15 implemented deterministic steps pass; only owner-selected project `LICENSE` fails, and the 16-step release receipt remains truthfully `FAIL` | 2026-07-18 15:21 +09:00 |
+| Unit tests | PASS | `pnpm test` | 441/441 pass, including schema v1/v2→v3 migration, durable retirement/restart, raw-SQL guards, stale generation, OPA budgets, release, container, media, and RPC coverage | 2026-07-20 08:39 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 82/82 pass, including real OPA 41-case execution, cross-process capacity/duplicate/lock races, retirement-before-delayed-repair admission, evidence, persistence, and mTLS | 2026-07-20 08:39 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass, including generic capacity exhaustion without project creation | 2026-07-20 08:39 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass against current isolated drafts and security/clean-copy reports | 2026-07-20 08:39 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16.2.10 Turbopack standalone build and strict TypeScript pass | 2026-07-20 08:39 +09:00 |
+| Offline full verification | FAIL_OWNER_DECISION_ONLY | `pnpm verify` | 15/16 ordered steps pass; only owner-selected project `LICENSE` fails, with a fresh 444-input zero-untracked receipt bound to current report and release-tree hashes | 2026-07-20 08:39 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no model or Codex call occurred | 2026-07-18 12:45 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 416 source files; isolated draft regeneration/check, frozen offline install, lint, typecheck, 358 unit, 61 integration, 22 eval, build, 3 browser, demo replay, and evidence generation pass | 2026-07-18 15:21 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | worker `1f0df815…`, verifier `6a38ec76…`, egress `d7e39c52…`, and helper `dcba15c2…` match the checked contract | 2026-07-18 12:45 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 447 source files; frozen offline install, draft checks, lint, typecheck, 441 unit, 82 integration, 22 eval, build, 3 browser, demo, and evidence regeneration pass | 2026-07-20 08:39 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | worker `eaad8b64…`, verifier `6a38ec76…`, egress `0d66b9bf…`, and helper `dcba15c2…` match the checked contract | 2026-07-20 08:39 +09:00 |
 | Dynamic helper artifact | FAIL | `pnpm helper:verify` | immutable builder image is unset; `dockerInvoked:false`, build input `dcba15c2…`, and all runtime/signing claims false | 2026-07-18 12:45 +09:00 |
 | Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-18 12:45 +09:00 |
 | Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | build inputs match; failure is the unset immutable Node base before Docker, with the cgroup-v2 preflight next in the admitted path | 2026-07-18 12:45 +09:00 |
 | Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | build inputs match; failure is the unset Node base and sealed helper identities before Docker; outbound remains `NOT_MEASURED` | 2026-07-18 12:45 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent with `OWNER_DECISION_REQUIRED` | 2026-07-18 15:21 +09:00 |
-| Security review | PASS_OFFLINE_SCAN | `pnpm security:check` | 416 files/386 text files plus Git history scanned; reviewed child-process boundaries remain allowlisted and no findings exist; live release review remains `NOT_RUN` | 2026-07-18 15:21 +09:00 |
+| Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent with `OWNER_DECISION_REQUIRED` | 2026-07-20 08:39 +09:00 |
+| Security review | PASS_OFFLINE_SCAN | `pnpm security:check` | 447 files/416 text files plus Git history scanned; reviewed child-process boundaries remain allowlisted and no findings exist; live release review remains `NOT_RUN` | 2026-07-20 08:39 +09:00 |
 | Submission consistency | FAIL | `pnpm submission:check` | exactly 42 unmet requirements; fresh offline failure disables public probes, and strict final copy/media/session/live/URL/license/confirmation boundaries remain visible | 2026-07-18 15:21 +09:00 |
 
 ## Product proof metrics
@@ -453,6 +483,15 @@ Never fill from estimates.
 | Browser happy path | 100% | 3/3 local production-server Chrome tests | `tests/e2e/workspace.spec.ts`, `artifacts/screenshots/` |
 
 ## Checkpoint log
+
+### 2026-07-20 08:39 +09:00 — Atomic capacity, durable session retirement, and bounded OPA verified
+
+- Milestone: M9 remains `IN_PROGRESS` only for external/runtime/owner release work; this checkpoint closes shared-policy-file anonymous admission, permanent expired-token replay rejection, and bounded local OPA evaluation.
+- Change: policy schema v3 migrates v1/v2, atomically admits project plus v1 under capacity, records generation-bound retirement tombstones before expiry deletion, blocks recreation after restart, and keeps repair admission/cleanup in one policy-writer-then-repair-writer order. D-064 adds separate OPA process and whole-run budgets; D-065 records the tombstone tradeoff.
+- Verification: lint, strict typecheck, 441/441 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, build, static container, 447-file clean-copy, and 447-file/416-text security/history pass. Independent final reviews report no P0/P1/P2.
+- Receipt: `pnpm verify` at `2026-07-20 08:39:02 +09:00` passes 15/16 ordered steps; only owner `LICENSE` is nonzero. Release tree: 444 tracked, 0 untracked, SHA-256 `2934ce519f7b940ac5283c7a2a544fd5e3359e06c6388fde91f1b763c4b01e42`.
+- Truth boundary: tombstones are permanent metadata excluded from active capacity and can grow by at most the configured capacity per 24-hour expiry cycle. Separate policy/repair databases are not atomic, separate files/distributed replicas are not coordinated, and no live model, Docker/cgroup-v2, deployment, publication, or submission claim follows.
+- Commit: pending implementation checkpoint.
 
 ### 2026-07-17 12:52 +09:00 — Explicit Responses terminal outcomes verified offline
 
@@ -973,11 +1012,11 @@ Link to IDs in `DECISIONS.md`.
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not yet paused; the offline-hardening checkpoint is committed and the first unavailable step is the scoped registry action below`
-- Exact current state: `390 unit, 61 integration, 22 eval, 3 browser, 434-file clean-copy, 434-file/403-text security/history, static container, 431-file zero-untracked release fingerprint, 2:55 isolated drafts, demo, and build pass; Docker is cgroup v1, reviewed CLI/immutable images and live credentials are absent`
-- Last successful command: `the final security step inside pnpm verify passed 434 files/403 text files and Git history after every other implemented deterministic step passed`
+- Why paused: `not yet paused; the atomic-capacity/durable-retirement checkpoint is verified and awaiting its implementation plus ledger commits`
+- Exact current state: `441 unit, 82 integration, 22 eval, 3 browser, 447-file clean-copy, 447-file/416-text security/history, static container, 444-input zero-untracked release fingerprint, 2:55 isolated drafts, demo, and build pass; Docker is cgroup v1, reviewed CLI/immutable images and live credentials are absent`
+- Last successful command: `the final security step inside pnpm verify passed 447 files/416 text files and Git history after every other implemented deterministic step passed`
 - Current failing command: `pnpm verify exits 1 only for owner LICENSE; helper/web/worker/egress stop before Docker workload execution at unset immutable identities; verify:live stops before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `none after the ledger commit; main is clean`
+- Uncommitted files: `the verified checkpoint is staged; implementation and ledger commits are pending`
 - Safe resume command/action: `after the exact registry scope is approved, confirm clean main, review and pin the release-host Docker CLI plus immutable Node/compiler digests, and run the helper artifact and web gates first; do not attempt worker/egress until an eligible Linux cgroup-v2 supervisor is available`
 - One owner action, if any: `reply with explicit approval for linux/amd64 manifest lookup and digest-blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only`
 
@@ -986,7 +1025,7 @@ Fill before `/goal pause` or any handoff.
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `FAIL_OWNER_DECISION_ONLY at 2026-07-18 22:42:36 +09:00; 15/16 ordered steps passed, including 390 unit, 61 integration, 22 eval, 3 browser, 434-file clean-copy, 434-file/403-text security/history, demo, and build; only the owner-selected project LICENSE is absent`
+- `pnpm verify`: `FAIL_OWNER_DECISION_ONLY at 2026-07-20 08:39:02 +09:00; 15/16 ordered steps passed, including 441 unit, 82 integration, 22 eval, 3 browser, 447-file clean-copy, 447-file/416-text security/history, demo, static container, and build; only the owner-selected project LICENSE is absent; 444 tracked release inputs and zero untracked inputs hash to 2934ce519f7b940ac5283c7a2a544fd5e3359e06c6388fde91f1b763c4b01e42`
 - `pnpm verify:live`: `FAIL_CLOSED_BEFORE_DYNAMIC_GATES_OR_NETWORK; OPENAI_API_KEY and CODEX_MODEL are absent, while helper/role images, an eligible cgroup-v2 supervisor, real-Docker/cumulative-CPU/outbound observations, finalized evidence, fresh GPT/Codex evidence, and signer/live admission do not exist`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`

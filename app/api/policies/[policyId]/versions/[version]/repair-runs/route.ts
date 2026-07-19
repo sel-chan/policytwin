@@ -1,6 +1,10 @@
-import { WorkspaceHttpError } from "../../../../../../../dist/workspace/http.js";
+import {
+  WorkspaceHttpError,
+  isWorkspaceSessionExpired,
+} from "../../../../../../../dist/workspace/http.js";
 import { RepairRunPersistenceError } from "../../../../../../../dist/repair-runs/sqlite.js";
 import {
+  ANONYMOUS_WORKSPACE_TTL_MS,
   SEEDED_POLICY_ID,
   getSeededWorkspaceStore,
   getSessionPolicyId,
@@ -122,19 +126,49 @@ export async function POST(
     const release = store.mutationGate.tryAcquire();
     if (!release) return workspaceJson({ error: "WORKSPACE_BUSY" }, 409);
     try {
-      const workspace = store.service.getWorkspace(internalPolicyId);
-      if (workspace.project.currentVersion !== expectedVersion) {
-        throw new WorkspaceHttpError(409, "STALE_VERSION", "Policy version changed before repair.");
+      const observedProject = store.repository.getAnonymousWorkspaceProject(internalPolicyId);
+      if (!observedProject) {
+        throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session is invalid.");
       }
-      const versionRecord = store.repository.getVersion(internalPolicyId, expectedVersion);
-      if (!versionRecord) {
-        return workspaceJson({ error: "VERSION_NOT_FOUND" }, 404);
+      const admission = store.repository.withAnonymousWorkspaceGeneration(
+        internalPolicyId,
+        observedProject.storageGeneration,
+        (lockedProject) => {
+          if (
+            isWorkspaceSessionExpired(
+              lockedProject.createdAt,
+              new Date(),
+              ANONYMOUS_WORKSPACE_TTL_MS,
+            )
+          ) {
+            return { status: "EXPIRED" as const };
+          }
+          const workspace = store.service.getWorkspace(internalPolicyId);
+          if (workspace.project.currentVersion !== expectedVersion) {
+            throw new WorkspaceHttpError(
+              409,
+              "STALE_VERSION",
+              "Policy version changed before repair.",
+            );
+          }
+          const versionRecord = store.repository.getVersion(internalPolicyId, expectedVersion);
+          if (!versionRecord) {
+            throw new WorkspaceHttpError(404, "PROJECT_NOT_FOUND", "Policy version is absent.");
+          }
+          return {
+            status: "STARTED" as const,
+            started: store.repairRunCoordinator.start({
+              clientRequestId: requestId,
+              sessionToken,
+              input: buildSeededRepairWorkerInput(versionRecord),
+            }),
+          };
+        },
+      );
+      if (!admission.matched || admission.value.status === "EXPIRED") {
+        throw new WorkspaceHttpError(403, "INVALID_SESSION", "Workspace session has expired.");
       }
-      const started = store.repairRunCoordinator.start({
-        clientRequestId: requestId,
-        sessionToken,
-        input: buildSeededRepairWorkerInput(versionRecord),
-      });
+      const { started } = admission.value;
       const events = store.repairRunRepository.listEventsForSession(
         started.run.id,
         repairRunSessionSha256(sessionToken),

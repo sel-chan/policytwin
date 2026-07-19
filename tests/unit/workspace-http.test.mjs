@@ -12,6 +12,8 @@ import {
   readWorkspaceMutationBody,
   resolveWorkspacePublicOrigin,
 } from "../../dist/index.js";
+import { PolicyPersistenceError } from "../../dist/persistence/sqlite.js";
+import { workspaceErrorResponse } from "../../app/lib/workspace-http.ts";
 
 const csrfToken = "a".repeat(43);
 const validHeaders = {
@@ -178,6 +180,16 @@ test("workspace body reader maps streaming limits to stable HTTP errors", async 
 test("workspace domain failures map to stable public HTTP errors", () => {
   assert.deepEqual(
     mapWorkspaceHttpError(
+      new PolicyPersistenceError("PROJECT_CAPACITY", "sensitive capacity detail"),
+    ),
+    new WorkspaceHttpError(
+      429,
+      "WORKSPACE_CAPACITY",
+      "Anonymous workspace capacity is temporarily exhausted.",
+    ),
+  );
+  assert.deepEqual(
+    mapWorkspaceHttpError(
       new PolicyWorkspaceServiceError("STALE_VERSION", "sensitive current version detail"),
     ),
     new WorkspaceHttpError(409, "STALE_VERSION", "Policy version is stale."),
@@ -195,4 +207,15 @@ test("workspace domain failures map to stable public HTTP errors", () => {
   assert.equal(crossBundleContradiction.status, 409);
   assert.equal(crossBundleContradiction.code, "GOLDEN_CONTRADICTION");
   assert.equal(mapWorkspaceHttpError(new Error("secret path")).code, "INTERNAL_ERROR");
+});
+
+test("workspace capacity responses are generic, non-cacheable, and retry bounded", async () => {
+  const response = workspaceErrorResponse(
+    new PolicyPersistenceError("PROJECT_CAPACITY", "sensitive capacity detail"),
+  );
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("retry-after"), "3600");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.deepEqual(await response.json(), { error: "WORKSPACE_CAPACITY" });
 });

@@ -68,6 +68,7 @@ const suites = {
     "tests/integration/worker-rpc-mtls.integration.test.mjs",
     "tests/integration/worker-rpc-replay.integration.test.mjs",
     "tests/integration/repair-run-replica-lease.integration.test.mjs",
+    "tests/integration/policy-workspace-capacity.integration.test.mjs",
     "tests/integration/verifier-replay-sqlite.integration.test.mjs",
     "tests/integration/openai-egress-proxy.integration.test.mjs",
     "tests/integration/evidence-package.integration.test.mjs",
@@ -99,7 +100,11 @@ if (suite === "integration") {
   runOrExit(process.execPath, ["scripts/build-fixtures.mjs"]);
 }
 const testArguments = ["--test"];
-if (suite === "integration") {
+if (suite === "unit") {
+  // Several contract tests intentionally exercise child-process deadlines and local rendering.
+  // Bound file-level concurrency so unrelated CPU-heavy files cannot manufacture timeouts.
+  testArguments.push("--test-concurrency=2", "--test-reporter=spec");
+} else if (suite === "integration") {
   // Integration tests intentionally rebuild shared dist/fixture/evidence outputs.
   // Serial execution prevents one test from replacing those outputs while another imports them.
   testArguments.push("--test-concurrency=1", "--test-reporter=spec");
