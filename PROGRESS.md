@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7 — verifier exchange checkpoint complete; next offline M9 admission audit`
+- Current milestone: `M9 — replica-safe repair executor ownership lease`
 - Goal state: `IN_PROGRESS`
 - Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-19 00:41 +09:00`
-- Latest checkpoint commit: `ddf407611ad81144d338b564daa537c220aef2bf`
+- Last updated: `2026-07-19 14:21 +09:00`
+- Latest checkpoint commit: `8bbda5a1447a96d2b242bba21d345e6bf12516e0`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -95,10 +95,41 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, the repair-run ledger/UI, both non-admissible v2/verifier candidates, and a non-runtime verifier exchange with exact source/build manifests, one-use HMAC capability, sealed SQLite replay/tombstone/clock state, bounded retry, and receipt-bound structural review pass offline contracts | `ddf4076` | capability delivery remains in-process, tree inspection is not runtime immutability, review is a caller-supplied bound echo, the production entrypoint remains validate-only, and no eligible Linux Docker/cgroup-v2 run, fresh SDK repair/review, finalized-result issuer, PASS signer, zero live post-repair drift, or signed live evidence exists |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, reviewed-CLI hash gate, owned standalone web lifecycle, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, and publication-probe isolation pass 426 unit, 69 integration, 22 eval, 3 browser, static container, 443-file/412-text security, and 443-file clean-copy gates | `ddf4076` | shared public admission/rate limiting, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | schema-v15 helper-artifact/lifecycle-v3 boundaries, reviewed-CLI hash gate, owned standalone web lifecycle, cgroup-v2 supervisor preflight, exact evidence scorecard, trusted-seed-only ambiguity canonicalization, cooperative E2E teardown, deterministic architecture rendering, release-tree receipt, publication-probe isolation, and the shared repair executor lease pass 432 unit, 77 integration, 22 eval, 3 browser, static container, 444-file/413-text security, and 444-file clean-copy gates | pending | shared public admission/rate limiting, atomic anonymous workspace capacity, SSE connection bounds, terminal-orphan pruning, authenticated poison recovery, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
 | M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements were refreshed at 2026-07-18 18:37:46 +09:00 with no change; isolated fail-closed draft and strict final gates remain separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed | `86bd1f0` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
 
 ## Current checkpoint
+
+### Objective
+
+Replace unconditional repair-run recovery with a durable SQLite executor ownership lease, heartbeat, and fencing token so a second process or replica cannot poison or write through another replica's live execution. An expired owner must be converted to a fail-stop state before any later admission, and no lease object or local clock may create live execution, cleanup, signing, settlement, or deployment proof.
+
+### Starting condition
+
+Starting HEAD is clean `main` at ledger commit `8bbda5a1447a96d2b242bba21d345e6bf12516e0`; the verifier exchange implementation is `ddf407611ad81144d338b564daa537c220aef2bf`. `pnpm verify` passes 15/16 deterministic steps and remains nonzero only for the owner-selected `LICENSE`. The repair-run repository currently opens schema v1 and immediately calls `recoverInterruptedRuns(new Date().toISOString())`. Read-only audits confirmed that opening a second repository against the same SQLite file changes another live replica's `RUNNING` row to `POISONED` while the first executor can keep running, separating execution reality from durable state.
+
+### Planned actions
+
+- [x] Map repair POST, SQLite admission, coordinator execution, restart recovery, session expiry, SSE, and multi-replica boundaries; obtain independent state/test and security audits.
+- [x] Reproduce cross-replica poisoning, stale-owner recovery, clock rollback, and unfenced progress/terminal writes with narrow failing tests.
+- [x] Add a closed schema migration and singleton owner lease with bounded heartbeat/expiry, monotonic persisted time, random fencing token, exact run binding, and fail-stop takeover semantics.
+- [x] Require the exact live fence for every running progress and terminal transition, integrate coordinator heartbeat/release, and preserve the currently unavailable web execution port.
+- [ ] Run focused and full offline gates, obtain independent final reviews, update decisions/docs/evidence, commit on current `main`, and leave the worktree clean.
+
+This slice must not enable the live execution port, clear a `POISONED` run automatically, reinterpret lease expiry as cleanup proof, connect the verifier bridge, issue a PASS signature, or claim multi-host/distributed-database deployment support. SQLite coordination applies only to processes sharing one durable database file.
+
+### Checkpoint evidence in progress
+
+- Two independent read-only audits agree on the P1 reproduction: repository B opening the same database invokes unconditional recovery and poisons repository A's legitimate active run. The same audits identified the required minimum as owner identity, heartbeat/expiry, fencing on all writes, expired-owner fail-stop conversion, and clock rollback rejection; public sliding-window admission, atomic anonymous workspace capacity, SSE connection budgets, terminal-orphan pruning, and authenticated operator recovery remain separate M9 slices.
+- Schema v2 now migrates under one `BEGIN IMMEDIATE` transaction, rereads the version after acquiring the writer lock, preserves terminal history and its durable high-water, and refuses active v1 work. Explicit insert/update generations and database triggers reject operations from an already-open v1 connection after migration. A singleton authority row binds owner, random 256-bit fence, run, heartbeat expiry, strictly increasing fence generation, and persisted high-water time.
+- Admission, progress, every active transition, terminal event, and lease release are fenced and transactional. Opening another repository is read-only. An unexpired lease uses a read-only reconciliation fast path even while another writer holds the lock; expired queued work fails, while running or cleanup-pending work becomes globally fail-stop `POISONED`. Actual heartbeat expiry and clock rollback are storage-reconciled before the coordinator's active promise ends.
+- Coordinator heartbeats extend through bounded timeout-settlement observation and stop exactly at terminal completion. Heartbeat failures are classified separately from wall-time timeout. GET and SSE reconcile expired work; the browser test proves the SSE-first transition, one terminal event, completed cursor behavior, and foreign-session denial.
+- Focused repair-run coverage passes 20/20; full `pnpm test` passes 432/432, `pnpm test:integration` passes 77/77, `pnpm eval` passes 22/22, `pnpm test:e2e` passes 3/3, `pnpm build` passes, and the static container contract passes. Worker and egress dynamic reports were refreshed and remain truthfully `FAIL` with `dockerInvoked:false` because immutable Node/helper identities are unset.
+- `pnpm clean:check` passes from a fresh 444-file copy after granting the managed sandbox access to the existing global pnpm store; the first architecture render and one clean-copy unit run failed transiently, while the focused renderer retry, root 432/432 unit rerun, and full clean-copy rerun all pass. `artifacts/security/security-report.json` records `PASS` across 444 files / 413 text files with Git history scanned.
+- The authoritative staged `pnpm verify` receipt at `2026-07-19T05:20:41.292Z` records 15/16 steps passing; only `license:check` is nonzero for the explicit `OWNER_DECISION_REQUIRED` boundary. Its 441 tracked release inputs contain zero untracked inputs and hash to `8412c470e76780c231e9cebf9713d5e6b5b6fa643d802da4a033743acaee017f`; the clean-copy and security report hashes are `b782c39ddbf1482076f474d02c2976628c370678456cdfa9927175675db77b3c` and `92d58ef1fe7ea8b1c5330746fe6b417872e72be810efc0b36db235684796b8df`.
+- Repeated independent state and security reviews drove closure of migration atomicity, stale-v1 writes, SSE writer amplification, timeout-heartbeat lifetime, cause classification, direct SSE reconciliation, and actual expiry/rollback settlement. The final read-only reviews report no remaining P0/P1/P2 in this slice.
+
+## Previous checkpoint - verifier exchange authority bridge
 
 ### Objective
 

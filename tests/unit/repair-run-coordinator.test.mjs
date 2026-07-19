@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 import {
   RepairRunCoordinator,
   SQLiteRepairRunRepository,
@@ -82,6 +83,14 @@ async function temporaryRepository(t) {
     await rm(root, { recursive: true, force: true });
   });
   return { repository, root };
+}
+
+async function waitUntil(predicate, timeoutMs = 500) {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() >= deadline) throw new Error("Timed out waiting for the test condition.");
+    await delay(5);
+  }
 }
 
 test("unavailable live execution creates one persistent, session-bound blocked run", async (t) => {
@@ -263,14 +272,19 @@ test("restart recovery fails interrupted work instead of resuming or overclaimin
     policyIrSha256: repairRunPolicyIrSha256(input),
     inputSha256: repairRunInputSha256(input),
     createdAt: "2020-01-01T00:00:00.000Z",
+  }, {
+    ownerId: `reo_${"3".repeat(32)}`,
+    leaseDurationMs: 100,
   });
-  first.markRunning(created.run.id, "2020-01-01T00:00:01.000Z");
+  assert.ok(created.lease);
+  first.markRunning(created.run.id, "2020-01-01T00:00:00.001Z", created.lease);
   assert.throws(
     () =>
       first.markFailed(
         created.run.id,
         { code: "UNVERIFIED_FAILURE", message: "An unverified failure cannot unlock a running job." },
-        "2020-01-01T00:00:02.000Z",
+        "2020-01-01T00:00:00.002Z",
+        created.lease,
       ),
     /stale or invalid/u,
   );
@@ -281,9 +295,14 @@ test("restart recovery fails interrupted work instead of resuming or overclaimin
     reopened.close();
     await rm(root, { recursive: true, force: true });
   });
+  assert.equal(
+    reopened.getRunForSession(created.run.id, sessionSha256)?.status,
+    "RUNNING",
+  );
+  reopened.reconcileExpiredExecutorLease("2020-01-01T00:00:00.101Z");
   const recovered = reopened.getRunForSession(created.run.id, sessionSha256);
   assert.equal(recovered?.status, "POISONED");
-  assert.equal(recovered?.failure?.code, "PROCESS_RESTARTED_WITHOUT_CLEANUP");
+  assert.equal(recovered?.failure?.code, "EXECUTOR_LEASE_EXPIRED_WITHOUT_CLEANUP");
   assert.equal(recovered?.executionMode, "LIVE_EXECUTION_UNVERIFIED");
   assert.equal(
     reopened.listEventsForSession(created.run.id, sessionSha256).at(-1)?.type,
@@ -293,18 +312,33 @@ test("restart recovery fails interrupted work instead of resuming or overclaimin
 
 test("an abort-ignoring executor poisons the session and prevents overlapping work", async (t) => {
   const { repository } = await temporaryRepository(t);
+  const originalHeartbeat = repository.heartbeatExecutorLease.bind(repository);
+  let heartbeatCalls = 0;
+  let heartbeatCallsAtAbort = -1;
+  repository.heartbeatExecutorLease = (...args) => {
+    heartbeatCalls += 1;
+    return originalHeartbeat(...args);
+  };
   const coordinator = new RepairRunCoordinator(
     repository,
     {
       readiness: () => ({ ready: true }),
-      async execute() {
+      async execute(_input, context) {
+        context.signal.addEventListener(
+          "abort",
+          () => {
+            heartbeatCallsAtAbort = heartbeatCalls;
+          },
+          { once: true },
+        );
         return new Promise(() => {});
       },
     },
     {
       executionTimeoutMs: 20,
-      settlementTimeoutMs: 20,
-      now: advancingClock(),
+      settlementTimeoutMs: 120,
+      executorLeaseDurationMs: 100,
+      executorHeartbeatIntervalMs: 10,
     },
   );
   const started = coordinator.start({
@@ -317,6 +351,11 @@ test("an abort-ignoring executor poisons the session and prevents overlapping wo
   const poisoned = repository.getRunForSession(started.run.id, sessionSha256);
   assert.equal(poisoned?.status, "POISONED");
   assert.equal(poisoned?.failure?.code, "LIVE_EXECUTION_UNSETTLED");
+  assert.ok(heartbeatCallsAtAbort >= 0);
+  assert.ok(
+    heartbeatCalls > heartbeatCallsAtAbort,
+    "the coordinator must retain its lease while awaiting bounded cleanup settlement",
+  );
   assert.deepEqual(
     repository.listEventsForSession(started.run.id, sessionSha256).map((event) => event.type),
     ["RUN_CREATED", "RUN_STARTED", "RUN_CLEANUP_PENDING", "RUN_POISONED"],
@@ -372,4 +411,201 @@ test("an ordinary execution rejection cannot unlock a run without cleanup proof"
       }),
     /active or fail-stop run/u,
   );
+});
+
+test("coordinator rejects an unsafe executor heartbeat configuration", async (t) => {
+  const { repository } = await temporaryRepository(t);
+  const unavailable = createUnavailableRepairRunExecutionPort();
+  assert.throws(
+    () =>
+      new RepairRunCoordinator(repository, unavailable, {
+        executorLeaseDurationMs: 99,
+        executorHeartbeatIntervalMs: 10,
+      }),
+    /lease of at least 100ms/u,
+  );
+  assert.throws(
+    () =>
+      new RepairRunCoordinator(repository, unavailable, {
+        executorLeaseDurationMs: 100,
+        executorHeartbeatIntervalMs: 100,
+      }),
+    /heartbeat interval must be shorter/u,
+  );
+});
+
+test("coordinator heartbeat extends the live fence and stops after terminal state", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "policytwin-repair-heartbeat-"));
+  const databasePath = join(root, "runs.sqlite");
+  const repository = new SQLiteRepairRunRepository(databasePath);
+  const observer = new SQLiteRepairRunRepository(databasePath);
+  t.after(async () => {
+    observer.close();
+    repository.close();
+    await rm(root, { recursive: true, force: true });
+  });
+  const originalHeartbeat = repository.heartbeatExecutorLease.bind(repository);
+  let heartbeatCalls = 0;
+  repository.heartbeatExecutorLease = (...args) => {
+    heartbeatCalls += 1;
+    return originalHeartbeat(...args);
+  };
+  let nowMs = Date.parse("2026-07-19T01:00:00.000Z");
+  let resolveExecution;
+  const execution = new Promise((resolve) => {
+    resolveExecution = resolve;
+  });
+  const coordinator = new RepairRunCoordinator(
+    repository,
+    {
+      readiness: () => ({ ready: true }),
+      execute: async () => execution,
+    },
+    {
+      executorLeaseDurationMs: 100,
+      executorHeartbeatIntervalMs: 10,
+      executionTimeoutMs: 1_000,
+      now: () => new Date(nowMs),
+    },
+  );
+  const started = coordinator.start({
+    clientRequestId: "91919191-9191-4191-8191-919191919191",
+    sessionToken: SESSION,
+    input: repairInput(),
+  });
+  nowMs += 80;
+  await waitUntil(() => heartbeatCalls >= 1);
+  nowMs += 80;
+  assert.equal(
+    observer.reconcileExpiredExecutorLease(new Date(nowMs).toISOString()),
+    0,
+    "the heartbeat must extend the original 100ms lease",
+  );
+  assert.equal(
+    observer.getRunForSession(started.run.id, repairRunSessionSha256(SESSION))?.status,
+    "RUNNING",
+  );
+
+  resolveExecution({ invalid: true });
+  await coordinator.waitForRun(started.run.id);
+  const callsAtTerminal = heartbeatCalls;
+  await delay(35);
+  assert.equal(heartbeatCalls, callsAtTerminal, "terminal completion must clear the interval");
+  assert.equal(
+    repository.getRunForSession(started.run.id, repairRunSessionSha256(SESSION))?.status,
+    "POISONED",
+  );
+});
+
+test("heartbeat failure is classified separately from wall-time timeout", async (t) => {
+  const { repository } = await temporaryRepository(t);
+  let heartbeatCalls = 0;
+  repository.heartbeatExecutorLease = () => {
+    heartbeatCalls += 1;
+    throw new Error("simulated durable heartbeat failure");
+  };
+  const coordinator = new RepairRunCoordinator(
+    repository,
+    {
+      readiness: () => ({ ready: true }),
+      execute: async (_input, context) =>
+        new Promise((_resolve, reject) => {
+          context.signal.addEventListener(
+            "abort",
+            () => reject(new Error("simulated external worker cancellation")),
+            { once: true },
+          );
+        }),
+    },
+    {
+      executorLeaseDurationMs: 100,
+      executorHeartbeatIntervalMs: 10,
+      executionTimeoutMs: 1_000,
+      settlementTimeoutMs: 100,
+      now: advancingClock("2026-07-19T01:01:00.000Z"),
+    },
+  );
+  const started = coordinator.start({
+    clientRequestId: "92929292-9292-4292-8292-929292929292",
+    sessionToken: SESSION,
+    input: repairInput(),
+  });
+  await coordinator.waitForRun(started.run.id);
+  const sessionSha256 = repairRunSessionSha256(SESSION);
+  const completed = repository.getRunForSession(started.run.id, sessionSha256);
+  assert.equal(completed?.status, "POISONED");
+  assert.equal(completed?.failure?.code, "EXECUTOR_LEASE_HEARTBEAT_FAILED");
+  assert.deepEqual(
+    repository.listEventsForSession(started.run.id, sessionSha256).map((event) => event.type),
+    ["RUN_CREATED", "RUN_STARTED", "RUN_CLEANUP_PENDING", "RUN_POISONED"],
+  );
+  assert.equal(
+    repository.listEventsForSession(started.run.id, sessionSha256)[2]?.detail.message,
+    "The repair executor lost its durable lease heartbeat; this session remains closed while external-worker settlement is observed.",
+  );
+  const callsAtTerminal = heartbeatCalls;
+  await delay(35);
+  assert.equal(heartbeatCalls, callsAtTerminal, "heartbeat failure must clear the interval once");
+});
+
+test("expired and rolled-back heartbeats are storage-reconciled before wait completes", async (t) => {
+  const cases = [
+    {
+      name: "expired exact lease",
+      clientRequestId: "93939393-9393-4393-8393-939393939393",
+      moveClock(nowMs) {
+        return nowMs + 100;
+      },
+      failureCode: "EXECUTOR_LEASE_LOST_WITHOUT_CLEANUP",
+    },
+    {
+      name: "durable clock rollback",
+      clientRequestId: "94949494-9494-4494-8494-949494949494",
+      moveClock(nowMs) {
+        return nowMs - 1;
+      },
+      failureCode: "EXECUTOR_CLOCK_ROLLBACK_WITHOUT_CLEANUP",
+    },
+  ];
+  for (const scenario of cases) {
+    await t.test(scenario.name, async (nested) => {
+      const { repository } = await temporaryRepository(nested);
+      let nowMs = Date.parse("2026-07-19T01:02:00.000Z");
+      const coordinator = new RepairRunCoordinator(
+        repository,
+        {
+          readiness: () => ({ ready: true }),
+          execute: async (_input, context) =>
+            new Promise((_resolve, reject) => {
+              context.signal.addEventListener(
+                "abort",
+                () => reject(new Error("simulated external worker abort")),
+                { once: true },
+              );
+            }),
+        },
+        {
+          executorLeaseDurationMs: 100,
+          executorHeartbeatIntervalMs: 10,
+          executionTimeoutMs: 1_000,
+          now: () => new Date(nowMs),
+        },
+      );
+      const started = coordinator.start({
+        clientRequestId: scenario.clientRequestId,
+        sessionToken: SESSION,
+        input: repairInput(),
+      });
+      nowMs = scenario.moveClock(nowMs);
+      await coordinator.waitForRun(started.run.id);
+      const sessionSha256 = repairRunSessionSha256(SESSION);
+      const terminal = repository.getRunForSession(started.run.id, sessionSha256);
+      assert.equal(terminal?.status, "POISONED");
+      assert.equal(terminal?.failure?.code, scenario.failureCode);
+      assert.deepEqual(
+        repository.listEventsForSession(started.run.id, sessionSha256).map((event) => event.type),
+        ["RUN_CREATED", "RUN_STARTED", "RUN_POISONED"],
+      );
+    });
+  }
 });

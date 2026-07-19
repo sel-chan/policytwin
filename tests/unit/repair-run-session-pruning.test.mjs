@@ -27,7 +27,11 @@ function createBlockedRun(repository, sessionToken, policyId, clientRequestId, c
     policyIrSha256: "a".repeat(64),
     inputSha256: "b".repeat(64),
     createdAt,
+  }, {
+    ownerId: `reo_${"4".repeat(32)}`,
+    leaseDurationMs: 1_000,
   });
+  assert.ok(created.lease);
   return repository.markBlocked(
     created.run.id,
     {
@@ -35,6 +39,7 @@ function createBlockedRun(repository, sessionToken, policyId, clientRequestId, c
       message: "The unavailable executor did not start external work.",
     },
     new Date(Date.parse(createdAt) + 1).toISOString(),
+    created.lease,
   );
 }
 

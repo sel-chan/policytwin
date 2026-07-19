@@ -67,6 +67,7 @@ const suites = {
     "tests/integration/repair-workspace.integration.test.mjs",
     "tests/integration/worker-rpc-mtls.integration.test.mjs",
     "tests/integration/worker-rpc-replay.integration.test.mjs",
+    "tests/integration/repair-run-replica-lease.integration.test.mjs",
     "tests/integration/verifier-replay-sqlite.integration.test.mjs",
     "tests/integration/openai-egress-proxy.integration.test.mjs",
     "tests/integration/evidence-package.integration.test.mjs",

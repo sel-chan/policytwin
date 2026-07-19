@@ -64,6 +64,7 @@ export async function GET(
     const sessionSha256 = repairRunSessionSha256(sessionToken);
     const store = getSeededWorkspaceStore();
     const internalPolicyId = getSessionPolicyId(store, sessionToken);
+    store.repairRunRepository.reconcileExpiredExecutorLease(new Date().toISOString());
     const initialRun = store.repairRunRepository.getRunForSession(runId, sessionSha256);
     if (
       !initialRun ||
@@ -99,6 +100,7 @@ export async function GET(
             return;
           }
           try {
+            store.repairRunRepository.reconcileExpiredExecutorLease(new Date().toISOString());
             const events = store.repairRunRepository.listEventsForSession(
               runId,
               sessionSha256,

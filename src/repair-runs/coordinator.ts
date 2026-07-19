@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { redactWorkerOutput } from "../codex/safety.js";
 import { parseRepairWorkerInput } from "../codex/validate.js";
 import type { RepairWorkerInput } from "../codex/types.js";
@@ -14,6 +14,7 @@ import {
 import {
   RepairRunPersistenceError,
   SQLiteRepairRunRepository,
+  type RepairExecutorLease,
 } from "./sqlite.js";
 import type {
   RepairRunExecutionPort,
@@ -24,6 +25,8 @@ import { repairRunSummaryFromValidatedExternalRun } from "./validated-result.js"
 
 const DEFAULT_EXECUTION_TIMEOUT_MS = 15 * 60_000;
 const DEFAULT_SETTLEMENT_TIMEOUT_MS = 30_000;
+const DEFAULT_EXECUTOR_LEASE_DURATION_MS = 30_000;
+const DEFAULT_EXECUTOR_HEARTBEAT_INTERVAL_MS = 10_000;
 const VERIFIED_REPAIR_RUN_SETTLEMENTS = new WeakSet<object>();
 const CLAIMED_REPAIR_RUN_SETTLEMENTS = new WeakSet<object>();
 
@@ -250,6 +253,9 @@ export class RepairRunCoordinator {
   readonly #active = new Map<string, Promise<void>>();
   readonly #executionTimeoutMs: number;
   readonly #settlementTimeoutMs: number;
+  readonly #executorLeaseDurationMs: number;
+  readonly #executorHeartbeatIntervalMs: number;
+  readonly #executorOwnerId: string;
   readonly #now: () => Date;
 
   constructor(
@@ -258,6 +264,8 @@ export class RepairRunCoordinator {
     options: {
       executionTimeoutMs?: number;
       settlementTimeoutMs?: number;
+      executorLeaseDurationMs?: number;
+      executorHeartbeatIntervalMs?: number;
       now?: () => Date;
     } = {},
   ) {
@@ -271,6 +279,25 @@ export class RepairRunCoordinator {
       "Repair-run settlement timeout",
       60_000,
     );
+    this.#executorLeaseDurationMs = boundedTimeout(
+      options.executorLeaseDurationMs ?? DEFAULT_EXECUTOR_LEASE_DURATION_MS,
+      "Repair executor lease duration",
+      60_000,
+    );
+    this.#executorHeartbeatIntervalMs = boundedTimeout(
+      options.executorHeartbeatIntervalMs ?? DEFAULT_EXECUTOR_HEARTBEAT_INTERVAL_MS,
+      "Repair executor heartbeat interval",
+      30_000,
+    );
+    if (
+      this.#executorLeaseDurationMs < 100 ||
+      this.#executorHeartbeatIntervalMs >= this.#executorLeaseDurationMs
+    ) {
+      throw new Error(
+        "Repair executor heartbeat interval must be shorter than a lease of at least 100ms.",
+      );
+    }
+    this.#executorOwnerId = `reo_${randomBytes(16).toString("hex")}`;
     this.#now = options.now ?? (() => new Date());
   }
 
@@ -289,8 +316,15 @@ export class RepairRunCoordinator {
       policyIrSha256: repairRunPolicyIrSha256(input),
       inputSha256: repairRunInputSha256(input),
       createdAt: canonicalNow(this.#now),
+    }, {
+      ownerId: this.#executorOwnerId,
+      leaseDurationMs: this.#executorLeaseDurationMs,
     });
     if (!created.created) return created;
+    if (!created.lease) {
+      throw new Error("A newly admitted repair run is missing its executor lease.");
+    }
+    const lease = created.lease;
 
     let readiness: ReturnType<RepairRunExecutionPort["readiness"]>;
     try {
@@ -309,12 +343,22 @@ export class RepairRunCoordinator {
           created.run.id,
           { code: readiness.code, message: readiness.message },
           canonicalNow(this.#now),
+          lease,
         ),
       };
     }
 
-    const running = this.repository.markRunning(created.run.id, canonicalNow(this.#now));
-    const execution = this.#execute(running.id, structuredClone(input), running.createdAt);
+    const running = this.repository.markRunning(
+      created.run.id,
+      canonicalNow(this.#now),
+      lease,
+    );
+    const execution = this.#execute(
+      running.id,
+      structuredClone(input),
+      running.createdAt,
+      lease,
+    );
     this.#active.set(running.id, execution);
     const clear = () => {
       if (this.#active.get(running.id) === execution) this.#active.delete(running.id);
@@ -323,11 +367,64 @@ export class RepairRunCoordinator {
     return { run: running, created: true };
   }
 
-  async #execute(runId: string, input: RepairWorkerInput, createdAt: string): Promise<void> {
+  async #execute(
+    runId: string,
+    input: RepairWorkerInput,
+    createdAt: string,
+    lease: RepairExecutorLease,
+  ): Promise<void> {
     const controller = new AbortController();
     let execution: Promise<RepairRunVerifiedSettlement> | undefined;
     let verifiedSettlement: ValidatedExternalWorkerV2Run | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
+    let heartbeatStopped = false;
+    let heartbeatFailure: unknown;
+    let heartbeatFailStopStored = false;
+    let heartbeatFailStopError: Error | undefined;
+    let rejectLeaseFailure: (error: Error) => void = () => {};
+    const leaseFailure = new Promise<never>((_resolve, reject) => {
+      rejectLeaseFailure = reject;
+    });
+    const heartbeat = () => {
+      if (heartbeatStopped) return;
+      const observedAt = canonicalNow(this.#now);
+      try {
+        this.repository.heartbeatExecutorLease(
+          lease,
+          observedAt,
+          this.#executorLeaseDurationMs,
+        );
+      } catch (error) {
+        if (heartbeatFailure !== undefined) return;
+        heartbeatStopped = true;
+        const failure =
+          error instanceof Error ? error : new Error("Executor lease heartbeat failed.");
+        heartbeatFailure = failure;
+        if (
+          error instanceof RepairRunPersistenceError &&
+          (error.code === "LEASE_INVALID" || error.code === "CLOCK_ROLLBACK")
+        ) {
+          try {
+            this.repository.failStopAfterExecutorHeartbeatFailure(
+              lease,
+              observedAt,
+              error.code,
+            );
+            heartbeatFailStopStored = true;
+          } catch (failStopError) {
+            heartbeatFailStopError =
+              failStopError instanceof Error
+                ? failStopError
+                : new Error("Executor lease fail-stop reconciliation failed.");
+          }
+        }
+        controller.abort(failure);
+        rejectLeaseFailure(failure);
+      }
+    };
+    heartbeatTimer = setInterval(heartbeat, this.#executorHeartbeatIntervalMs);
+    heartbeatTimer.unref?.();
     const timeout = new Promise<never>((_resolve, reject) => {
       timer = setTimeout(() => {
         const error = new Error("The guarded repair execution exceeded its wall-time limit.");
@@ -351,10 +448,11 @@ export class RepairRunCoordinator {
               event.phase,
               event.detail,
               canonicalNow(this.#now),
+              lease,
             );
           },
         });
-      const settlement = await Promise.race([execution, timeout]);
+      const settlement = await Promise.race([execution, timeout, leaseFailure]);
       const validatedRun = claimRepairRunSettlement(settlement);
       const observedAt = canonicalNow(this.#now);
       assertVerifiedSettlementBinding(runId, input, createdAt, observedAt, validatedRun);
@@ -368,29 +466,48 @@ export class RepairRunCoordinator {
       if (result.verification.total !== input.acceptedCases.length) {
         throw new Error("Live repair verification did not cover the complete accepted corpus.");
       }
-      this.repository.markSucceeded(runId, validatedRun, observedAt);
+      this.repository.markSucceeded(runId, validatedRun, observedAt, lease);
     } catch (error) {
+      if (heartbeatFailStopError) throw heartbeatFailStopError;
+      if (heartbeatFailStopStored) return;
       try {
         if (controller.signal.aborted && execution !== undefined) {
+          const heartbeatAborted = heartbeatFailure !== undefined;
+          const interruptedFailure = heartbeatAborted
+            ? {
+                code: "EXECUTOR_LEASE_HEARTBEAT_FAILED_CLEANUP_PENDING",
+                message:
+                  "The repair executor lost its durable lease heartbeat; this session remains closed while external-worker settlement is observed.",
+              }
+            : {
+                code: "LIVE_EXECUTION_TIMEOUT_CLEANUP_PENDING",
+                message:
+                  "The live execution timed out; this session remains closed while external-worker settlement is observed.",
+              };
+          const settledFailure = heartbeatAborted
+            ? {
+                code: "EXECUTOR_LEASE_HEARTBEAT_FAILED",
+                message:
+                  "The repair executor lost its durable lease heartbeat; the authenticated external-worker settlement was recorded only as cleanup proof.",
+              }
+            : {
+                code: "LIVE_EXECUTION_TIMEOUT",
+                message:
+                  "The timed-out external-worker call returned an authenticated cleanup-complete settlement after the deadline.",
+              };
           this.repository.markCleanupPending(
             runId,
-            {
-              code: "LIVE_EXECUTION_TIMEOUT_CLEANUP_PENDING",
-              message:
-                "The live execution timed out; this session remains closed while external-worker settlement is observed.",
-            },
+            interruptedFailure,
             canonicalNow(this.#now),
+            lease,
           );
           if (verifiedSettlement !== undefined) {
             this.repository.markFailedAfterVerifiedSettlement(
               runId,
               verifiedSettlement,
-              {
-                code: "LIVE_EXECUTION_TIMEOUT",
-                message:
-                  "The timed-out external-worker call returned an authenticated cleanup-complete settlement after the deadline.",
-              },
+              settledFailure,
               canonicalNow(this.#now),
+              lease,
             );
           } else {
             let settlementTimer: ReturnType<typeof setTimeout> | undefined;
@@ -415,38 +532,44 @@ export class RepairRunCoordinator {
                 this.repository.markFailedAfterVerifiedSettlement(
                   runId,
                   validatedRun,
-                  {
-                    code: "LIVE_EXECUTION_TIMEOUT",
-                    message:
-                      "The timed-out external-worker call returned an authenticated cleanup-complete settlement after the deadline.",
-                  },
+                  settledFailure,
                   observedAt,
+                  lease,
                 );
               } catch {
                 this.repository.markPoisoned(
                   runId,
                   {
-                    code: "LIVE_EXECUTION_SETTLEMENT_UNVERIFIED",
-                    message:
-                      "The external-worker call settled without a run-bound authenticated cleanup receipt; new runs remain fail-stop blocked.",
+                    code: heartbeatAborted
+                      ? "EXECUTOR_LEASE_HEARTBEAT_FAILED"
+                      : "LIVE_EXECUTION_SETTLEMENT_UNVERIFIED",
+                    message: heartbeatAborted
+                      ? "The repair executor lost its durable lease heartbeat and the external-worker settlement was not authenticated; new runs remain fail-stop blocked."
+                      : "The external-worker call settled without a run-bound authenticated cleanup receipt; new runs remain fail-stop blocked.",
                   },
                   observedAt,
+                  lease,
                 );
               }
             } else {
               this.repository.markPoisoned(
                 runId,
                 {
-                  code:
-                    settled.kind === "UNSETTLED"
+                  code: heartbeatAborted
+                    ? "EXECUTOR_LEASE_HEARTBEAT_FAILED"
+                    : settled.kind === "UNSETTLED"
                       ? "LIVE_EXECUTION_UNSETTLED"
                       : "LIVE_EXECUTION_SETTLEMENT_UNVERIFIED",
-                  message:
-                    settled.kind === "UNSETTLED"
+                  message: heartbeatAborted
+                    ? settled.kind === "UNSETTLED"
+                      ? "The repair executor lost its durable lease heartbeat and the external-worker call did not settle; new runs remain fail-stop blocked."
+                      : "The repair executor lost its durable lease heartbeat and the external-worker transport ended without authenticated cleanup proof; new runs remain fail-stop blocked."
+                    : settled.kind === "UNSETTLED"
                       ? "The external-worker call ignored cancellation and did not settle; new runs remain fail-stop blocked."
                       : "The external-worker transport ended without an authenticated cleanup receipt; new runs remain fail-stop blocked.",
                 },
                 canonicalNow(this.#now),
+                lease,
               );
             }
           }
@@ -459,6 +582,7 @@ export class RepairRunCoordinator {
               message: safeFailureMessage(error),
             },
             canonicalNow(this.#now),
+            lease,
           );
         } else {
           this.repository.markPoisoned(
@@ -469,18 +593,23 @@ export class RepairRunCoordinator {
                 "The external-worker execution ended without a run-bound authenticated cleanup receipt; new runs remain fail-stop blocked.",
             },
             canonicalNow(this.#now),
+            lease,
           );
         }
       } catch (transitionError) {
         if (
           !(transitionError instanceof RepairRunPersistenceError) ||
-          transitionError.code !== "INVALID_TRANSITION"
+          (transitionError.code !== "INVALID_TRANSITION" &&
+            transitionError.code !== "LEASE_INVALID" &&
+            transitionError.code !== "CLOCK_ROLLBACK")
         ) {
           throw transitionError;
         }
       }
     } finally {
       if (timer !== undefined) clearTimeout(timer);
+      heartbeatStopped = true;
+      if (heartbeatTimer !== undefined) clearInterval(heartbeatTimer);
     }
   }
 

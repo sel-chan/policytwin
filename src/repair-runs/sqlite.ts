@@ -21,16 +21,35 @@ import {
 } from "./types.js";
 import { repairRunSummaryFromValidatedExternalRun } from "./validated-result.js";
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const MAX_RUNS_PER_SESSION = 16;
 const MAX_EVENTS_PER_RUN = 64;
+const MIN_LEASE_DURATION_MS = 100;
+const MAX_LEASE_DURATION_MS = 60_000;
 const IDENTIFIER = /^[a-z0-9][a-z0-9._-]{0,127}$/u;
 const CLIENT_REQUEST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const RUN_ID = /^rr_[0-9a-f]{32}$/u;
+const EXECUTOR_OWNER_ID = /^reo_[0-9a-f]{32}$/u;
+const FENCE_TOKEN = /^[0-9a-f]{64}$/u;
 const SHA256 = /^[0-9a-f]{64}$/u;
 const FAILURE_CODE = /^[A-Z][A-Z0-9_]{2,63}$/u;
 
 type Row = Record<string, null | number | bigint | string | Uint8Array>;
+
+export interface RepairExecutorLease {
+  readonly kind: "REPAIR_EXECUTOR_LEASE";
+  readonly runId: string;
+}
+
+interface RepairExecutorLeaseBinding {
+  repository: SQLiteRepairRunRepository;
+  ownerId: string;
+  fenceToken: string;
+  fenceGeneration: number;
+  runId: string;
+}
+
+const REPAIR_EXECUTOR_LEASE_BINDINGS = new WeakMap<object, RepairExecutorLeaseBinding>();
 
 export class RepairRunPersistenceError extends Error {
   constructor(
@@ -40,9 +59,12 @@ export class RepairRunPersistenceError extends Error {
       | "RUN_BUSY"
       | "RUN_CAPACITY"
       | "RUN_NOT_FOUND"
+      | "LEASE_INVALID"
+      | "CLOCK_ROLLBACK"
       | "INVALID_TRANSITION"
       | "CORRUPTED_STORAGE"
       | "UNSUPPORTED_SCHEMA"
+      | "MIGRATION_REQUIRES_DRAIN"
       | "STORAGE_FAILURE"
       | "CLOSED",
     message: string,
@@ -121,6 +143,31 @@ function positiveInteger(value: unknown, label: string, maximum = Number.MAX_SAF
     value > maximum
   ) {
     throw new RepairRunPersistenceError("INVALID_INPUT", `${label} must be a positive integer.`);
+  }
+  return value;
+}
+
+function executorOwnerId(value: unknown): string {
+  if (typeof value !== "string" || !EXECUTOR_OWNER_ID.test(value)) {
+    throw new RepairRunPersistenceError(
+      "INVALID_INPUT",
+      "Repair executor owner identity is invalid.",
+    );
+  }
+  return value;
+}
+
+function leaseDuration(value: unknown): number {
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < MIN_LEASE_DURATION_MS ||
+    value > MAX_LEASE_DURATION_MS
+  ) {
+    throw new RepairRunPersistenceError(
+      "INVALID_INPUT",
+      `Repair executor lease duration must be an integer from ${MIN_LEASE_DURATION_MS}ms to ${MAX_LEASE_DURATION_MS}ms.`,
+    );
   }
   return value;
 }
@@ -357,6 +404,11 @@ export interface CreateRepairRunInput {
   createdAt: string;
 }
 
+export interface RepairExecutorLeaseRequest {
+  ownerId: string;
+  leaseDurationMs: number;
+}
+
 export class SQLiteRepairRunRepository {
   readonly #database: DatabaseSync;
   #closed = false;
@@ -368,7 +420,6 @@ export class SQLiteRepairRunRepository {
     this.#database = new DatabaseSync(databasePath);
     try {
       this.#initialize();
-      this.recoverInterruptedRuns(new Date().toISOString());
     } catch (error) {
       this.#database.close();
       this.#closed = true;
@@ -379,50 +430,221 @@ export class SQLiteRepairRunRepository {
   #initialize(): void {
     this.#database.exec("PRAGMA foreign_keys = ON");
     this.#database.exec("PRAGMA busy_timeout = 5000");
-    const versionRow = this.#database.prepare("PRAGMA user_version").get() as Row | undefined;
-    const version = versionRow ? rowInteger(versionRow, "user_version") : 0;
-    if (version !== 0 && version !== SCHEMA_VERSION) {
+    this.#database.exec("PRAGMA journal_mode = WAL");
+    this.#database.exec("PRAGMA synchronous = FULL");
+    this.#migrateSchema();
+    const quickCheck = this.#database.prepare("PRAGMA quick_check").get() as Row | undefined;
+    if (!quickCheck || rowString(quickCheck, "quick_check") !== "ok") {
       throw new RepairRunPersistenceError(
-        "UNSUPPORTED_SCHEMA",
-        `Unsupported repair-run schema version: ${version}.`,
+        "CORRUPTED_STORAGE",
+        "Repair-run storage integrity check failed.",
       );
     }
-    if (version === SCHEMA_VERSION) return;
-    this.#database.exec(`
-      CREATE TABLE repair_runs (
-        id TEXT PRIMARY KEY,
-        client_request_id TEXT NOT NULL,
-        session_sha256 TEXT NOT NULL,
-        policy_id TEXT NOT NULL,
-        policy_version INTEGER NOT NULL CHECK (policy_version >= 1),
-        policy_ir_sha256 TEXT NOT NULL,
-        input_sha256 TEXT NOT NULL,
-        status TEXT NOT NULL,
-        phase TEXT NOT NULL,
-        execution_mode TEXT NOT NULL,
-        result_json TEXT,
-        failure_json TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        UNIQUE(session_sha256, client_request_id)
+    const foreignKeyFailures = this.#database.prepare("PRAGMA foreign_key_check").all() as Row[];
+    if (foreignKeyFailures.length !== 0) {
+      throw new RepairRunPersistenceError(
+        "CORRUPTED_STORAGE",
+        "Repair-run storage foreign-key check failed.",
       );
-      CREATE TABLE repair_run_events (
-        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        run_id TEXT NOT NULL,
-        sequence INTEGER NOT NULL CHECK (sequence >= 1),
-        type TEXT NOT NULL,
-        phase TEXT NOT NULL,
-        occurred_at TEXT NOT NULL,
-        detail_json TEXT NOT NULL,
-        UNIQUE(run_id, sequence),
-        FOREIGN KEY (run_id) REFERENCES repair_runs(id) ON DELETE CASCADE
+    }
+    const authorityRows = this.#database
+      .prepare(
+        "SELECT singleton,owner_id,fence_token,run_id,heartbeat_at_ms,expires_at_ms,fence_generation,high_water_at_ms FROM repair_executor_authority",
+      )
+      .all() as Row[];
+    if (authorityRows.length !== 1 || rowInteger(authorityRows[0] as Row, "singleton") !== 1) {
+      throw new RepairRunPersistenceError(
+        "CORRUPTED_STORAGE",
+        "Repair executor authority singleton is invalid.",
       );
-      CREATE INDEX repair_runs_session_idx
-        ON repair_runs(session_sha256, created_at DESC);
-      CREATE INDEX repair_run_events_run_idx
-        ON repair_run_events(run_id, sequence);
-      PRAGMA user_version = 1;
-    `);
+    }
+    const authorityHighWater = rowInteger(authorityRows[0] as Row, "high_water_at_ms");
+    const maximumStoredRunTime = (this.#database
+      .prepare("SELECT updated_at FROM repair_runs")
+      .all() as Row[]).reduce((maximum, row) => {
+      const milliseconds = Date.parse(
+        storedTimestamp(rowString(row, "updated_at"), "repair-run updated time"),
+      );
+      return Math.max(maximum, milliseconds);
+    }, 0);
+    if (authorityHighWater < maximumStoredRunTime) {
+      throw new RepairRunPersistenceError(
+        "CORRUPTED_STORAGE",
+        "Repair executor high-water mark is behind stored run state.",
+      );
+    }
+  }
+
+  #schemaVersion(): number {
+    const row = this.#database.prepare("PRAGMA user_version").get() as Row | undefined;
+    return row ? rowInteger(row, "user_version") : 0;
+  }
+
+  #migrateSchema(): void {
+    const initialVersion = this.#schemaVersion();
+    if (initialVersion < 0 || initialVersion > SCHEMA_VERSION) {
+      throw new RepairRunPersistenceError(
+        "UNSUPPORTED_SCHEMA",
+        `Unsupported repair-run schema version: ${initialVersion}.`,
+      );
+    }
+    if (initialVersion === SCHEMA_VERSION) return;
+    try {
+      this.#database.exec("BEGIN IMMEDIATE");
+    } catch {
+      throw new RepairRunPersistenceError(
+        "STORAGE_FAILURE",
+        "Repair-run schema migration could not acquire exclusive write authority.",
+      );
+    }
+    try {
+      const version = this.#schemaVersion();
+      if (version < 0 || version > SCHEMA_VERSION) {
+        throw new RepairRunPersistenceError(
+          "UNSUPPORTED_SCHEMA",
+          `Unsupported repair-run schema version: ${version}.`,
+        );
+      }
+      if (version === 0) {
+        const existingObjects = this.#database
+          .prepare(
+            "SELECT name FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
+          )
+          .all() as Row[];
+        if (existingObjects.length !== 0) {
+          throw new RepairRunPersistenceError(
+            "CORRUPTED_STORAGE",
+            "Unversioned repair-run storage contains unexpected schema objects.",
+          );
+        }
+        this.#database.exec(`
+          CREATE TABLE repair_runs (
+            id TEXT PRIMARY KEY,
+            client_request_id TEXT NOT NULL,
+            session_sha256 TEXT NOT NULL,
+            policy_id TEXT NOT NULL,
+            policy_version INTEGER NOT NULL CHECK (policy_version >= 1),
+            policy_ir_sha256 TEXT NOT NULL,
+            input_sha256 TEXT NOT NULL,
+            status TEXT NOT NULL,
+            phase TEXT NOT NULL,
+            execution_mode TEXT NOT NULL,
+            result_json TEXT,
+            failure_json TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            write_generation INTEGER NOT NULL DEFAULT 0 CHECK (write_generation >= 0),
+            UNIQUE(session_sha256, client_request_id)
+          );
+          CREATE TABLE repair_run_events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT NOT NULL,
+            sequence INTEGER NOT NULL CHECK (sequence >= 1),
+            type TEXT NOT NULL,
+            phase TEXT NOT NULL,
+            occurred_at TEXT NOT NULL,
+            detail_json TEXT NOT NULL,
+            UNIQUE(run_id, sequence),
+            FOREIGN KEY (run_id) REFERENCES repair_runs(id) ON DELETE CASCADE
+          );
+          CREATE INDEX repair_runs_session_idx
+            ON repair_runs(session_sha256, created_at DESC);
+          CREATE INDEX repair_run_events_run_idx
+            ON repair_run_events(run_id, sequence);
+        `);
+      }
+      if (version <= 1) {
+        if (version === 1) {
+          const active = this.#database
+            .prepare(
+              "SELECT COUNT(*) AS count FROM repair_runs WHERE status IN ('QUEUED','RUNNING','CLEANUP_PENDING')",
+            )
+            .get() as Row;
+          if (rowInteger(active, "count") !== 0) {
+            throw new RepairRunPersistenceError(
+              "MIGRATION_REQUIRES_DRAIN",
+              "Repair-run schema v1 has active work and must be drained before migration.",
+            );
+          }
+          this.#database.exec(
+            "ALTER TABLE repair_runs ADD COLUMN write_generation INTEGER NOT NULL DEFAULT 0 CHECK (write_generation >= 0)",
+          );
+        }
+        this.#database.exec(`
+          CREATE TABLE repair_executor_authority (
+            singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+            owner_id TEXT,
+            fence_token TEXT UNIQUE,
+            run_id TEXT,
+            heartbeat_at_ms INTEGER,
+            expires_at_ms INTEGER,
+            fence_generation INTEGER NOT NULL CHECK (fence_generation >= 0),
+            high_water_at_ms INTEGER NOT NULL CHECK (high_water_at_ms >= 0),
+            CHECK (
+              (
+                owner_id IS NULL AND
+                fence_token IS NULL AND
+                run_id IS NULL AND
+                heartbeat_at_ms IS NULL AND
+                expires_at_ms IS NULL
+              ) OR
+              (
+                owner_id IS NOT NULL AND
+                fence_token IS NOT NULL AND
+                run_id IS NOT NULL AND
+                heartbeat_at_ms IS NOT NULL AND
+                expires_at_ms IS NOT NULL AND
+                heartbeat_at_ms >= 0 AND
+                expires_at_ms > heartbeat_at_ms
+              )
+            ),
+            FOREIGN KEY (run_id) REFERENCES repair_runs(id) ON DELETE RESTRICT
+          ) STRICT;
+          CREATE TRIGGER repair_runs_active_write_guard
+          BEFORE UPDATE ON repair_runs
+          WHEN OLD.status IN ('QUEUED','RUNNING','CLEANUP_PENDING')
+            AND NEW.write_generation <> OLD.write_generation + 1
+          BEGIN
+            SELECT RAISE(ABORT, 'repair_executor_lease_required');
+          END;
+          CREATE TRIGGER repair_runs_insert_guard
+          BEFORE INSERT ON repair_runs
+          WHEN NEW.status <> 'QUEUED' OR NEW.write_generation <> 1
+          BEGIN
+            SELECT RAISE(ABORT, 'repair_executor_v2_admission_required');
+          END;
+        `);
+        const maximumStoredRunTime = (this.#database
+          .prepare("SELECT updated_at FROM repair_runs")
+          .all() as Row[]).reduce((maximum, row) => {
+          const milliseconds = Date.parse(
+            storedTimestamp(rowString(row, "updated_at"), "repair-run updated time"),
+          );
+          return Math.max(maximum, milliseconds);
+        }, 0);
+        this.#database
+          .prepare(
+            "INSERT INTO repair_executor_authority(singleton,owner_id,fence_token,run_id,heartbeat_at_ms,expires_at_ms,fence_generation,high_water_at_ms) VALUES (1,NULL,NULL,NULL,NULL,NULL,0,?)",
+          )
+          .run(maximumStoredRunTime);
+        this.#database.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+      }
+      this.#database.exec("COMMIT");
+    } catch (error) {
+      try {
+        this.#database.exec("ROLLBACK");
+      } catch {
+        throw new RepairRunPersistenceError(
+          "STORAGE_FAILURE",
+          "Repair-run schema migration failed and rollback could not be confirmed.",
+        );
+      }
+      if (error instanceof RepairRunPersistenceError) throw error;
+      throw new RepairRunPersistenceError(
+        "STORAGE_FAILURE",
+        "Repair-run schema migration failed.",
+      );
+    }
   }
 
   #ensureOpen(): void {
@@ -442,6 +664,234 @@ export class SQLiteRepairRunRepository {
       if (error instanceof RepairRunPersistenceError) throw error;
       throw new RepairRunPersistenceError("STORAGE_FAILURE", "Repair-run transaction failed.");
     }
+  }
+
+  #authorityRow(): Row {
+    const row = this.#database
+      .prepare(
+        "SELECT singleton,owner_id,fence_token,run_id,heartbeat_at_ms,expires_at_ms,fence_generation,high_water_at_ms FROM repair_executor_authority WHERE singleton = 1",
+      )
+      .get() as Row | undefined;
+    if (!row || rowInteger(row, "singleton") !== 1) {
+      throw new RepairRunPersistenceError(
+        "CORRUPTED_STORAGE",
+        "Repair executor authority singleton is missing.",
+      );
+    }
+    const fenceGeneration = rowInteger(row, "fence_generation");
+    const highWater = rowInteger(row, "high_water_at_ms");
+    if (fenceGeneration < 0 || highWater < 0) {
+      throw new RepairRunPersistenceError(
+        "CORRUPTED_STORAGE",
+        "Repair executor authority counters are invalid.",
+      );
+    }
+    const leaseValues = [
+      row.owner_id,
+      row.fence_token,
+      row.run_id,
+      row.heartbeat_at_ms,
+      row.expires_at_ms,
+    ];
+    if (leaseValues.every((value) => value === null)) return row;
+    if (
+      typeof row.owner_id !== "string" ||
+      !EXECUTOR_OWNER_ID.test(row.owner_id) ||
+      typeof row.fence_token !== "string" ||
+      !FENCE_TOKEN.test(row.fence_token) ||
+      typeof row.run_id !== "string" ||
+      !RUN_ID.test(row.run_id)
+    ) {
+      throw new RepairRunPersistenceError(
+        "CORRUPTED_STORAGE",
+        "Repair executor authority binding is invalid.",
+      );
+    }
+    const heartbeatAt = rowInteger(row, "heartbeat_at_ms");
+    const expiresAt = rowInteger(row, "expires_at_ms");
+    if (heartbeatAt < 0 || expiresAt <= heartbeatAt) {
+      throw new RepairRunPersistenceError(
+        "CORRUPTED_STORAGE",
+        "Repair executor lease time is invalid.",
+      );
+    }
+    return row;
+  }
+
+  #observeTime(currentMs: number): void {
+    if (!Number.isSafeInteger(currentMs) || currentMs < 0) {
+      throw new RepairRunPersistenceError("INVALID_INPUT", "Repair executor time is invalid.");
+    }
+    const authority = this.#authorityRow();
+    const highWater = rowInteger(authority, "high_water_at_ms");
+    if (currentMs < highWater) {
+      throw new RepairRunPersistenceError(
+        "CLOCK_ROLLBACK",
+        "Repair executor clock moved behind its durable high-water mark.",
+      );
+    }
+    if (currentMs > highWater) {
+      const update = this.#database
+        .prepare(
+          "UPDATE repair_executor_authority SET high_water_at_ms = ? WHERE singleton = 1 AND high_water_at_ms = ?",
+        )
+        .run(currentMs, highWater);
+      if (Number(update.changes) !== 1) {
+        throw new RepairRunPersistenceError(
+          "INVALID_TRANSITION",
+          "Repair executor clock changed concurrently.",
+        );
+      }
+    }
+  }
+
+  #leaseBinding(value: unknown): RepairExecutorLeaseBinding {
+    if (typeof value !== "object" || value === null) {
+      throw new RepairRunPersistenceError("LEASE_INVALID", "Repair executor lease is invalid.");
+    }
+    const binding = REPAIR_EXECUTOR_LEASE_BINDINGS.get(value);
+    if (!binding || binding.repository !== this) {
+      throw new RepairRunPersistenceError(
+        "LEASE_INVALID",
+        "Repair executor lease is foreign, copied, or stale.",
+      );
+    }
+    return binding;
+  }
+
+  #leaseBindingForRun(value: unknown, runId: string): RepairExecutorLeaseBinding {
+    const binding = this.#leaseBinding(value);
+    if (binding.runId !== runId) {
+      throw new RepairRunPersistenceError(
+        "LEASE_INVALID",
+        "Repair executor lease is not bound to this run.",
+      );
+    }
+    return binding;
+  }
+
+  #assertLeaseCurrent(binding: RepairExecutorLeaseBinding, currentMs: number): Row {
+    const authority = this.#authorityRow();
+    if (
+      authority.owner_id !== binding.ownerId ||
+      authority.fence_token !== binding.fenceToken ||
+      authority.run_id !== binding.runId ||
+      rowInteger(authority, "fence_generation") !== binding.fenceGeneration ||
+      rowInteger(authority, "expires_at_ms") <= currentMs
+    ) {
+      throw new RepairRunPersistenceError(
+        "LEASE_INVALID",
+        "Repair executor lease is foreign, expired, or fenced.",
+      );
+    }
+    return authority;
+  }
+
+  #leaseFor(binding: Omit<RepairExecutorLeaseBinding, "repository">): RepairExecutorLease {
+    const lease = Object.freeze({
+      kind: "REPAIR_EXECUTOR_LEASE" as const,
+      runId: binding.runId,
+    });
+    REPAIR_EXECUTOR_LEASE_BINDINGS.set(lease, { repository: this, ...binding });
+    return lease;
+  }
+
+  #clearLease(binding: RepairExecutorLeaseBinding): void {
+    const update = this.#database
+      .prepare(
+        "UPDATE repair_executor_authority SET owner_id = NULL, fence_token = NULL, run_id = NULL, heartbeat_at_ms = NULL, expires_at_ms = NULL WHERE singleton = 1 AND owner_id = ? AND fence_token = ? AND fence_generation = ? AND run_id = ?",
+      )
+      .run(binding.ownerId, binding.fenceToken, binding.fenceGeneration, binding.runId);
+    if (Number(update.changes) !== 1) {
+      throw new RepairRunPersistenceError(
+        "LEASE_INVALID",
+        "Repair executor lease changed before release.",
+      );
+    }
+  }
+
+  #recoverRunWithoutLease(
+    run: RepairRunRecord,
+    currentMs: number,
+    leaseExpired: boolean,
+    failureOverride?: RepairRunFailure,
+  ): void {
+    const occurredAt = new Date(currentMs).toISOString();
+    if (currentMs < Date.parse(run.updatedAt)) {
+      throw new RepairRunPersistenceError(
+        "CLOCK_ROLLBACK",
+        "Repair-run recovery time is behind the stored run state.",
+      );
+    }
+    const queued = run.status === "QUEUED";
+    if (!queued && run.status !== "RUNNING" && run.status !== "CLEANUP_PENDING") return;
+    const nextStatus: RepairRunStatus = queued ? "FAILED" : "POISONED";
+    const code = queued
+      ? leaseExpired
+        ? "EXECUTOR_LEASE_EXPIRED_BEFORE_START"
+        : "EXECUTOR_AUTHORITY_MISSING_BEFORE_START"
+      : leaseExpired
+        ? "EXECUTOR_LEASE_EXPIRED_WITHOUT_CLEANUP"
+        : "EXECUTOR_AUTHORITY_MISSING_WITHOUT_CLEANUP";
+    const message = queued
+      ? leaseExpired
+        ? "The repair executor authority expired before external work started."
+        : "The repair run had no executor authority before external work started."
+      : leaseExpired
+        ? "The repair executor authority expired without authenticated settlement or cleanup proof."
+        : "The repair run had no executor authority and no authenticated settlement or cleanup proof.";
+    const parsedFailure = failure(failureOverride ?? { code, message });
+    const update = this.#database
+      .prepare(
+        "UPDATE repair_runs SET status = ?, phase = 'COMPLETE', result_json = NULL, failure_json = ?, updated_at = ?, write_generation = write_generation + 1 WHERE id = ? AND status = ?",
+      )
+      .run(nextStatus, JSON.stringify(parsedFailure), occurredAt, run.id, run.status);
+    if (Number(update.changes) !== 1) {
+      throw new RepairRunPersistenceError(
+        "INVALID_TRANSITION",
+        "Repair-run recovery state changed concurrently.",
+      );
+    }
+    this.#appendEvent(
+      run.id,
+      queued ? "RUN_FAILED" : "RUN_POISONED",
+      "COMPLETE",
+      { message: parsedFailure.message },
+      occurredAt,
+    );
+  }
+
+  #reconcileExpiredExecutorLease(currentMs: number): number {
+    const authority = this.#authorityRow();
+    const boundRunId = authority.run_id;
+    if (typeof boundRunId === "string") {
+      if (rowInteger(authority, "expires_at_ms") > currentMs) return 0;
+      const run = this.#getRunById(boundRunId);
+      if (!run) {
+        throw new RepairRunPersistenceError(
+          "CORRUPTED_STORAGE",
+          "Repair executor lease references a missing run.",
+        );
+      }
+      this.#recoverRunWithoutLease(run, currentMs, true);
+      this.#clearLease({
+        repository: this,
+        ownerId: rowString(authority, "owner_id"),
+        fenceToken: rowString(authority, "fence_token"),
+        fenceGeneration: rowInteger(authority, "fence_generation"),
+        runId: boundRunId,
+      });
+      return 1;
+    }
+    const unownedRows = this.#database
+      .prepare(
+        "SELECT id,client_request_id,session_sha256,policy_id,policy_version,policy_ir_sha256,input_sha256,status,phase,execution_mode,result_json,failure_json,created_at,updated_at FROM repair_runs WHERE status IN ('QUEUED','RUNNING','CLEANUP_PENDING') ORDER BY created_at,id",
+      )
+      .all() as Row[];
+    for (const row of unownedRows) {
+      this.#recoverRunWithoutLease(this.#runFromRow(row), currentMs, false);
+    }
+    return unownedRows.length;
   }
 
   #runFromRow(row: Row): RepairRunRecord {
@@ -536,7 +986,10 @@ export class SQLiteRepairRunRepository {
       .run(runId, sequence, typeValue, phaseValue, occurredAt, JSON.stringify(detail));
   }
 
-  createOrGetRun(value: CreateRepairRunInput): { run: RepairRunRecord; created: boolean } {
+  createOrGetRun(
+    value: CreateRepairRunInput,
+    leaseValue: RepairExecutorLeaseRequest,
+  ): { run: RepairRunRecord; created: boolean; lease: RepairExecutorLease | null } {
     this.#ensureOpen();
     if (!CLIENT_REQUEST_ID.test(value.clientRequestId)) {
       throw new RepairRunPersistenceError("INVALID_INPUT", "Repair-run client request ID is invalid.");
@@ -547,7 +1000,16 @@ export class SQLiteRepairRunRepository {
     const policyIrSha256 = sha256(value.policyIrSha256, "repair-run PolicyIR hash");
     const inputSha256 = sha256(value.inputSha256, "repair-run input hash");
     const createdAt = canonicalTimestamp(value.createdAt, "repair-run creation time");
+    const currentMs = Date.parse(createdAt);
+    const ownerId = executorOwnerId(leaseValue?.ownerId);
+    const leaseDurationMs = leaseDuration(leaseValue?.leaseDurationMs);
+    const expiresAtMs = currentMs + leaseDurationMs;
+    if (!Number.isSafeInteger(expiresAtMs)) {
+      throw new RepairRunPersistenceError("INVALID_INPUT", "Repair executor lease expiry is invalid.");
+    }
+    this.reconcileExpiredExecutorLease(createdAt);
     return this.#transaction(() => {
+      this.#observeTime(currentMs);
       const existingRow = this.#database
         .prepare(
           "SELECT id,client_request_id,session_sha256,policy_id,policy_version,policy_ir_sha256,input_sha256,status,phase,execution_mode,result_json,failure_json,created_at,updated_at FROM repair_runs WHERE session_sha256 = ? AND client_request_id = ?",
@@ -566,7 +1028,7 @@ export class SQLiteRepairRunRepository {
             "Repair-run request ID was reused for different input.",
           );
         }
-        return { run: existing, created: false };
+        return { run: existing, created: false, lease: null };
       }
       const active = this.#database
         .prepare(
@@ -594,7 +1056,7 @@ export class SQLiteRepairRunRepository {
       } while (this.#getRunById(runId));
       this.#database
         .prepare(
-          "INSERT INTO repair_runs(id,client_request_id,session_sha256,policy_id,policy_version,policy_ir_sha256,input_sha256,status,phase,execution_mode,result_json,failure_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+          "INSERT INTO repair_runs(id,client_request_id,session_sha256,policy_id,policy_version,policy_ir_sha256,input_sha256,status,phase,execution_mode,result_json,failure_json,created_at,updated_at,write_generation) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         )
         .run(
           runId,
@@ -611,6 +1073,7 @@ export class SQLiteRepairRunRepository {
           null,
           createdAt,
           createdAt,
+          1,
         );
       this.#appendEvent(
         runId,
@@ -623,7 +1086,189 @@ export class SQLiteRepairRunRepository {
       if (!run) {
         throw new RepairRunPersistenceError("STORAGE_FAILURE", "Created repair run cannot be read.");
       }
-      return { run, created: true };
+      const authority = this.#authorityRow();
+      if (authority.run_id !== null) {
+        throw new RepairRunPersistenceError(
+          "RUN_BUSY",
+          "The guarded repair executor already has an active authority lease.",
+        );
+      }
+      const previousGeneration = rowInteger(authority, "fence_generation");
+      const fenceGeneration = previousGeneration + 1;
+      if (!Number.isSafeInteger(fenceGeneration)) {
+        throw new RepairRunPersistenceError(
+          "STORAGE_FAILURE",
+          "Repair executor fence generation is exhausted.",
+        );
+      }
+      const fenceToken = randomBytes(32).toString("hex");
+      const issued = this.#database
+        .prepare(
+          "UPDATE repair_executor_authority SET owner_id = ?, fence_token = ?, run_id = ?, heartbeat_at_ms = ?, expires_at_ms = ?, fence_generation = ? WHERE singleton = 1 AND owner_id IS NULL AND fence_token IS NULL AND run_id IS NULL AND heartbeat_at_ms IS NULL AND expires_at_ms IS NULL AND fence_generation = ?",
+        )
+        .run(
+          ownerId,
+          fenceToken,
+          run.id,
+          currentMs,
+          expiresAtMs,
+          fenceGeneration,
+          previousGeneration,
+        );
+      if (Number(issued.changes) !== 1) {
+        throw new RepairRunPersistenceError(
+          "RUN_BUSY",
+          "Repair executor authority changed before lease issuance.",
+        );
+      }
+      return {
+        run,
+        created: true,
+        lease: this.#leaseFor({
+          ownerId,
+          fenceToken,
+          fenceGeneration,
+          runId: run.id,
+        }),
+      };
+    });
+  }
+
+  reconcileExpiredExecutorLease(occurredAtValue: string): number {
+    this.#ensureOpen();
+    const occurredAt = canonicalTimestamp(
+      occurredAtValue,
+      "repair executor reconciliation time",
+    );
+    const currentMs = Date.parse(occurredAt);
+    const observedAuthority = this.#authorityRow();
+    const highWater = rowInteger(observedAuthority, "high_water_at_ms");
+    if (currentMs < highWater) {
+      throw new RepairRunPersistenceError(
+        "CLOCK_ROLLBACK",
+        "Repair executor clock moved behind its durable high-water mark.",
+      );
+    }
+    if (
+      typeof observedAuthority.run_id === "string" &&
+      rowInteger(observedAuthority, "expires_at_ms") > currentMs
+    ) {
+      return 0;
+    }
+    if (observedAuthority.run_id === null) {
+      const unownedActive = this.#database
+        .prepare(
+          "SELECT COUNT(*) AS count FROM repair_runs WHERE status IN ('QUEUED','RUNNING','CLEANUP_PENDING')",
+        )
+        .get() as Row;
+      if (rowInteger(unownedActive, "count") === 0) return 0;
+    }
+    return this.#transaction(() => {
+      this.#observeTime(currentMs);
+      return this.#reconcileExpiredExecutorLease(currentMs);
+    });
+  }
+
+  heartbeatExecutorLease(
+    leaseValue: RepairExecutorLease,
+    occurredAtValue: string,
+    leaseDurationValue: number,
+  ): void {
+    this.#ensureOpen();
+    const binding = this.#leaseBinding(leaseValue);
+    const occurredAt = canonicalTimestamp(occurredAtValue, "repair executor heartbeat time");
+    const currentMs = Date.parse(occurredAt);
+    const leaseDurationMs = leaseDuration(leaseDurationValue);
+    const expiresAtMs = currentMs + leaseDurationMs;
+    if (!Number.isSafeInteger(expiresAtMs)) {
+      throw new RepairRunPersistenceError("INVALID_INPUT", "Repair executor lease expiry is invalid.");
+    }
+    this.#transaction(() => {
+      this.#observeTime(currentMs);
+      this.#assertLeaseCurrent(binding, currentMs);
+      const update = this.#database
+        .prepare(
+          "UPDATE repair_executor_authority SET heartbeat_at_ms = ?, expires_at_ms = ? WHERE singleton = 1 AND owner_id = ? AND fence_token = ? AND fence_generation = ? AND run_id = ? AND expires_at_ms > ?",
+        )
+        .run(
+          currentMs,
+          expiresAtMs,
+          binding.ownerId,
+          binding.fenceToken,
+          binding.fenceGeneration,
+          binding.runId,
+          currentMs,
+        );
+      if (Number(update.changes) !== 1) {
+        throw new RepairRunPersistenceError(
+          "LEASE_INVALID",
+          "Repair executor lease changed before heartbeat.",
+        );
+      }
+    });
+  }
+
+  failStopAfterExecutorHeartbeatFailure(
+    leaseValue: RepairExecutorLease,
+    occurredAtValue: string,
+    cause: "LEASE_INVALID" | "CLOCK_ROLLBACK",
+  ): RepairRunRecord {
+    this.#ensureOpen();
+    const binding = this.#leaseBinding(leaseValue);
+    const occurredAt = canonicalTimestamp(
+      occurredAtValue,
+      "repair executor heartbeat failure time",
+    );
+    if (cause !== "LEASE_INVALID" && cause !== "CLOCK_ROLLBACK") {
+      throw new RepairRunPersistenceError(
+        "INVALID_INPUT",
+        "Repair executor heartbeat failure cause is invalid.",
+      );
+    }
+    return this.#transaction(() => {
+      const authority = this.#authorityRow();
+      const highWater = rowInteger(authority, "high_water_at_ms");
+      const providedMs = Date.parse(occurredAt);
+      const logicalMs = Math.max(providedMs, highWater);
+      if (providedMs > highWater) this.#observeTime(providedMs);
+      const run = this.#getRunById(binding.runId);
+      if (!run) {
+        throw new RepairRunPersistenceError("RUN_NOT_FOUND", "Repair run was not found.");
+      }
+      if (
+        run.status === "BLOCKED" ||
+        run.status === "FAILED" ||
+        run.status === "SUCCEEDED" ||
+        run.status === "POISONED"
+      ) {
+        return run;
+      }
+      const authorityMatches =
+        authority.owner_id === binding.ownerId &&
+        authority.fence_token === binding.fenceToken &&
+        authority.run_id === binding.runId &&
+        rowInteger(authority, "fence_generation") === binding.fenceGeneration;
+      if (!authorityMatches && authority.run_id !== null) {
+        throw new RepairRunPersistenceError(
+          "LEASE_INVALID",
+          "A different repair executor authority owns the active run.",
+        );
+      }
+      const failureValue =
+        cause === "CLOCK_ROLLBACK"
+          ? {
+              code: "EXECUTOR_CLOCK_ROLLBACK_WITHOUT_CLEANUP",
+              message:
+                "The repair executor clock moved behind its durable high-water mark; execution was aborted without authenticated cleanup proof.",
+            }
+          : {
+              code: "EXECUTOR_LEASE_LOST_WITHOUT_CLEANUP",
+              message:
+                "The repair executor lost its exact heartbeat lease; execution was aborted without authenticated cleanup proof.",
+            };
+      this.#recoverRunWithoutLease(run, logicalMs, false, failureValue);
+      if (authorityMatches) this.#clearLease(binding);
+      return this.#getRunById(binding.runId) as RepairRunRecord;
     });
   }
 
@@ -703,7 +1348,11 @@ export class SQLiteRepairRunRepository {
       .all(run.id, afterSequenceValue, limitValue) as Row[]).map((row) => this.#eventFromRow(row));
   }
 
-  markRunning(runId: string, occurredAtValue: string): RepairRunRecord {
+  markRunning(
+    runId: string,
+    occurredAtValue: string,
+    lease: RepairExecutorLease,
+  ): RepairRunRecord {
     return this.#transition(runId, ["QUEUED"], {
       status: "RUNNING",
       phase: "ADMISSION",
@@ -713,7 +1362,7 @@ export class SQLiteRepairRunRepository {
       eventType: "RUN_STARTED",
       detail: { message: "The admitted external worker execution started." },
       occurredAt: occurredAtValue,
-    });
+    }, lease);
   }
 
   appendProgress(
@@ -722,11 +1371,16 @@ export class SQLiteRepairRunRepository {
     phaseValue: Exclude<RepairRunPhase, "ADMISSION" | "COMPLETE">,
     detailValue: RepairRunEventDetail,
     occurredAtValue: string,
+    leaseValue: RepairExecutorLease,
   ): RepairRunRecord {
     this.#ensureOpen();
+    const binding = this.#leaseBindingForRun(leaseValue, runId);
     const occurredAt = canonicalTimestamp(occurredAtValue, "repair-run progress time");
+    const currentMs = Date.parse(occurredAt);
     const detail = eventDetail(detailValue);
     return this.#transaction(() => {
+      this.#observeTime(currentMs);
+      this.#assertLeaseCurrent(binding, currentMs);
       const run = this.#getRunById(runId);
       if (!run) throw new RepairRunPersistenceError("RUN_NOT_FOUND", "Repair run was not found.");
       if (run.status !== "RUNNING") {
@@ -758,15 +1412,37 @@ export class SQLiteRepairRunRepository {
       if (!startIsOrdered && !completionIsOrdered) {
         throw new RepairRunPersistenceError("INVALID_TRANSITION", "Repair-run phase order is invalid.");
       }
-      this.#database
-        .prepare("UPDATE repair_runs SET phase = ?, updated_at = ? WHERE id = ?")
-        .run(phaseValue, occurredAt, runId);
+      const update = this.#database
+        .prepare(
+          "UPDATE repair_runs SET phase = ?, updated_at = ?, write_generation = write_generation + 1 WHERE id = ? AND status = 'RUNNING' AND EXISTS (SELECT 1 FROM repair_executor_authority WHERE singleton = 1 AND owner_id = ? AND fence_token = ? AND fence_generation = ? AND run_id = ? AND expires_at_ms > ?)",
+        )
+        .run(
+          phaseValue,
+          occurredAt,
+          runId,
+          binding.ownerId,
+          binding.fenceToken,
+          binding.fenceGeneration,
+          runId,
+          currentMs,
+        );
+      if (Number(update.changes) !== 1) {
+        throw new RepairRunPersistenceError(
+          "LEASE_INVALID",
+          "Repair executor lease changed before progress was stored.",
+        );
+      }
       this.#appendEvent(runId, typeValue, phaseValue, detail, occurredAt);
       return this.#getRunById(runId) as RepairRunRecord;
     });
   }
 
-  markBlocked(runId: string, failureValue: RepairRunFailure, occurredAtValue: string): RepairRunRecord {
+  markBlocked(
+    runId: string,
+    failureValue: RepairRunFailure,
+    occurredAtValue: string,
+    lease: RepairExecutorLease,
+  ): RepairRunRecord {
     return this.#transition(runId, ["QUEUED"], {
       status: "BLOCKED",
       phase: "ADMISSION",
@@ -776,13 +1452,14 @@ export class SQLiteRepairRunRepository {
       eventType: "RUN_BLOCKED",
       detail: { message: failureValue.message },
       occurredAt: occurredAtValue,
-    });
+    }, lease);
   }
 
   markCleanupPending(
     runId: string,
     failureValue: RepairRunFailure,
     occurredAtValue: string,
+    lease: RepairExecutorLease,
   ): RepairRunRecord {
     return this.#transition(runId, ["RUNNING"], {
       status: "CLEANUP_PENDING",
@@ -793,13 +1470,14 @@ export class SQLiteRepairRunRepository {
       eventType: "RUN_CLEANUP_PENDING",
       detail: { message: failureValue.message },
       occurredAt: occurredAtValue,
-    });
+    }, lease);
   }
 
   markPoisoned(
     runId: string,
     failureValue: RepairRunFailure,
     occurredAtValue: string,
+    lease: RepairExecutorLease,
   ): RepairRunRecord {
     const current = this.#getRunById(runId);
     if (!current) throw new RepairRunPersistenceError("RUN_NOT_FOUND", "Repair run was not found.");
@@ -812,13 +1490,14 @@ export class SQLiteRepairRunRepository {
       eventType: "RUN_POISONED",
       detail: { message: failureValue.message },
       occurredAt: occurredAtValue,
-    });
+    }, lease);
   }
 
   markSucceeded(
     runId: string,
     validatedRun: ValidatedExternalWorkerV2Run,
     occurredAtValue: string,
+    lease: RepairExecutorLease,
   ): RepairRunRecord {
     assertConsumedExternalWorkerV2Run(validatedRun);
     const result = resultSummary(repairRunSummaryFromValidatedExternalRun(validatedRun));
@@ -895,10 +1574,15 @@ export class SQLiteRepairRunRepository {
         reviewVerdict: result.review.verdict,
       },
       occurredAt,
-    });
+    }, lease);
   }
 
-  markFailed(runId: string, failureValue: RepairRunFailure, occurredAtValue: string): RepairRunRecord {
+  markFailed(
+    runId: string,
+    failureValue: RepairRunFailure,
+    occurredAtValue: string,
+    lease: RepairExecutorLease,
+  ): RepairRunRecord {
     const run = this.#getRunById(runId);
     if (!run) throw new RepairRunPersistenceError("RUN_NOT_FOUND", "Repair run was not found.");
     return this.#transition(runId, ["QUEUED"], {
@@ -910,7 +1594,7 @@ export class SQLiteRepairRunRepository {
       eventType: "RUN_FAILED",
       detail: { message: failureValue.message },
       occurredAt: occurredAtValue,
-    });
+    }, lease);
   }
 
   markFailedAfterVerifiedSettlement(
@@ -918,6 +1602,7 @@ export class SQLiteRepairRunRepository {
     validatedRun: ValidatedExternalWorkerV2Run,
     failureValue: RepairRunFailure,
     occurredAtValue: string,
+    lease: RepairExecutorLease,
   ): RepairRunRecord {
     assertConsumedExternalWorkerV2Run(validatedRun);
     const run = this.#getRunById(runId);
@@ -947,7 +1632,7 @@ export class SQLiteRepairRunRepository {
       eventType: "RUN_FAILED",
       detail: { message: failureValue.message },
       occurredAt,
-    });
+    }, lease);
   }
 
   #transition(
@@ -963,16 +1648,21 @@ export class SQLiteRepairRunRepository {
       detail: RepairRunEventDetail;
       occurredAt: string;
     },
+    leaseValue: RepairExecutorLease,
   ): RepairRunRecord {
     this.#ensureOpen();
     if (typeof runIdValue !== "string" || !RUN_ID.test(runIdValue)) {
       throw new RepairRunPersistenceError("INVALID_INPUT", "Repair-run ID is invalid.");
     }
+    const binding = this.#leaseBindingForRun(leaseValue, runIdValue);
     const occurredAt = canonicalTimestamp(next.occurredAt, "repair-run transition time");
+    const currentMs = Date.parse(occurredAt);
     const parsedFailure = next.failure === null ? null : failure(next.failure);
     const parsedResult = next.result === null ? null : resultSummary(next.result);
     const detail = eventDetail(next.detail);
     return this.#transaction(() => {
+      this.#observeTime(currentMs);
+      this.#assertLeaseCurrent(binding, currentMs);
       const run = this.#getRunById(runIdValue);
       if (!run) throw new RepairRunPersistenceError("RUN_NOT_FOUND", "Repair run was not found.");
       if (!allowedStatuses.includes(run.status) || occurredAt < run.updatedAt) {
@@ -980,7 +1670,7 @@ export class SQLiteRepairRunRepository {
       }
       const update = this.#database
         .prepare(
-          `UPDATE repair_runs SET status = ?, phase = ?, execution_mode = ?, result_json = ?, failure_json = ?, updated_at = ? WHERE id = ? AND status = ?`,
+          `UPDATE repair_runs SET status = ?, phase = ?, execution_mode = ?, result_json = ?, failure_json = ?, updated_at = ?, write_generation = write_generation + 1 WHERE id = ? AND status = ? AND EXISTS (SELECT 1 FROM repair_executor_authority WHERE singleton = 1 AND owner_id = ? AND fence_token = ? AND fence_generation = ? AND run_id = ? AND expires_at_ms > ?)`,
         )
         .run(
           next.status,
@@ -991,46 +1681,26 @@ export class SQLiteRepairRunRepository {
           occurredAt,
           runIdValue,
           run.status,
+          binding.ownerId,
+          binding.fenceToken,
+          binding.fenceGeneration,
+          runIdValue,
+          currentMs,
         );
       if (Number(update.changes) !== 1) {
         throw new RepairRunPersistenceError("INVALID_TRANSITION", "Repair-run state changed concurrently.");
       }
       this.#appendEvent(runIdValue, next.eventType, next.phase, detail, occurredAt);
+      if (
+        next.status === "BLOCKED" ||
+        next.status === "FAILED" ||
+        next.status === "SUCCEEDED" ||
+        next.status === "POISONED"
+      ) {
+        this.#clearLease(binding);
+      }
       return this.#getRunById(runIdValue) as RepairRunRecord;
     });
-  }
-
-  recoverInterruptedRuns(occurredAtValue: string): number {
-    this.#ensureOpen();
-    const occurredAt = canonicalTimestamp(occurredAtValue, "repair-run recovery time");
-    const queuedRows = this.#database
-      .prepare("SELECT id FROM repair_runs WHERE status = 'QUEUED' ORDER BY created_at")
-      .all() as Row[];
-    for (const row of queuedRows) {
-      this.markFailed(
-        rowString(row, "id"),
-        {
-          code: "PROCESS_RESTARTED",
-          message: "The server restarted before the guarded repair run reached a terminal state.",
-        },
-        occurredAt,
-      );
-    }
-    const uncleanRows = this.#database
-      .prepare("SELECT id FROM repair_runs WHERE status IN ('RUNNING','CLEANUP_PENDING') ORDER BY created_at")
-      .all() as Row[];
-    for (const row of uncleanRows) {
-      this.markPoisoned(
-        rowString(row, "id"),
-        {
-          code: "PROCESS_RESTARTED_WITHOUT_CLEANUP",
-          message:
-            "The server restarted without a verified external-worker settlement or cleanup receipt.",
-        },
-        occurredAt,
-      );
-    }
-    return queuedRows.length + uncleanRows.length;
   }
 
   close(): void {

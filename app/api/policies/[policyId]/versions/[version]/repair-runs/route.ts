@@ -87,6 +87,7 @@ export async function GET(
     const sessionToken = requireWorkspaceSession(request);
     const store = getSeededWorkspaceStore();
     const internalPolicyId = getSessionPolicyId(store, sessionToken);
+    store.repairRunRepository.reconcileExpiredExecutorLease(new Date().toISOString());
     const run = store.repairRunRepository.getLatestRunForSession(
       repairRunSessionSha256(sessionToken),
     );

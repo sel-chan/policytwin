@@ -3,6 +3,10 @@ import { Buffer } from "node:buffer";
 import { mkdir, readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { resolve } from "node:path";
+import {
+  SQLiteRepairRunRepository,
+  repairRunSessionSha256,
+} from "../../dist/index.js";
 
 const admittedScreenshotDirectories = new Set([
   ".tmp/playwright-screenshots",
@@ -221,6 +225,83 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   expect(idempotentRepairReplay.body.created).toBe(false);
   await page.screenshot({ path: resolve(screenshotDirectory, "04-integration-drift.png"), fullPage: true });
 
+  const databasePath = process.env.POLICYTWIN_E2E_DATABASE_PATH;
+  expect(databasePath).toBeTruthy();
+  const sessionCookie = (await page.context().cookies()).find(
+    (cookie) => cookie.name === "policytwin-workspace-session",
+  );
+  expect(sessionCookie?.value).toBeTruthy();
+  const repairWorkspace = await page.evaluate(async () => {
+    const response = await fetch("/api/policies/policy-seeded-refund/workspace", {
+      cache: "no-store",
+    });
+    return response.json() as Promise<{ workspace: { project: { id: string } } }>;
+  });
+  const repairRepository = new SQLiteRepairRunRepository(
+    `${databasePath}.repair-runs.sqlite`,
+  );
+  const injectedAtMs = Date.now() + 100;
+  const injected = repairRepository.createOrGetRun(
+    {
+      clientRequestId: "45454545-4545-4545-8545-454545454545",
+      sessionSha256: repairRunSessionSha256(sessionCookie!.value),
+      policyId: repairWorkspace.workspace.project.id,
+      policyVersion: 4,
+      policyIrSha256: "a".repeat(64),
+      inputSha256: "b".repeat(64),
+      createdAt: new Date(injectedAtMs).toISOString(),
+    },
+    {
+      ownerId: `reo_${"4".repeat(32)}`,
+      leaseDurationMs: 100,
+    },
+  );
+  expect(injected.lease).not.toBeNull();
+  repairRepository.markRunning(
+    injected.run.id,
+    new Date(injectedAtMs + 1).toISOString(),
+    injected.lease!,
+  );
+  repairRepository.close();
+  await page.waitForTimeout(250);
+  const reconciledTimeline = await page.evaluate(async (runId) => {
+    const response = await fetch(
+      `/api/policies/policy-seeded-refund/versions/4/repair-runs/${runId}/events`,
+      { headers: { "Last-Event-ID": "2" } },
+    );
+    return { status: response.status, body: await response.text() };
+  }, injected.run.id);
+  expect(reconciledTimeline.status).toBe(200);
+  expect(reconciledTimeline.body.match(/id: 3\n/gu)).toHaveLength(1);
+  expect(reconciledTimeline.body).toContain('"type":"RUN_POISONED"');
+  const expiredRepair = await page.evaluate(async () => {
+    const response = await fetch(
+      "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+      { cache: "no-store" },
+    );
+    return { status: response.status, body: await response.json() };
+  });
+  expect(expiredRepair.status).toBe(200);
+  expect(expiredRepair.body.run.id).toBe(injected.run.id);
+  expect(expiredRepair.body.run.status).toBe("POISONED");
+  expect(expiredRepair.body.run.failure.code).toBe(
+    "EXECUTOR_LEASE_EXPIRED_WITHOUT_CLEANUP",
+  );
+  expect(expiredRepair.body.events.map((event: { type: string }) => event.type)).toEqual([
+    "RUN_CREATED",
+    "RUN_STARTED",
+    "RUN_POISONED",
+  ]);
+  const completedCursorTimeline = await page.evaluate(async (runId) => {
+    const response = await fetch(
+      `/api/policies/policy-seeded-refund/versions/4/repair-runs/${runId}/events`,
+      { headers: { "Last-Event-ID": "3" } },
+    );
+    return { status: response.status, body: await response.text() };
+  }, injected.run.id);
+  expect(completedCursorTimeline.status).toBe(200);
+  expect(completedCursorTimeline.body).not.toContain("id: 3\n");
+
   await page.getByRole("link", { name: /Proof/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Proof" })).toBeVisible();
   await expect(
@@ -295,6 +376,27 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
     const isolatedPage = await isolatedContext.newPage();
     await isolatedPage.goto("http://127.0.0.1:3210/decisions");
     await expect(isolatedPage.getByText("0 / 3 resolved", { exact: true })).toBeVisible();
+    const foreignRepairRead = await isolatedPage.evaluate(async (runId) => {
+      const latest = await fetch(
+        "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+        { cache: "no-store" },
+      );
+      const timeline = await fetch(
+        `/api/policies/policy-seeded-refund/versions/4/repair-runs/${runId}/events`,
+      );
+      return {
+        latestStatus: latest.status,
+        latestBody: await latest.json(),
+        timelineStatus: timeline.status,
+        timelineBody: await timeline.json(),
+      };
+    }, injected.run.id);
+    expect(foreignRepairRead).toEqual({
+      latestStatus: 200,
+      latestBody: { schemaVersion: "1", run: null, events: [] },
+      timelineStatus: 404,
+      timelineBody: { error: "REPAIR_RUN_NOT_FOUND" },
+    });
     await expect(isolatedPage.getByText("SQLite current version:")).toContainText("v1");
     await isolatedPage.getByRole("button", { name: /Purchase day is day 1/u }).click();
     await isolatedPage.getByRole("button", { name: /Measure at decision time/u }).click();
@@ -347,8 +449,6 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
       status: 409,
       body: { error: "REFERENCE_POLICY_MISMATCH" },
     });
-    const databasePath = process.env.POLICYTWIN_E2E_DATABASE_PATH;
-    expect(databasePath).toBeTruthy();
     const database = new DatabaseSync(databasePath!);
     database
       .prepare("UPDATE policy_projects SET created_at = ? WHERE id = ?")
