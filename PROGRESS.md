@@ -8,8 +8,8 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-20 20:15 +09:00`
-- Latest checkpoint commit: `75a1854`
+- Last updated: `2026-07-20 20:17 +09:00`
+- Latest checkpoint commit: `5cd1dbc`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -114,7 +114,7 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - [x] Run one bounded approved GPT-5.6/Codex challenge attempt from the clean receipt checkpoint.
 - [x] Promote only validated challenge evidence and refresh judge-facing copy and public-link receipts.
 - [x] Commit the validated evidence and copy on `main` and rerun the required gates.
-- [ ] Push the verified `main` commits and require exact public/local `HEAD` equality.
+- [x] Push the verified `main` commits and require exact public/local `HEAD` equality.
 - [ ] Capture the strict Devpost confirmation screenshot/object without changing owner-only legal declarations.
 
 ### Objective
@@ -137,6 +137,7 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- Checkpoint `5cd1dbc` and its preceding D-072/test commits were pushed to public `main`. The post-push `pnpm challenge:submission:release` check passed `PUBLIC_ENTRY_VERIFIED`, proving anonymous GitHub HEAD equality plus public YouTube oEmbed and canonical Devpost entry access. The strict production-ledger Devpost confirmation object remains intentionally absent.
 - Final clean-tree `pnpm verify` after the D-072 isolation fix passed all 16 ordered steps at `2026-07-20 20:14 +09:00`: lint, strict typecheck, 452/452 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, MIT license, static container, 476-file clean-copy reproduction, production build, and 476-file/442-text-file security plus Git-history scanning. Receipt `artifacts/security/offline-verify-report.json` binds evidence hash `c8f7c64f...`, clean report `245ce66e...`, security report `62522ec8...`, and 473 tracked/zero-untracked release inputs with release-tree hash `6ad59da1...`.
 - The first clean-copy run after D-072 found one test-isolation defect: the new regression invoked `HEAD` against `ROOT`, but the deterministic copied tree intentionally excludes `.git`. The inner unit suite therefore reported 451 pass/1 fail and its expected clean-report failure propagated to one eval assertion; browser 3/3, production build, and security/history scanning still passed. The regression now creates and commits an isolated temporary Git repository, then exercises the stripped-config HEAD command there. Focused submission validation passes 10/10, lint and strict typecheck pass, `pnpm clean:check` passes with 476 copied files, and the truthful submission draft was regenerated back from the transient failure state. A fresh clean-tree full gate remains required after checkpointing this test fix.
 - The first post-push release check falsely reported a local/public HEAD mismatch even though anonymous `git ls-remote` and `origin/main` both resolved to local commit `0cfcc21`. Exact reproduction showed that the checker disabled the user's global Git config and thereby lost the removable `F:` drive's `safe.directory` exception. D-072 now gives only the resolved repository root a process-local safe-directory entry, never a wildcard; the 10/10 focused submission-validation suite, lint, and `pnpm challenge:submission:release` pass with `PUBLIC_ENTRY_VERIFIED`.
@@ -1071,7 +1072,7 @@ A blocker is valid only when the task cannot continue safely without external in
 | Immutable container images unavailable | High | High | Keep dynamic gates fail-closed; after scoped registry approval, review and pin exact Node/compiler digests before any build | Owner/Codex / open; Docker daemon itself is running |
 | Current Docker host is cgroup v1 | High | High | Reject before expensive worker/egress builds and require a Linux cgroup-v2 supervisor that can observe the same local Docker PIDs | Owner/Codex / open; current Desktop daemon is ineligible |
 | Offline validator/Zod duplication | Low | Medium | One Zod structure now generates the checked-in schema and model projection and runs before deterministic semantic validation; exact freshness is gated | Closed by D-048; live provider acceptance remains open separately |
-| Public video/account blocker | Medium | High | The exact reviewed 2:48 MP4 is ready; upload it unchanged to public YouTube and verify signed-out playback/audio | Owner / open |
+| Public video/account blocker | Low | High | Public YouTube oEmbed and signed-out browser playback with decoded, non-muted audio/video were verified | Closed for publication; later successful repair capture is represented by repository evidence rather than the pre-capture video |
 
 ## Decisions pending
 
@@ -1081,31 +1082,31 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Commit this resumed-run ledger update on main, run and validate the approved bounded pnpm challenge:run profile with CODEX_MODEL=gpt-5.6-sol, then complete the full offline gate and publish the repository/video before populating Devpost. Stop only at any legal declaration or terms-acceptance control that requires the owner.`
+`Capture the authenticated Devpost submission-confirmation screenshot/object if strict production-ledger closure is desired. The challenge entry itself is already publicly verified; production verify:live, deployment, immutable images, and cgroup-v2 proof remain a separate post-submission engineering track.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the Build Week checkpoint is in its final staged verification and local-challenge execution sequence`
-- Exact current state: `449 unit, 82 integration, 22 eval, 3 browser, prior 472-file clean-copy, prior 472-file/439-text security/history, MIT license, refreshed static container, reviewed 2:48 video, and local submission package pass; the approved GPT-5.6 local capture remains NOT_RUN`
-- Last successful command: `pnpm security:check passed 472 files/439 text files and Git history after the reviewed local-challenge lock registrations; all 16 offline verification steps also passed`
-- Current failing command: `none in the deterministic offline gate; pnpm verify passes all 16 staged steps, while production-live and external publication gates remain separately unavailable`
-- Uncommitted files: `the intended local-challenge serialization checkpoint is verified and awaiting its dedicated commit`
-- Safe resume command/action: `commit the verified checkpoint on main, confirm clean status, then run the approved bounded GPT-5.6 local challenge capture`
-- Remaining owner actions: `publish or share the repository, upload the exact reviewed MP4 to public YouTube, verify signed-out access, and complete Devpost declarations/terms/final submit`
+- Why paused: `the requested post-submission quality pass is complete; only stronger production-proof work or a strict Devpost confirmation artifact remains`
+- Exact current state: `452 unit, 82 integration, 22 eval, 3 browser, 476-file clean-copy, 476-file/442-text security/history, MIT license, static container, public 2:48 video, validated GPT-5.6/Codex repair evidence, public repository, and public submitted Devpost entry`
+- Last successful command: `pnpm challenge:submission:release returned PUBLIC_ENTRY_VERIFIED after public/local Git HEAD equality, YouTube, and Devpost probes`
+- Current failing command: `none in the offline or challenge-release package; production pnpm verify:live remains intentionally fail-closed on missing production credentials, immutable images, and eligible cgroup-v2 infrastructure`
+- Uncommitted files: `this final mutable ledger update only`
+- Safe resume command/action: `capture the authenticated Devpost submission-confirmation artifact, or separately authorize and provide the production cgroup-v2/container prerequisites`
+- Remaining owner actions: `one optional strict-ledger action: capture the authenticated Devpost confirmation screenshot/object without altering legal declarations`
 
 ## Final completion record
 
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `PASS at 2026-07-20 12:27 +09:00; all 16 ordered steps pass, including 448 unit, 82 integration, 22 eval, 3 browser, 472-file clean-copy, 472-file/439-text-file security/history, MIT licensing, static container, demo, and production build; 469 tracked release inputs and zero untracked inputs hash to 3a917bcd6fe8943f57aeb331b34a9517b948d0db7985a48212ca2ada59854421`
+- `pnpm verify`: `PASS at 2026-07-20 20:14 +09:00; all 16 ordered steps pass, including 452 unit, 82 integration, 22 eval, 3 browser, 476-file clean-copy, 476-file/442-text-file security/history, MIT licensing, static container, demo, and production build; 473 tracked release inputs and zero untracked inputs hash to 6ad59da131e31fba35a78bd63e2d4e6a410c9ece2bb704e92ed9eea79fd36eef`
 - `pnpm verify:live`: `FAIL_CLOSED_BEFORE_DYNAMIC_GATES_OR_NETWORK; OPENAI_API_KEY and CODEX_MODEL are absent, while helper/role images, an eligible cgroup-v2 supervisor, real-Docker/cumulative-CPU/outbound observations, finalized evidence, fresh GPT/Codex evidence, and signer/live admission do not exist`
 - Production deployment: `NOT_VERIFIED`
-- Public repository: `NOT_VERIFIED`
-- Demo video: `LOCAL_UPLOAD_CANDIDATE_VERIFIED; public YouTube URL and signed-out playback remain NOT_VERIFIED`
-- Challenge submission: `NOT_VERIFIED`
-- Final evidence hash: `84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291` (`PARTIAL_OFFLINE/FAIL`, structurally consistent offline package, not final live proof)
-- Final commit/tag: `UNSET`
+- Public repository: `VERIFIED_PUBLIC; GitHub main matched local checkpoint 5cd1dbc at the release probe`
+- Demo video: `VERIFIED_PUBLIC; 168.021-second signed-out playback with decoded non-muted audio/video and public YouTube oEmbed`
+- Challenge submission: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
+- Final evidence hash: `c8f7c64f653849ba207195054874d347dcb9bb35122615e5602e6cdcb4cb5d64` (`PARTIAL_OFFLINE/FAIL` production package) plus challenge run `lc_71163880e27f24d9` (`LOCAL_CHALLENGE_PASS`, 41/41, zero drift, APPROVE; never production-eligible)
+- Final commit/tag: `5cd1dbc` / `UNSET`
 - Final truthful state: `IN_PROGRESS`
