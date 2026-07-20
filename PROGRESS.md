@@ -8,8 +8,8 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-21 08:05 +09:00`
-- Latest checkpoint commit: `6852e23`
+- Last updated: `2026-07-21 08:07 +09:00`
+- Latest checkpoint commit: `8497771`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -114,10 +114,11 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - [x] Recheck the canonical Devpost page and YouTube oEmbed anonymously; both resolve the exact replacement metadata.
 - [x] Finalize the URL/hash-bound publication receipt after owner audio review.
 - [x] Rerun the single-process offline gate from committed release inputs.
-- [ ] Commit the refreshed offline report and ledger, push the final metadata checkpoint, and run the public release gate.
+- [x] Commit the refreshed offline report and ledger, push the final metadata checkpoint, and run the public release gate.
 - The first `pnpm verify` retry was invalidated by a timed-out wrapper that left an older verification child alive. Two concurrent runs raced on `dist/` and the clean-checkout temporary root, producing 11 integration import failures and `EBUSY`; the stale process tree was identified by creation time and terminated. Lint, typecheck, 452/452 unit, 22/22 eval, 3/3 browser, build, license, container, draft, demo, and security stages still passed in the surviving run. A clean single-process rerun is required before commit.
 - A focused recovery run passed `pnpm challenge:submission:check` as `PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING` and reproduced a clean checkout with 477 source files. The subsequent single-process pre-commit `pnpm verify` passed lint, typecheck, 452/452 unit, 82/82 integration, 22/22 eval, 3/3 browser, clean-copy, build, license, container, draft, demo, and security stages; only final receipt issuance rejected the intentionally uncommitted release-input diff. Commit this reviewed metadata, then rerun the exact gate from a clean tree.
 - Commit `6852e23` binds the replacement video, owner audio review, refreshed rules timestamp, and public Devpost state. The clean-commit `pnpm verify` then passed all ordered stages and issued the offline receipt: lint, strict typecheck, 452/452 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, 477-file clean-copy, production build, MIT license, static container, draft/demo, and 442-text-file security/history checks. Its generated offline report now records 474 tracked release inputs, 18,561,304 bytes, and release-tree SHA-256 `1fbe94fb7cd73c5c985adaa0760ec755c7a7e2c0c72fb6410506a11426a0cc6d`.
+- Commits `6852e23` and `8497771` were pushed to public `main`. The post-push `pnpm challenge:submission:release` returned `PUBLIC_ENTRY_VERIFIED`, proving anonymous GitHub HEAD equality plus replacement YouTube oEmbed and canonical Devpost access. The strict production-ledger confirmation screenshot/object remains the only challenge-handoff action.
 
 ### Media refresh after validated local challenge (`2026-07-20 21:46 +09:00`)
 
@@ -1111,7 +1112,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Push the final replacement-media ledger and run pnpm challenge:submission:release. After that, capture the authenticated Devpost submission-confirmation screenshot/object only if strict production-ledger closure is desired; production verify:live, deployment, immutable images, and cgroup-v2 proof remain a separate post-submission engineering track.`
+`Capture the authenticated Devpost submission-confirmation screenshot/object only if strict production-ledger closure is desired. The challenge entry, replacement video, owner audio review, repository, and release probes are complete; production verify:live, deployment, immutable images, and cgroup-v2 proof remain a separate post-submission engineering track.`
 
 ## Pause handoff
 
@@ -1119,9 +1120,9 @@ Fill before `/goal pause` or any handoff.
 
 - Why paused: `the requested post-submission quality pass is complete; only stronger production-proof work or a strict Devpost confirmation artifact remains`
 - Exact current state: `452 unit, 82 integration, 22 eval, 3 browser, 477-file clean-copy, 442-text security/history, MIT license, static container, replacement public 2:48 video with owner audio review, validated GPT-5.6/Codex repair evidence, public repository, and public submitted Devpost entry`
-- Last successful command: `pnpm verify passed all ordered offline stages from clean commit 6852e23 at 2026-07-21 08:05 +09:00`
+- Last successful command: `pnpm challenge:submission:release returned PUBLIC_ENTRY_VERIFIED after public/local Git HEAD equality, replacement YouTube, and Devpost probes at 2026-07-21 08:07 +09:00`
 - Current failing command: `none in the offline or challenge-release package; production pnpm verify:live remains intentionally fail-closed on missing production credentials, immutable images, and eligible cgroup-v2 infrastructure`
-- Uncommitted files: `refreshed offline verification report and this mutable ledger update`
+- Uncommitted files: `final release-probe checklist and this mutable ledger update`
 - Safe resume command/action: `capture the authenticated Devpost submission-confirmation artifact, or separately authorize and provide the production cgroup-v2/container prerequisites`
 - Remaining owner actions: `one optional strict-ledger action: capture the authenticated Devpost confirmation screenshot/object without altering legal declarations`
 
@@ -1133,9 +1134,9 @@ Do not fill until the end.
 - `pnpm verify`: `PASS at 2026-07-21 08:05 +09:00; all ordered steps pass, including 452 unit, 82 integration, 22 eval, 3 browser, 477-file clean-copy, 442-text-file security/history, MIT licensing, static container, demo, and production build; 474 tracked release inputs and zero untracked inputs hash to 1fbe94fb7cd73c5c985adaa0760ec755c7a7e2c0c72fb6410506a11426a0cc6d`
 - `pnpm verify:live`: `FAIL_CLOSED_BEFORE_DYNAMIC_GATES_OR_NETWORK; OPENAI_API_KEY and CODEX_MODEL are absent, while helper/role images, an eligible cgroup-v2 supervisor, real-Docker/cumulative-CPU/outbound observations, finalized evidence, fresh GPT/Codex evidence, and signer/live admission do not exist`
 - Production deployment: `NOT_VERIFIED`
-- Public repository: `VERIFIED_PUBLIC; GitHub main matched local checkpoint 5cd1dbc at the release probe`
+- Public repository: `VERIFIED_PUBLIC; GitHub main matched local checkpoint 8497771 at the release probe`
 - Demo video: `VERIFIED_PUBLIC; https://youtu.be/h7o1vXmWC-M; 168.000-second H.264/AAC replacement bound to SHA-256 190f585b6cb6023ada28b13c46a6d3dccff082acbe024bbaaf7b29d49042786e; anonymous title/embed and owner playback/audio reviewed`
 - Challenge submission: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
 - Final evidence hash: `c8f7c64f653849ba207195054874d347dcb9bb35122615e5602e6cdcb4cb5d64` (`PARTIAL_OFFLINE/FAIL` production package) plus challenge run `lc_71163880e27f24d9` (`LOCAL_CHALLENGE_PASS`, 41/41, zero drift, APPROVE; never production-eligible)
-- Final commit/tag: `5cd1dbc` / `UNSET`
+- Final commit/tag: `8497771` / `UNSET`
 - Final truthful state: `IN_PROGRESS`

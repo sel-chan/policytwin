@@ -12,7 +12,7 @@
 - [x] Verify anonymous YouTube title/oEmbed access and the exact replacement embed on Devpost.
 - [x] Obtain the owner's direct public playback/audio review.
 - [x] Replace the Devpost video link, add four refreshed screenshots/captions, and remove the stray story prefix without changing owner-only declarations.
-- [ ] Rerun the full anonymous repository, YouTube, and Devpost release probes after binding the owner-reviewed public URL to this exact video hash.
+- [x] Rerun the full anonymous repository, YouTube, and Devpost release probes after binding the owner-reviewed public URL to this exact video hash.
 - [ ] Capture the strict Devpost confirmation screenshot/object required by the separate production submission ledger.
 
 The production `verify:live` gate is a separate, stricter security target and is not represented as completed by this challenge handoff.
