@@ -482,7 +482,7 @@ Record latest actual result.
 | Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass, including generic capacity exhaustion without project creation | 2026-07-20 10:39 +09:00 |
 | Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass against current isolated drafts and security/clean-copy reports | 2026-07-20 10:39 +09:00 |
 | Production build | PASS | `pnpm build` | Next.js 16.2.10 Turbopack standalone build and strict TypeScript pass | 2026-07-20 10:39 +09:00 |
-| Offline full verification | PASS | `pnpm verify` | all 16 ordered steps pass; the fresh receipt binds 468 tracked release inputs, zero untracked inputs, clean/security report hashes, and release-tree SHA-256 `ee4ee220046c81c0c1c1061991c0add5059d8e0d89a29a0294b62ea3934a7867` | 2026-07-20 10:58 +09:00 |
+| Offline full verification | PASS | `pnpm verify` | all 16 ordered steps pass after the Codex login-stream compatibility fix; the fresh receipt binds 468 tracked release inputs, zero untracked inputs, clean/security report hashes, and release-tree SHA-256 `276abfcb759a8e92d2a4a854ed04f04398a36fc7d66016b257ba5f1c4f559816` | 2026-07-20 11:18 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no model or Codex call occurred | 2026-07-18 12:45 +09:00 |
 | Clean-copy reproduction | PASS | `pnpm clean:check` | 471 source files; frozen offline install, draft checks, lint, typecheck, 445 unit, 82 integration, 22 eval, build, 3 browser, demo, and evidence regeneration pass | 2026-07-20 10:39 +09:00 |
 | Static container contract | PASS | `pnpm container:check` | worker `942bd41f…`, verifier `991040bd…`, egress `c5782283…`, and helper `85a1d41c…` match the checked contract | 2026-07-20 10:39 +09:00 |
@@ -1058,7 +1058,7 @@ Fill before `/goal pause` or any handoff.
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `PASS at 2026-07-20 10:58 +09:00; all 16 ordered steps pass, including 445 unit, 82 integration, 22 eval, 3 browser, 471-file clean-copy, 471-file/438-text-file security/history, MIT licensing, static container, demo, and production build; 468 tracked release inputs and zero untracked inputs hash to ee4ee220046c81c0c1c1061991c0add5059d8e0d89a29a0294b62ea3934a7867`
+- `pnpm verify`: `PASS at 2026-07-20 11:18 +09:00; all 16 ordered steps pass, including 445 unit, 82 integration, 22 eval, 3 browser, 471-file clean-copy, 471-file/438-text-file security/history, MIT licensing, static container, demo, and production build; 468 tracked release inputs and zero untracked inputs hash to 276abfcb759a8e92d2a4a854ed04f04398a36fc7d66016b257ba5f1c4f559816`
 - `pnpm verify:live`: `FAIL_CLOSED_BEFORE_DYNAMIC_GATES_OR_NETWORK; OPENAI_API_KEY and CODEX_MODEL are absent, while helper/role images, an eligible cgroup-v2 supervisor, real-Docker/cumulative-CPU/outbound observations, finalized evidence, fresh GPT/Codex evidence, and signer/live admission do not exist`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`

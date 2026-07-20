@@ -415,7 +415,7 @@ function commandOutput(command, args) {
   if (result.error !== undefined || result.status !== 0) {
     throw new Error(`Local challenge prerequisite failed: ${command} ${args.join(" ")}.`);
   }
-  return result.stdout.trim();
+  return `${result.stdout}\n${result.stderr}`.trim();
 }
 
 function recoverInterruptedChallengeEvidence() {
