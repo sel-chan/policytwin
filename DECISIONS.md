@@ -1227,3 +1227,20 @@ Add new entries below this line with the template above.
 - Risks: Full-file replacement can introduce formatting or unrelated-content drift, and a model can still return incorrect logic. Such output remains terminal under the exact test digest, source-subset inspection, fixed commands, full 41-case replay, and independent read-only review. A partial write poisons the disposable workspace and is never promoted.
 - Reversal or migration path: Prefer a future SDK-native edit operation only after a live run proves it reliably produces observable changes under the same no-command, fixed-write-set contract. Never replace model output with the known expected-fixed fixture while claiming a live Codex repair.
 - Related files/commits: `prompts/repair.v1.md`, `prompts/repair-report.v1.md`, `src/codex/sdk-output-schemas.ts`, `src/codex/sdk-adapter.ts`, `src/evidence/validate.ts`, `scripts/local-challenge.mjs`, `tests/unit/codex-sdk-adapter.test.mjs`, `README.md`, `PROGRESS.md`.
+
+### D-072 — Bind local release HEAD discovery to the exact repository root
+
+- Date: 2026-07-20
+- Status: `ACCEPTED`
+- Milestone: M10
+- Context: After a successful push, the public release checker could anonymously read the exact new GitHub `HEAD` but reported a mismatch. Its local `git rev-parse HEAD` deliberately disabled global and system Git configuration; on the removable `F:` filesystem this also removed the required `safe.directory` exception, so local discovery failed before comparison.
+- Options considered:
+  1. keep relying on the user's global `safe.directory` configuration;
+  2. trust every repository with `safe.directory=*`;
+  3. pass one process-local Git configuration entry for only the resolved PolicyTwin root while retaining disabled global/system configuration and anonymous public probing.
+- Decision: Use option 3. Local HEAD discovery receives `-c safe.directory=<resolved repository root>` as a direct argument with no shell. Public `ls-remote` remains isolated in a fresh directory with credential helpers, prompts, parent discovery, and global/system configuration disabled.
+- Evidence: exact stripped-environment reproduction returned `fatal: detected dubious ownership`; `git ls-remote` independently returned the local 40-character commit; the new regression executes local HEAD discovery under the stripped environment and requires a non-wildcard exact safe-directory argument; the release checker then returned `PUBLIC_ENTRY_VERIFIED`.
+- Consequences: Removable filesystems that do not record ownership can pass the same strict local/public commit comparison without depending on ambient user configuration or broadening Git trust.
+- Risks: This trusts the repository root already executing the repository-owned checker; it does not make any other directory safe and grants no network credential authority.
+- Reversal or migration path: Remove the explicit entry only when the release environment records compatible ownership or local commit identity is obtained from an equally strict repository-owned mechanism. Never replace it with a wildcard safe-directory rule.
+- Related files/commits: `scripts/submission-validation.mjs`, `scripts/challenge-submission-check.mjs`, `tests/unit/submission-validation.test.mjs`, `PROGRESS.md`.

@@ -16,7 +16,10 @@ import {
   acquireLocalChallengeRunLock,
   releaseLocalChallengeRunLock,
 } from "./local-challenge-lock.mjs";
-import { isAcceptableDevpostSubmissionUrl } from "./submission-validation.mjs";
+import {
+  isAcceptableDevpostSubmissionUrl,
+  localGitHeadArguments,
+} from "./submission-validation.mjs";
 
 const mode = process.argv[2] ?? "--local";
 if (mode !== "--local" && mode !== "--release") {
@@ -526,7 +529,7 @@ if (mode === "--release") {
     rmSync(repositoryProbeDirectory, { recursive: true, force: true });
   }
   check(gitProbe.error === undefined && gitProbe.status === 0, "Public repository HEAD probe failed.");
-  const localHead = spawnSync("git", ["rev-parse", "HEAD"], {
+  const localHead = spawnSync("git", localGitHeadArguments(ROOT), {
     cwd: ROOT,
     env: {
       PATH: process.env.PATH ?? "",

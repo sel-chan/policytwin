@@ -9,7 +9,9 @@ import {
   collectSubmissionFailures,
   isAcceptableDevpostSubmissionUrl,
   isFreshOfficialRulesSnapshot,
+  localGitHeadArguments,
 } from "../../scripts/submission-validation.mjs";
+import { ROOT } from "../../scripts/process.mjs";
 import {
   gitProbeEnvironment,
   isPublicIpAddress,
@@ -70,6 +72,32 @@ test("canonical public Devpost project URLs are admitted without broadening URL 
   ]) {
     assert.equal(isAcceptableDevpostSubmissionUrl(value), false, value);
   }
+});
+
+test("local HEAD verification trusts only the exact repository root without global Git config", () => {
+  const args = localGitHeadArguments(ROOT);
+  assert.deepEqual(args.slice(-2), ["rev-parse", "HEAD"]);
+  assert.equal(args[0], "-c");
+  assert.equal(args[1], `safe.directory=${join(ROOT).replaceAll("\\", "/").replace(/\/$/u, "")}`);
+  assert.equal(args[1].includes("*"), false);
+
+  const environment = {
+    GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null",
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_TERMINAL_PROMPT: "0",
+  };
+  for (const key of ["PATH", "Path", "SystemRoot", "SYSTEMROOT", "ComSpec", "TEMP", "TMP"]) {
+    if (typeof process.env[key] === "string") environment[key] = process.env[key];
+  }
+  const result = spawnSync("git", args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    env: environment,
+    shell: false,
+    windowsHide: true,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout.trim(), /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/u);
 });
 
 test("submission readiness requires every independent proof boundary", () => {

@@ -8,7 +8,7 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-20 19:38 +09:00`
+- Last updated: `2026-07-20 19:42 +09:00`
 - Latest checkpoint commit: `93874de`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -137,6 +137,7 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- The first post-push release check falsely reported a local/public HEAD mismatch even though anonymous `git ls-remote` and `origin/main` both resolved to local commit `0cfcc21`. Exact reproduction showed that the checker disabled the user's global Git config and thereby lost the removable `F:` drive's `safe.directory` exception. D-072 now gives only the resolved repository root a process-local safe-directory entry, never a wildcard; the 10/10 focused submission-validation suite, lint, and `pnpm challenge:submission:release` pass with `PUBLIC_ENTRY_VERIFIED`.
 - Authoritative clean-tree `pnpm verify` passed all 16 ordered steps at `2026-07-20 19:38 +09:00`: lint, strict typecheck, 451/451 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, MIT license, static container, 476-file clean-copy reproduction, production build, and 476-file/442-text-file security plus Git-history scanning. The new receipt binds evidence hash `c8f7c64f...`, clean report `245ce66e...`, security report `62522ec8...`, and 473 tracked/zero-untracked release inputs with release-tree hash `2f6f225a...`.
 - Checkpoint `85dd037` commits the validated GPT-5.6/Codex run evidence, filesystem-derived diff, public GitHub/YouTube/Devpost state, judge-facing copy, canonical Devpost URL validation, and release checks on current `main`. The subsequent clean-commit `pnpm verify` execution passed every substantive command: lint, strict typecheck, 451/451 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, MIT license, static container, 476-file clean-copy reproduction, production build, and 476-file/442-text-file security plus Git-history scanning. Final receipt issuance then correctly failed because those two generated security reports had refreshed file counts and no longer matched their Git-index objects. This is a generated-report checkpoint mismatch, not a failed product/test/security command; commit the refreshed reports and rerun from a clean tree before publication.
 - Authenticated run `lc_71163880e27f24d9` at repository commit `5ab9f9a` completed `LOCAL_CHALLENGE_PASS` with GPT-5.6 Sol through Codex SDK/CLI 0.144.6 and no metadata fallback diagnostic. Codex changed exactly `src/refund.ts` and `tests/refund.test.mjs`; server-owned typecheck and regression tests passed 7/7, the hash-bound accepted corpus passed 41/41 with zero drift, and independent thread `019f7ef1-beeb-7522-a96a-ec945a337fd5` returned `APPROVE` with zero blocking findings. `pnpm challenge:check` independently validates the checked-in JSON, filesystem diff, prompt/schema/thread/tree/command/result hashes, and production-claim exclusions.

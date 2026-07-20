@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+
 export const RULES_MAX_AGE_MILLISECONDS = 48 * 60 * 60 * 1_000;
 const RULES_FUTURE_SKEW_MILLISECONDS = 5 * 60 * 1_000;
 const READY_OWNER_ACTION = Object.freeze({
@@ -9,6 +11,19 @@ const REQUIRED_OFFICIAL_RULE_URLS = Object.freeze([
   "https://openai.devpost.com/",
   "https://openai.devpost.com/rules",
 ]);
+
+export function localGitHeadArguments(repositoryRoot) {
+  if (typeof repositoryRoot !== "string" || repositoryRoot.length === 0) {
+    throw new TypeError("Repository root must be a non-empty path.");
+  }
+  const safeDirectory = resolve(repositoryRoot).replaceAll("\\", "/");
+  return Object.freeze([
+    "-c",
+    `safe.directory=${safeDirectory}`,
+    "rev-parse",
+    "HEAD",
+  ]);
+}
 
 export function isFreshOfficialRulesSnapshot(snapshot, now = Date.now()) {
   const nowMilliseconds = now instanceof Date ? now.getTime() : now;
