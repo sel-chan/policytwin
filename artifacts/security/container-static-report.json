@@ -15,7 +15,7 @@
   "nativeHelperBuilderImagePinned": false,
   "nativeHelperImagePinned": false,
   "nativeHelperBinaryPinned": false,
-  "workerBuildInputSha256": "7ec6ac33fd4a6d2bb38041f4bb885151300cbe67883ed75e460e5414e867e580",
+  "workerBuildInputSha256": "b128226bf5fd5da65fb3ba5de2ab97e68bf118fc845551e79d7f03bdf7d4a9a9",
   "verifierBuildInputSha256": "0497698d826ce2d50f558c34000885ec1a63c05862fd1976c87d34aba6a06bb6",
   "egressProxyBuildInputSha256": "5b102026df01b6b39226440b7913a8e18b97dee629e27cc54dc3b3ec4450a7c3",
   "nativeHelperBuildInputSha256": "cab5ad2bcffaa0337bdd513b9809ea903b6af3a020fa3571aec2bdc691926a44",

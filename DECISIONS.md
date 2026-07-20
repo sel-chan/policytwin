@@ -1159,3 +1159,20 @@ Add new entries below this line with the template above.
 - Reversal or migration path: Reintroduce provider-level uniqueness only if the current Codex/Structured Outputs service documents and accepts it, while retaining server-side validation as defense in depth.
 - Related files/commits: `src/codex/sdk-output-schemas.ts`, `tests/unit/codex-sdk-adapter.test.mjs`, `tests/unit/codex-worker-contract.test.mjs`, `PROGRESS.md`.
 - Follow-up evidence: after `uniqueItems` was removed, the next authenticated request was rejected because the relative-path regular expression used lookaround. The same decision therefore applies to `pattern`: omit that provider annotation and keep `assertSafeRelativePath()` as the authoritative security check for every returned path.
+
+### D-068 — Require repair side effects before the structured final response
+
+- Date: 2026-07-20
+- Status: `ACCEPTED`
+- Milestone: M7/M10
+- Context: After Codex schema admission was fixed, GPT-5.6 Sol completed cartography and a workspace-write repair turn but produced no file-content change. The existing repair prompt described the desired edits and ended with “Return only” the schema body, which could be read as a response-only planning task even though file-edit operations were allowed.
+- Options considered:
+  1. accept the model's stated repair summary without a filesystem delta;
+  2. expose the evaluation-only expected-fixed source or apply a deterministic host patch;
+  3. preserve the strict filesystem-derived proof and clarify the required operation order: edit both fixed workspace files first, then return the structured final body.
+- Decision: Use option 3. The repair prompt explicitly makes this an execution task, requires Codex file-edit operations on exactly `src/refund.ts` and `tests/refund.test.mjs` before the final response, and declares a plan-only or schema-only response invalid. Shell and SDK command execution remain forbidden, the expected-fixed fixture remains absent, and the adapter still requires content-derived changes plus the exact server-owned regression-test digest.
+- Evidence: authenticated third challenge attempt ending `REPAIR_INVALID` with an empty observed delta; `prompts/repair.v1.md`; prompt-order regression in `tests/unit/codex-sdk-adapter.test.mjs`; existing filesystem-delta, exact-test-digest, write-set, and pure-source admission tests.
+- Consequences: The model receives an unambiguous edit-then-report contract without allowing prose to substitute for proof.
+- Risks: Prompt clarification cannot guarantee that a stochastic model edits successfully. A repeated no-change result remains terminal and requires a new hypothesis; it must not trigger an unbounded retry or a host-authored repair that is presented as Codex work.
+- Reversal or migration path: Replace prompt reliance with a future typed Codex edit protocol only if it preserves observable filesystem deltas, fixed write scope, server-owned verification, and independent review.
+- Related files/commits: `prompts/repair.v1.md`, `tests/unit/codex-sdk-adapter.test.mjs`, `PROGRESS.md`.

@@ -9,7 +9,7 @@
   "nodeBaseImageRequirement": "node:22.22.2-<verified-variant>@sha256:<64-lowercase-hex>",
   "workerImage": null,
   "workerImageRequirement": "runtime-observed sha256:<64-lowercase-hex> image ID from Dockerfile.worker and this repository context",
-  "workerBuildInputSha256": "7ec6ac33fd4a6d2bb38041f4bb885151300cbe67883ed75e460e5414e867e580",
+  "workerBuildInputSha256": "b128226bf5fd5da65fb3ba5de2ab97e68bf118fc845551e79d7f03bdf7d4a9a9",
   "verifierImage": null,
   "verifierImageRequirement": "runtime-observed sha256:<64-lowercase-hex> image ID from Dockerfile.verifier and this repository context",
   "verifierBuildInputSha256": "0497698d826ce2d50f558c34000885ec1a63c05862fd1976c87d34aba6a06bb6",

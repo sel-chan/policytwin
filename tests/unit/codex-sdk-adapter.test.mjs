@@ -399,6 +399,10 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
     assert.match(client.calls[2].prompt, /--- a\/src\/refund\.ts/u);
     assert.match(client.calls[2].prompt, /\+\+\+ b\/tests\/refund\.test\.mjs/u);
     assert.match(client.calls[2].prompt, /SERVER_OWNED_CORPUS/u);
+    assert.match(
+      client.calls[1].prompt,
+      /Before returning the schema body, use Codex file-edit operations to modify both required workspace files/u,
+    );
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
   }
