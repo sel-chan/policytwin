@@ -40,7 +40,7 @@ import {
 import { ROOT, run } from "./process.mjs";
 
 const FINAL_DIRECTORY = resolve(ROOT, "artifacts", "challenge-evidence");
-const MODEL = "gpt-5.6";
+const MODEL = "gpt-5.6-sol";
 const SDK_VERSION = "0.144.6";
 const ENVIRONMENT_ALLOWLIST = new Set([
   "APPDATA",
@@ -611,7 +611,7 @@ export async function runLocalChallenge({
     );
   }
   if (process.env.CODEX_MODEL && process.env.CODEX_MODEL !== MODEL) {
-    throw new Error("LOCAL_CHALLENGE requires CODEX_MODEL=gpt-5.6 when CODEX_MODEL is set.");
+    throw new Error("LOCAL_CHALLENGE requires CODEX_MODEL=gpt-5.6-sol when CODEX_MODEL is set.");
   }
   return withLocalChallengeRunLock(ROOT, () => runLocalChallengeLocked({ now }));
 }

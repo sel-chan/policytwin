@@ -164,7 +164,7 @@ const SEEDED_REGRESSION_TEST_PATH = "tests/refund.test.mjs";
 const SEEDED_REGRESSION_TEST_SHA256 =
   "b2285ae673d0d4ce164bbe896649d611462820c4c34ebce5073fdc77980ef68a";
 const LOCAL_CHALLENGE_MODEL_METADATA_FALLBACK_WARNING =
-  "Model metadata for `gpt-5.6` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.";
+  "Model metadata for `gpt-5.6-sol` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.";
 
 interface PhaseRunResult {
   body: Record<string, unknown>;
@@ -196,7 +196,7 @@ function isLocalChallengeModelMetadataFallbackWarning(
   return (
     options.backendId === "local-challenge-host-sdk" &&
     options.executionMode === "LIVE_CODEX_SDK" &&
-    options.model === "gpt-5.6" &&
+    options.model === "gpt-5.6-sol" &&
     message === LOCAL_CHALLENGE_MODEL_METADATA_FALLBACK_WARNING
   );
 }

@@ -40,7 +40,7 @@ const generatedCases = JSON.parse(
 );
 const acceptedCases = [...goldenCases, ...generatedCases];
 const modelMetadataFallbackWarning =
-  "Model metadata for `gpt-5.6` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.";
+  "Model metadata for `gpt-5.6-sol` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.";
 const driftCases = JSON.parse(
   await readFile(
     new URL("../../fixtures/refund-demo/cases/seeded-drift-cases.json", import.meta.url),
@@ -624,14 +624,14 @@ test("local challenge continues only past the exact GPT-5.6 metadata fallback wa
       },
     ]);
     const compatibleBackend = createLocalChallengeCodexSdkBackend({
-      ...backendOptions(fixture.fixtureRoot, compatibleClient, { model: "gpt-5.6" }),
+      ...backendOptions(fixture.fixtureRoot, compatibleClient, { model: "gpt-5.6-sol" }),
       acknowledgedNonProduction: true,
       onDiagnostic(diagnostic) {
         diagnostics.push(diagnostic);
       },
     });
     const result = await compatibleBackend.cartograph({ input });
-    assert.equal(result.metadata.model, "gpt-5.6");
+    assert.equal(result.metadata.model, "gpt-5.6-sol");
     assert.equal(result.metadata.backendId, "local-challenge-host-sdk");
     assert.deepEqual(diagnostics, [
       { phase: "CARTOGRAPHY", code: "MODEL_METADATA_FALLBACK" },
@@ -646,7 +646,7 @@ test("local challenge continues only past the exact GPT-5.6 metadata fallback wa
       },
     ]);
     const wrongModelBackend = createLocalChallengeCodexSdkBackend({
-      ...backendOptions(fixture.fixtureRoot, wrongModelClient, { model: "gpt-5.6-sol" }),
+      ...backendOptions(fixture.fixtureRoot, wrongModelClient, { model: "gpt-5.6-terra" }),
       acknowledgedNonProduction: true,
     });
     await assert.rejects(
@@ -662,7 +662,7 @@ test("local challenge continues only past the exact GPT-5.6 metadata fallback wa
       },
     ]);
     const alteredWarningBackend = createLocalChallengeCodexSdkBackend({
-      ...backendOptions(fixture.fixtureRoot, alteredWarningClient, { model: "gpt-5.6" }),
+      ...backendOptions(fixture.fixtureRoot, alteredWarningClient, { model: "gpt-5.6-sol" }),
       acknowledgedNonProduction: true,
     });
     await assert.rejects(
@@ -679,7 +679,7 @@ test("local challenge continues only past the exact GPT-5.6 metadata fallback wa
       },
     ]);
     const updatedWarningBackend = createLocalChallengeCodexSdkBackend({
-      ...backendOptions(fixture.fixtureRoot, updatedWarningClient, { model: "gpt-5.6" }),
+      ...backendOptions(fixture.fixtureRoot, updatedWarningClient, { model: "gpt-5.6-sol" }),
       acknowledgedNonProduction: true,
     });
     await assert.rejects(
@@ -696,7 +696,7 @@ test("local challenge continues only past the exact GPT-5.6 metadata fallback wa
       },
     ]);
     const duplicateWarningBackend = createLocalChallengeCodexSdkBackend({
-      ...backendOptions(fixture.fixtureRoot, duplicateWarningClient, { model: "gpt-5.6" }),
+      ...backendOptions(fixture.fixtureRoot, duplicateWarningClient, { model: "gpt-5.6-sol" }),
       acknowledgedNonProduction: true,
     });
     await assert.rejects(

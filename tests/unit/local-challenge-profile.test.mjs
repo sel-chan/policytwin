@@ -104,7 +104,7 @@ function validRun() {
     schemaVersion: "1",
     profile: "LOCAL_CHALLENGE",
     status: "LOCAL_CHALLENGE_PASS",
-    model: "gpt-5.6",
+    model: "gpt-5.6-sol",
     surface: "CODEX_CLI_OUTPUT_SCHEMA",
     authentication: {
       mode: "EXISTING_CODEX_LOGIN_TEMPORARY_AUTH_COPY",
@@ -187,7 +187,7 @@ test("local challenge factory is explicit, non-root-exported, and leaves host li
         acknowledgedNonProduction: false,
         client: { startThread() { throw new Error("not called"); } },
         fixtureRoot: process.cwd(),
-        model: "gpt-5.6",
+        model: "gpt-5.6-sol",
         prompts: { cartographer: "a", repair: "b", reviewer: "c" },
         timeouts: { cartographyMs: 1, repairMs: 1, reviewMs: 1 },
       }),
@@ -197,7 +197,7 @@ test("local challenge factory is explicit, non-root-exported, and leaves host li
     acknowledgedNonProduction: true,
     client: { startThread() { throw new Error("not called"); } },
     fixtureRoot: process.cwd(),
-    model: "gpt-5.6",
+    model: "gpt-5.6-sol",
     prompts: { cartographer: "a", repair: "b", reviewer: "c" },
     timeouts: { cartographyMs: 1, repairMs: 1, reviewMs: 1 },
   });

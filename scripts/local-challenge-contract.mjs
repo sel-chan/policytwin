@@ -118,7 +118,7 @@ export function validateLocalChallengeSchemaContract() {
     SCHEMA.properties?.schemaVersion?.const !== "1" ||
     SCHEMA.properties?.profile?.const !== "LOCAL_CHALLENGE" ||
     SCHEMA.properties?.status?.const !== "LOCAL_CHALLENGE_PASS" ||
-    SCHEMA.properties?.model?.const !== "gpt-5.6" ||
+    SCHEMA.properties?.model?.const !== "gpt-5.6-sol" ||
     SCHEMA.properties?.surface?.const !== "CODEX_CLI_OUTPUT_SCHEMA" ||
     SCHEMA.properties?.authentication?.properties?.mode?.const !==
       "EXISTING_CODEX_LOGIN_TEMPORARY_AUTH_COPY" ||
@@ -168,7 +168,7 @@ export function validateLocalChallengeRun(input) {
     value.schemaVersion !== "1" ||
     value.profile !== "LOCAL_CHALLENGE" ||
     value.status !== "LOCAL_CHALLENGE_PASS" ||
-    value.model !== "gpt-5.6" ||
+    value.model !== "gpt-5.6-sol" ||
     value.surface !== "CODEX_CLI_OUTPUT_SCHEMA"
   ) {
     throw new Error("Local challenge identity is invalid.");
