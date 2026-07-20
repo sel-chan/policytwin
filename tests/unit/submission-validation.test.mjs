@@ -11,7 +11,6 @@ import {
   isFreshOfficialRulesSnapshot,
   localGitHeadArguments,
 } from "../../scripts/submission-validation.mjs";
-import { ROOT } from "../../scripts/process.mjs";
 import {
   gitProbeEnvironment,
   isPublicIpAddress,
@@ -75,29 +74,63 @@ test("canonical public Devpost project URLs are admitted without broadening URL 
 });
 
 test("local HEAD verification trusts only the exact repository root without global Git config", () => {
-  const args = localGitHeadArguments(ROOT);
-  assert.deepEqual(args.slice(-2), ["rev-parse", "HEAD"]);
-  assert.equal(args[0], "-c");
-  assert.equal(args[1], `safe.directory=${join(ROOT).replaceAll("\\", "/").replace(/\/$/u, "")}`);
-  assert.equal(args[1].includes("*"), false);
+  const repository = mkdtempSync(join(tmpdir(), "policytwin-local-head-"));
+  try {
+    const initialized = spawnSync("git", ["init", "--quiet"], {
+      cwd: repository,
+      encoding: "utf8",
+      shell: false,
+      windowsHide: true,
+    });
+    assert.equal(initialized.status, 0, initialized.stderr);
+    const committed = spawnSync(
+      "git",
+      [
+        "-c",
+        "user.name=PolicyTwin Test",
+        "-c",
+        "user.email=policytwin-test@example.invalid",
+        "commit",
+        "--quiet",
+        "--allow-empty",
+        "-m",
+        "fixture",
+      ],
+      {
+        cwd: repository,
+        encoding: "utf8",
+        shell: false,
+        windowsHide: true,
+      },
+    );
+    assert.equal(committed.status, 0, committed.stderr);
 
-  const environment = {
-    GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null",
-    GIT_CONFIG_NOSYSTEM: "1",
-    GIT_TERMINAL_PROMPT: "0",
-  };
-  for (const key of ["PATH", "Path", "SystemRoot", "SYSTEMROOT", "ComSpec", "TEMP", "TMP"]) {
-    if (typeof process.env[key] === "string") environment[key] = process.env[key];
+    const args = localGitHeadArguments(repository);
+    assert.deepEqual(args.slice(-2), ["rev-parse", "HEAD"]);
+    assert.equal(args[0], "-c");
+    assert.equal(args[1], `safe.directory=${repository.replaceAll("\\", "/")}`);
+    assert.equal(args[1].includes("*"), false);
+
+    const environment = {
+      GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null",
+      GIT_CONFIG_NOSYSTEM: "1",
+      GIT_TERMINAL_PROMPT: "0",
+    };
+    for (const key of ["PATH", "Path", "SystemRoot", "SYSTEMROOT", "ComSpec", "TEMP", "TMP"]) {
+      if (typeof process.env[key] === "string") environment[key] = process.env[key];
+    }
+    const result = spawnSync("git", args, {
+      cwd: repository,
+      encoding: "utf8",
+      env: environment,
+      shell: false,
+      windowsHide: true,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout.trim(), /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/u);
+  } finally {
+    rmSync(repository, { recursive: true, force: true });
   }
-  const result = spawnSync("git", args, {
-    cwd: ROOT,
-    encoding: "utf8",
-    env: environment,
-    shell: false,
-    windowsHide: true,
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout.trim(), /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/u);
 });
 
 test("submission readiness requires every independent proof boundary", () => {
