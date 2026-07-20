@@ -2,7 +2,7 @@
 
 ## 0. Truthful status
 
-- Submission status: `USER_REPORTED_SUBMITTED_CONFIRMATION_PENDING`
+- Submission status: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
 - Last rules check: `2026-07-20 09:30:00 +09:00 — all three official OpenAI and Devpost pages refreshed directly; the official challenge minimum remains distinct from PolicyTwin's production live gate`
 - Exact official deadline and timezone: `2026-07-21 17:00 PDT (UTC-07:00)`
 - Local deadline: `2026-07-22 09:00 KST (UTC+09:00)`
@@ -10,7 +10,7 @@
 - Live application URL: `UNSET`
 - Public repository URL: `https://github.com/sel-chan/policytwin`
 - Demo video URL: `https://youtu.be/YvJlOQkPwnE`
-- Submission page URL: `https://devpost.com/software/1328474`
+- Submission page URL: `https://devpost.com/software/policytwin`
 - Confirmation ID/URL: `UNSET`
 - Confirmation evidence path: `UNSET`
 
@@ -26,8 +26,8 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 - `artifacts/challenge-submission/` contains concise English Devpost copy, testing instructions, the primary `/feedback` session ID `019f5dcf-0233-7a80-9147-af10c7bbfb28`, exact local-video binding, and an explicit owner-action list.
 - `artifacts/demo/policytwin-demo.mp4` is the visually reviewed public-upload candidate: 2:48, 1920×1080 H.264, 48 kHz stereo AAC, synchronized eight-cue narration/captions, and SHA-256 `9d7281258d376cf2e6f7963e6a458ccb396cb0e6c0481fdece84db751186db7b`.
 - The video uses absolute scene boundaries, shows the six-view product, includes a direct Codex + GPT-5.6 build card and `/feedback` ID, preserves every unavailable production claim, and ends on `pnpm demo:run`.
-- `pnpm challenge:submission:check` passes the local package and lists exactly three remaining prerequisites: execute and validate the already approved bounded GPT-5.6 challenge capture, publish the repository, and upload the exact video to public YouTube. The MIT project license is present with `Copyright (c) 2026 CHAN`.
-- `pnpm challenge:submission:release` remains nonzero until those prerequisites exist. The official challenge handoff does not replace or weaken `artifacts/submission/`, `pnpm verify:live`, or `pnpm submission:check`; those remain the stricter production-release target.
+- `pnpm challenge:check` validates the fresh GPT-5.6 Sol/Codex capture: exact two-file repair, fixed typecheck and regression tests 7/7, accepted policy cases 41/41, zero drift, and independent review `APPROVE` with no blocking finding.
+- The repository, reviewed 2:48 YouTube video, and canonical Devpost entry are publicly reachable. `pnpm challenge:submission:release` performs anonymous Git, YouTube oEmbed, and Devpost probes. The official challenge handoff does not replace or weaken `artifacts/submission/`, `pnpm verify:live`, or `pnpm submission:check`; those remain the stricter production-release target.
 
 ### Current offline draft
 
@@ -37,7 +37,7 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 - Every judge-facing draft remains marked `DRAFT_NOT_READY`; no generated file claims submission readiness.
 - `pnpm submission:check` is intentionally fail-closed until live and owner evidence exists. It first runs `pnpm verify` in the same non-recursive invocation, then validates the resulting receipt. The current exact failure count is regenerated after each checker revision. The release gate fixes exact staging/screenshots/38-file evidence sets, distinct reviewable screenshots, substantial SRT coverage synchronized to a two-to-three-minute local video, a 48-hour exact-three-source rule snapshot, cross-file metric claims including README, decoded non-uniform PNGs, Chrome three-point visual/audio/tail verification, full semantic evidence plus release-pinned Ed25519-attestation validation, a raw-byte Git-index/worktree-consistent release-input-bound offline verification receipt, deployment-evidence-bound anonymous live HTTPS and repository Git probes, a YouTube publication receipt, and state-specific owner action or confirmation evidence.
 - Normal `pnpm test:e2e` and `pnpm verify` write browser review copies only to ignored `.tmp/playwright-screenshots/`. The tracked release captures are updated only by the explicit `pnpm exec playwright test --config=playwright.screenshots.config.ts` workflow and require direct visual review before commit.
-- The owner reports that the Devpost entry was submitted at `https://devpost.com/software/1328474`; a confirmation screen or public challenge entry has not yet been captured, so the strict `SUBMITTED` state remains fail-closed. The public repository is anonymously readable at `https://github.com/sel-chan/policytwin`, and the public YouTube URL `https://youtu.be/YvJlOQkPwnE` resolves anonymously to the reviewed 2:48 video; YouTube Studio showed no copyright issue. The bounded local Codex GPT-5.6 capture was attempted but did not produce admissible live repair evidence, so it remains unavailable and no production-live claim is made. The MIT license, public repository, public video, and challenge copy are complete.
+- The owner reports that the Devpost entry was submitted, and an anonymous browser now verifies the canonical public page `https://devpost.com/software/policytwin` with `SUBMITTED TO OpenAI Build Week`. The strict `SUBMITTED` production-ledger state remains fail-closed only because its required confirmation screenshot/object is not captured. The public repository is anonymously readable, the public YouTube video resolves through anonymous oEmbed, and browser playback reached its 168-second media with decoded audio and video bytes. The bounded local Codex GPT-5.6 capture now passes independently at `artifacts/challenge-evidence/`; this remains non-production challenge evidence and does not promote direct Responses API, cgroup-v2, deployment, or attestation claims.
 - Integration now has a session-bound SQLite repair-run/event ledger, idempotent CSRF-protected creation, resumable SSE, retryable terminal records, terminal-history pruning at session expiry, and a global fail-stop executor latch that retains active or poisoned rows. Schema v2 adds an atomic singleton owner lease with heartbeat/expiry, durable clock high-water, random fence, increasing generation, and insert/update guards that fence stale v1 processes. Every active write requires the exact opaque lease; terminal state/event/release commit together; direct GET/SSE reconciliation poisons only expired work, while a live lease stays on a read-only path. This coordinates only processes sharing the same durable SQLite file and is not distributed-replica proof. The disabled future execution seam binds the local run identity into the signed v2 request, accepts only an exact branded one-use settlement, persists request/binding/completion provenance, and leaves unproved transport or cleanup outcomes `POISONED`. The current product execution port is deliberately unavailable, so browser-tested attempts remain `BLOCKED / NOT_STARTED` and explicitly state that no model or Codex call occurred. This is reusable product scaffolding, not live repair evidence or the required `04-codex-repair.png`.
 - Anonymous policy admission now has an independent policy-database schema v3. It reserves the seeded-session namespace, migrates v1/v2 rows to random immutable storage generations, rejects stale ID-only deletion, and commits exact duplicate precedence, the configured capacity count, project insertion, and v1 insertion in one writer transaction across processes sharing that policy file. Generation-fenced expiry atomically records a durable ID/generation retirement tombstone before deletion; triggers require it and reject later recreation or ID reassignment across restart. Tombstones are excluded from active capacity and retained for replay rejection, so metadata can grow by at most the configured capacity per 24-hour expiry cycle. Expiry cleanup and repair POST admission use the same policy-generation writer lock before touching the repair database; stale snapshots have no cleanup side effect, cleanup-first rejects delayed repair admission, and admission-first creates the run row before cleanup. Only nonterminal or poisoned rows retain the slot; the disabled executor can immediately produce terminal `BLOCKED` history that later expiry cleanup may safely prune. Tests use child processes, repeated and retired IDs, writer-lock timeout/retry, fresh-schema concurrency, v1/v2 schema migration, repeated timestamps, delayed repair admission, cleanup failures, raw-SQL trigger bypass attempts, and actual generic 429 response headers. Policy and repair-run databases remain separate and are not cross-database atomic; arbitrary direct database writes are trusted operator authority, and separate files, network filesystems, distributed quotas, public rate limits, and deployment storage are not claimed.
 - The complete evidence download now rereads and content-hashes the exact bounded package on every request, then permits one content-and-validation-policy-bound in-process archive to be reused for at most 15 seconds. Failures and expired live attestations are never cached and responses remain `no-store`; shared public rate limiting is still deployment work, not a current claim.
@@ -130,7 +130,7 @@ Do not finalize this copy until the implemented behavior has been verified.
 
 ## 3. Judge-facing story
 
-> **TARGET FINAL BEHAVIOR — NOT_RUN_LIVE.** GPT-5.6 interpretation, Codex repair/review, post-repair proof, and deployment statements below describe the intended final flow, not current evidence.
+> **LOCAL CHALLENGE REPAIR VERIFIED / PRODUCTION LIVE NOT RUN.** The bounded GPT-5.6 Sol/Codex repair, 41/41 post-repair result, zero drift, and review approval below have checked-in challenge evidence. Fresh Responses API interpretation, isolated production execution, deployment, and attestation remain target behavior only.
 
 ### Problem
 
@@ -249,11 +249,11 @@ Fill with final paths and URLs.
 | Where is OPA used? | `src/opa/runner.ts`, `artifacts/evidence/opa-results.json`, and checksum/version pins in `container-contract.json` |
 | How are cases generated? | `src/cases/generate.ts` and `artifacts/evidence/generated-cases.json` |
 | How is mutation score calculated? | `src/mutation/` and `artifacts/evidence/mutation-report.json`; current score is explicitly reference-evaluator evidence, not live OPA mutation proof |
-| How is application drift measured? | `src/differential/` plus `artifacts/evidence/drift-report-before.json`; post-Codex drift remains unavailable |
-| Where is Codex used in-product? | Prepared contracts under `src/codex/`, with phase prompts and external-worker RPC; `artifacts/evidence/codex-run-summary.json` truthfully remains `NOT_RUN_LIVE` |
+| How is application drift measured? | `src/differential/` plus `artifacts/evidence/drift-report-before.json`; the separate local challenge receipt records 41/41 and zero post-repair drift |
+| Where is Codex used in-product? | Prepared production contracts under `src/codex/` remain fail-closed; the bounded local profile executed GPT-5.6 Sol through Codex SDK/CLI 0.144.6 and is recorded under `artifacts/challenge-evidence/` |
 | How is a repair run followed? | Session-bound routes under `app/api/policies/[policyId]/versions/[version]/repair-runs/`, the SQLite ledger under `src/repair-runs/`, and the Integration SSE timeline; current attempts stop before execution |
-| What code did Codex change? | No live Codex change exists yet; the allowed future write set is `fixtures/refund-demo/baseline/src/refund.ts` and `tests/refund.test.mjs` in a disposable copy |
-| How is the result verified? | `pnpm verify`, `pnpm verify:live`, source-derived `eval-scorecard.json`, and the 38-file evidence validator/archive |
+| What code did Codex change? | In a disposable copy, Codex changed `src/refund.ts` and `tests/refund.test.mjs`: inclusive day/usage boundaries, final-sale precedence, and the exact three regression assertions; see `artifacts/challenge-evidence/integration.diff` |
+| How is the result verified? | `pnpm challenge:check` validates the local capture; `pnpm verify` validates the deterministic product; `pnpm verify:live` remains the separate production gate |
 | What are the safety limits? | `docs/threat-model.md`, `docs/limitations.md`, fixed trusted fixture, closed commands/write set, split worker/verifier, and fail-closed dynamic reports |
 | Can the run be reproduced? | `README.md`, `docs/demo-runbook.md`, `pnpm demo:reset`, `pnpm demo:run`, `pnpm verify`, and clean-copy evidence |
 
@@ -342,7 +342,7 @@ A clear video strictly shorter than the official three-minute limit. Target 2:55
 
 ### Script draft
 
-> **TARGET VIDEO FLOW — NOT_RECORDED / NOT_RUN_LIVE.** GPT-5.6, Codex repair, post-repair zero drift, and final proof segments cannot be recorded as completed until fresh live evidence exists.
+> **PUBLIC VIDEO RECORDED; LATER REPAIR CAPTURE CHECKED IN.** The reviewed 2:48 public video demonstrates the product and guarded repair design. The subsequent successful GPT-5.6/Codex run is supplied as machine-readable repository evidence with a filesystem-derived diff, 41/41 result, zero drift, and review approval.
 
 #### 0:00–0:18 — Policy drift
 

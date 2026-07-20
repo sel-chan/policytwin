@@ -16,6 +16,7 @@ import {
   acquireLocalChallengeRunLock,
   releaseLocalChallengeRunLock,
 } from "./local-challenge-lock.mjs";
+import { isAcceptableDevpostSubmissionUrl } from "./submission-validation.mjs";
 
 const mode = process.argv[2] ?? "--local";
 if (mode !== "--local" && mode !== "--release") {
@@ -187,8 +188,8 @@ check(
 );
 check(
   links.submissionUrl === null ||
-    (typeof links.submissionUrl === "string" && /^https:\/\/openai\.devpost\.com\//u.test(links.submissionUrl)),
-  "Submission URL must be null or an OpenAI Devpost URL.",
+    isAcceptableDevpostSubmissionUrl(links.submissionUrl),
+  "Submission URL must be null or a canonical HTTPS Devpost URL.",
 );
 
 const manifest = exactKeys(
@@ -453,12 +454,30 @@ try {
 
 if (mode === "--release") {
   check(releaseErrors.length === 0, `Challenge release is not ready: ${releaseErrors.join(" ")}`);
-  check(links.status === "READY_FOR_DEVPOST", "Release links status must be READY_FOR_DEVPOST.");
-  check(releaseState.status === "READY_FOR_DEVPOST", "Release state must be READY_FOR_DEVPOST.");
+  const publicEntryRecorded =
+    links.status === "PUBLIC_ENTRY_VERIFIED" &&
+    releaseState.status === "PUBLIC_ENTRY_VERIFIED";
   check(
-    JSON.stringify(releaseState.requiredOwnerActions) === JSON.stringify(["SUBMIT_ON_DEVPOST"]),
-    "A ready release must leave exactly the owner-only Devpost submission action.",
+    publicEntryRecorded ||
+      (links.status === "READY_FOR_DEVPOST" && releaseState.status === "READY_FOR_DEVPOST"),
+    "Release state must be READY_FOR_DEVPOST or PUBLIC_ENTRY_VERIFIED.",
   );
+  if (publicEntryRecorded) {
+    check(
+      JSON.stringify(releaseState.requiredOwnerActions) ===
+        JSON.stringify(["CAPTURE_DEVPOST_CONFIRMATION"]),
+      "A public-entry release must leave only the strict confirmation-capture action.",
+    );
+    check(
+      isAcceptableDevpostSubmissionUrl(links.submissionUrl),
+      "A public-entry release requires its canonical Devpost URL.",
+    );
+  } else {
+    check(
+      JSON.stringify(releaseState.requiredOwnerActions) === JSON.stringify(["SUBMIT_ON_DEVPOST"]),
+      "A ready release must leave exactly the owner-only Devpost submission action.",
+    );
+  }
   check(
     publicationReceipt.status === "PUBLISHED_AND_REVIEWED" &&
       publicationReceipt.repositoryUrl === links.repositoryUrl &&
@@ -507,6 +526,26 @@ if (mode === "--release") {
     rmSync(repositoryProbeDirectory, { recursive: true, force: true });
   }
   check(gitProbe.error === undefined && gitProbe.status === 0, "Public repository HEAD probe failed.");
+  const localHead = spawnSync("git", ["rev-parse", "HEAD"], {
+    cwd: ROOT,
+    env: {
+      PATH: process.env.PATH ?? "",
+      SYSTEMROOT: process.env.SYSTEMROOT ?? "",
+      GIT_CONFIG_NOSYSTEM: "1",
+      GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null",
+      GIT_TERMINAL_PROMPT: "0",
+    },
+    encoding: "utf8",
+    shell: false,
+    windowsHide: true,
+    timeout: 10_000,
+  });
+  check(
+    localHead.error === undefined &&
+      localHead.status === 0 &&
+      gitProbe.stdout.trim().split(/\s+/u)[0] === localHead.stdout.trim(),
+    "Public repository HEAD does not match the reviewed local commit.",
+  );
   const oembed = new URL("https://www.youtube.com/oembed");
   oembed.searchParams.set("url", links.videoUrl);
   oembed.searchParams.set("format", "json");
@@ -516,21 +555,49 @@ if (mode === "--release") {
     headers: { "user-agent": "PolicyTwin challenge release verifier" },
   });
   check(videoProbe.ok, "Public YouTube oEmbed probe failed.");
-  console.log("Challenge submission release metadata: READY_FOR_DEVPOST.");
+  if (publicEntryRecorded) {
+    const submissionProbe = await fetch(links.submissionUrl, {
+      redirect: "error",
+      signal: AbortSignal.timeout(20_000),
+      headers: { "user-agent": "PolicyTwin challenge release verifier" },
+    });
+    check(submissionProbe.ok, "Public Devpost entry probe failed.");
+    const submissionBody = await submissionProbe.text();
+    check(
+      Buffer.byteLength(submissionBody, "utf8") <= 2 * 1024 * 1024 &&
+        /PolicyTwin/u.test(submissionBody) &&
+        /OpenAI Build Week/u.test(submissionBody),
+      "Public Devpost entry does not match PolicyTwin and OpenAI Build Week.",
+    );
+  }
+  console.log(
+    `Challenge submission release metadata: ${publicEntryRecorded ? "PUBLIC_ENTRY_VERIFIED" : "READY_FOR_DEVPOST"}.`,
+  );
 } else {
+  const publicEntryRecorded =
+    links.status === "PUBLIC_ENTRY_VERIFIED" &&
+    releaseState.status === "PUBLIC_ENTRY_VERIFIED" &&
+    isAcceptableDevpostSubmissionUrl(links.submissionUrl) &&
+    JSON.stringify(releaseState.requiredOwnerActions) ===
+      JSON.stringify(["CAPTURE_DEVPOST_CONFIRMATION"]);
   check(
-    links.status === "PENDING_EXTERNAL_LINKS" &&
-      releaseState.status === "LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS",
-    "Local challenge package must remain explicitly pending external actions.",
+    publicEntryRecorded ||
+      (links.status === "PENDING_EXTERNAL_LINKS" &&
+        releaseState.status === "LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS"),
+    "Local challenge package state is inconsistent.",
   );
   console.log(
     JSON.stringify(
       {
-        status: "LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS",
+        status: publicEntryRecorded
+          ? "PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING"
+          : "LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS",
         feedbackSessionId: links.feedbackSessionId,
         videoSha256: manifest.sha256,
         durationMilliseconds: manifest.durationMilliseconds,
-        remaining: releaseErrors,
+        remaining: publicEntryRecorded
+          ? ["Capture the strict Devpost confirmation artifact for the production submission ledger."]
+          : releaseErrors,
       },
       null,
       2,

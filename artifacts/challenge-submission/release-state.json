@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1",
-  "status": "LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS",
+  "status": "PUBLIC_ENTRY_VERIFIED",
   "officialRulesCheckedAt": "2026-07-20T09:30:00+09:00",
   "deadline": "2026-07-22T09:00:00+09:00",
   "localVideo": {
@@ -11,10 +11,7 @@
     "width": 1920,
     "height": 1080
   },
-  "requiredOwnerActions": [
-    "PUBLISH_REPOSITORY",
-    "UPLOAD_PUBLIC_YOUTUBE_VIDEO"
-  ],
+  "requiredOwnerActions": ["CAPTURE_DEVPOST_CONFIRMATION"],
   "claims": {
     "productionVerifyLive": false,
     "productionIsolation": false,

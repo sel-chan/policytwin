@@ -1,0 +1,402 @@
+{
+  "schemaVersion": "1",
+  "profile": "LOCAL_CHALLENGE",
+  "status": "LOCAL_CHALLENGE_PASS",
+  "model": "gpt-5.6-sol",
+  "surface": "CODEX_CLI_OUTPUT_SCHEMA",
+  "authentication": {
+    "mode": "EXISTING_CODEX_LOGIN_TEMPORARY_AUTH_COPY",
+    "explicitApiKeyProvided": false,
+    "credentialMaterialCaptured": false,
+    "temporaryAuthCopyCreated": true,
+    "temporaryAuthCopyRemovedBeforeEvidence": true,
+    "temporaryAuthDirectoryRestricted": true
+  },
+  "tooling": {
+    "sdkVersion": "0.144.6",
+    "bundledCliVersion": "0.144.6",
+    "externalCliVersion": "0.144.6",
+    "modelMetadataFallbackPhases": []
+  },
+  "provenance": {
+    "runId": "lc_71163880e27f24d9",
+    "repositoryCommit": "5ab9f9ad32081d5b36627c97747ee89c67b2aec2",
+    "sourceInputSha256": "8c49c3f8ec0ead1d31ab969631c48f601b41f585096aaadff58a3473de1ace04",
+    "acceptedPolicyIrSha256": "2cfec48bf2eb9902dded3242027b1a4f766855d51bbb4700fb698c7ac85cc1ae",
+    "acceptedCorpusSha256": "2658993bb79e56bf5dfbc1cc762786fdd25b52afe0b63c5ffb1c0b1deb132f57",
+    "promptSha256s": {
+      "cartography": "b06b4fc881a3a96b17b72a56cc526d201aed8a928ac9cf6514fe3cc6e8706bfb",
+      "repair": "35285437bf8b87f0ab15523aa1e07bf298fe238591b37c38a905dd1e71047109",
+      "review": "bc6b04ff1690b599976747e661d6126294c39d8b6f8466120f289564f9cc44c7"
+    },
+    "outputSchemaSha256s": {
+      "cartography": "edb4f9c2bd164feec5ee7f003d01391ff2a10fe35b8e6e0812f36c6ccf818932",
+      "repair": "36a0a16f0ca5260de522c7bb505068c89831cc12e989b994071a5e8e5024345c",
+      "review": "389d94df64efe9f685444ccc752095f7184855fc498ebafe612be13280c81baf"
+    }
+  },
+  "repair": {
+    "status": "PASS",
+    "cartographyThreadId": "019f7ef0-d338-7320-b984-64872831da49",
+    "repairThreadIds": [
+      "019f7ef1-48db-7053-91db-1d64a155258d"
+    ],
+    "changedFiles": [
+      "src/refund.ts",
+      "tests/refund.test.mjs"
+    ],
+    "preCommandTreeSha256": "91ba104d91bb2819c6ffba15c01be78f1872d614dd06502d3cafc3e0daaf6f24",
+    "postCommandTreeSha256": "ccc046c6ec1f5e4849bab15a6db8da50ee601db4d5cabc9b8967fa4455a9f004",
+    "diffSha256": "bef92fdc9a3eb7714f45c4b0bd066fae177d3a8671d64f09147d8a55a91b2e5e"
+  },
+  "commands": {
+    "status": "PASS",
+    "orderedIds": [
+      "fixture-typecheck",
+      "fixture-test"
+    ],
+    "receipts": [
+      {
+        "schemaVersion": "1",
+        "commandId": "fixture-typecheck",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 1316,
+        "stdout": "",
+        "stderr": "",
+        "outputTruncated": false,
+        "fixtureTreeBeforeSha256": "91ba104d91bb2819c6ffba15c01be78f1872d614dd06502d3cafc3e0daaf6f24",
+        "fixtureTreeAfterSha256": "ccc046c6ec1f5e4849bab15a6db8da50ee601db4d5cabc9b8967fa4455a9f004",
+        "attempt": 1,
+        "repairRunId": "019f7ef1-48db-7053-91db-1d64a155258d"
+      },
+      {
+        "schemaVersion": "1",
+        "commandId": "fixture-test",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 106,
+        "stdout": "TAP version 13\n# Subtest: allows an ordinary eligible request\nok 1 - allows an ordinary eligible request\n  ---\n  duration_ms: 0.982\n  type: 'test'\n  ...\n# Subtest: denies an ordinary request outside the window\nok 2 - denies an ordinary request outside the window\n  ---\n  duration_ms: 0.8309\n  type: 'test'\n  ...\n# Subtest: reviews an eligible promotion until approval\nok 3 - reviews an eligible promotion until approval\n  ---\n  duration_ms: 0.1837\n  type: 'test'\n  ...\n# Subtest: denies a non-promotional final-sale request\nok 4 - denies a non-promotional final-sale request\n  ---\n  duration_ms: 0.1368\n  type: 'test'\n  ...\n# Subtest: regression D01 allows the exact day-14 boundary\nok 5 - regression D01 allows the exact day-14 boundary\n  ---\n  duration_ms: 0.2084\n  type: 'test'\n  ...\n# Subtest: regression D02 allows the exact 2000-bps usage boundary\nok 6 - regression D02 allows the exact 2000-bps usage boundary\n  ---\n  duration_ms: 0.1142\n  type: 'test'\n  ...\n# Subtest: regression D03 keeps final sale above approved promotion\nok 7 - regression D03 keeps final sale above approved promotion\n  ---\n  duration_ms: 0.2212\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 7\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 13.4557\n",
+        "stderr": "",
+        "outputTruncated": false,
+        "fixtureTreeBeforeSha256": "ccc046c6ec1f5e4849bab15a6db8da50ee601db4d5cabc9b8967fa4455a9f004",
+        "fixtureTreeAfterSha256": "ccc046c6ec1f5e4849bab15a6db8da50ee601db4d5cabc9b8967fa4455a9f004",
+        "attempt": 1,
+        "repairRunId": "019f7ef1-48db-7053-91db-1d64a155258d"
+      }
+    ],
+    "receiptsSha256": "564bd984d242d50261994f88d8ef4fb189f386b18eecc40d409b465480e0f9ee"
+  },
+  "policyVerification": {
+    "status": "PASS",
+    "total": 41,
+    "passed": 41,
+    "drift": 0,
+    "results": [
+      {
+        "caseId": "G01",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "G02",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "G03",
+        "expectedDecision": "REVIEW",
+        "actualDecision": "REVIEW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "G04",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "G05",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "G06",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "D01",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "D02",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "D03",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-abce7966",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-44e23079",
+        "expectedDecision": "REVIEW",
+        "actualDecision": "REVIEW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-1894e746",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-f810e650",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-100e174b",
+        "expectedDecision": "REVIEW",
+        "actualDecision": "REVIEW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-5c4a82b0",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-e1dd5ebb",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-f026bb80",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-ac95135b",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-101ed55d",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-9be5639a",
+        "expectedDecision": "REVIEW",
+        "actualDecision": "REVIEW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-ea8e309d",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-1089c17b",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-c9c2f540",
+        "expectedDecision": "REVIEW",
+        "actualDecision": "REVIEW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-24372e1b",
+        "expectedDecision": "ALLOW",
+        "actualDecision": "ALLOW",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-dae2f310",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-dcc1890b",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-98443570",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-e3ae81f0",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-15545d6b",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-4ee64850",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-b1f5224e",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-0f19e261",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-d24b1a0e",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-BOUNDARY-c2c18019",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-d9e1f506",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-MINIMAL_CONTRAST-cbd08539",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-CONFLICT-16766370",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-CONFLICT-5af3b70b",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-CONFLICT-506a318b",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-CONFLICT-0becddf0",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      },
+      {
+        "caseId": "C-GENERATED-fed86770",
+        "expectedDecision": "DENY",
+        "actualDecision": "DENY",
+        "status": "PASS",
+        "error": null
+      }
+    ],
+    "resultsSha256": "8cb5265be65d6279236335fb1cf47d3259fd97f4701d4feeb985c6b43d1e6363"
+  },
+  "review": {
+    "status": "PASS",
+    "threadId": "019f7ef1-beeb-7522-a96a-ec945a337fd5",
+    "verdict": "APPROVE",
+    "blockingFindings": 0
+  },
+  "claims": {
+    "productionIsolationVerified": false,
+    "authoritativeVerifyLive": false,
+    "releaseEvidenceEligible": false,
+    "responsesApiDirectlyVerified": false,
+    "cgroupV2Verified": false,
+    "liveAttestationPresent": false
+  },
+  "startedAt": "2026-07-20T09:52:18.604Z",
+  "completedAt": "2026-07-20T09:53:35.073Z"
+}

@@ -159,7 +159,7 @@ function isAcceptableYoutubeUrl(value) {
   return /^\/(?:shorts|live)\/[A-Za-z0-9_-]{6,64}$/u.test(url.pathname);
 }
 
-function isAcceptableDevpostSubmissionUrl(value) {
+export function isAcceptableDevpostSubmissionUrl(value) {
   if (!isAcceptableHttpsUrl(value)) return false;
   const url = new URL(value);
   return (

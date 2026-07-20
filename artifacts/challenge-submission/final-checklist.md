@@ -6,10 +6,11 @@
 - [x] Deterministic judge path is `pnpm demo:run`; full offline gate is `pnpm verify`.
 - [x] Owner authorizes the bounded logged-in Codex GPT-5.6 challenge run.
 - [x] MIT project license is present with `Copyright (c) 2026 CHAN`.
-- [ ] Run and validate the approved bounded GPT-5.6 local challenge capture; treat outputs only as a structurally consistent non-production capture.
-- [ ] Repository is published or privately shared according to the official rules, and `links.json` is updated.
-- [ ] The exact local MP4 is uploaded to public YouTube, and `links.json` is updated.
-- [ ] Signed-out repository and video checks pass.
-- [ ] Devpost declarations, terms, preview, and final submit are completed by the owner.
+- [x] Run and validate the approved bounded GPT-5.6 local challenge capture; treat outputs only as a structurally consistent non-production capture.
+- [x] Repository is public and anonymously readable, and `links.json` is updated.
+- [x] The exact reviewed MP4 is public on YouTube, and `links.json` is updated.
+- [x] Anonymous repository and YouTube oEmbed checks, browser audio/video decoding, and the public Devpost entry check pass.
+- [x] The public Devpost page shows PolicyTwin submitted to OpenAI Build Week.
+- [ ] Capture the strict Devpost confirmation screenshot/object required by the separate production submission ledger.
 
 The production `verify:live` gate is a separate, stricter security target and is not represented as completed by this challenge handoff.

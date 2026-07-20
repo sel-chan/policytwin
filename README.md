@@ -22,13 +22,15 @@ pnpm dev
 Open `http://localhost:3000` and review Policy Studio, Decision Queue, Case Lab, Integration / Drift, Proof, and Change Impact. The deterministic command must expose exactly three seeded TypeScript defects; the UI presents the corresponding 16 drift witnesses and the checksum-pinned OPA result for all 41 accepted cases.
 
 - Devpost-ready copy and owner handoff: [`artifacts/challenge-submission/`](artifacts/challenge-submission/)
+- Validated GPT-5.6/Codex repair evidence: [`artifacts/challenge-evidence/summary.md`](artifacts/challenge-evidence/summary.md) — two changed files, regression tests 7/7, accepted cases 41/41, zero drift, review `APPROVE`
 - Local public-upload video candidate: [`artifacts/demo/policytwin-demo.mp4`](artifacts/demo/policytwin-demo.mp4) — 2:48, 1920×1080, H.264/AAC, SHA-256 `9d7281258d376cf2e6f7963e6a458ccb396cb0e6c0481fdece84db751186db7b`
+- Public project links: [GitHub](https://github.com/sel-chan/policytwin), [YouTube](https://youtu.be/YvJlOQkPwnE), [Devpost](https://devpost.com/software/policytwin)
 - Primary Codex `/feedback` session ID: `019f5dcf-0233-7a80-9147-af10c7bbfb28`
 - Local handoff check: `pnpm challenge:submission:check`
 
-Codex was the primary Build Week engineering environment for repository mapping, implementation, adversarial testing, independent review, and verified fixes. GPT-5.6 was used for an independent challenge-release review, and the owner approved the separate bounded local challenge capture. The opt-in `pnpm challenge:run` profile is pinned to the Codex-supported GPT-5.6 Sol identifier `gpt-5.6-sol` and may repair only a disposable copy of the seeded fixture. Earlier authenticated capture attempts failed closed before evidence promotion; no local challenge PASS is claimed until `artifacts/challenge-evidence/` validates. This profile is not the production `verify:live` gate and cannot claim direct Responses API evidence, cgroup-v2 isolation, deployment security, trusted production attestation, or independently signed execution proof.
+Codex was the primary Build Week engineering environment for repository mapping, implementation, adversarial testing, independent review, and verified fixes. The bounded `pnpm challenge:run` profile used GPT-5.6 Sol (`gpt-5.6-sol`) through Codex SDK/CLI 0.144.6 against a disposable fixture. Run `lc_71163880e27f24d9` produced model-authored replacements for `src/refund.ts` and `tests/refund.test.mjs`; server-owned typecheck and tests passed, all 41 accepted cases agreed with zero drift, and a distinct read-only Codex review returned `APPROVE` with no blocking finding. `pnpm challenge:check` independently validates the checked-in capture.
 
-The MIT project license is present with `Copyright (c) 2026 CHAN`. Before the owner-controlled external actions, the already approved bounded GPT-5.6 challenge capture must still run and validate. The remaining external actions are repository publication and public YouTube upload; public URLs are intentionally not invented in the repository.
+This local Build Week capture is intentionally narrower than the production `verify:live` gate: it does not claim direct Responses API provenance, cgroup-v2 isolation, deployment security, trusted production attestation, or independently signed execution proof. The MIT project license is present with `Copyright (c) 2026 CHAN`. GitHub and YouTube are anonymously reachable, and the public Devpost page shows PolicyTwin submitted to OpenAI Build Week; the stricter confirmation artifact remains pending in the production submission ledger.
 
 ## One-command seeded demo
 
@@ -56,9 +58,10 @@ The repository now includes:
 - static supervisor-owned worker/verifier/egress plans, a shell-free ID-owned Docker driver verified against a stateful fake daemon, and an OpenAI Responses-only reverse broker that gives the worker only a short-lived capability, keeps the provider credential in an external proxy mount, and remains explicitly non-live until the real Docker and SDK paths run;
 - Policy Studio, an anonymous-session-isolated SQLite Decision Queue, Case Lab, Integration/Drift, Proof, and blocked Change Impact views in Next.js;
 - Chrome E2E coverage for all six views, browser-session isolation, versioned decision/source writes, CSRF rejection, golden-conflict blocking, complete evidence downloads, keyboard navigation, and a 390px mobile layout;
-- a structurally consistent, hash-covered `PARTIAL_OFFLINE` product evidence package, adversarial semantic validation, a byte-deterministic 38-file USTAR download, and fail-closed submission drafts; this is not GPT/Codex execution proof or production evidence.
+- a structurally consistent, hash-covered `PARTIAL_OFFLINE` product evidence package, adversarial semantic validation, a byte-deterministic 38-file USTAR download, and fail-closed submission drafts; this package remains separate from the validated non-production GPT-5.6/Codex challenge capture;
+- checked-in local challenge evidence binding GPT-5.6/Codex thread identities, prompt and schema hashes, the filesystem-derived two-file diff, fixed command receipts, regression tests 7/7, policy cases 41/41, zero drift, and independent review approval.
 
-The local Build Week package and 2:48 video are rendered and checked, and the MIT license is present. It is **not yet ready for the owner-only Devpost action** because the approved bounded GPT-5.6 challenge capture has not run or been validated and the repository and public YouTube URLs are still missing. The stricter production evidence package independently remains `FAIL / PARTIAL_OFFLINE`; dynamic container/egress proof, deployment, and trusted live attestation have not run and are not official challenge claims.
+The local Build Week package, validated GPT-5.6/Codex capture, public repository, public 2:48 YouTube video, Devpost entry, and MIT license are present. The public entry is verified, while the strict confirmation screenshot/object is still pending. The production evidence package independently remains `FAIL / PARTIAL_OFFLINE`; dynamic container/egress proof, deployment, and trusted live attestation have not run and are not official challenge claims.
 
 ## Architecture
 
@@ -70,13 +73,15 @@ flowchart LR
   D --> E["Deterministic Rego compiler"]
   E --> F["OPA + generated cases"]
   F --> G["TypeScript differential runner"]
+  G --> L["Local GPT-5.6/Codex repair (PASS)"]
+  L --> M["41/41 · zero drift · review APPROVE"]
   G --> H["Session-bound repair-run ledger + SSE"]
   H -.-> I["Signed external-worker v2 RPC (live disabled)"]
   I -.-> J["Hash-covered live proof"]
   J -.-> K["Trusted live attestation"]
 ```
 
-Dashed edges are planned live execution and have not run. Model output never becomes the final executable policy. The validated IR is compiled deterministically, every rule traces to source clauses, and golden-case contradictions fail closed.
+The solid local challenge branch has run and is checked in; the dashed production-isolated path has not. Model output never becomes the final executable policy. The validated IR is compiled deterministically, every rule traces to source clauses, and golden-case contradictions fail closed.
 
 ![PolicyTwin architecture snapshot](docs/assets/policytwin-architecture.svg)
 

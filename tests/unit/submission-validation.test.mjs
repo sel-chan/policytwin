@@ -7,6 +7,7 @@ import test from "node:test";
 import {
   RULES_MAX_AGE_MILLISECONDS,
   collectSubmissionFailures,
+  isAcceptableDevpostSubmissionUrl,
   isFreshOfficialRulesSnapshot,
 } from "../../scripts/submission-validation.mjs";
 import {
@@ -51,6 +52,25 @@ function readySnapshot() {
     containerStatus: "PASS",
   };
 }
+
+test("canonical public Devpost project URLs are admitted without broadening URL authority", () => {
+  assert.equal(
+    isAcceptableDevpostSubmissionUrl("https://devpost.com/software/policytwin"),
+    true,
+  );
+  assert.equal(
+    isAcceptableDevpostSubmissionUrl("https://openai.devpost.com/software/policytwin"),
+    true,
+  );
+  for (const value of [
+    "http://devpost.com/software/policytwin",
+    "https://devpost.com.evil.example/software/policytwin",
+    "https://user:pass@devpost.com/software/policytwin",
+    "https://devpost.com/",
+  ]) {
+    assert.equal(isAcceptableDevpostSubmissionUrl(value), false, value);
+  }
+});
 
 test("submission readiness requires every independent proof boundary", () => {
   assert.deepEqual(collectSubmissionFailures(readySnapshot()), []);
