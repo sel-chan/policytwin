@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9/M10 — deadline completion and release readiness`
 - Goal state: `IN_PROGRESS`
 - Submission state: `LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS`
-- Last updated: `2026-07-20 09:51 +09:00`
-- Latest checkpoint commit: `cabf6362c59c8df3c6ab09b9dedb486358f11761`
+- Last updated: `2026-07-20 14:25 +09:00`
+- Latest checkpoint commit: `56e8b34`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -39,7 +39,7 @@ Fill with actual evidence.
 | pnpm | 11.9.0 | `pnpm --version` | Available globally; rechecked at this continuation |
 | Docker | 29.1.5 CLI and Linux server; daemon running locally with `cgroupfs` / cgroup v1 | `docker desktop status`; `docker info --format '{{.ServerVersion}}|{{.OperatingSystem}}|{{.CgroupDriver}}|{{.CgroupVersion}}'`; local image inventory | Desktop was started locally without a registry pull. Existing images are ineligible, and this Windows/cgroup-v1 supervisor cannot satisfy the worker/egress cgroup-v2 gate. |
 | OPA | 1.18.2, Rego v1, windows/amd64 | `.tools/opa/1.18.2/opa.exe version`; SHA-256 verification | Official binary is repository-ignored; checksum `b9022224ee660c87cc35ce957c21c352fa57b267d71fb4e1ce779a38e107c9df` |
-| Codex client | codex-cli 0.144.0 | `codex --version` |  |
+| Codex client | project-pinned codex-cli 0.144.6; ChatGPT login active | `pnpm exec codex --version`; `pnpm exec codex login status` | The bounded challenge runner uses the project-pinned client. |
 | Goal mode | stable/enabled | `codex features list` | `goals stable true` |
 | OpenAI API auth | UNSET | redacted environment-name check only | `OPENAI_API_KEY` is not configured; the prepared worker receives only a run capability and never a provider credential |
 | Codex SDK feasibility | PARTIAL | `codex --version`; `pnpm list --depth 1` | global Codex CLI 0.144.0 and project-pinned `@openai/codex-sdk` plus bundled CLI 0.144.6 are installed; production-live adapter/credentials remain unverified |
@@ -52,7 +52,9 @@ Fill with actual evidence.
 
 - Approved by owner: `2026-07-14`
 - Approved scope: direct verification of the three supplied OpenAI Build Week/Devpost URLs, current official OpenAI/Codex/OPA/Next.js documentation lookup, pinned pnpm package installation, and official OPA binary acquisition needed for the PolicyTwin goal
-- Not inferred from this approval: Git push, public repository publication, deployment, media upload, challenge registration, terms acceptance, or final submission
+- Additional owner approval: `2026-07-20 14:24 +09:00` after the Codex usage limit reset
+- Additional approved scope: execute the already reviewed bounded GPT-5.6 Sol challenge capture; publish and push this repository for the challenge; upload the exact reviewed MP4 to public YouTube; populate the Devpost submission and attempt final submission
+- Still owner-confirmed at the point of action: legal eligibility declarations, challenge terms acceptance, or any payment/billing action
 - Supplied official URLs: `https://openai.com/build-week/`; `https://openai.devpost.com/`; `https://openai.devpost.com/rules`
 
 ## Challenge facts verified
@@ -120,6 +122,7 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- Resumed at `2026-07-20 14:24 +09:00` after the owner reported the Codex usage limit reset and authorized a fast submission attempt. Required control documents were reread completely. `main` is clean at `56e8b34`, the project-pinned Codex CLI is 0.144.6 with an active ChatGPT login, no active local-challenge lock exists, no challenge evidence has been promoted, no Git remote is configured, and the exact reviewed 11,671,397-byte MP4 remains present.
 - Resumed at `2026-07-20 08:48 +09:00` after the owner confirmed the `F:` drive was connected and requested an accelerated finish.
 - Required documents, current release receipt, submission definition, accepted decisions, and active blocker ledger were re-read. No production-live, deployment, publication, upload, or submission claim has been promoted.
 - Official Build Week/Devpost pages were refreshed at `2026-07-20 09:30 +09:00`. The challenge minimum is a working Codex/GPT-5.6 project, English description, public sub-three-minute YouTube demo with audio, repository/README, and primary `/feedback` session ID; PolicyTwin's cgroup-v2/direct-Responses/deployment attestation remains a separate stronger production target.
@@ -1039,7 +1042,7 @@ Link to IDs in `DECISIONS.md`.
 
 ## Next action
 
-`Commit the verified GPT-5.6 Sol model-identifier checkpoint on main, confirm a clean worktree, then run and validate the already approved bounded pnpm challenge:run profile with CODEX_MODEL=gpt-5.6-sol. Keep the resulting files labeled as a structurally consistent non-production local capture. Repository publication, YouTube upload, Devpost terms, and final submission remain owner-controlled external actions.`
+`Commit this resumed-run ledger update on main, run and validate the approved bounded pnpm challenge:run profile with CODEX_MODEL=gpt-5.6-sol, then complete the full offline gate and publish the repository/video before populating Devpost. Stop only at any legal declaration or terms-acceptance control that requires the owner.`
 
 ## Pause handoff
 
