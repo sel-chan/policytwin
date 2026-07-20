@@ -8,8 +8,8 @@
 - Current milestone: `M8/M10 — judge clarity pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-21 08:56 +09:00`
-- Latest checkpoint commit: `5d7cdd0`
+- Last updated: `2026-07-21 08:57 +09:00`
+- Latest checkpoint commit: `4ca1229`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -110,7 +110,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - [x] Replace `Partial offline / FAIL`, `Verification blocked`, `Draft blocked`, and raw `LOCAL_CHALLENGE_PASS` presentation with clear reviewer language while preserving the underlying machine-readable statuses.
 - [x] Remove the unavailable browser-triggered repair panel from the Integration judge path and present it as a separate next integration step below the successful captured repair.
 - [x] Keep the two limitations explicit: the judge flow uses recorded schema-validated PolicyIR, and a fresh hosted repair worker is not connected to the browser.
-- [ ] Commit and push `README.md`, `app/components/workspace-shell.tsx`, `app/policy-studio-client.tsx`, `app/proof/page.tsx`, `app/integration/page.tsx`, `app/impact/change-impact-client.tsx`, and this ledger without running lint, tests, build, or verification, per the owner's explicit instruction.
+- [x] Commit and push `README.md`, `app/components/workspace-shell.tsx`, `app/policy-studio-client.tsx`, `app/proof/page.tsx`, `app/integration/page.tsx`, `app/impact/change-impact-client.tsx`, and this ledger as `4ca1229` without running lint, tests, build, or verification, per the owner's explicit instruction.
+- Validation status for this checkpoint: `NOT_RUN_BY_OWNER_DIRECTION`; the last verified baseline remains commit `5d7cdd0` and must not be presented as verification of the judge-clarity edits.
 
 ### Public replacement upload and Devpost refresh (`2026-07-21 07:13 +09:00`)
 
