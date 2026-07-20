@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 476,
+  "scannedFiles": 477,
   "scannedTextFiles": 442,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
