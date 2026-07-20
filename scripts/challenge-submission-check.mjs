@@ -12,6 +12,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { ROOT } from "./process.mjs";
 import { validateLocalChallengeDirectory } from "./local-challenge-contract.mjs";
+import {
+  acquireLocalChallengeRunLock,
+  releaseLocalChallengeRunLock,
+} from "./local-challenge-lock.mjs";
 
 const mode = process.argv[2] ?? "--local";
 if (mode !== "--local" && mode !== "--release") {
@@ -434,11 +438,18 @@ const licensePath = resolve(ROOT, "LICENSE");
 if (!existsSync(licensePath) || readRegular(licensePath, "project LICENSE", 128 * 1024).byteLength < 100) {
   releaseErrors.push("Select and add the project LICENSE.");
 }
+let localChallengeEvidenceValid = false;
+const challengeEvidenceLock = acquireLocalChallengeRunLock(ROOT);
 try {
-  validateLocalChallengeDirectory(resolve(ROOT, "artifacts", "challenge-evidence"));
-} catch {
-  releaseErrors.push("Run and validate the approved GPT-5.6 local challenge evidence.");
-}
+  try {
+    validateLocalChallengeDirectory(resolve(ROOT, "artifacts", "challenge-evidence"));
+    localChallengeEvidenceValid = true;
+  } catch {
+    localChallengeEvidenceValid = false;
+  }
+  if (!localChallengeEvidenceValid) {
+    releaseErrors.push("Run and validate the approved GPT-5.6 local challenge evidence.");
+  }
 
 if (mode === "--release") {
   check(releaseErrors.length === 0, `Challenge release is not ready: ${releaseErrors.join(" ")}`);
@@ -525,4 +536,7 @@ if (mode === "--release") {
       2,
     ),
   );
+  }
+} finally {
+  releaseLocalChallengeRunLock(challengeEvidenceLock);
 }

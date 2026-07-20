@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "status": "PASS",
   "scope": "OFFLINE_STATIC_NOT_RELEASE_REVIEW",
-  "scannedFiles": 471,
-  "scannedTextFiles": 438,
+  "scannedFiles": 472,
+  "scannedTextFiles": 439,
   "gitHistoryScanned": true,
   "productionDependencyCount": 6,
   "reviewedChildProcessFiles": [
@@ -35,6 +35,7 @@
     "tests/integration/policy-workspace-capacity.integration.test.mjs",
     "tests/integration/refund-fixture.integration.test.mjs",
     "tests/unit/architecture-asset.test.mjs",
+    "tests/unit/local-challenge-profile.test.mjs",
     "tests/unit/submission-release-receipts.test.mjs",
     "tests/unit/submission-validation.test.mjs"
   ],

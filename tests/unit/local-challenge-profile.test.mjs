@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 import * as rootExports from "../../dist/index.js";
 import { createLocalChallengeCodexSdkBackend } from "../../dist/codex/sdk-adapter.js";
 import {
@@ -17,6 +19,13 @@ import {
   assertSafeLocalChallengeRepair,
   buildLocalChallengeEnvironment,
 } from "../../scripts/local-challenge.mjs";
+import {
+  acquireLocalChallengeRunLock,
+  releaseLocalChallengeRunLock,
+  retireLocalChallengeRunLockAfterOperatorReview,
+  withLocalChallengeRunLock,
+  withLocalChallengeRunLockSync,
+} from "../../scripts/local-challenge-lock.mjs";
 
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const canonicalSourcePolicy = readFileSync(
@@ -213,6 +222,166 @@ test("local challenge SDK environment preserves login locations and excludes pro
     "C:\\Temp\\policytwin-codex-home-test",
   );
   assert.equal(isolated.CODEX_HOME, "C:\\Temp\\policytwin-codex-home-test");
+});
+
+test("local challenge run lock is exclusive, owner-bound, and held for the full operation", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "policytwin-local-challenge-lock-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const lockDirectory = join(root, ".tmp", "local-challenge-lock", "active");
+
+  const first = acquireLocalChallengeRunLock(root);
+  assert.equal(existsSync(lockDirectory), true);
+  assert.throws(
+    () => acquireLocalChallengeRunLock(root),
+    /operation is active/u,
+  );
+  releaseLocalChallengeRunLock(first);
+  assert.equal(existsSync(lockDirectory), false);
+
+  const result = await withLocalChallengeRunLock(root, async () => {
+    assert.equal(existsSync(lockDirectory), true);
+    return "LOCK_HELD";
+  });
+  assert.equal(result, "LOCK_HELD");
+  assert.equal(existsSync(lockDirectory), false);
+
+  await assert.rejects(
+    withLocalChallengeRunLock(root, async () => {
+      throw new Error("bounded operation failed");
+    }),
+    /bounded operation failed/u,
+  );
+  assert.equal(existsSync(lockDirectory), false);
+
+  const syncResult = withLocalChallengeRunLockSync(root, () => {
+    assert.equal(existsSync(lockDirectory), true);
+    return "SYNC_LOCK_HELD";
+  });
+  assert.equal(syncResult, "SYNC_LOCK_HELD");
+  assert.equal(existsSync(lockDirectory), false);
+
+  await assert.rejects(
+    withLocalChallengeRunLock(root, async () => {
+      await writeFile(join(lockDirectory, "unexpected.txt"), "preserve\n", "utf8");
+      throw new Error("operation failed before a changed lock release");
+    }),
+    (error) =>
+      error instanceof AggregateError &&
+      error.errors.length === 2 &&
+      /operation failed/u.test(error.errors[0].message) &&
+      /must contain only its regular owner record/u.test(error.errors[1].message),
+  );
+  assert.equal(
+    await readFile(join(lockDirectory, "unexpected.txt"), "utf8"),
+    "preserve\n",
+  );
+});
+
+test("a dead owner requires explicit reviewed retirement and preserves tombstones", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "policytwin-local-challenge-dead-lock-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const moduleUrl = pathToFileURL(
+    resolve(process.cwd(), "scripts", "local-challenge-lock.mjs"),
+  ).href;
+  const child = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `import { acquireLocalChallengeRunLock } from ${JSON.stringify(moduleUrl)}; acquireLocalChallengeRunLock(process.argv[1]);`,
+      root,
+    ],
+    {
+      encoding: "utf8",
+      env: {
+        PATH: process.env.PATH ?? "",
+        SYSTEMROOT: process.env.SYSTEMROOT ?? "",
+      },
+      shell: false,
+      windowsHide: true,
+      timeout: 10_000,
+    },
+  );
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr);
+
+  const lockRoot = join(root, ".tmp", "local-challenge-lock");
+  assert.equal(existsSync(join(lockRoot, "active")), true);
+  assert.throws(
+    () => acquireLocalChallengeRunLock(root),
+    /explicit operator-reviewed retirement is required/u,
+  );
+  const staleOwner = JSON.parse(
+    await readFile(join(lockRoot, "active", "owner.json"), "utf8"),
+  );
+  assert.throws(
+    () =>
+      retireLocalChallengeRunLockAfterOperatorReview(root, {
+        expectedNonce: staleOwner.nonce,
+        confirmedNoDescendantProcesses: false,
+      }),
+    /explicit confirmation that no descendant process remains/u,
+  );
+  const retirement = retireLocalChallengeRunLockAfterOperatorReview(root, {
+    expectedNonce: staleOwner.nonce,
+    confirmedNoDescendantProcesses: true,
+  });
+  assert.equal(retirement.status, "RETIRED_AFTER_OPERATOR_REVIEW");
+  assert.equal(retirement.automatedDescendantProof, false);
+  const recovered = acquireLocalChallengeRunLock(root);
+  releaseLocalChallengeRunLock(recovered);
+  assert.equal(existsSync(join(lockRoot, "active")), false);
+  const retired = (await readdir(lockRoot)).filter((name) => name.startsWith("retired-"));
+  assert.equal(retired.length, 2);
+});
+
+test("a live child process owns the local challenge run lock exclusively", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "policytwin-local-challenge-live-lock-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const moduleUrl = pathToFileURL(
+    resolve(process.cwd(), "scripts", "local-challenge-lock.mjs"),
+  ).href;
+  const child = spawn(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `import { acquireLocalChallengeRunLock, releaseLocalChallengeRunLock } from ${JSON.stringify(moduleUrl)}; const handle=acquireLocalChallengeRunLock(process.argv[1]); process.stdout.write("LOCKED\\n"); process.stdin.once("data",()=>{ releaseLocalChallengeRunLock(handle); }); process.stdin.resume();`,
+      root,
+    ],
+    {
+      env: {
+        PATH: process.env.PATH ?? "",
+        SYSTEMROOT: process.env.SYSTEMROOT ?? "",
+      },
+      shell: false,
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+    },
+  );
+  t.after(() => {
+    if (child.exitCode === null) child.kill();
+  });
+  const ready = await new Promise((resolveReady, rejectReady) => {
+    const timeout = setTimeout(() => rejectReady(new Error("lock child readiness timed out")), 10_000);
+    child.once("error", rejectReady);
+    child.stdout.once("data", (chunk) => {
+      clearTimeout(timeout);
+      resolveReady(chunk.toString("utf8"));
+    });
+  });
+  assert.equal(ready, "LOCKED\n");
+  assert.throws(
+    () => acquireLocalChallengeRunLock(root),
+    /operation is active/u,
+  );
+  child.stdin.end("release\n");
+  const exitCode = await new Promise((resolveExit, rejectExit) => {
+    child.once("error", rejectExit);
+    child.once("exit", resolveExit);
+  });
+  assert.equal(exitCode, 0);
+  assert.equal(existsSync(join(root, ".tmp", "local-challenge-lock", "active")), false);
 });
 
 test("local challenge executes only the reviewed pure source subset and exact test enablement", async (t) => {

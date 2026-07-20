@@ -33,7 +33,11 @@ import {
   repairFixtureTreeHash,
   runRepairCommand,
 } from "./repair-command.mjs";
-import { ROOT, runOrExit } from "./process.mjs";
+import {
+  withLocalChallengeRunLock,
+  withLocalChallengeRunLockSync,
+} from "./local-challenge-lock.mjs";
+import { ROOT, run } from "./process.mjs";
 
 const FINAL_DIRECTORY = resolve(ROOT, "artifacts", "challenge-evidence");
 const MODEL = "gpt-5.6";
@@ -380,7 +384,12 @@ function removeIsolatedCodexHome(path) {
   if (!stat.isDirectory() || stat.isSymbolicLink()) {
     throw new Error("Refusing to remove an isolated Codex home that is not a real directory.");
   }
-  rmSync(resolved, { recursive: true, force: true });
+  rmSync(resolved, {
+    recursive: true,
+    force: true,
+    maxRetries: 40,
+    retryDelay: 250,
+  });
 }
 
 function cleanupStaleIsolatedCodexHomes() {
@@ -396,7 +405,12 @@ function cleanupStaleIsolatedCodexHomes() {
     }
     const candidate = resolve(temporaryRoot, entry.name);
     const stat = lstatSync(candidate);
-    if (stat.isDirectory() && !stat.isSymbolicLink() && stat.mtimeMs <= staleBefore) {
+    const authenticationPresent = existsSync(resolve(candidate, "auth.json"));
+    if (
+      stat.isDirectory() &&
+      !stat.isSymbolicLink() &&
+      (stat.mtimeMs <= staleBefore || !authenticationPresent)
+    ) {
       removeIsolatedCodexHome(candidate);
     }
   }
@@ -599,7 +613,14 @@ export async function runLocalChallenge({
   if (process.env.CODEX_MODEL && process.env.CODEX_MODEL !== MODEL) {
     throw new Error("LOCAL_CHALLENGE requires CODEX_MODEL=gpt-5.6 when CODEX_MODEL is set.");
   }
-  runOrExit(process.execPath, ["scripts/build-core.mjs"]);
+  return withLocalChallengeRunLock(ROOT, () => runLocalChallengeLocked({ now }));
+}
+
+async function runLocalChallengeLocked({ now }) {
+  const buildStatus = run(process.execPath, ["scripts/build-core.mjs"]);
+  if (buildStatus !== 0) {
+    throw new Error(`Local challenge core build failed with exit code ${buildStatus}.`);
+  }
   validateLocalChallengeSchemaContract();
   recoverInterruptedChallengeEvidence();
   const versions = installedVersions();
@@ -881,7 +902,9 @@ export async function runLocalChallenge({
 }
 
 export function checkLocalChallenge() {
-  return validateLocalChallengeDirectory(FINAL_DIRECTORY);
+  return withLocalChallengeRunLockSync(ROOT, () =>
+    validateLocalChallengeDirectory(FINAL_DIRECTORY),
+  );
 }
 
 async function main() {
