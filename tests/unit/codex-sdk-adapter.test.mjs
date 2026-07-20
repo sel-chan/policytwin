@@ -390,6 +390,11 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
         false,
         "Codex Structured Outputs must omit the provider-unsupported uniqueItems keyword",
       );
+      assert.equal(
+        JSON.stringify(call.turnOptions.outputSchema).includes('"pattern"'),
+        false,
+        "Codex Structured Outputs must not carry the server-only path pattern",
+      );
     }
     assert.match(client.calls[2].prompt, /--- a\/src\/refund\.ts/u);
     assert.match(client.calls[2].prompt, /\+\+\+ b\/tests\/refund\.test\.mjs/u);

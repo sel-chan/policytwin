@@ -8,8 +8,8 @@
 - Current milestone: `M7/M9/M10 — deadline completion and release readiness`
 - Goal state: `IN_PROGRESS`
 - Submission state: `LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS`
-- Last updated: `2026-07-20 14:35 +09:00`
-- Latest checkpoint commit: `341279b`
+- Last updated: `2026-07-20 14:44 +09:00`
+- Latest checkpoint commit: `c09781d`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `UNSET`
@@ -122,6 +122,8 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- The server-only path regex has now been removed from the Codex phase schemas; `assertSafeRelativePath()` remains mandatory after parsing for arrays and location objects. The test-first schema assertion failed before the change and now passes. Focused suites pass 12/12 and 11/11; lint, strict typecheck, static container checks, and the full 449/449 unit suite pass with refreshed worker/egress inputs `7ec6ac33...` and `5b102026...`.
+- The second post-reset attempt ran only after commit `c09781d` and again reached the authenticated service. It stopped before model output with `400 invalid_json_schema`: Codex does not admit regex lookaround in `relevantFiles.items.pattern`. No evidence was promoted. The exact hypothesis is now to remove the server-only path `pattern` from transmitted schemas while keeping every path field behind `assertSafeRelativePath()` and the existing traversal/absolute-path regressions.
 - D-067 applies the narrow compatibility fix: provider schemas omit only `uniqueItems`, while `pathArray()` and `parseCommandIds()` still reject duplicates after structured parsing. A test-first assertion reproduced the unsupported keyword, the official Structured Outputs guide confirms that strict mode accepts only its supported JSON Schema subset, and duplicate cartography paths remain a tested terminal error. Focused suites pass 12/12 and 11/11; lint, strict typecheck, the refreshed static container contract, and the full 449/449 unit suite pass. Current worker/egress build-input hashes are `93353934...` and `201e6603...`.
 - The first post-reset `pnpm challenge:run` reached the authenticated GPT-5.6 Sol service and failed once in cartography before model output or evidence promotion. The provider returned `400 invalid_json_schema` because the Codex turn schema contained unsupported `uniqueItems` under `relevantFiles`. This is classified as a code/schema compatibility defect, not a quota or authentication failure. No retry occurred until the transmitted Codex phase schemas removed that unsupported annotation while the existing server-side duplicate rejection remained covered.
 - Resumed at `2026-07-20 14:24 +09:00` after the owner reported the Codex usage limit reset and authorized a fast submission attempt. Required control documents were reread completely. `main` is clean at `56e8b34`, the project-pinned Codex CLI is 0.144.6 with an active ChatGPT login, no active local-challenge lock exists, no challenge evidence has been promoted, no Git remote is configured, and the exact reviewed 11,671,397-byte MP4 remains present.
@@ -482,7 +484,7 @@ Record latest actual result.
 | Lint | PASS | `pnpm lint` | repository static checks pass with schema-v3 retirement and reviewed capacity subprocess coverage | 2026-07-20 08:39 +09:00 |
 | Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers policy schema v3, OPA budgets, application, evidence, and RPC contracts | 2026-07-20 08:39 +09:00 |
 | Native helper local build | PASS_LOCAL_ONLY | `pnpm helper:build:local` | repeated compilation remains byte-identical at 841,656-byte AMD64 static PIE with SHA-256 `906214d0489875ebbc718d934397fb2e43b00b5af825391c247b1efb112abdef`; compiler is explicitly unpinned, stale success evidence is removed on failure, and no image/runtime claim follows | 2026-07-17 10:54 +09:00 |
-| Unit tests | PASS | `pnpm test` | 449/449 pass, including provider-schema compatibility without weakened server uniqueness, the exact non-production local challenge profile, exact one-per-phase GPT-5.6 metadata-fallback diagnostic admission/evidence, cross-process run-lock/tombstone/reviewed-retirement coverage, schema v1/v2→v3 migration, durable retirement/restart, OPA budgets, release, media, container, and RPC coverage | 2026-07-20 14:34 +09:00 |
+| Unit tests | PASS | `pnpm test` | 449/449 pass, including provider-schema compatibility without weakened server uniqueness/path admission, the exact non-production local challenge profile, exact one-per-phase GPT-5.6 metadata-fallback diagnostic admission/evidence, cross-process run-lock/tombstone/reviewed-retirement coverage, schema v1/v2→v3 migration, durable retirement/restart, OPA budgets, release, media, container, and RPC coverage | 2026-07-20 14:43 +09:00 |
 | Integration tests | PASS | `pnpm test:integration` | 82/82 pass, including real OPA 41-case execution, cross-process capacity/duplicate/lock races, retirement-before-delayed-repair admission, evidence, persistence, and mTLS | 2026-07-20 12:26 +09:00 |
 | Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass, including generic capacity exhaustion without project creation | 2026-07-20 12:26 +09:00 |
 | Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass against current isolated drafts and security/clean-copy reports | 2026-07-20 12:26 +09:00 |
@@ -490,7 +492,7 @@ Record latest actual result.
 | Offline full verification | PASS | `pnpm verify` plus current-receipt validation | all 16 ordered steps pass; after staging the regenerated clean-copy report, the fresh receipt binds 469 tracked release inputs, zero untracked inputs, current clean/security report hashes, and release-tree SHA-256 `3a917bcd6fe8943f57aeb331b34a9517b948d0db7985a48212ca2ada59854421` | 2026-07-20 12:27 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no model or Codex call occurred | 2026-07-18 12:45 +09:00 |
 | Clean-copy reproduction | PASS | `pnpm clean:check` | 472 source files; frozen offline install, draft checks, lint, typecheck, 448 unit, 82 integration, 22 eval, build, 3 browser, demo, and evidence regeneration pass | 2026-07-20 12:26 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | worker `93353934…`, verifier `0497698d…`, egress `201e6603…`, and helper `cab5ad2b…` match the checked contract after the Codex response-schema compatibility fix | 2026-07-20 14:34 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | worker `7ec6ac33…`, verifier `0497698d…`, egress `5b102026…`, and helper `cab5ad2b…` match the checked contract after removing the provider-incompatible path regex | 2026-07-20 14:43 +09:00 |
 | Dynamic helper artifact | FAIL | `pnpm helper:verify` | immutable builder image is unset; `dockerInvoked:false`, build input `dcba15c2…`, and all runtime/signing claims false | 2026-07-18 12:45 +09:00 |
 | Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-18 12:45 +09:00 |
 | Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | build inputs match; failure is the unset immutable Node base before Docker, with the cgroup-v2 preflight next in the admitted path | 2026-07-18 12:45 +09:00 |

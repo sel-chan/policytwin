@@ -1,7 +1,6 @@
 const RELATIVE_PATH_SCHEMA = {
   type: "string",
   minLength: 1,
-  pattern: "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$",
 } as const;
 
 const PATH_ARRAY_SCHEMA = {
