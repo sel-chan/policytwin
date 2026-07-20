@@ -8,12 +8,12 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-20 22:21 +09:00`
-- Latest checkpoint commit: `5cd1dbc`
+- Last updated: `2026-07-21 07:51 +09:00`
+- Latest checkpoint commit: `a0554d9`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
-- Demo video URL: `https://youtu.be/YvJlOQkPwnE`
+- Demo video URL: `https://youtu.be/h7o1vXmWC-M`
 - Submission confirmation: `PUBLIC_DEVPOST_ENTRY_VERIFIED; STRICT_SCREENSHOT_OBJECT_NOT_CAPTURED`
 
 Allowed overall states:
@@ -69,7 +69,7 @@ Replace placeholders after checking current official sources.
 - Repository visibility requirement: `public with relevant licensing, or private and shared with testing@devpost.com and build-week-event@openai.com`
 - Demo video constraints: `public YouTube, less than 3 minutes, clear audio, show the project and use of Codex/GPT-5.6, no unlicensed third-party marks/music/material`
 - Required submission fields: `category; description; demo video; repository; README Codex collaboration narrative; /feedback session ID; developer-tool installation/platform/testing path; working access and testing instructions`
-- Rules checked at: `2026-07-20 09:30:00 +09:00`
+- Rules checked at: `2026-07-21 00:04:17 +09:00`
 - Source links: `https://openai.com/build-week/`; `https://openai.devpost.com/`; `https://openai.devpost.com/rules`
 
 ## Baseline
@@ -102,6 +102,21 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 
 ## Current checkpoint
 
+### Public replacement upload and Devpost refresh (`2026-07-21 07:13 +09:00`)
+
+- The owner explicitly approved the final YouTube publish action. The exact reviewed `artifacts/demo/policytwin-demo.mp4` was uploaded to the `chancoder` channel and published at `https://youtu.be/h7o1vXmWC-M` with the evidence-bound title and description.
+- [x] YouTube Studio reported the replacement video as published and its copyright check found no issue.
+- [x] An anonymous external fetch resolved the public video URL with the exact final title.
+- [x] Refresh the three official OpenAI Build Week/Devpost pages immediately before the account-side update; the deadline and submission requirements are unchanged.
+- [x] Obtain the owner's direct public playback/audio review (`2026-07-21 07:29 +09:00`).
+- [x] Replace the Devpost video URL, add four refreshed judge-facing screenshots and captions, and preserve all owner-only legal declarations.
+- [x] Remove the stray pre-existing Korean prefix from the public story after action-time owner approval; anonymous HTML now begins with the `PolicyTwin` heading and contains the exact 41/41 zero-drift result and replacement video ID.
+- [x] Recheck the canonical Devpost page and YouTube oEmbed anonymously; both resolve the exact replacement metadata.
+- [x] Finalize the URL/hash-bound publication receipt after owner audio review.
+- [ ] Rerun the single-process offline and release gates, commit, and push the final metadata checkpoint.
+- The first `pnpm verify` retry was invalidated by a timed-out wrapper that left an older verification child alive. Two concurrent runs raced on `dist/` and the clean-checkout temporary root, producing 11 integration import failures and `EBUSY`; the stale process tree was identified by creation time and terminated. Lint, typecheck, 452/452 unit, 22/22 eval, 3/3 browser, build, license, container, draft, demo, and security stages still passed in the surviving run. A clean single-process rerun is required before commit.
+- A focused recovery run passed `pnpm challenge:submission:check` as `PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING` and reproduced a clean checkout with 477 source files. The subsequent single-process pre-commit `pnpm verify` passed lint, typecheck, 452/452 unit, 82/82 integration, 22/22 eval, 3/3 browser, clean-copy, build, license, container, draft, demo, and security stages; only final receipt issuance rejected the intentionally uncommitted release-input diff. Commit this reviewed metadata, then rerun the exact gate from a clean tree.
+
 ### Media refresh after validated local challenge (`2026-07-20 21:46 +09:00`)
 
 - The owner approved remaking the judge-facing video and screenshots after the successful bounded GPT-5.6/Codex capture. The existing public 2:48 video predates that success and therefore does not show the filesystem-derived two-file repair, 7/7 regression result, 41/41 accepted corpus, zero drift, or independent `APPROVE` review.
@@ -109,9 +124,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - [x] Add an evidence-bound, explicitly `LOCAL_CHALLENGE` repair receipt to the Integration presentation without promoting production `verify:live` claims.
 - [x] Refresh all tracked product screenshots and directly review the desktop, mobile, architecture, and successful-repair views.
 - [x] Recut the public demo below three minutes with synchronized narration and captions that show the successful repair and its exact proof.
-- [ ] Run focused media checks, lint, typecheck, tests, build, `pnpm challenge:submission:check`, and the authoritative clean-tree gate.
-- [ ] Commit and push the reviewed media checkpoint on current `main`.
-- [ ] Upload the new public YouTube video, verify signed-out playback/audio, update the Devpost video and screenshots, and refresh URL-bound publication receipts without changing owner-only declarations.
+- [x] Run focused media checks, lint, typecheck, tests, build, `pnpm challenge:submission:check`, and the authoritative clean-tree gate.
+- [x] Commit and push the reviewed media checkpoint on current `main`.
+- [x] Upload the new public YouTube video, verify anonymous title/embed access, and update the Devpost video and screenshots without changing owner-only declarations. Owner public-audio review and final receipt promotion remain pending.
 - Verification so far: media capture 1/1, tracked browser capture 3/3, direct MP4 decode and nine-frame review, 2:48 H.264/AAC stream probe, synchronized eight-cue captions, local challenge evidence check, local challenge submission check, lint, strict typecheck, production build, and 452/452 unit tests pass. The full clean-tree `pnpm verify` remains after the checkpoint commit.
 
 ### Continuation — post-submission quality pass (`2026-07-20 16:42 +09:00`)

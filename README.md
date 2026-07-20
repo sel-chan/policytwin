@@ -23,8 +23,8 @@ Open `http://localhost:3000` and review Policy Studio, Decision Queue, Case Lab,
 
 - Devpost-ready copy and owner handoff: [`artifacts/challenge-submission/`](artifacts/challenge-submission/)
 - Validated GPT-5.6/Codex repair evidence: [`artifacts/challenge-evidence/summary.md`](artifacts/challenge-evidence/summary.md) — two changed files, regression tests 7/7, accepted cases 41/41, zero drift, review `APPROVE`
-- Replacement public-upload video candidate: [`artifacts/demo/policytwin-demo.mp4`](artifacts/demo/policytwin-demo.mp4) — 2:48, 1920×1080, H.264/AAC, SHA-256 `190f585b6cb6023ada28b13c46a6d3dccff082acbe024bbaaf7b29d49042786e`; upload and public-audio review are pending
-- Public project links: [GitHub](https://github.com/sel-chan/policytwin), [current Devpost entry](https://devpost.com/software/policytwin). The prior YouTube cut remains public while the evidence-bound replacement is uploaded.
+- Published replacement video: [YouTube](https://youtu.be/h7o1vXmWC-M) and [`artifacts/demo/policytwin-demo.mp4`](artifacts/demo/policytwin-demo.mp4) — 2:48, 1920×1080, H.264/AAC, SHA-256 `190f585b6cb6023ada28b13c46a6d3dccff082acbe024bbaaf7b29d49042786e`; anonymous title/embed checks pass and the owner confirmed public playback/audio
+- Public project links: [GitHub](https://github.com/sel-chan/policytwin), [YouTube](https://youtu.be/h7o1vXmWC-M), and the [submitted Devpost entry](https://devpost.com/software/policytwin)
 - Primary Codex `/feedback` session ID: `019f5dcf-0233-7a80-9147-af10c7bbfb28`
 - Local handoff check: `pnpm challenge:submission:check`
 

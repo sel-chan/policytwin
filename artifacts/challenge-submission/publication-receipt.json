@@ -1,11 +1,11 @@
 {
   "schemaVersion": "1",
-  "status": "LOCAL_MEDIA_REVIEWED_PUBLICATION_PENDING",
+  "status": "PUBLISHED_AND_REVIEWED",
   "repositoryUrl": "https://github.com/sel-chan/policytwin",
-  "videoUrl": null,
+  "videoUrl": "https://youtu.be/h7o1vXmWC-M",
   "localVideoSha256": "190f585b6cb6023ada28b13c46a6d3dccff082acbe024bbaaf7b29d49042786e",
-  "verifiedAt": "2026-07-20T22:16:37+09:00",
+  "verifiedAt": "2026-07-21T07:29:44+09:00",
   "repositoryAnonymousRead": true,
-  "videoAnonymousPlayback": false,
-  "audioReviewed": false
+  "videoAnonymousPlayback": true,
+  "audioReviewed": true
 }

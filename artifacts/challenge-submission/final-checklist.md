@@ -8,9 +8,11 @@
 - [x] Deterministic judge path is `pnpm demo:run`; full offline gate is `pnpm verify`.
 - [x] MIT project license is present with `Copyright (c) 2026 CHAN`.
 - [x] Repository is public and anonymously readable.
-- [ ] Upload the exact replacement MP4 to public YouTube and review public playback/audio.
-- [ ] Replace the Devpost video link and upload the refreshed screenshots without changing owner-only declarations.
-- [ ] Refresh anonymous repository, YouTube, and Devpost probes and bind the new public URL to this exact video hash.
+- [x] Upload the exact replacement MP4 to public YouTube at `https://youtu.be/h7o1vXmWC-M`.
+- [x] Verify anonymous YouTube title/oEmbed access and the exact replacement embed on Devpost.
+- [x] Obtain the owner's direct public playback/audio review.
+- [x] Replace the Devpost video link, add four refreshed screenshots/captions, and remove the stray story prefix without changing owner-only declarations.
+- [ ] Rerun the full anonymous repository, YouTube, and Devpost release probes after binding the owner-reviewed public URL to this exact video hash.
 - [ ] Capture the strict Devpost confirmation screenshot/object required by the separate production submission ledger.
 
 The production `verify:live` gate is a separate, stricter security target and is not represented as completed by this challenge handoff.
