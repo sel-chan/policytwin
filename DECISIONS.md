@@ -1210,3 +1210,20 @@ Add new entries below this line with the template above.
 - Risks: The model may still ignore explicit bounds; such an attempt remains fail-closed. Line counts describe text lines, not AST symbol ownership, so the existing symbol/reason and file checks remain review data rather than executable proof.
 - Reversal or migration path: Replace model-selected numeric ranges with deterministic server AST locations only if the result retains model-identified semantic roles and preserves source-to-location traceability. Never accept silent range correction as evidence.
 - Related files/commits: `prompts/cartographer.v1.md`, `src/codex/sdk-adapter.ts`, `tests/unit/codex-sdk-adapter.test.mjs`, `container-contract.json`, `artifacts/evidence/`, `PROGRESS.md`.
+
+### D-071 — Use a typed Codex edit protocol for the fixed repair write set
+
+- Date: 2026-07-20
+- Status: `ACCEPTED`
+- Milestone: M7/M10
+- Context: Two authenticated GPT-5.6 Sol repair attempts completed the no-command edit turn without producing any filesystem content change, including the post-D-070 attempt that had already passed cartography. The assumed dedicated file-edit surface is therefore not reliable in the current SDK execution profile, while prose, an empty delta, or a host-authored expected repair cannot truthfully count as Codex repair evidence.
+- Options considered:
+  1. retry the same edit-only prompt without changing the execution contract;
+  2. apply the evaluation-only expected-fixed source or a host-authored semantic patch and label it as Codex work;
+  3. require Codex to return strict structured replacement content for the two fixed files, let the server apply only those returned strings, and retain every filesystem-derived and behavioral admission gate.
+- Decision: Use option 3. The first repair turn now has a strict schema with exactly `sourceFile` and `testFile`, each containing one fixed path and complete replacement content. The server independently enforces exact nested keys and paths, non-empty NUL-free UTF-8, a 64 KiB per-file limit, sensitive-content exclusion, existing regular-file targets, and an observable two-file delta. It writes the model-provided strings byte-for-byte and does not import, read, or synthesize the evaluation-only expected-fixed implementation. The second turn remains a report-only structured response on the same thread.
+- Evidence: two authenticated no-delta `REPAIR_INVALID` outcomes; failing test-first typed-edit success case; 13/13 focused adapter tests after implementation, including wrong-path, NUL, and oversize rejection; `prompts/repair.v1.md`; `src/codex/sdk-output-schemas.ts`; `src/codex/sdk-adapter.ts`.
+- Consequences: Codex authors the candidate code through a provider-enforced machine-readable channel that is available in the current runtime, while the host performs only fixed-path transport and independent verification. Metadata binds both repair schemas and both prompt turns.
+- Risks: Full-file replacement can introduce formatting or unrelated-content drift, and a model can still return incorrect logic. Such output remains terminal under the exact test digest, source-subset inspection, fixed commands, full 41-case replay, and independent read-only review. A partial write poisons the disposable workspace and is never promoted.
+- Reversal or migration path: Prefer a future SDK-native edit operation only after a live run proves it reliably produces observable changes under the same no-command, fixed-write-set contract. Never replace model output with the known expected-fixed fixture while claiming a live Codex repair.
+- Related files/commits: `prompts/repair.v1.md`, `prompts/repair-report.v1.md`, `src/codex/sdk-output-schemas.ts`, `src/codex/sdk-adapter.ts`, `src/evidence/validate.ts`, `scripts/local-challenge.mjs`, `tests/unit/codex-sdk-adapter.test.mjs`, `README.md`, `PROGRESS.md`.

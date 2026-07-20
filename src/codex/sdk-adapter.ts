@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { lstat, readFile, readdir } from "node:fs/promises";
+import { lstat, readFile, readdir, writeFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 import { TextDecoder } from "node:util";
 import type {
@@ -22,8 +22,11 @@ import {
 import {
   CARTOGRAPHY_MODEL_OUTPUT_KEYS,
   CARTOGRAPHY_MODEL_OUTPUT_SCHEMA,
+  REPAIR_EDIT_MODEL_OUTPUT_KEYS,
+  REPAIR_EDIT_MODEL_OUTPUT_SCHEMA,
   REPAIR_MODEL_OUTPUT_KEYS,
   REPAIR_MODEL_OUTPUT_SCHEMA,
+  REPAIR_PHASE_OUTPUT_SCHEMAS,
   REVIEW_MODEL_OUTPUT_KEYS,
   REVIEW_MODEL_OUTPUT_SCHEMA,
 } from "./sdk-output-schemas.js";
@@ -43,6 +46,7 @@ const MAX_PROMPT_BYTES = 512 * 1024;
 const DEFAULT_MAX_EVENTS = 2_000;
 const DEFAULT_MAX_EVENT_BYTES = 1024 * 1024;
 const DEFAULT_MAX_FINAL_RESPONSE_BYTES = 128 * 1024;
+const MAX_REPAIR_REPLACEMENT_BYTES = 64 * 1024;
 
 const SAFE_SDK_ENVIRONMENT_KEYS = [
   "CI",
@@ -653,6 +657,81 @@ function parsePhaseBody(
   return exactModelKeys(parsed, expectedKeys, phase);
 }
 
+interface RepairEditFile {
+  path: "src/refund.ts" | "tests/refund.test.mjs";
+  content: string;
+}
+
+interface RepairEditBody {
+  sourceFile: RepairEditFile;
+  testFile: RepairEditFile;
+}
+
+function parseRepairEditFile(
+  value: unknown,
+  expectedPath: RepairEditFile["path"],
+  label: string,
+): RepairEditFile {
+  const result = exactModelKeys(value, ["path", "content"], "REPAIR");
+  if (result.path !== expectedPath) {
+    throw new Error(`${label}.path must be exactly ${expectedPath}.`);
+  }
+  if (typeof result.content !== "string" || result.content.length === 0) {
+    throw new Error(`${label}.content must be a non-empty string.`);
+  }
+  if (
+    Buffer.byteLength(result.content, "utf8") > MAX_REPAIR_REPLACEMENT_BYTES ||
+    result.content.includes("\0")
+  ) {
+    throw new Error(`${label}.content exceeds the safe UTF-8 contract.`);
+  }
+  return {
+    path: expectedPath,
+    content: assertNoSensitiveWorkerText(
+      result.content,
+      `${label}.content`,
+      MAX_REPAIR_REPLACEMENT_BYTES,
+    ),
+  };
+}
+
+function parseRepairEditBody(finalResponse: string): RepairEditBody {
+  const result = parsePhaseBody(
+    finalResponse,
+    REPAIR_EDIT_MODEL_OUTPUT_KEYS,
+    "REPAIR",
+  );
+  return {
+    sourceFile: parseRepairEditFile(result.sourceFile, "src/refund.ts", "sourceFile"),
+    testFile: parseRepairEditFile(
+      result.testFile,
+      "tests/refund.test.mjs",
+      "testFile",
+    ),
+  };
+}
+
+async function applyTypedRepairEdits(
+  fixtureRoot: string,
+  snapshot: FixtureSnapshot,
+  response: string,
+): Promise<string[]> {
+  const body = parseRepairEditBody(response);
+  const edits = [body.sourceFile, body.testFile];
+  for (const edit of edits) {
+    if (!snapshot.files.has(edit.path)) {
+      throw new Error(`Typed repair target is not an existing trusted file: ${edit.path}.`);
+    }
+    const target = resolve(fixtureRoot, ...edit.path.split("/"));
+    const targetStat = await lstat(target);
+    if (!targetStat.isFile() || targetStat.isSymbolicLink()) {
+      throw new Error(`Typed repair target is not a regular file: ${edit.path}.`);
+    }
+    await writeFile(target, edit.content, "utf8");
+  }
+  return edits.map((edit) => edit.path).sort(compareText);
+}
+
 function registerPhaseThread(seenThreadIds: Set<string>, phase: PhaseName, threadId: string): void {
   if (seenThreadIds.has(threadId)) {
     throw new Error(`${phase} reused a prior SDK thread identity.`);
@@ -787,7 +866,7 @@ async function consumeRepairPhaseStream(
         phase,
         thread,
         executionPrompt,
-        { signal: controller.signal },
+        { outputSchema: REPAIR_EDIT_MODEL_OUTPUT_SCHEMA, signal: controller.signal },
         state,
         true,
         limits.maxEvents,
@@ -796,8 +875,26 @@ async function consumeRepairPhaseStream(
       );
       if (controller.signal.aborted) throw new Error(`${phase} timed out after ${timeoutMs}ms.`);
 
-      const afterExecution = await snapshotFixture(options.fixtureRoot);
-      const executionDiff = diffSnapshots(before, afterExecution);
+      let afterExecution = await snapshotFixture(options.fixtureRoot);
+      let executionDiff = diffSnapshots(before, afterExecution);
+      let executionFileChangePaths = executionTurn.fileChangePaths;
+      const initialMetadataOnlyChanges = executionDiff.modified.filter(
+        (path) => !executionDiff.contentModified.includes(path),
+      );
+      if (initialMetadataOnlyChanges.length > 0) {
+        throw new Error(
+          `Repair made metadata-only file changes, which are forbidden: ${initialMetadataOnlyChanges.join(", ")}`,
+        );
+      }
+      if (executionDiff.contentModified.length === 0) {
+        executionFileChangePaths = await applyTypedRepairEdits(
+          options.fixtureRoot,
+          afterExecution,
+          executionTurn.finalResponse,
+        );
+        afterExecution = await snapshotFixture(options.fixtureRoot);
+        executionDiff = diffSnapshots(before, afterExecution);
+      }
       const executionMetadataOnlyChanges = executionDiff.modified.filter(
         (path) => !executionDiff.contentModified.includes(path),
       );
@@ -855,13 +952,13 @@ async function consumeRepairPhaseStream(
             .update(JSON.stringify({ execution: executionPrompt, report: reportPrompt }), "utf8")
             .digest("hex"),
           outputSchemaSha256: createHash("sha256")
-            .update(JSON.stringify(REPAIR_MODEL_OUTPUT_SCHEMA), "utf8")
+            .update(JSON.stringify(REPAIR_PHASE_OUTPUT_SCHEMAS), "utf8")
             .digest("hex"),
           runId: threadId,
           startedAt,
           completedAt: (options.now ?? (() => new Date()))().toISOString(),
         },
-        fileChangePaths: executionTurn.fileChangePaths,
+        fileChangePaths: executionFileChangePaths,
       };
     } catch (error) {
       if (controller.signal.aborted) {

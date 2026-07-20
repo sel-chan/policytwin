@@ -7,7 +7,7 @@ import {
 } from "../codex/safety.js";
 import {
   CARTOGRAPHY_MODEL_OUTPUT_SCHEMA,
-  REPAIR_MODEL_OUTPUT_SCHEMA,
+  REPAIR_PHASE_OUTPUT_SCHEMAS,
   REVIEW_MODEL_OUTPUT_SCHEMA,
 } from "../codex/sdk-output-schemas.js";
 import type { CommandEvidence, PolicyVerificationEvidence } from "../codex/types.js";
@@ -2364,7 +2364,7 @@ export function validateEvidencePackage(
             reportSha256: promptFiles.get("prompts/repair-report.v1.md"),
           }),
         ) &&
-      metadata.outputSchemaSha256 === hashText(JSON.stringify(REPAIR_MODEL_OUTPUT_SCHEMA));
+      metadata.outputSchemaSha256 === hashText(JSON.stringify(REPAIR_PHASE_OUTPUT_SCHEMAS));
     const workerMetadata = [
       cartography.metadata,
       ...repairs.map((repair) => repair.metadata),

@@ -47,6 +47,16 @@ const driftCases = JSON.parse(
     "utf8",
   ),
 );
+const expectedFixedSource = await readFile(
+  new URL("../../fixtures/refund-demo/expected-fixed/src/refund.ts", import.meta.url),
+  "utf8",
+);
+const enabledRegressionTestSource = (
+  await readFile(
+    new URL("../../fixtures/refund-demo/baseline/tests/refund.test.mjs", import.meta.url),
+    "utf8",
+  )
+).replaceAll("test.skip(", "test(");
 const prompts = {
   cartographer: await readFile(
     new URL("../../prompts/cartographer.v1.md", import.meta.url),
@@ -133,6 +143,21 @@ function repairBody(overrides = {}) {
     remainingRisks: [],
     verificationCommandIds: ["fixture-typecheck", "fixture-test"],
     ...overrides,
+  };
+}
+
+function repairEditBody(overrides = {}) {
+  return {
+    sourceFile: {
+      path: "src/refund.ts",
+      content: expectedFixedSource,
+      ...overrides.sourceFile,
+    },
+    testFile: {
+      path: "tests/refund.test.mjs",
+      content: enabledRegressionTestSource,
+      ...overrides.testFile,
+    },
   };
 }
 
@@ -272,7 +297,12 @@ function createFakeClient(plans) {
                   text:
                     turnOptions.outputSchema === undefined
                       ? (plan.executionResponse ?? "Workspace edits completed.")
-                      : (plan.rawResponse ?? JSON.stringify(plan.body)),
+                      : (plan.rawResponse ??
+                        JSON.stringify(
+                          turnNumber === 1 && plan.editBody !== undefined
+                            ? plan.editBody
+                            : plan.body,
+                        )),
                 },
               };
               yield {
@@ -333,21 +363,7 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
       {
         id: "thread-repair",
         body: repairBody(),
-        fileChanges: [
-          resolve(fixture.fixtureRoot, "src", "refund.ts"),
-          "tests/refund.test.mjs",
-        ],
-        async mutate() {
-          const sourcePath = join(fixture.fixtureRoot, "src", "refund.ts");
-          const original = await readFile(sourcePath, "utf8");
-          const fixed = original.replace(
-            'export function decideRefund(input: RefundPolicyInput): Decision {\n  const withinWindow = input.daysSincePurchase < 14;\n  const withinUsage = input.usageBasisPoints < 2000;\n\n  if (input.promotionalPurchase && input.managerApproved) {\n    return "ALLOW";\n  }\n\n  if (input.finalSale) {\n    return "DENY";\n  }\n\n  if (!withinWindow || !withinUsage) {\n    return "DENY";\n  }\n\n  if (input.promotionalPurchase) {\n    return "REVIEW";\n  }\n\n  return "ALLOW";\n}',
-            'export function decideRefund(input: RefundPolicyInput): Decision {\n  if (input.finalSale) {\n    return "DENY";\n  }\n\n  const withinWindow = input.daysSincePurchase <= 14;\n  const withinUsage = input.usageBasisPoints <= 2000;\n\n  if (!withinWindow || !withinUsage) {\n    return "DENY";\n  }\n\n  if (input.promotionalPurchase) {\n    return input.managerApproved ? "ALLOW" : "REVIEW";\n  }\n\n  return "ALLOW";\n}',
-          );
-          assert.notEqual(fixed, original);
-          await writeFile(sourcePath, fixed, "utf8");
-          await enableSeededRegressionTests(fixture.fixtureRoot);
-        },
+        editBody: repairEditBody(),
       },
       { id: "thread-review", body: reviewBody() },
     ]);
@@ -383,6 +399,15 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
         }),
       ),
     );
+    assert.equal(
+      report.repairAttempts[0].metadata.outputSchemaSha256,
+      sha256(
+        JSON.stringify({
+          edit: client.calls[1].turnOptions.outputSchema,
+          report: client.calls[2].turnOptions.outputSchema,
+        }),
+      ),
+    );
     assert.equal(report.policyVerificationAttempts.length, 1);
     assert.equal(report.policyVerificationAttempts[0].repairRunId, "thread-repair");
     assert.equal(report.policyVerificationAttempts[0].total, 41);
@@ -401,10 +426,6 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
       assert.deepEqual(call.threadOptions.additionalDirectories, []);
       assert.equal(call.prompt.includes(fixture.fixtureRoot), false);
       assert.equal(call.prompt.includes("must-not-leak"), false);
-      if (index === 1) {
-        assert.equal(call.turnOptions.outputSchema, undefined);
-        continue;
-      }
       assert.equal(call.turnOptions.outputSchema.additionalProperties, false);
       assert.equal(call.turnOptions.outputSchema.required.includes("metadata"), false);
       assert.equal(
@@ -426,9 +447,21 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
     assert.match(client.calls[0].prompt, /lineEnd.*fixtureLineCounts/isu);
     assert.match(
       client.calls[1].prompt,
-      /Use Codex file-edit operations to modify both required workspace files/u,
+      /Return complete replacement content for both required workspace files/u,
     );
-    assert.match(client.calls[1].prompt, /Do not output the structured repair report in this turn/u);
+    assert.match(client.calls[1].prompt, /Do not run commands or use file-edit tools/u);
+    assert.deepEqual(client.calls[1].turnOptions.outputSchema.required, [
+      "sourceFile",
+      "testFile",
+    ]);
+    assert.deepEqual(
+      client.calls[1].turnOptions.outputSchema.properties.sourceFile.properties.path.enum,
+      ["src/refund.ts"],
+    );
+    assert.deepEqual(
+      client.calls[1].turnOptions.outputSchema.properties.testFile.properties.path.enum,
+      ["tests/refund.test.mjs"],
+    );
     assert.match(client.calls[2].prompt, /must not modify any file/u);
     assert.deepEqual(client.calls[2].turnOptions.outputSchema.required, [
       "summary",
@@ -438,6 +471,62 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
     ]);
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("typed repair replacements reject wrong paths and unsafe content before writing", async () => {
+  const cases = [
+    {
+      editBody: repairEditBody({ sourceFile: { path: "package.json" } }),
+      expected: /sourceFile\.path must be exactly src\/refund\.ts/u,
+    },
+    {
+      editBody: repairEditBody({ sourceFile: { content: `${expectedFixedSource}\0` } }),
+      expected: /sourceFile\.content exceeds the safe UTF-8 contract/u,
+    },
+    {
+      editBody: repairEditBody({ sourceFile: { content: "x".repeat(64 * 1024 + 1) } }),
+      expected: /sourceFile\.content exceeds the safe UTF-8 contract/u,
+    },
+  ];
+
+  for (const [index, scenario] of cases.entries()) {
+    const fixture = await createFixture();
+    try {
+      const sourceBefore = await readFile(join(fixture.fixtureRoot, "src", "refund.ts"), "utf8");
+      const testsBefore = await readFile(
+        join(fixture.fixtureRoot, "tests", "refund.test.mjs"),
+        "utf8",
+      );
+      const client = createFakeClient([
+        { id: `typed-cartography-${index}`, body: cartographyBody() },
+        {
+          id: `typed-repair-${index}`,
+          body: repairBody(),
+          editBody: scenario.editBody,
+        },
+      ]);
+      const report = await orchestrateRepair(
+        input,
+        createOfflineCodexSdkBackend(backendOptions(fixture.fixtureRoot, client)),
+        async (commandId) => commandEvidence(commandId),
+        async (_input, context) => policyEvidence(context),
+      );
+      assert.equal(report.status, "FAIL");
+      assert.equal(report.failure.code, "REPAIR_INVALID");
+      assert.match(report.failure.message, scenario.expected);
+      assert.equal(client.calls.length, 2);
+      assert.equal(
+        await readFile(join(fixture.fixtureRoot, "src", "refund.ts"), "utf8"),
+        sourceBefore,
+      );
+      assert.equal(
+        await readFile(join(fixture.fixtureRoot, "tests", "refund.test.mjs"), "utf8"),
+        testsBefore,
+      );
+    } finally {
+      await rm(fixture.root, { recursive: true, force: true });
+    }
   }
 });
 

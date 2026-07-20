@@ -38,7 +38,10 @@ test("cartography, repair execution, repair reporting, and review prompts preser
   assert.match(cartographer, /expected-fixed/iu);
   assert.match(repair, /smallest coherent change/iu);
   assert.match(repair, /Do not weaken or skip tests/iu);
-  assert.match(repair, /Do not output the structured repair report in this turn/iu);
+  assert.match(repair, /complete replacement content.*src\/refund\.ts.*tests\/refund\.test\.mjs/isu);
+  assert.match(repair, /Do not run commands or use file-edit tools/iu);
+  assert.match(repair, /strict typed edit body/iu);
+  assert.match(repair, /separate follow-up turn.*strict repair report/isu);
   assert.match(repairReport, /must not modify any file/iu);
   assert.match(repairReport, /strict repair model-output body/iu);
   assert.match(reviewer, /distinct run identity/iu);

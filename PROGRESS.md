@@ -8,8 +8,8 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_CONFIRMATION_PENDING`
-- Last updated: `2026-07-20 17:57 +09:00`
-- Latest checkpoint commit: `f6f7ef4`
+- Last updated: `2026-07-20 18:37 +09:00`
+- Latest checkpoint commit: `a4175ad`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -109,7 +109,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - [x] Reconcile the evaluation task with the repository ledger, current public repository/video, and truthful evidence state.
 - [x] Reproduce the most recent no-file-change repair failure from the authenticated attempt record without spending another model attempt.
 - [x] Replace the single structured repair turn with an execution-first edit turn followed by a separate structured report turn, while preserving the fixed write set and filesystem-derived admission.
-- [ ] Run focused tests, then one bounded approved GPT-5.6/Codex challenge attempt.
+- [x] Replace the non-operational edit-tool turn with a strict typed Codex edit protocol while preserving model authorship, fixed paths, filesystem deltas, and every downstream gate.
+- [ ] Refresh the offline evidence and run one bounded approved GPT-5.6/Codex challenge attempt from a clean commit.
 - [ ] If the repair succeeds, promote only validated challenge evidence, refresh judge-facing copy/media as time permits, run the offline gate, commit on `main`, and push.
 - [ ] Capture and verify Devpost submission confirmation without changing owner-only legal declarations.
 
@@ -133,6 +134,8 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- D-071 replaces the twice non-operational no-command file-edit surface with a strict typed Codex edit response. GPT-5.6 must return complete content for exactly `src/refund.ts` and `tests/refund.test.mjs`; the server checks exact keys and paths, non-empty NUL-free UTF-8, a 64 KiB per-file ceiling, and sensitive-content exclusion, then writes only those model-produced strings. No expected-fixed code is present in production paths or prompts. Existing snapshot, exact regression digest, fixed write-set, pure-AST, fixed-command, 41-case corpus, and read-only review gates remain authoritative. Test-first reproduction failed as expected; the implementation and wrong-path/NUL/oversize regressions pass 13/13 focused adapter tests. Broader checks pass 450/450 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, lint, strict typecheck, static container, 473-file clean-copy reproduction, production build, and 440-text-file plus Git-history security scanning. Offline evidence is deterministically refreshed to `c8f7c64f653849ba207195054874d347dcb9bb35122615e5602e6cdcb4cb5d64`; worker/egress build-input hashes are `79e6a4ca...` and `25b00bce...`. The first full `pnpm verify` attempt correctly failed only at final receipt issuance because the implementation checkpoint had not yet been committed and its release inputs therefore differed from the Git index; commit and clean-tree rerun are the exact recovery path.
+- The second bounded post-D-070 live attempt passed cartography and reached the new edit-only repair turn, but again completed with no observable content change. No command, review, or evidence promotion occurred. This confirms the remaining incompatibility is the assumed no-command SDK file-edit surface rather than schema admission, location bounds, or report ordering. The next hypothesis is a typed Codex edit protocol: strict Structured Output carries complete replacements for the two fixed files, the server applies only those model-produced bytes, and every existing snapshot, path, exact-test, pure-AST, command, 41-case, and independent-review gate remains authoritative. The host will not insert the known expected-fixed implementation.
 - The first D-069 live attempt reached authenticated GPT-5.6 Sol cartography but failed closed before repair because a returned test-file location ended at line 58 while the server-owned fixture has 55 lines. No workspace write, command, review, or challenge-evidence promotion occurred. This is a new cartography precision defect, not a repeat of the prior no-edit repair. The next bounded change adds server-computed per-file line counts to trusted context and requires every returned location to stay within them; an out-of-range response remains terminal rather than being clamped or silently rewritten.
 - D-070 implements that bounded fix: the trusted cartography context includes exact `fixtureLineCounts`, and the prompt requires one-based inclusive locations within each server-computed bound. The failing prompt/context regression now passes; adapter 12/12, evidence validation 15/15, lint, strict typecheck, static container, and submission-draft checks pass. Offline evidence is deterministically refreshed to `c8378b3d70930548dff301dd9cf936aa21f7b64100181ccf1c43a5b2cd54f418`; worker/egress input hashes are `9d16f09a...` and `cecc965f...`. The prior authoritative receipt predates only this narrow cartography-context delta; a full refresh remains required after the next bounded live attempt.
 - Checkpoint `f6f7ef4` commits D-070 and its focused evidence on current `main`.

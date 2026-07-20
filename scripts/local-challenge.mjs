@@ -630,7 +630,7 @@ async function runLocalChallengeLocked({ now }) {
   }
   const {
     CARTOGRAPHY_MODEL_OUTPUT_SCHEMA,
-    REPAIR_MODEL_OUTPUT_SCHEMA,
+    REPAIR_PHASE_OUTPUT_SCHEMAS,
     REVIEW_MODEL_OUTPUT_SCHEMA,
   } = await import("../dist/codex/sdk-output-schemas.js");
   const { createLocalChallengeCodexSdkBackend } = await import(
@@ -647,7 +647,7 @@ async function runLocalChallengeLocked({ now }) {
   try {
     const prompts = {
       cartographer: readFileSync(resolve(ROOT, "prompts", "cartographer.v1.md"), "utf8"),
-      repair: `${readFileSync(resolve(ROOT, "prompts", "repair.v1.md"), "utf8")}\n\nLOCAL_CHALLENGE safety contract: do not run commands. Change only the two planned files. Preserve the exported types, input interface, and decideRefund signature. Keep decideRefund pure: use only input property reads, const declarations, comparisons, boolean logic, conditionals, if blocks, and decision returns; imports, calls, assignments, loops, exceptions, computed properties, and global identifiers are forbidden. In tests/refund.test.mjs, change only the three existing test.skip( tokens to test(. Derive the source repair from the supplied policy, accepted cases, and drift witnesses; no expected-fixed implementation is available to the repair agent.\n`,
+      repair: `${readFileSync(resolve(ROOT, "prompts", "repair.v1.md"), "utf8")}\n\nLOCAL_CHALLENGE safety contract: do not run commands or use file-edit tools. Return typed replacement content only for the two planned files. Preserve the exported types, input interface, and decideRefund signature. Keep decideRefund pure: use only input property reads, const declarations, comparisons, boolean logic, conditionals, if blocks, and decision returns; imports, calls, assignments, loops, exceptions, computed properties, and global identifiers are forbidden. In tests/refund.test.mjs, change only the three existing test.skip( tokens to test(. Derive the source repair from the supplied policy, accepted cases, and drift witnesses; no expected-fixed implementation is available to the repair agent.\n`,
       repairReport: readFileSync(
         resolve(ROOT, "prompts", "repair-report.v1.md"),
         "utf8",
@@ -795,7 +795,7 @@ async function runLocalChallengeLocked({ now }) {
         },
         outputSchemaSha256s: {
           cartography: sha256(JSON.stringify(CARTOGRAPHY_MODEL_OUTPUT_SCHEMA)),
-          repair: sha256(JSON.stringify(REPAIR_MODEL_OUTPUT_SCHEMA)),
+          repair: sha256(JSON.stringify(REPAIR_PHASE_OUTPUT_SCHEMAS)),
           review: sha256(JSON.stringify(REVIEW_MODEL_OUTPUT_SCHEMA)),
         },
       },
