@@ -29,9 +29,11 @@ test("offline security and clean-copy checks pass without becoming a release rev
   }
 });
 
-test("license and container remain fail-closed for explicit owner/external work", () => {
-  assert.equal(license.status, "FAIL");
-  assert.equal(license.failures.some((failure) => failure.includes("OWNER_DECISION_REQUIRED")), true);
+test("owner-selected license passes while the external container gate remains fail-closed", () => {
+  assert.equal(license.status, "PASS");
+  assert.equal(license.projectLicensePresent, true);
+  assert.equal(license.noticePresent, true);
+  assert.deepEqual(license.failures, []);
   assert.equal(container.schemaVersion, "3");
   assert.equal(container.status, "FAIL");
   assert.equal(container.scope, "DYNAMIC_WEB_CONTAINER");

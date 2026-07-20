@@ -19,6 +19,7 @@ const suites = {
     "tests/unit/policy-workspace-service.test.mjs",
     "tests/unit/repair-run-coordinator.test.mjs",
     "tests/unit/repair-run-session-pruning.test.mjs",
+    "tests/unit/local-challenge-profile.test.mjs",
     "tests/unit/rego-compiler.test.mjs",
     "tests/unit/case-generation.test.mjs",
     "tests/unit/mutation-engine.test.mjs",

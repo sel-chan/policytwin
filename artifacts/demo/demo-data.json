@@ -1,24 +1,36 @@
 {
   "schemaVersion": "1",
-  "status": "DRAFT_NOT_RECORDED",
+  "status": "LOCAL_CHALLENGE_VIDEO_RENDERED",
   "evidenceHash": "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291",
+  "evidenceMode": "PARTIAL_OFFLINE",
   "caseCount": 41,
+  "opaPassed": 41,
   "driftBefore": 16,
+  "seededDefects": 3,
   "postRepairDrift": null,
-  "evaluationOnlyFixedFixtureDrift": 0,
   "mutation": {
     "killed": 44,
     "total": 47,
-    "excludedEquivalent": 0,
     "killRate": 0.9361702127659575,
     "executionMode": "REFERENCE_EVALUATOR_NOT_OPA"
   },
-  "externalGates": {
-    "gpt56": "NOT_RUN",
-    "opa": "PASS",
-    "codex": "NOT_RUN",
-    "browser": "NOT_RUN",
-    "container": "NOT_RUN",
-    "deployment": "NOT_RUN"
+  "buildWeekUsage": {
+    "codexWithGpt56": "USED_TO_BUILD_AND_REVIEW_PROJECT",
+    "directResponsesApiEvidence": "NOT_RUN",
+    "productionCodexRepairEvidence": "NOT_RUN"
+  },
+  "video": {
+    "file": "policytwin-demo.mp4",
+    "durationMilliseconds": 168000,
+    "width": 1920,
+    "height": 1080,
+    "audio": true,
+    "sha256": "9d7281258d376cf2e6f7963e6a458ccb396cb0e6c0481fdece84db751186db7b"
+  },
+  "productionClaims": {
+    "verifyLive": false,
+    "cgroupV2": false,
+    "deploymentSecurity": false,
+    "liveAttestation": false
   }
 }

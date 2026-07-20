@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1",
-  "status": "FAIL",
-  "projectLicensePresent": false,
+  "status": "PASS",
+  "projectLicensePresent": true,
   "noticePresent": true,
   "productionDependencies": [
     "@openai/codex-sdk",
@@ -11,7 +11,5 @@
     "react-dom",
     "zod"
   ],
-  "failures": [
-    "OWNER_DECISION_REQUIRED: project LICENSE is absent."
-  ]
+  "failures": []
 }

@@ -3,7 +3,7 @@
 ## 0. Truthful status
 
 - Submission status: `NOT_STARTED`
-- Last rules check: `2026-07-18 18:37:46 +09:00 — all three official OpenAI and Devpost pages fetched directly; no requirement change found`
+- Last rules check: `2026-07-20 09:30:00 +09:00 — all three official OpenAI and Devpost pages refreshed directly; the official challenge minimum remains distinct from PolicyTwin's production live gate`
 - Exact official deadline and timezone: `2026-07-21 17:00 PDT (UTC-07:00)`
 - Local deadline: `2026-07-22 09:00 KST (UTC+09:00)`
 - Selected category/track: `Developer Tools`
@@ -21,6 +21,14 @@ Allowed final states:
 
 Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OWNER_ACTION` while engineering, deployment, recording, or copy work remains.
 
+### Deadline challenge handoff
+
+- `artifacts/challenge-submission/` contains concise English Devpost copy, testing instructions, the primary `/feedback` session ID `019f5dcf-0233-7a80-9147-af10c7bbfb28`, exact local-video binding, and an explicit owner-action list.
+- `artifacts/demo/policytwin-demo.mp4` is the visually reviewed public-upload candidate: 2:48, 1920×1080 H.264, 48 kHz stereo AAC, synchronized eight-cue narration/captions, and SHA-256 `9d7281258d376cf2e6f7963e6a458ccb396cb0e6c0481fdece84db751186db7b`.
+- The video uses absolute scene boundaries, shows the six-view product, includes a direct Codex + GPT-5.6 build card and `/feedback` ID, preserves every unavailable production claim, and ends on `pnpm demo:run`.
+- `pnpm challenge:submission:check` passes the local package and lists exactly three remaining prerequisites: execute and validate the already approved bounded GPT-5.6 challenge capture, publish the repository, and upload the exact video to public YouTube. The MIT project license is present with `Copyright (c) 2026 CHAN`.
+- `pnpm challenge:submission:release` remains nonzero until those prerequisites exist. The official challenge handoff does not replace or weaken `artifacts/submission/`, `pnpm verify:live`, or `pnpm submission:check`; those remain the stricter production-release target.
+
 ### Current offline draft
 
 - `artifacts/submission-draft/` contains 21 generated files, including the machine-readable state and explicit `NOT_RUN` checker placeholder.
@@ -29,7 +37,7 @@ Do not use `SUBMITTED` without a verified confirmation. Do not use `READY_FOR_OW
 - Every judge-facing draft remains marked `DRAFT_NOT_READY`; no generated file claims submission readiness.
 - `pnpm submission:check` is intentionally fail-closed until live and owner evidence exists. It first runs `pnpm verify` in the same non-recursive invocation, then validates the resulting receipt. The current exact failure count is regenerated after each checker revision. The release gate fixes exact staging/screenshots/38-file evidence sets, distinct reviewable screenshots, substantial SRT coverage synchronized to a two-to-three-minute local video, a 48-hour exact-three-source rule snapshot, cross-file metric claims including README, decoded non-uniform PNGs, Chrome three-point visual/audio/tail verification, full semantic evidence plus release-pinned Ed25519-attestation validation, a raw-byte Git-index/worktree-consistent release-input-bound offline verification receipt, deployment-evidence-bound anonymous live HTTPS and repository Git probes, a YouTube publication receipt, and state-specific owner action or confirmation evidence.
 - Normal `pnpm test:e2e` and `pnpm verify` write browser review copies only to ignored `.tmp/playwright-screenshots/`. The tracked release captures are updated only by the explicit `pnpm exec playwright test --config=playwright.screenshots.config.ts` workflow and require direct visual review before commit.
-- Owner declarations, live proof, project license, one required live Codex repair capture, video, public URLs, final form fields, and confirmation remain unverified or absent.
+- Owner declarations, public repository/video URLs, Devpost form actions, and confirmation remain unverified or absent. The bounded local Codex GPT-5.6 capture is approved but explicitly `NOT_RUN` and unvalidated; any resulting package is only a structurally consistent non-production local capture, not independently signed execution proof or production-live evidence. The MIT license, local video, and challenge copy are complete.
 - Integration now has a session-bound SQLite repair-run/event ledger, idempotent CSRF-protected creation, resumable SSE, retryable terminal records, terminal-history pruning at session expiry, and a global fail-stop executor latch that retains active or poisoned rows. Schema v2 adds an atomic singleton owner lease with heartbeat/expiry, durable clock high-water, random fence, increasing generation, and insert/update guards that fence stale v1 processes. Every active write requires the exact opaque lease; terminal state/event/release commit together; direct GET/SSE reconciliation poisons only expired work, while a live lease stays on a read-only path. This coordinates only processes sharing the same durable SQLite file and is not distributed-replica proof. The disabled future execution seam binds the local run identity into the signed v2 request, accepts only an exact branded one-use settlement, persists request/binding/completion provenance, and leaves unproved transport or cleanup outcomes `POISONED`. The current product execution port is deliberately unavailable, so browser-tested attempts remain `BLOCKED / NOT_STARTED` and explicitly state that no model or Codex call occurred. This is reusable product scaffolding, not live repair evidence or the required `04-codex-repair.png`.
 - Anonymous policy admission now has an independent policy-database schema v3. It reserves the seeded-session namespace, migrates v1/v2 rows to random immutable storage generations, rejects stale ID-only deletion, and commits exact duplicate precedence, the configured capacity count, project insertion, and v1 insertion in one writer transaction across processes sharing that policy file. Generation-fenced expiry atomically records a durable ID/generation retirement tombstone before deletion; triggers require it and reject later recreation or ID reassignment across restart. Tombstones are excluded from active capacity and retained for replay rejection, so metadata can grow by at most the configured capacity per 24-hour expiry cycle. Expiry cleanup and repair POST admission use the same policy-generation writer lock before touching the repair database; stale snapshots have no cleanup side effect, cleanup-first rejects delayed repair admission, and admission-first creates the run row before cleanup. Only nonterminal or poisoned rows retain the slot; the disabled executor can immediately produce terminal `BLOCKED` history that later expiry cleanup may safely prune. Tests use child processes, repeated and retired IDs, writer-lock timeout/retry, fresh-schema concurrency, v1/v2 schema migration, repeated timestamps, delayed repair admission, cleanup failures, raw-SQL trigger bypass attempts, and actual generic 429 response headers. Policy and repair-run databases remain separate and are not cross-database atomic; arbitrary direct database writes are trusted operator authority, and separate files, network filesystems, distributed quotas, public rate limits, and deployment storage are not claimed.
 - The complete evidence download now rereads and content-hashes the exact bounded package on every request, then permits one content-and-validation-policy-bound in-process archive to be reused for at most 15 seconds. Failures and expired live attestations are never cached and responses remain `no-store`; shared public rate limiting is still deployment work, not a current claim.
@@ -259,8 +267,8 @@ Before publishing, verify:
 - [ ] Local setup is tested from a clean checkout.
 - [ ] Environment variables are documented in `.env.example`.
 - [ ] No secret appears in Git history, current files, logs, screenshots, or evidence.
-- [ ] License is present and compatible.
-- [ ] `NOTICE.md` or attribution is complete.
+- [x] License is present and compatible.
+- [x] `NOTICE.md` or attribution is complete.
 - [ ] Seeded bug and repair workflow are documented.
 - [ ] Offline `pnpm verify` and fresh-integration `pnpm verify:live` are documented and passing.
 - [ ] Deployment path is documented.
@@ -396,14 +404,14 @@ Live demo · Source · Evidence
 
 ### Recording acceptance
 
-- [ ] voice/captions match actual UI;
-- [ ] cursor path is deliberate;
-- [ ] no loading gap is confusing;
-- [ ] no claim is unsupported;
-- [ ] text is legible at 1080p;
-- [ ] audio is clear or captions carry the narrative;
+- [x] voice/captions match actual UI;
+- [x] cursor path is deliberate;
+- [x] no loading gap is confusing;
+- [x] no claim is unsupported;
+- [x] text is legible at 1080p;
+- [x] audio is clear or captions carry the narrative;
 - [ ] final URL plays without owner login;
-- [ ] duration satisfies current rules.
+- [x] duration satisfies current rules.
 
 ## 10. Deployment checklist
 
@@ -428,8 +436,8 @@ Live demo · Source · Evidence
 - [ ] `OPENAI_API_KEY` and other credentials are absent from client bundles.
 - [ ] Secret scan includes Git history where possible.
 - [ ] Dependency audit reviewed.
-- [ ] License compatibility reviewed.
-- [ ] Third-party notices present.
+- [x] License compatibility reviewed.
+- [x] Third-party notices present.
 - [ ] Fixture code is owned or properly licensed.
 - [ ] Policy text is synthetic.
 - [ ] No customer/personal data appears.

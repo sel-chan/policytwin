@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M9 — atomic anonymous admission and durable session retirement`
+- Current milestone: `M7/M9/M10 — deadline completion and release readiness`
 - Goal state: `IN_PROGRESS`
-- Submission state: `DRAFT_NOT_READY`
-- Last updated: `2026-07-20 08:42 +09:00`
+- Submission state: `LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS`
+- Last updated: `2026-07-20 09:51 +09:00`
 - Latest checkpoint commit: `cabf6362c59c8df3c6ab09b9dedb486358f11761`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -67,7 +67,7 @@ Replace placeholders after checking current official sources.
 - Repository visibility requirement: `public with relevant licensing, or private and shared with testing@devpost.com and build-week-event@openai.com`
 - Demo video constraints: `public YouTube, less than 3 minutes, clear audio, show the project and use of Codex/GPT-5.6, no unlicensed third-party marks/music/material`
 - Required submission fields: `category; description; demo video; repository; README Codex collaboration narrative; /feedback session ID; developer-tool installation/platform/testing path; working access and testing instructions`
-- Rules checked at: `2026-07-18 18:37:46 +09:00`
+- Rules checked at: `2026-07-20 09:30:00 +09:00`
 - Source links: `https://openai.com/build-week/`; `https://openai.devpost.com/`; `https://openai.devpost.com/rules`
 
 ## Baseline
@@ -94,11 +94,43 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, the repair-run ledger/UI, both non-admissible v2/verifier candidates, and a non-runtime verifier exchange with exact source/build manifests, one-use HMAC capability, sealed SQLite replay/tombstone/clock state, bounded retry, and receipt-bound structural review pass offline contracts | `ddf4076` | capability delivery remains in-process, tree inspection is not runtime immutability, review is a caller-supplied bound echo, the production entrypoint remains validate-only, and no eligible Linux Docker/cgroup-v2 run, fresh SDK repair/review, finalized-result issuer, PASS signer, zero live post-repair drift, or signed live evidence exists |
-| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, semantic mismatch guard, deterministic guarded 38-file USTAR download, responsive six-view navigation, seven inspected product screenshots plus a reviewed architecture asset, and 3/3 production Chrome E2E checks pass | `5fecdde` | live signer/receipts, actual Codex proof, and the truthful live Codex repair capture remain |
-| M9 Security, reproducibility, deployment | IN_PROGRESS | policy schema v3 now combines atomic cross-process anonymous capacity with durable expired-ID tombstones; OPA has separate 30-second process and five-minute whole-run budgets; schema-v15 helper/lifecycle, release-tree, repair lease, and other prior M9 boundaries pass 441 unit, 82 integration, 22 eval, 3 browser, static container, 447-file/416-text security, 447-file clean-copy, and a 444-input release receipt | `cabf636` | shared public request/rate limiting, SSE connection bounds, authenticated poison recovery, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, owner license, and deployment remain |
-| M10 Submission package | IN_PROGRESS | official rules/dates/track/requirements were refreshed at 2026-07-18 18:37:46 +09:00 with no change; isolated fail-closed draft and strict final gates remain separated; 2:55 draft script/captions and reproducible architecture/UI captures are reviewed | `86bd1f0` | live Codex repair screenshot, owner declarations/license, live/repo/video/submission URLs, final media/form, and confirmation remain unavailable |
+| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, deterministic guarded 38-file USTAR download, seven product screenshots, reviewed architecture asset, and a visually reviewed 2:48 1080p H.264/AAC Build Week video with Codex/GPT-5.6 usage card and end card | `5fecdde` | production signer/receipts remain; the approved bounded local challenge capture is `NOT_RUN` |
+| M9 Security, reproducibility, deployment | IN_PROGRESS | policy schema v3 now combines atomic cross-process anonymous capacity with durable expired-ID tombstones; OPA has separate 30-second process and five-minute whole-run budgets; schema-v15 helper/lifecycle, release-tree, repair lease, and other prior M9 boundaries pass 445 unit, 82 integration, 22 eval, 3 browser, production build, and static container checks | `cabf636` | shared public request/rate limiting, SSE connection bounds, authenticated poison recovery, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, and deployment remain |
+| M10 Submission package | IN_PROGRESS | official requirements refreshed at 2026-07-20 09:30 +09:00; `artifacts/challenge-submission/` contains final English copy, testing path, `/feedback` ID, local-video binding, MIT license, and a passing local checker; strict production staging/gates remain separate | `86bd1f0` | approved challenge capture execution, public repository/YouTube URLs, Devpost declarations/actions, and confirmation remain |
 
 ## Current checkpoint
+
+### Objective
+
+Complete the highest-value remaining Build Week work before the deadline. Re-audit live GPT/Codex, deployment, media, repository, and submission paths; finish every safe local implementation and release artifact that does not require credentials, legal acceptance, publication, upload, or account-side submission; then reduce the remainder to the smallest exact owner actions without weakening any proof boundary.
+
+### Starting condition
+
+Starting HEAD is clean `main` at ledger commit `a9ace11` with implementation commit `cabf636`. The authoritative offline receipt passes 15/16 ordered steps: 441 unit, 82 integration, 22 eval, 3 browser, production build, static container, 447-file clean-copy, and 447-file/416-text security plus Git history pass; only the owner-selected project `LICENSE` remains nonzero. Live GPT/Codex evidence, immutable images and an eligible cgroup-v2 supervisor, deployment, public repository, final video, Devpost fields, and confirmation are not verified. The deadline is `2026-07-22 09:00 KST`.
+
+### Planned actions
+
+- [x] Re-read the required control documents and reconfirm the clean repository, deadline, root gates, truthful evidence state, and external-authority boundaries.
+- [x] Audit the current environment and exact M7/M9/M10 failure surface, including locally available credentials, Docker/WSL options, release assets, and callable browser/account tools without exposing secret values.
+- [x] In parallel, identify and implement every remaining independent code, documentation, media-preparation, and submission-staging slice that materially shortens the owner path.
+- [ ] Run focused checks and the full required offline gate; inspect generated release artifacts and obtain independent final review.
+- [ ] Commit on current `main`, leave the worktree clean, and report only the exact remaining credential, infrastructure, legal, publication, and account actions.
+
+The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved the bounded local GPT-5.6 challenge execution. This checkpoint must not disclose credentials, pull unapproved registry images, publish or push a repository, deploy, upload media, accept terms, or submit the challenge without the required owner authority. Existing approved network scope is limited to the three official challenge URLs, official OpenAI/Codex/OPA/Next.js documentation, pinned packages, the official OPA binary, and the approved bounded model call.
+
+### Checkpoint evidence in progress
+
+- Resumed at `2026-07-20 08:48 +09:00` after the owner confirmed the `F:` drive was connected and requested an accelerated finish.
+- Required documents, current release receipt, submission definition, accepted decisions, and active blocker ledger were re-read. No production-live, deployment, publication, upload, or submission claim has been promoted.
+- Official Build Week/Devpost pages were refreshed at `2026-07-20 09:30 +09:00`. The challenge minimum is a working Codex/GPT-5.6 project, English description, public sub-three-minute YouTube demo with audio, repository/README, and primary `/feedback` session ID; PolicyTwin's cgroup-v2/direct-Responses/deployment attestation remains a separate stronger production target.
+- The installed Codex CLI 0.144.0 reports an existing ChatGPT login, and the repository pins `@openai/codex-sdk` plus bundled CLI 0.144.3. No product/provider model call was made: `pnpm challenge:run` was exercised without the explicit opt-in and failed before build/client creation as required.
+- D-066 adds a non-root-exported, route-inaccessible `LOCAL_CHALLENGE` profile pinned to `gpt-5.6`. Independent security and explicit Codex GPT-5.6 release reviews found and drove fixes for expected-answer leakage, Windows preflight ordering, pure-source admission, host command safety, corpus tree binding, full receipt/result retention, JSON-Schema parity, repository provenance, cleanup, and truthful production-claim separation.
+- The final video was recaptured against absolute 17/36/60/83/109/136/158/168-second scene boundaries. All eight representative frames were visually inspected. The final MP4 is 168.000 seconds, 1920×1080 H.264, 48 kHz stereo AAC, hash `9d7281258d376cf2e6f7963e6a458ccb396cb0e6c0481fdece84db751186db7b`; narration overrun now fails before render, captions/narration are hash-bound to the video manifest, and audio is normalized.
+- The owner approved the bounded GPT-5.6 local challenge run and selected MIT with `Copyright (c) 2026 CHAN`; `pnpm license:check` passes.
+- `pnpm challenge:submission:check` passes with state `LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS`, the primary task ID `019f5dcf-0233-7a80-9147-af10c7bbfb28`, and exactly three remaining prerequisites: run and validate the approved GPT-5.6 challenge capture, publish the repository, and upload the exact video to public YouTube.
+- Post-change checks pass: lint, strict typecheck, 445/445 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, production build, static container contract, local challenge-submission package, and MIT license.
+
+## Previous checkpoint — atomic anonymous admission and durable session retirement
 
 ### Objective
 
@@ -445,22 +477,22 @@ Record latest actual result.
 | Lint | PASS | `pnpm lint` | repository static checks pass with schema-v3 retirement and reviewed capacity subprocess coverage | 2026-07-20 08:39 +09:00 |
 | Typecheck | PASS | `pnpm typecheck` | strict TypeScript 6.0.3 covers policy schema v3, OPA budgets, application, evidence, and RPC contracts | 2026-07-20 08:39 +09:00 |
 | Native helper local build | PASS_LOCAL_ONLY | `pnpm helper:build:local` | repeated compilation remains byte-identical at 841,656-byte AMD64 static PIE with SHA-256 `906214d0489875ebbc718d934397fb2e43b00b5af825391c247b1efb112abdef`; compiler is explicitly unpinned, stale success evidence is removed on failure, and no image/runtime claim follows | 2026-07-17 10:54 +09:00 |
-| Unit tests | PASS | `pnpm test` | 441/441 pass, including schema v1/v2→v3 migration, durable retirement/restart, raw-SQL guards, stale generation, OPA budgets, release, container, media, and RPC coverage | 2026-07-20 08:39 +09:00 |
-| Integration tests | PASS | `pnpm test:integration` | 82/82 pass, including real OPA 41-case execution, cross-process capacity/duplicate/lock races, retirement-before-delayed-repair admission, evidence, persistence, and mTLS | 2026-07-20 08:39 +09:00 |
-| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass, including generic capacity exhaustion without project creation | 2026-07-20 08:39 +09:00 |
-| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass against current isolated drafts and security/clean-copy reports | 2026-07-20 08:39 +09:00 |
-| Production build | PASS | `pnpm build` | Next.js 16.2.10 Turbopack standalone build and strict TypeScript pass | 2026-07-20 08:39 +09:00 |
-| Offline full verification | FAIL_OWNER_DECISION_ONLY | `pnpm verify` | 15/16 ordered steps pass; only owner-selected project `LICENSE` fails, with a fresh 444-input zero-untracked receipt bound to current report and release-tree hashes | 2026-07-20 08:39 +09:00 |
+| Unit tests | PASS | `pnpm test` | 445/445 pass, including the exact non-production local challenge profile, schema v1/v2→v3 migration, durable retirement/restart, OPA budgets, release, media, container, and RPC coverage | 2026-07-20 10:39 +09:00 |
+| Integration tests | PASS | `pnpm test:integration` | 82/82 pass, including real OPA 41-case execution, cross-process capacity/duplicate/lock races, retirement-before-delayed-repair admission, evidence, persistence, and mTLS | 2026-07-20 10:39 +09:00 |
+| Browser tests | PASS | `pnpm test:e2e` | 3/3 production standalone Chrome tests pass, including generic capacity exhaustion without project creation | 2026-07-20 10:39 +09:00 |
+| Prompt/eval suite | PASS | `pnpm eval` | 22/22 offline/recorded evals pass against current isolated drafts and security/clean-copy reports | 2026-07-20 10:39 +09:00 |
+| Production build | PASS | `pnpm build` | Next.js 16.2.10 Turbopack standalone build and strict TypeScript pass | 2026-07-20 10:39 +09:00 |
+| Offline full verification | PASS | `pnpm verify` | all 16 ordered steps pass; the fresh receipt binds 468 tracked release inputs, zero untracked inputs, clean/security report hashes, and release-tree SHA-256 `ee4ee220046c81c0c1c1061991c0add5059d8e0d89a29a0294b62ea3934a7867` | 2026-07-20 10:58 +09:00 |
 | Fresh live integration | FAIL | `pnpm verify:live` | fail-closed before dynamic gates/network at missing `OPENAI_API_KEY` and `CODEX_MODEL`; no model or Codex call occurred | 2026-07-18 12:45 +09:00 |
-| Clean-copy reproduction | PASS | `pnpm clean:check` | 447 source files; frozen offline install, draft checks, lint, typecheck, 441 unit, 82 integration, 22 eval, build, 3 browser, demo, and evidence regeneration pass | 2026-07-20 08:39 +09:00 |
-| Static container contract | PASS | `pnpm container:check` | worker `eaad8b64…`, verifier `6a38ec76…`, egress `0d66b9bf…`, and helper `dcba15c2…` match the checked contract | 2026-07-20 08:39 +09:00 |
+| Clean-copy reproduction | PASS | `pnpm clean:check` | 471 source files; frozen offline install, draft checks, lint, typecheck, 445 unit, 82 integration, 22 eval, build, 3 browser, demo, and evidence regeneration pass | 2026-07-20 10:39 +09:00 |
+| Static container contract | PASS | `pnpm container:check` | worker `942bd41f…`, verifier `991040bd…`, egress `c5782283…`, and helper `85a1d41c…` match the checked contract | 2026-07-20 10:39 +09:00 |
 | Dynamic helper artifact | FAIL | `pnpm helper:verify` | immutable builder image is unset; `dockerInvoked:false`, build input `dcba15c2…`, and all runtime/signing claims false | 2026-07-18 12:45 +09:00 |
 | Dynamic container health | FAIL | `pnpm container:verify` | immutable Node 22.22.2 base is unset, so Docker build/runtime/SQLite restart checks did not run | 2026-07-18 12:45 +09:00 |
 | Dynamic worker/verifier smoke | FAIL | `pnpm worker:verify` | build inputs match; failure is the unset immutable Node base before Docker, with the cgroup-v2 preflight next in the admitted path | 2026-07-18 12:45 +09:00 |
 | Dynamic TLS-only egress smoke | FAIL | `pnpm egress:verify` | build inputs match; failure is the unset Node base and sealed helper identities before Docker; outbound remains `NOT_MEASURED` | 2026-07-18 12:45 +09:00 |
 | Secret scan | PASS | credential-shaped `rg` scan | no matches | 2026-07-14 08:20 +09:00 |
-| Dependency/license review | FAIL | `pnpm license:check`; prior `pnpm audit --prod --json` | 6 production dependencies inventoried, audit 0 vulnerabilities, NOTICE present; owner-selected project LICENSE absent with `OWNER_DECISION_REQUIRED` | 2026-07-20 08:39 +09:00 |
-| Security review | PASS_OFFLINE_SCAN | `pnpm security:check` | 447 files/416 text files plus Git history scanned; reviewed child-process boundaries remain allowlisted and no findings exist; live release review remains `NOT_RUN` | 2026-07-20 08:39 +09:00 |
+| Dependency/license review | PASS | `pnpm license:check`; prior `pnpm audit --prod --json` | MIT `LICENSE` with `Copyright (c) 2026 CHAN`, NOTICE, 6 production dependencies, and prior audit 0 vulnerabilities | 2026-07-20 10:39 +09:00 |
+| Security review | PASS_OFFLINE_SCAN | `pnpm security:check` | 471 files/438 text files plus Git history scanned; the three new fixed-command scripts are explicitly reviewed and no findings exist; live release review remains `NOT_RUN` | 2026-07-20 10:42 +09:00 |
 | Submission consistency | FAIL | `pnpm submission:check` | exactly 42 unmet requirements; fresh offline failure disables public probes, and strict final copy/media/session/live/URL/license/confirmation boundaries remain visible | 2026-07-18 15:21 +09:00 |
 
 ## Product proof metrics
@@ -989,7 +1021,7 @@ A blocker is valid only when the task cannot continue safely without external in
 | Risk | Likelihood | Impact | Mitigation | Owner/status |
 |---|---|---|---|---|
 | Deadline compression | Medium | High | Preserve P0 vertical slice; cut only P1 | Codex / open |
-| Live model/API outage | Medium | Medium | Keep recorded verified evidence clearly labeled | Codex / open |
+| Live model/API outage | Medium | Medium | Keep the future local capture explicitly non-production and structurally consistent only; never present it as independently signed execution proof | Codex / open |
 | Hosted worker restrictions | Medium | High | Keep final-result issuance and live admission disabled; package and dynamically verify the fixture-only private Docker/cgroup construction with hard limits and teardown receipts | Codex / open |
 | Codex SDK/live adapter mismatch | Medium | High | Current package/docs are pinned; validate the real adapter with fresh SDK evidence | Codex / open |
 | Live attestation key custody | Medium | High | Keep private key outside Git/logs/evidence; inject only trusted public keys into verification | Codex / open |
@@ -997,41 +1029,41 @@ A blocker is valid only when the task cannot continue safely without external in
 | Immutable container images unavailable | High | High | Keep dynamic gates fail-closed; after scoped registry approval, review and pin exact Node/compiler digests before any build | Owner/Codex / open; Docker daemon itself is running |
 | Current Docker host is cgroup v1 | High | High | Reject before expensive worker/egress builds and require a Linux cgroup-v2 supervisor that can observe the same local Docker PIDs | Owner/Codex / open; current Desktop daemon is ineligible |
 | Offline validator/Zod duplication | Low | Medium | One Zod structure now generates the checked-in schema and model projection and runs before deterministic semantic validation; exact freshness is gated | Closed by D-048; live provider acceptance remains open separately |
-| Demo recording/account blocker | Medium | Medium | Prepare script, captions, screenshots, and exact owner action | Codex / open |
+| Public video/account blocker | Medium | High | The exact reviewed 2:48 MP4 is ready; upload it unchanged to public YouTube and verify signed-out playback/audio | Owner / open |
 
 ## Decisions pending
 
 Link to IDs in `DECISIONS.md`.
 
-- Project license selection requires owner acceptance; see D-013 and `docs/license-review.md`.
+- No project-license decision remains pending: the owner selected MIT with `Copyright (c) 2026 CHAN`.
 
 ## Next action
 
-`First, explicitly approve linux/amd64 manifest lookup and digest-pinned blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only. The already approved pinned package/OPA scope covers cold-build pnpm 11.7.0, lockfile packages, and OPA 1.18.2; image push, deployment, model calls, publication, and other external actions remain excluded. This can unblock helper/web/image identity work, while worker/egress execution still requires the separate measured cgroup-v2 supervisor condition before finalization, PASS, or live admission.`
+`Stage and pass the authoritative offline gate, commit the clean checkpoint on main, then run and validate the already approved bounded pnpm challenge:run profile with CODEX_MODEL=gpt-5.6. Keep the resulting files labeled as a structurally consistent non-production local capture. Repository publication, YouTube upload, Devpost terms, and final submission remain owner-controlled external actions.`
 
 ## Pause handoff
 
 Fill before `/goal pause` or any handoff.
 
-- Why paused: `not paused; the atomic-capacity/durable-retirement checkpoint is verified and committed, and the remaining work requires the owner/external prerequisites below`
-- Exact current state: `441 unit, 82 integration, 22 eval, 3 browser, 447-file clean-copy, 447-file/416-text security/history, static container, 444-input zero-untracked release fingerprint, 2:55 isolated drafts, demo, and build pass; Docker is cgroup v1, reviewed CLI/immutable images and live credentials are absent`
-- Last successful command: `the final security step inside pnpm verify passed 447 files/416 text files and Git history after every other implemented deterministic step passed`
-- Current failing command: `pnpm verify exits 1 only for owner LICENSE; helper/web/worker/egress stop before Docker workload execution at unset immutable identities; verify:live stops before network at missing OPENAI_API_KEY and CODEX_MODEL`
-- Uncommitted files: `none after the ledger commit; main is clean`
-- Safe resume command/action: `after the exact registry scope is approved, confirm clean main, review and pin the release-host Docker CLI plus immutable Node/compiler digests, and run the helper artifact and web gates first; do not attempt worker/egress until an eligible Linux cgroup-v2 supervisor is available`
-- One owner action, if any: `reply with explicit approval for linux/amd64 manifest lookup and digest-blob pulls for the reviewed Node 22.22.2 runtime and static-PIE compiler-builder images only`
+- Why paused: `not paused; the Build Week checkpoint is in its final staged verification and local-challenge execution sequence`
+- Exact current state: `445 unit, 82 integration, 22 eval, 3 browser, 471-file clean-copy, 471-file/438-text security/history, MIT license, static container, reviewed 2:48 video, and local submission package pass; the approved GPT-5.6 local capture remains NOT_RUN`
+- Last successful command: `pnpm security:check passed 471 files/438 text files and Git history after the reviewed fixed-command registrations`
+- Current failing command: `none in the deterministic offline gate; pnpm verify passes all 16 staged steps, while production-live and external publication gates remain separately unavailable`
+- Uncommitted files: `the intended Build Week challenge checkpoint remains uncommitted until the staged gate passes`
+- Safe resume command/action: `stage the intended checkpoint, run pnpm verify, commit on main, confirm clean status, then run the approved bounded GPT-5.6 local challenge capture`
+- Remaining owner actions: `publish or share the repository, upload the exact reviewed MP4 to public YouTube, verify signed-out access, and complete Devpost declarations/terms/final submit`
 
 ## Final completion record
 
 Do not fill until the end.
 
 - Engineering definition of done: `NOT_VERIFIED`
-- `pnpm verify`: `FAIL_OWNER_DECISION_ONLY at 2026-07-20 08:39:02 +09:00; 15/16 ordered steps passed, including 441 unit, 82 integration, 22 eval, 3 browser, 447-file clean-copy, 447-file/416-text security/history, demo, static container, and build; only the owner-selected project LICENSE is absent; 444 tracked release inputs and zero untracked inputs hash to 2934ce519f7b940ac5283c7a2a544fd5e3359e06c6388fde91f1b763c4b01e42`
+- `pnpm verify`: `PASS at 2026-07-20 10:58 +09:00; all 16 ordered steps pass, including 445 unit, 82 integration, 22 eval, 3 browser, 471-file clean-copy, 471-file/438-text-file security/history, MIT licensing, static container, demo, and production build; 468 tracked release inputs and zero untracked inputs hash to ee4ee220046c81c0c1c1061991c0add5059d8e0d89a29a0294b62ea3934a7867`
 - `pnpm verify:live`: `FAIL_CLOSED_BEFORE_DYNAMIC_GATES_OR_NETWORK; OPENAI_API_KEY and CODEX_MODEL are absent, while helper/role images, an eligible cgroup-v2 supervisor, real-Docker/cumulative-CPU/outbound observations, finalized evidence, fresh GPT/Codex evidence, and signer/live admission do not exist`
 - Production deployment: `NOT_VERIFIED`
 - Public repository: `NOT_VERIFIED`
-- Demo video: `NOT_VERIFIED`
+- Demo video: `LOCAL_UPLOAD_CANDIDATE_VERIFIED; public YouTube URL and signed-out playback remain NOT_VERIFIED`
 - Challenge submission: `NOT_VERIFIED`
-- Final evidence hash: `84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291` (`PARTIAL_OFFLINE/FAIL`, not final live proof)
+- Final evidence hash: `84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291` (`PARTIAL_OFFLINE/FAIL`, structurally consistent offline package, not final live proof)
 - Final commit/tag: `UNSET`
 - Final truthful state: `IN_PROGRESS`

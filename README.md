@@ -8,6 +8,28 @@ PolicyTwin is an evidence-first policy engineering product for OpenAI Build Week
 
 ![PolicyTwin Policy Studio](artifacts/screenshots/01-policy-studio.png)
 
+## Build Week judge path
+
+The judge-ready path is a working local developer-tool demo on Windows/PowerShell:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm opa:install
+pnpm demo:run
+pnpm dev
+```
+
+Open `http://localhost:3000` and review Policy Studio, Decision Queue, Case Lab, Integration / Drift, Proof, and Change Impact. The deterministic command must expose exactly three seeded TypeScript defects; the UI presents the corresponding 16 drift witnesses and the checksum-pinned OPA result for all 41 accepted cases.
+
+- Devpost-ready copy and owner handoff: [`artifacts/challenge-submission/`](artifacts/challenge-submission/)
+- Local public-upload video candidate: [`artifacts/demo/policytwin-demo.mp4`](artifacts/demo/policytwin-demo.mp4) — 2:48, 1920×1080, H.264/AAC, SHA-256 `9d7281258d376cf2e6f7963e6a458ccb396cb0e6c0481fdece84db751186db7b`
+- Primary Codex `/feedback` session ID: `019f5dcf-0233-7a80-9147-af10c7bbfb28`
+- Local handoff check: `pnpm challenge:submission:check`
+
+Codex was the primary Build Week engineering environment for repository mapping, implementation, adversarial testing, independent review, and verified fixes. GPT-5.6 was used for an independent challenge-release review, and the owner has approved the separate bounded local challenge capture. The opt-in `pnpm challenge:run` profile is pinned to `gpt-5.6` and may repair only a disposable copy of the seeded fixture. The capture is explicitly `NOT_RUN` at this checkpoint. It is not the production `verify:live` gate and cannot claim direct Responses API evidence, cgroup-v2 isolation, deployment security, trusted production attestation, or independently signed execution proof.
+
+The MIT project license is present with `Copyright (c) 2026 CHAN`. Before the owner-controlled external actions, the already approved bounded GPT-5.6 challenge capture must still run and validate. The remaining external actions are repository publication and public YouTube upload; public URLs are intentionally not invented in the repository.
+
 ## One-command seeded demo
 
 After the dependencies in [Local setup](#local-setup) are installed, reproduce the three deliberate refund defects with one deterministic command:
@@ -34,9 +56,9 @@ The repository now includes:
 - static supervisor-owned worker/verifier/egress plans, a shell-free ID-owned Docker driver verified against a stateful fake daemon, and an OpenAI Responses-only reverse broker that gives the worker only a short-lived capability, keeps the provider credential in an external proxy mount, and remains explicitly non-live until the real Docker and SDK paths run;
 - Policy Studio, an anonymous-session-isolated SQLite Decision Queue, Case Lab, Integration/Drift, Proof, and blocked Change Impact views in Next.js;
 - Chrome E2E coverage for all six views, browser-session isolation, versioned decision/source writes, CSRF rejection, golden-conflict blocking, complete evidence downloads, keyboard navigation, and a 390px mobile layout;
-- a complete, hash-covered `PARTIAL_OFFLINE` evidence package, adversarial semantic validation, a byte-deterministic 38-file USTAR download, and fail-closed submission drafts.
+- a structurally consistent, hash-covered `PARTIAL_OFFLINE` product evidence package, adversarial semantic validation, a byte-deterministic 38-file USTAR download, and fail-closed submission drafts; this is not GPT/Codex execution proof or production evidence.
 
-The repository is **not submission-ready**. Fresh GPT-5.6 and Codex runs, actual Codex repair evidence, dynamic container/egress proof, deployment, video, repository/submission URLs, an owner-selected project license, and confirmation are still missing. The evidence package therefore remains `FAIL / PARTIAL_OFFLINE` by design.
+The local Build Week package and 2:48 video are rendered and checked, and the MIT license is present. It is **not yet ready for the owner-only Devpost action** because the approved bounded GPT-5.6 challenge capture has not run or been validated and the repository and public YouTube URLs are still missing. The stricter production evidence package independently remains `FAIL / PARTIAL_OFFLINE`; dynamic container/egress proof, deployment, and trusted live attestation have not run and are not official challenge claims.
 
 ## Architecture
 
@@ -84,6 +106,7 @@ Copy `.env.example` to a local ignored environment file when exercising live int
 | `OPENAI_API_KEY` | Server-side Responses API access; a future live supervisor must mount the provider credential only into the egress broker, never the browser or worker |
 | `OPENAI_MODEL` | Configurable model, default `gpt-5.6` |
 | `CODEX_MODEL` | Required explicit model for live repair; no personal Codex default is inherited |
+| `POLICYTWIN_LOCAL_CHALLENGE_APPROVED` | Explicit opt-in for the bounded disposable-fixture challenge run through the existing Codex login; never enables `verify:live` |
 | `POLICYTWIN_RUN_TOKEN` | High-entropy token required by `POST /api/interpret` |
 | `POLICYTWIN_ATTESTATION_PUBLIC_KEYS_JSON` | Ed25519 public-key map used to verify live evidence; every key ID/SPKI hash must also be pinned in `config/attestation-trust.v1.json`; never a private key |
 | `NEXT_PUBLIC_SITE_URL` | Absolute site URL used for metadata |
@@ -91,11 +114,12 @@ Copy `.env.example` to a local ignored environment file when exercising live int
 | `OPA_PATH` | Optional verified OPA executable override |
 | `OPENSSL_PATH` | Optional OpenSSL executable override used only to generate temporary mTLS test certificates |
 | `POLICYTWIN_DOCKER_CLI` | Canonical absolute Docker CLI path required by every dynamic container gate; its binary SHA-256 must match the separately reviewed value in `container-contract.json`, and the gates force the platform-local daemon without searching `PATH` |
+| `POLICYTWIN_FFMPEG_PATH` / `POLICYTWIN_FFPROBE_PATH` | Optional absolute local media-tool overrides used only for challenge-video rendering and probing |
 | `POLICYTWIN_DATABASE_PATH` | Optional absolute SQLite file path; defaults to ignored `.data/policytwin.sqlite` |
 | `POLICYTWIN_REPAIR_RUN_DATABASE_PATH` | Optional distinct absolute SQLite file for repair runs/events; defaults beside `POLICYTWIN_DATABASE_PATH` and is reset with the local demo |
 | `POLICYTWIN_CODEX_*_TIMEOUT_MS` | Reserved values for the future external worker; the current host does not consume them |
 
-Without `POLICYTWIN_RUN_TOKEN`, the live interpretation route returns `LIVE_RUN_DISABLED`. The Integration action may create a durable blocked audit record, but its execution port remains unavailable. A run can become successful only from a fresh, one-use object issued by the authenticated Worker RPC v2 client after signature, request/input, CPU, teardown, exact two-file, two-command, complete-corpus, and review checks. Raw objects, unsigned candidates, JSON copies, and test-double summaries fail. The host process still cannot construct a live Codex backend, and no live model or Codex claim is made from recorded fixtures or fake-SDK tests.
+Without `POLICYTWIN_RUN_TOKEN`, the live interpretation route returns `LIVE_RUN_DISABLED`. The Integration action may create a durable blocked audit record, but its execution port remains unavailable. A run can become successful only from a fresh, one-use object issued by the authenticated Worker RPC v2 client after signature, request/input, CPU, teardown, exact two-file, two-command, complete-corpus, and review checks. Raw objects, unsigned candidates, JSON copies, and test-double summaries fail. The host still cannot construct the production-isolated Codex backend. The only host SDK exception is the explicit, non-root-exported `LOCAL_CHALLENGE` profile against a disposable fixture; it is not reachable from the product route and cannot issue production success, signing, settlement, or attestation claims.
 
 ## Verification
 
@@ -111,6 +135,8 @@ pnpm build
 pnpm schema:check
 pnpm demo:reset
 pnpm demo:run
+pnpm challenge:submission:check
+pnpm challenge:check
 pnpm evidence:offline
 pnpm security:check
 pnpm clean:check

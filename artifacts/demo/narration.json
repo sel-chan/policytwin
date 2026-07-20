@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1",
+  "voice": "Microsoft Zira Desktop",
+  "rate": -1,
+  "totalDurationMilliseconds": 168000,
+  "segments": [
+    {
+      "id": 1,
+      "startMilliseconds": 0,
+      "endMilliseconds": 17000,
+      "text": "Business policies live in prose, but customer decisions live in code. One strict inequality or misplaced exception can quietly produce the wrong refund. PolicyTwin makes those gaps visible, testable, and reviewable."
+    },
+    {
+      "id": 2,
+      "startMilliseconds": 17000,
+      "endMilliseconds": 36000,
+      "text": "During Build Week, Codex with GPT-5.6 helped us map the repository, design strict PolicyIR, build this workspace, generate adversarial tests, and turn independent review findings into verified implementation fixes."
+    },
+    {
+      "id": 3,
+      "startMilliseconds": 36000,
+      "endMilliseconds": 60000,
+      "text": "Decision Queue makes material uncertainty explicit instead of hiding it in a prompt. It records purchase-day counting, the usage measurement point, and the default outcome as versioned choices, while a contradictory authoritative example is rejected."
+    },
+    {
+      "id": 4,
+      "startMilliseconds": 60000,
+      "endMilliseconds": 83000,
+      "text": "Deterministic code compiles the accepted model to Rego, and checksum-pinned OPA 1.18.2 passes all 41 accepted cases. Golden, boundary, conflict, and contrast cases cover every rule. A separate reference mutation run kills 44 of 47 plausible defects."
+    },
+    {
+      "id": 5,
+      "startMilliseconds": 83000,
+      "endMilliseconds": 109000,
+      "text": "The same accepted cases are compared with the bundled TypeScript application. Sixteen counterexamples expose three seeded bugs: day 14 is excluded, exactly 20 percent usage is excluded, and approved promotions bypass final-sale precedence. The guarded production repair stays visibly blocked when isolation is unavailable."
+    },
+    {
+      "id": 6,
+      "startMilliseconds": 109000,
+      "endMilliseconds": 136000,
+      "text": "Proof keeps every claim attached to machine-readable evidence: PolicyIR, Rego, OPA results, drift witnesses, mutation results, traceability, and security reports. The archive is deterministic and hash-covered, while unavailable production claims remain explicitly marked as not run."
+    },
+    {
+      "id": 7,
+      "startMilliseconds": 136000,
+      "endMilliseconds": 158000,
+      "text": "A proposed change from 14 to 30 days reveals three affected rules, eight changed cases, one golden conflict, and five code locations before any new repair. The accepted version and its proof remain unchanged."
+    },
+    {
+      "id": 8,
+      "startMilliseconds": 158000,
+      "endMilliseconds": 168000,
+      "text": "Judges can reproduce three seeded drifts with one command. PolicyTwin makes policy-to-code gaps visible and reviewable."
+    }
+  ]
+}

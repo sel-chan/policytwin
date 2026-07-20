@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1",
-  "status": "FAIL",
-  "completedAt": "2026-07-19T23:39:02.107Z",
+  "status": "PASS",
+  "completedAt": "2026-07-20T01:58:12.307Z",
   "steps": [
     {
       "step": "lint",
@@ -25,7 +25,7 @@
     },
     {
       "step": "license:check",
-      "status": 1
+      "status": 0
     },
     {
       "step": "container:check",
@@ -69,8 +69,8 @@
     }
   ],
   "evidenceHash": "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291",
-  "cleanReportSha256": "2ae6ec007c6d0f3ad6ca1bfbc2d0bb2522ddaa12d16d72788e68bbd1dc3527d9",
-  "securityReportSha256": "c32ac841a1f00e94ea45f6f64d608bc3e478e4ec2c7f818dd40ca5297ab11935",
+  "cleanReportSha256": "998f25af4c26bf60a28869b1e4bc2adbe5bed5c9271b86737a7440b561f5740d",
+  "securityReportSha256": "a036e20fd72e463029b33ead792a519e55871e3a0093f96382a6595d9ee3a5c9",
   "releaseTree": {
     "scope": "GIT_MANAGED_RELEASE_INPUTS_EXCLUDING_MUTABLE_LEDGER_AND_SELF_REPORTS",
     "excludedPaths": [
@@ -79,10 +79,10 @@
       "artifacts/submission/submission-check-report.json"
     ],
     "algorithm": "SHA-256",
-    "fileCount": 444,
-    "trackedFileCount": 444,
+    "fileCount": 468,
+    "trackedFileCount": 468,
     "untrackedFileCount": 0,
-    "totalBytes": 6896452,
-    "sha256": "2934ce519f7b940ac5283c7a2a544fd5e3359e06c6388fde91f1b763c4b01e42"
+    "totalBytes": 18697589,
+    "sha256": "ee4ee220046c81c0c1c1061991c0add5059d8e0d89a29a0294b62ea3934a7867"
   }
 }

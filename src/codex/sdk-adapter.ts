@@ -121,6 +121,11 @@ export interface IsolatedWorkerCodexSdkBackendOptions extends CommonBackendOptio
   sourceEnvironment?: NodeJS.ProcessEnv;
 }
 
+export interface LocalChallengeCodexSdkBackendOptions extends CommonBackendOptions {
+  client: CodexSdkClientLike;
+  acknowledgedNonProduction: true;
+}
+
 interface FixtureSnapshot {
   root: FixtureEntryMetadata;
   files: ReadonlyMap<string, FixtureFileSnapshot>;
@@ -975,6 +980,25 @@ export function createOfflineCodexSdkBackend(
     ...options,
     executionMode: "OFFLINE_TEST_DOUBLE",
     backendId: options.backendId ?? "offline-codex-sdk-double",
+  });
+}
+
+/**
+ * Runs the reviewed SDK phase adapter against a disposable local fixture for
+ * challenge capture only. This capability is intentionally not exported from
+ * the package root and does not satisfy the external-worker or verify:live
+ * boundary.
+ */
+export function createLocalChallengeCodexSdkBackend(
+  options: LocalChallengeCodexSdkBackendOptions,
+): CodexWorkerBackend {
+  if (options.acknowledgedNonProduction !== true) {
+    throw new Error("LOCAL_CHALLENGE requires explicit non-production acknowledgement.");
+  }
+  return createBackend({
+    ...options,
+    executionMode: "LIVE_CODEX_SDK",
+    backendId: "local-challenge-host-sdk",
   });
 }
 
