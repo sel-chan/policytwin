@@ -46,7 +46,7 @@ export function WorkspaceShell({
         </nav>
         <div className="sidebar-foot">
           <span className="pulse" aria-hidden="true" />
-          <div><strong>Build Week capture verified</strong><small>Production live path remains gated</small></div>
+          <div><strong>Build Week result verified</strong><small>41/41 cases · zero drift · APPROVE</small></div>
         </div>
       </aside>
       <main>

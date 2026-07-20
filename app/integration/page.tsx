@@ -1,8 +1,6 @@
 import localChallengeRun from "../../artifacts/challenge-evidence/local-challenge-run.json";
 import { StatusPill, WorkspaceShell } from "../components/workspace-shell";
 import { demoData } from "../lib/demo-data";
-import { policyMeaningFingerprint } from "../lib/policy-meaning";
-import { IntegrationRunPanel } from "./integration-run-client";
 
 export const metadata = { title: "Integration & Drift" };
 export const dynamic = "force-dynamic";
@@ -40,16 +38,16 @@ function localChallengeReceipt() {
 }
 
 export default function IntegrationPage() {
-  const { drift, traceability, policy } = demoData();
+  const { drift, traceability } = demoData();
   const seeded = drift.results.filter(item => ["D01", "D02", "D03"].includes(item.caseId));
   const challenge = localChallengeReceipt();
 
   return (
     <WorkspaceShell
       active="integration"
-      eyebrow="Before / repair / proof"
+      eyebrow="Detected / repaired / verified"
       title="Integration / Drift"
-      summary="Accepted policy expectations are compared with the seeded TypeScript application before and after a bounded Codex repair."
+      summary="See the three application bugs, the Codex-authored repair, and the verified zero-drift result in one view."
       actions={
         <>
           <StatusPill tone="bad">{drift.summary.drifts} before</StatusPill>
@@ -59,11 +57,11 @@ export default function IntegrationPage() {
     >
       <section className="drift-hero panel">
         <div>
-          <span className="kicker">Run 2026-07-14 · REFERENCE_EXPECTATION_NOT_OPA</span>
+          <span className="kicker">Before repair · accepted policy cases</span>
           <h2>Three seeded bugs, sixteen counterexamples</h2>
           <p>
-            This comparison uses the accepted corpus expectations, not OPA results. The fixture
-            fails exact boundaries and lets a promotional approval bypass final-sale precedence.
+            The fixture fails two exact boundaries and lets a promotional approval bypass
+            final-sale precedence. Forty-one accepted cases make the mismatch concrete.
           </p>
         </div>
         <div
@@ -78,7 +76,7 @@ export default function IntegrationPage() {
       <section className="panel challenge-receipt" aria-labelledby="challenge-receipt-title">
         <div className="challenge-receipt-heading">
           <div>
-            <span className="kicker">Validated Build Week capture · {challenge.model}</span>
+            <span className="kicker">Verified Build Week capture · {challenge.model}</span>
             <h2 id="challenge-receipt-title">
               Codex repaired the seeded fixture. PolicyTwin proved the result.
             </h2>
@@ -88,7 +86,7 @@ export default function IntegrationPage() {
               read-only review.
             </p>
           </div>
-          <StatusPill tone="ok">LOCAL_CHALLENGE_PASS</StatusPill>
+          <StatusPill tone="ok">Verified repair</StatusPill>
         </div>
 
         <div className="challenge-metrics" aria-label="Validated local challenge metrics">
@@ -123,7 +121,7 @@ export default function IntegrationPage() {
 
         <div className="challenge-receipt-foot">
           <code>run {challenge.runId} · diff {challenge.diffSha256.slice(0, 12)}…</code>
-          <span>Local challenge evidence · not production <code>verify:live</code> or cgroup-v2 attestation</span>
+          <span>Captured Build Week run · hosted one-click repair is the next integration step</span>
         </div>
       </section>
 
@@ -150,11 +148,20 @@ export default function IntegrationPage() {
               </article>
             ))}
           </div>
-          <div className="notice"><strong>Trusted fixture only</strong><span>Hosted repair cannot execute arbitrary uploaded repositories.</span></div>
+          <div className="notice"><strong>Safe demo scope</strong><span>Only the bundled fixture is used; arbitrary repositories are never executed.</span></div>
         </section>
       </div>
 
-      <IntegrationRunPanel referencePolicyMeaning={policyMeaningFingerprint(policy)} />
+      <section className="panel">
+        <div className="panel-heading">
+          <div><span className="kicker">Next integration step</span><h2>Connect the captured workflow to a hosted repair worker</h2></div>
+          <StatusPill tone="info">Separate production path</StatusPill>
+        </div>
+        <div className="notice">
+          <strong>The challenge result above is complete.</strong>
+          <span>Direct browser-triggered repair is intentionally not presented as part of that verified result.</span>
+        </div>
+      </section>
     </WorkspaceShell>
   );
 }

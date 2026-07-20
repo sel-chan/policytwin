@@ -141,7 +141,7 @@ export function ChangeImpactClient({
       eyebrow={`Policy change / v${impact.fromVersion} → v${impact.toVersion}`}
       title="Change Impact"
       summary="Preview how one policy sentence changes rules, cases, and potential code locations before any repair begins."
-      actions={<StatusPill tone="bad">Verification blocked</StatusPill>}
+      actions={<StatusPill tone="warn">Needs review</StatusPill>}
     >
       <section className="impact-hero panel">
         <div>
@@ -201,7 +201,7 @@ export function ChangeImpactClient({
           </button>
         </section>
         <section className="panel golden-block">
-          <div className="panel-heading"><div><span className="kicker">Authoritative evidence</span><h2>G02 blocks verification</h2></div><StatusPill tone="bad">DENY → ALLOW</StatusPill></div>
+          <div className="panel-heading"><div><span className="kicker">Authoritative evidence</span><h2>G02 requires a decision</h2></div><StatusPill tone="warn">DENY → ALLOW</StatusPill></div>
           <div className="golden-explanation">
             <p>Golden case G02 says a day-20 request must be denied. The 30-day candidate would allow it under <code>refund-eligible</code>.</p>
             <ul>

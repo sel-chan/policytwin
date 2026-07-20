@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7/M8/M10 — post-submission quality pass`
+- Current milestone: `M8/M10 — judge clarity pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-21 08:26 +09:00`
-- Latest checkpoint commit: `60b66ae`
+- Last updated: `2026-07-21 08:56 +09:00`
+- Latest checkpoint commit: `5d7cdd0`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -101,6 +101,16 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M10 Submission package | IN_PROGRESS | final English copy, testing path, `/feedback` ID, MIT license, validated local challenge evidence, public GitHub/YouTube, and the canonical Devpost entry submitted to OpenAI Build Week are verified anonymously | pending | the strict production-ledger confirmation screenshot/object remains |
 
 ## Current checkpoint
+
+### Judge clarity pass (`2026-07-21 08:51 +09:00`)
+
+- The owner explicitly stopped further verification commands and requested a simpler first-review experience.
+- [x] Rewrite the README from 197 to 141 lines around the product problem, six-step flow, measured result, two honest limitations, and a short judge path; link deep security material instead of front-loading it.
+- [x] Lead the shared sidebar and Proof view with the validated Build Week outcome (`41/41`, zero drift, independent `APPROVE`) rather than production-gate terminology.
+- [x] Replace `Partial offline / FAIL`, `Verification blocked`, `Draft blocked`, and raw `LOCAL_CHALLENGE_PASS` presentation with clear reviewer language while preserving the underlying machine-readable statuses.
+- [x] Remove the unavailable browser-triggered repair panel from the Integration judge path and present it as a separate next integration step below the successful captured repair.
+- [x] Keep the two limitations explicit: the judge flow uses recorded schema-validated PolicyIR, and a fresh hosted repair worker is not connected to the browser.
+- [ ] Commit and push `README.md`, `app/components/workspace-shell.tsx`, `app/policy-studio-client.tsx`, `app/proof/page.tsx`, `app/integration/page.tsx`, `app/impact/change-impact-client.tsx`, and this ledger without running lint, tests, build, or verification, per the owner's explicit instruction.
 
 ### Public replacement upload and Devpost refresh (`2026-07-21 07:13 +09:00`)
 
