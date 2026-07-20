@@ -46,7 +46,7 @@ export function WorkspaceShell({
         </nav>
         <div className="sidebar-foot">
           <span className="pulse" aria-hidden="true" />
-          <div><strong>Offline evidence active</strong><small>Live GPT + Codex pending</small></div>
+          <div><strong>Build Week capture verified</strong><small>Production live path remains gated</small></div>
         </div>
       </aside>
       <main>

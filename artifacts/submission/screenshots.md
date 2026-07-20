@@ -13,4 +13,8 @@ Local captures completed:
 - `07-mobile-or-responsive.png`
 - `08-architecture.png` (repository-native architecture snapshot; live paths are explicitly not run)
 
-Submission-required capture still missing: `04-codex-repair.png`.
+Additional validated local-challenge capture completed:
+
+- `04-codex-repair.png` — evidence-bound two-file repair with 7/7 regressions, 41/41 accepted cases, zero drift, and independent `APPROVE`; explicitly labeled as local challenge evidence rather than production `verify:live` proof.
+
+All required screenshot names are now present and visually reviewed. The separate production package remains fail-closed on live attestation, deployment, and confirmation evidence.

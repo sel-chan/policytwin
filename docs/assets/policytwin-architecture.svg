@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title description">
   <title id="title">PolicyTwin architecture and current verification boundary</title>
-  <desc id="description">A three-layer architecture diagram separating the deterministic offline path from prepared but unexecuted GPT-5.6, Codex, Docker, OpenAI upstream, attestation, and deployment paths.</desc>
+  <desc id="description">A three-layer architecture diagram separating deterministic evidence and a validated local GPT-5.6 Codex repair capture from the prepared but unexecuted production Responses, Docker, attestation, and deployment paths.</desc>
   <defs>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
       <feDropShadow dx="0" dy="7" stdDeviation="12" flood-color="#173128" flood-opacity="0.09"/>
@@ -52,14 +52,14 @@
 
   <rect class="bg" width="1800" height="1200"/>
 
-  <text class="eyebrow" x="58" y="45">ARCHITECTURE SNAPSHOT · JULY 15, 2026</text>
+  <text class="eyebrow" x="58" y="45">ARCHITECTURE SNAPSHOT · JULY 20, 2026</text>
   <text class="heading" x="58" y="92">PolicyTwin</text>
   <text class="subheading" x="58" y="124">From policy text to executable rules, application drift, and reviewable proof.</text>
 
   <g transform="translate(1370 37)">
     <rect width="370" height="70" rx="18" fill="#102d24"/>
-    <text x="24" y="28" font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.4" fill="#a8d8c6">CURRENT EVIDENCE</text>
-    <text x="24" y="53" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#ffffff">PARTIAL_OFFLINE · FAIL</text>
+    <text x="24" y="28" font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1.4" fill="#a8d8c6">BUILD WEEK CAPTURE</text>
+    <text x="24" y="53" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#ffffff">LOCAL_CHALLENGE · PASS</text>
   </g>
 
   <g transform="translate(850 116)">
@@ -137,11 +137,11 @@
   <g id="node-drift" transform="translate(940 470)">
     <rect class="card" width="380" height="190" rx="18"/>
     <rect class="badge-red" x="22" y="20" width="198" height="24" rx="12"/>
-    <text class="badge-text badge-red-text" x="36" y="36">16 PRE-REPAIR DRIFTS</text>
+    <text class="badge-text badge-red-text" x="36" y="36">16 BEFORE · 0 AFTER*</text>
     <text class="card-title" x="22" y="78">Integration / Drift</text>
     <text class="metric" x="22" y="111">Reference-expectation differential</text>
-    <text class="body-small" x="22" y="143">16 drifts; not OPA-backed.</text>
-    <text class="body-small" x="22" y="165">D01–D03 included; no post-repair result.</text>
+    <text class="body-small" x="22" y="143">16 before; zero after local repair.*</text>
+    <text class="body-small" x="22" y="165">* 41/41 bounded local challenge capture.</text>
   </g>
 
   <g id="node-proof" transform="translate(1380 470)">
@@ -214,16 +214,16 @@
     <text class="footer-title" x="28" y="34">EVIDENCE SNAPSHOT · PARTIAL_OFFLINE / FAIL</text>
     <text class="footer-body" x="28" y="67">OPA evaluated 41/41 accepted cases. The seeded application produced 16 pre-repair</text>
     <text class="footer-body" x="28" y="91">drift records, including D01–D03. Mutation testing killed 44/47 mutants with the</text>
-    <text class="footer-body" x="28" y="115">reference evaluator. All 4 clauses and 4 rules are traceable.</text>
+    <text class="footer-body" x="28" y="115">Local challenge: 2 files, 7/7 tests, 41/41 cases, zero drift, APPROVE.</text>
     <text class="footer-note" x="28" y="145">Local Chrome: 3/3 E2E · Proof archive: 38 deterministic USTAR files</text>
   </g>
 
   <g transform="translate(922 990)">
     <rect class="footer-boundary" width="836" height="170" rx="22"/>
     <text class="footer-title" x="28" y="34">CURRENT BOUNDARY</text>
-    <text class="footer-body" x="28" y="67">GPT-5.6 and live Codex were not run. No Codex repair, post-repair drift, live</text>
-    <text class="footer-body" x="28" y="91">attestation, immutable image build, real-Docker isolation, OpenAI upstream traffic,</text>
-    <text class="footer-body" x="28" y="115">deployment, or submission is claimed.</text>
-    <text class="footer-note" x="28" y="145">Images are unset; worker/egress also require an eligible Linux cgroup-v2 host.</text>
+    <text class="footer-body" x="28" y="67">Local GPT-5.6/Codex capture is validated. Production cgroup-v2 isolation, live</text>
+    <text class="footer-body" x="28" y="91">attestation, direct Responses API provenance, real-Docker execution, upstream traffic,</text>
+    <text class="footer-body" x="28" y="115">and deployment remain unverified and are not claimed.</text>
+    <text class="footer-note" x="28" y="145">Challenge evidence is local; production verify:live remains gated.</text>
   </g>
 </svg>

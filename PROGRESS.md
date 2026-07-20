@@ -8,7 +8,7 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-20 20:17 +09:00`
+- Last updated: `2026-07-20 22:21 +09:00`
 - Latest checkpoint commit: `5cd1dbc`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -101,6 +101,18 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M10 Submission package | IN_PROGRESS | final English copy, testing path, `/feedback` ID, MIT license, validated local challenge evidence, public GitHub/YouTube, and the canonical Devpost entry submitted to OpenAI Build Week are verified anonymously | pending | the strict production-ledger confirmation screenshot/object remains |
 
 ## Current checkpoint
+
+### Media refresh after validated local challenge (`2026-07-20 21:46 +09:00`)
+
+- The owner approved remaking the judge-facing video and screenshots after the successful bounded GPT-5.6/Codex capture. The existing public 2:48 video predates that success and therefore does not show the filesystem-derived two-file repair, 7/7 regression result, 41/41 accepted corpus, zero drift, or independent `APPROVE` review.
+- [x] Re-read the required control documents, confirm a clean `main`, and inspect the existing capture/render pipeline plus validated challenge evidence.
+- [x] Add an evidence-bound, explicitly `LOCAL_CHALLENGE` repair receipt to the Integration presentation without promoting production `verify:live` claims.
+- [x] Refresh all tracked product screenshots and directly review the desktop, mobile, architecture, and successful-repair views.
+- [x] Recut the public demo below three minutes with synchronized narration and captions that show the successful repair and its exact proof.
+- [ ] Run focused media checks, lint, typecheck, tests, build, `pnpm challenge:submission:check`, and the authoritative clean-tree gate.
+- [ ] Commit and push the reviewed media checkpoint on current `main`.
+- [ ] Upload the new public YouTube video, verify signed-out playback/audio, update the Devpost video and screenshots, and refresh URL-bound publication receipts without changing owner-only declarations.
+- Verification so far: media capture 1/1, tracked browser capture 3/3, direct MP4 decode and nine-frame review, 2:48 H.264/AAC stream probe, synchronized eight-cue captions, local challenge evidence check, local challenge submission check, lint, strict typecheck, production build, and 452/452 unit tests pass. The full clean-tree `pnpm verify` remains after the checkpoint commit.
 
 ### Continuation — post-submission quality pass (`2026-07-20 16:42 +09:00`)
 

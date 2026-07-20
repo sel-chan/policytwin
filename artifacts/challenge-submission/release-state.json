@@ -1,17 +1,21 @@
 {
   "schemaVersion": "1",
-  "status": "PUBLIC_ENTRY_VERIFIED",
+  "status": "LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS",
   "officialRulesCheckedAt": "2026-07-20T09:30:00+09:00",
   "deadline": "2026-07-22T09:00:00+09:00",
   "localVideo": {
     "path": "artifacts/demo/policytwin-demo.mp4",
-    "sha256": "9d7281258d376cf2e6f7963e6a458ccb396cb0e6c0481fdece84db751186db7b",
+    "sha256": "190f585b6cb6023ada28b13c46a6d3dccff082acbe024bbaaf7b29d49042786e",
     "durationMilliseconds": 168000,
     "audio": true,
     "width": 1920,
     "height": 1080
   },
-  "requiredOwnerActions": ["CAPTURE_DEVPOST_CONFIRMATION"],
+  "requiredOwnerActions": [
+    "UPLOAD_REPLACEMENT_YOUTUBE_VIDEO",
+    "UPDATE_DEVPOST_VIDEO_AND_SCREENSHOTS",
+    "REVIEW_PUBLIC_AUDIO_AND_PLAYBACK"
+  ],
   "claims": {
     "productionVerifyLive": false,
     "productionIsolation": false,

@@ -2,15 +2,15 @@
 
 - [x] Project title, tagline, descriptions, build narrative, OpenAI/Codex usage, and testing instructions are prepared.
 - [x] Primary Codex `/feedback` session ID is recorded.
-- [x] Local 2:48 public-upload candidate is 1920×1080 with an AAC audio track and synchronized captions.
+- [x] Replacement 2:48 video is 1920×1080 H.264/AAC with synchronized captions and exact hash binding.
+- [x] The replacement video visibly shows the validated two-file repair, 7/7 regressions, 41/41 accepted cases, zero drift, and independent `APPROVE` review.
+- [x] Eight refreshed judge-facing screenshots plus the separate successful Codex repair receipt are captured and visually reviewed.
 - [x] Deterministic judge path is `pnpm demo:run`; full offline gate is `pnpm verify`.
-- [x] Owner authorizes the bounded logged-in Codex GPT-5.6 challenge run.
 - [x] MIT project license is present with `Copyright (c) 2026 CHAN`.
-- [x] Run and validate the approved bounded GPT-5.6 local challenge capture; treat outputs only as a structurally consistent non-production capture.
-- [x] Repository is public and anonymously readable, and `links.json` is updated.
-- [x] The exact reviewed MP4 is public on YouTube, and `links.json` is updated.
-- [x] Anonymous repository and YouTube oEmbed checks, browser audio/video decoding, and the public Devpost entry check pass.
-- [x] The public Devpost page shows PolicyTwin submitted to OpenAI Build Week.
+- [x] Repository is public and anonymously readable.
+- [ ] Upload the exact replacement MP4 to public YouTube and review public playback/audio.
+- [ ] Replace the Devpost video link and upload the refreshed screenshots without changing owner-only declarations.
+- [ ] Refresh anonymous repository, YouTube, and Devpost probes and bind the new public URL to this exact video hash.
 - [ ] Capture the strict Devpost confirmation screenshot/object required by the separate production submission ledger.
 
 The production `verify:live` gate is a separate, stricter security target and is not represented as completed by this challenge handoff.

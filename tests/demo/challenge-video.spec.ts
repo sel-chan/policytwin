@@ -10,6 +10,7 @@ async function showCallout(
   input: { title: string; lines: string[]; fullScreen?: boolean },
 ) {
   await page.evaluate(({ title, lines, fullScreen }) => {
+    document.querySelector("[data-challenge-callout]")?.remove();
     const callout = document.createElement("section");
     callout.setAttribute("data-challenge-callout", "true");
     const heading = document.createElement("h2");
@@ -25,13 +26,13 @@ async function showCallout(
       position: "fixed",
       zIndex: "2147483647",
       color: "#f7f5ed",
-      background: fullScreen ? "rgba(10, 35, 26, 0.97)" : "rgba(16, 48, 37, 0.96)",
+      background: fullScreen ? "rgba(10, 35, 26, 0.98)" : "rgba(16, 48, 37, 0.96)",
       border: fullScreen ? "0" : "1px solid rgba(247, 245, 237, 0.3)",
       borderRadius: fullScreen ? "0" : "22px",
       boxShadow: "0 24px 70px rgba(0, 0, 0, 0.28)",
-      padding: fullScreen ? "120px" : "30px 36px",
+      padding: fullScreen ? "110px" : "30px 36px",
       inset: fullScreen ? "0" : "32px 32px auto auto",
-      width: fullScreen ? "auto" : "520px",
+      width: fullScreen ? "auto" : "540px",
       display: fullScreen ? "grid" : "block",
       placeContent: fullScreen ? "center" : "initial",
       textAlign: fullScreen ? "center" : "left",
@@ -39,13 +40,13 @@ async function showCallout(
     });
     Object.assign(heading.style, {
       margin: "0 0 18px",
-      fontSize: fullScreen ? "72px" : "36px",
+      fontSize: fullScreen ? "68px" : "36px",
       lineHeight: "1.05",
     });
     Object.assign(list.style, {
       display: "grid",
       gap: "10px",
-      fontSize: fullScreen ? "28px" : "22px",
+      fontSize: fullScreen ? "27px" : "21px",
       lineHeight: "1.35",
     });
     for (const item of list.children) {
@@ -55,7 +56,7 @@ async function showCallout(
   }, input);
 }
 
-test("record the truthful local challenge walkthrough", async ({ browser }) => {
+test("record the evidence-bound local challenge walkthrough", async ({ browser }) => {
   await mkdir(resolve(outputDirectory, "raw"), { recursive: true });
   await rm(sourceVideo, { force: true });
   const context = await browser.newContext({
@@ -75,62 +76,71 @@ test("record the truthful local challenge walkthrough", async ({ browser }) => {
       await page.waitForTimeout(Math.max(0, startedAt + milliseconds - Date.now()));
     };
 
-    await holdUntil(17_000);
+    await holdUntil(16_000);
 
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "Policy Studio" })).toBeVisible();
     await showCallout(page, {
       title: "Built with Codex + GPT-5.6",
       lines: [
-        "Repository mapping and strict PolicyIR",
-        "Implementation and adversarial tests",
-        "Independent review to verified fixes",
+        "Strict PolicyIR and deterministic Rego",
+        "Adversarial cases and independent reviews",
+        "Bounded repair on a disposable seeded fixture",
         "/feedback: 019f5dcf-0233-7a80-9147-af10c7bbfb28",
       ],
     });
-    await holdUntil(36_000);
+    await holdUntil(34_000);
 
     await page.goto("/decisions");
     await expect(page.getByText("0 / 3 resolved", { exact: true })).toBeVisible();
-    await page.waitForTimeout(2_000);
+    await page.waitForTimeout(1_500);
     await page.getByRole("button", { name: /Purchase day is day 0/u }).click();
-    await page.waitForTimeout(2_000);
+    await page.waitForTimeout(1_500);
     await page.getByRole("button", { name: /Measure at request time/u }).click();
-    await page.waitForTimeout(2_000);
+    await page.waitForTimeout(1_500);
     await page.getByRole("button", { name: /Deny by default/u }).click();
     await expect(page.getByText("3 / 3 resolved", { exact: true })).toBeVisible();
-    await holdUntil(60_000);
+    await holdUntil(56_000);
 
     await page.goto("/cases");
     await expect(page.getByText("OPA 41 / 41", { exact: true })).toBeVisible();
-    await holdUntil(83_000);
+    await holdUntil(78_000);
 
     await page.goto("/integration");
+    const challengeReceipt = page.locator(".challenge-receipt");
+    await expect(challengeReceipt.getByText("LOCAL_CHALLENGE_PASS", { exact: true })).toBeVisible();
+    await challengeReceipt.scrollIntoViewIfNeeded();
+    await holdUntil(97_000);
     const repairButton = page.getByRole("button", { name: "Start guarded Codex repair" });
     await repairButton.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(3_000);
+    await page.waitForTimeout(1_000);
     await repairButton.click();
     await expect(page.getByText("BLOCKED", { exact: true })).toBeVisible();
-    await holdUntil(109_000);
+    await holdUntil(110_000);
 
     await page.goto("/proof");
     await expect(page.getByRole("heading", { level: 1, name: "Proof" })).toBeVisible();
-    await holdUntil(119_000);
+    await holdUntil(120_000);
     await page.mouse.wheel(0, 650);
-    await holdUntil(136_000);
+    await holdUntil(132_000);
 
     await page.goto("/impact");
     await expect(page.getByText("G02 blocks verification", { exact: true })).toBeVisible();
-    await holdUntil(145_000);
+    await holdUntil(141_000);
     await page.getByRole("button", { name: "Create draft v5" }).click();
     await expect(page.getByRole("button", { name: "Draft v5 persisted" })).toBeDisabled();
-    await holdUntil(158_000);
+    await holdUntil(151_000);
 
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Policy Studio" })).toBeVisible();
+    await page.goto("/integration");
+    await expect(page.getByRole("heading", { level: 1, name: "Integration / Drift" })).toBeVisible();
     await showCallout(page, {
-      title: "PolicyTwin",
-      lines: ["pnpm demo:run", "Three seeded drifts • 41 accepted cases • reviewable evidence"],
+      title: "PolicyTwin · repair proven",
+      lines: [
+        "2 files changed · 7 / 7 regressions",
+        "41 / 41 accepted cases · zero drift",
+        "Independent review: APPROVE",
+        "github.com/sel-chan/policytwin",
+      ],
       fullScreen: true,
     });
     await holdUntil(168_000);

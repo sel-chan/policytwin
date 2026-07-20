@@ -160,6 +160,15 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   for (const caseId of ["D01", "D02", "D03"]) {
     await expect(page.getByText(caseId, { exact: true })).toBeVisible();
   }
+  const challengeReceipt = page.locator(".challenge-receipt");
+  await expect(challengeReceipt.getByText("LOCAL_CHALLENGE_PASS", { exact: true })).toBeVisible();
+  await expect(challengeReceipt.getByText("7 / 7", { exact: true })).toBeVisible();
+  await expect(challengeReceipt.getByText("41 / 41", { exact: true })).toBeVisible();
+  await expect(challengeReceipt.getByText("APPROVE", { exact: true })).toBeVisible();
+  await expect(challengeReceipt).toContainText("not production");
+  await challengeReceipt.screenshot({
+    path: resolve(screenshotDirectory, "04-codex-repair.png"),
+  });
   const untrustedRepair = await request.post(
     "/api/policies/policy-seeded-refund/versions/4/repair-runs",
     { data: { clientRequestId: "44444444-4444-4444-8444-444444444444" } },
@@ -305,7 +314,7 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   await page.getByRole("link", { name: /Proof/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Proof" })).toBeVisible();
   await expect(
-    page.getByText("Reference v4 OPA proof is preserved. Live repair still pending.", { exact: true }),
+    page.getByText("Reference v4 OPA proof is preserved. Production live repair remains gated.", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("This session matches recorded reference v4.", { exact: true }),
