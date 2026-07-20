@@ -6,7 +6,6 @@ const RELATIVE_PATH_SCHEMA = {
 
 const PATH_ARRAY_SCHEMA = {
   type: "array",
-  uniqueItems: true,
   items: RELATIVE_PATH_SCHEMA,
 } as const;
 
@@ -18,7 +17,6 @@ const STRING_ARRAY_SCHEMA = {
 const COMMAND_ARRAY_SCHEMA = {
   type: "array",
   minItems: 1,
-  uniqueItems: true,
   items: { enum: ["fixture-typecheck", "fixture-test"] },
 } as const;
 

@@ -385,6 +385,11 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
       assert.equal(call.prompt.includes("must-not-leak"), false);
       assert.equal(call.turnOptions.outputSchema.additionalProperties, false);
       assert.equal(call.turnOptions.outputSchema.required.includes("metadata"), false);
+      assert.equal(
+        JSON.stringify(call.turnOptions.outputSchema).includes('"uniqueItems"'),
+        false,
+        "Codex Structured Outputs must omit the provider-unsupported uniqueItems keyword",
+      );
     }
     assert.match(client.calls[2].prompt, /--- a\/src\/refund\.ts/u);
     assert.match(client.calls[2].prompt, /\+\+\+ b\/tests\/refund\.test\.mjs/u);

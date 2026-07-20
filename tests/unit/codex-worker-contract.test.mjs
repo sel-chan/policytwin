@@ -258,6 +258,15 @@ test("strict cartography contract rejects unknown fields, traversal, and fake li
     () => parseCartographyResult(cartography({ risks: ["OPENAI_API_KEY=must-not-pass"] })),
     /sensitive or personal-path content/u,
   );
+  assert.throws(
+    () =>
+      parseCartographyResult(
+        cartography({
+          relevantFiles: ["src/refund.ts", "src/refund.ts", "tests/refund.test.mjs"],
+        }),
+      ),
+    /must not contain duplicates/u,
+  );
 });
 
 test("repair input binds source, accepted PolicyIR, and complete drift witnesses", () => {

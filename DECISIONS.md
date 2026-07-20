@@ -1141,3 +1141,20 @@ Add new entries below this line with the template above.
 - Risks: The challenge profile is still a host-side developer capture, not an OS-isolated production worker. Static AST admission deliberately accepts only the tiny seeded pure-function surface and is not a general arbitrary-repository sandbox. The user's Codex authentication is reused but never copied into artifacts; actual model access remains unverified until the explicitly approved run. Publication, terms acceptance, and final submission remain owner-authorized actions.
 - Reversal or migration path: Remove the local profile after the event or retain it only as a non-production benchmark. A future production path must satisfy the existing external-worker, cgroup-v2, dynamic-container, egress, signing, settlement, and attestation gates; it must never promote `LOCAL_CHALLENGE` evidence into `LIVE_VERIFIED` evidence.
 - Related files/commits: `src/codex/sdk-adapter.ts`, `scripts/local-challenge.mjs`, `scripts/local-challenge-contract.mjs`, `schemas/local-challenge-run.v1.schema.json`, `scripts/challenge-submission-check.mjs`, `scripts/render-challenge-video.mjs`, `tests/demo/challenge-video.spec.ts`, `tests/unit/local-challenge-profile.test.mjs`, `artifacts/challenge-submission/`, `artifacts/demo/`, `README.md`, `SUBMISSION.md`, `PROGRESS.md`.
+
+### D-067 — Keep Codex output uniqueness in server admission rather than provider schema
+
+- Date: 2026-07-20
+- Status: `ACCEPTED`
+- Milestone: M7/M10
+- Context: The first post-quota-reset GPT-5.6 Sol challenge attempt reached the authenticated service but Codex rejected cartography with `400 invalid_json_schema` because `uniqueItems` is not accepted in the Structured Outputs subset. The same keyword appeared in path and command arrays for all three Codex phases.
+- Options considered:
+  1. replace strict Structured Outputs with unconstrained JSON;
+  2. remove duplicate enforcement entirely;
+  3. omit only the provider-unsupported `uniqueItems` annotations and retain the existing strict server-side duplicate rejection after structured output parsing.
+- Decision: Use option 3. The transmitted cartography, repair, and review schemas keep their closed objects, required fields, enums, path constraints, and array bounds but omit `uniqueItems`. `pathArray()` and `parseCommandIds()` remain authoritative for uniqueness, and focused tests require both the absence of `uniqueItems` from every transmitted Codex phase schema and rejection of duplicate cartography paths.
+- Evidence: authenticated GPT-5.6 Sol error `invalid_json_schema`; the official Structured Outputs guide's supported-subset requirement; `src/codex/sdk-output-schemas.ts`; `tests/unit/codex-sdk-adapter.test.mjs`; `tests/unit/codex-worker-contract.test.mjs`.
+- Consequences: Codex can admit the strict response schema without weakening PolicyTwin's application-side uniqueness invariant. Output-schema hashes intentionally change and remain captured per run.
+- Risks: Provider schema support can change, and another unsupported keyword may still be exposed only by a real request. Every such failure remains terminal and must be fixed narrowly with a failing regression before retry; server semantic validation must never be removed merely to satisfy provider schema admission.
+- Reversal or migration path: Reintroduce provider-level uniqueness only if the current Codex/Structured Outputs service documents and accepts it, while retaining server-side validation as defense in depth.
+- Related files/commits: `src/codex/sdk-output-schemas.ts`, `tests/unit/codex-sdk-adapter.test.mjs`, `tests/unit/codex-worker-contract.test.mjs`, `PROGRESS.md`.
