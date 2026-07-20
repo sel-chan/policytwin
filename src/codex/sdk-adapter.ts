@@ -934,6 +934,9 @@ function createBackend(options: InternalBackendOptions): CodexWorkerBackend {
             acceptedCases: context.input.acceptedCases,
             failingDriftWitnesses: context.input.failingDriftWitnesses,
             fixtureFiles: [...snapshot.files.keys()],
+            fixtureLineCounts: Object.fromEntries(
+              [...snapshot.files].map(([path, file]) => [path, file.content.split("\n").length]),
+            ),
             fixtureContents: Object.fromEntries(
               [...snapshot.files].map(([path, file]) => [path, file.content]),
             ),

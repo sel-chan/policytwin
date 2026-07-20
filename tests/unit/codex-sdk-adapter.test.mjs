@@ -421,6 +421,9 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
     assert.match(client.calls[3].prompt, /--- a\/src\/refund\.ts/u);
     assert.match(client.calls[3].prompt, /\+\+\+ b\/tests\/refund\.test\.mjs/u);
     assert.match(client.calls[3].prompt, /SERVER_OWNED_CORPUS/u);
+    assert.match(client.calls[0].prompt, /"fixtureLineCounts"/u);
+    assert.match(client.calls[0].prompt, /"tests\/refund\.test\.mjs": 55/u);
+    assert.match(client.calls[0].prompt, /lineEnd.*fixtureLineCounts/isu);
     assert.match(
       client.calls[1].prompt,
       /Use Codex file-edit operations to modify both required workspace files/u,

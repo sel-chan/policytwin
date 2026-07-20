@@ -1193,3 +1193,20 @@ Add new entries below this line with the template above.
 - Risks: The repair thread remains workspace-write for the reporting turn because the installed TypeScript SDK fixes sandbox options when the thread starts; the adapter therefore enforces report immutability with both event rejection and before/after snapshots. A stochastic edit can still be wrong and will then fail the existing AST, test, corpus, or review gates.
 - Reversal or migration path: If a future SDK supports a per-turn sandbox override in TypeScript, set the report turn to read-only while retaining the snapshot check. Do not collapse the turns again unless live evidence shows tool execution remains reliable under structured output.
 - Related files/commits: `prompts/repair.v1.md`, `prompts/repair-report.v1.md`, `src/codex/sdk-adapter.ts`, `scripts/local-challenge.mjs`, `tests/unit/codex-sdk-adapter.test.mjs`, `tests/unit/local-challenge-profile.test.mjs`, `tests/integration/repair-workspace.integration.test.mjs`, `README.md`, `PROGRESS.md`.
+
+### D-070 — Bind Codex cartography locations to server-computed file line counts
+
+- Date: 2026-07-20
+- Status: `ACCEPTED`
+- Milestone: M7/M10
+- Context: The first authenticated D-069 challenge attempt passed provider schema admission but returned a test-file cartography location ending at line 58 for a server-observed 55-line file. PolicyTwin correctly rejected the result before repair, but the prompt supplied only raw contents and did not expose the server's exact line-count convention.
+- Options considered:
+  1. clamp or silently rewrite the model's location to the last line;
+  2. weaken location validation or omit line ranges;
+  3. retain terminal validation and provide a server-computed `fixtureLineCounts` map with an explicit one-based inclusive range invariant.
+- Decision: Use option 3. Cartography context now carries the exact line count for every admitted fixture file, computed from the same canonical snapshot used by server validation. The prompt requires `1 <= lineStart <= lineEnd <= fixtureLineCounts[file]`. Out-of-range, absent-file, traversal, and malformed locations remain terminal; no model result is clamped or rewritten.
+- Evidence: authenticated `CARTOGRAPHY_INVALID` with `tests/refund.test.mjs` line 58 versus server line count 55; test-first prompt/context assertions in `tests/unit/codex-sdk-adapter.test.mjs`; 12/12 focused adapter tests; existing out-of-range rejection regression.
+- Consequences: GPT-5.6 receives the exact dynamic bounds needed to produce an admissible map while the server remains the only authority for fixture contents and location validity.
+- Risks: The model may still ignore explicit bounds; such an attempt remains fail-closed. Line counts describe text lines, not AST symbol ownership, so the existing symbol/reason and file checks remain review data rather than executable proof.
+- Reversal or migration path: Replace model-selected numeric ranges with deterministic server AST locations only if the result retains model-identified semantic roles and preserves source-to-location traceability. Never accept silent range correction as evidence.
+- Related files/commits: `prompts/cartographer.v1.md`, `src/codex/sdk-adapter.ts`, `tests/unit/codex-sdk-adapter.test.mjs`, `container-contract.json`, `artifacts/evidence/`, `PROGRESS.md`.
