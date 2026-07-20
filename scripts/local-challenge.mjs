@@ -652,6 +652,7 @@ async function runLocalChallengeLocked({ now }) {
     };
     const inputs = await buildInputs();
     isolatedCodexHome = createIsolatedCodexHome();
+    const modelMetadataFallbackPhases = [];
     const codex = new Codex({
       env: buildLocalChallengeEnvironment(process.env, isolatedCodexHome),
       config: {
@@ -669,6 +670,19 @@ async function runLocalChallengeLocked({ now }) {
       fixtureRoot: workspace.fixtureRoot,
       model: MODEL,
       modelReasoningEffort: "high",
+      onDiagnostic(diagnostic) {
+        if (diagnostic.code !== "MODEL_METADATA_FALLBACK") {
+          throw new Error("LOCAL_CHALLENGE received an unsupported SDK diagnostic code.");
+        }
+        const phase = diagnostic.phase.toLowerCase();
+        if (!["cartography", "repair", "review"].includes(phase)) {
+          throw new Error("LOCAL_CHALLENGE received an unsupported SDK diagnostic phase.");
+        }
+        if (modelMetadataFallbackPhases.includes(phase)) {
+          throw new Error("LOCAL_CHALLENGE received a duplicate SDK diagnostic phase.");
+        }
+        modelMetadataFallbackPhases.push(phase);
+      },
       prompts,
       timeouts: {
         cartographyMs: 10 * 60_000,
@@ -760,7 +774,10 @@ async function runLocalChallengeLocked({ now }) {
         temporaryAuthCopyRemovedBeforeEvidence: true,
         temporaryAuthDirectoryRestricted: true,
       },
-      tooling: versions,
+      tooling: {
+        ...versions,
+        modelMetadataFallbackPhases,
+      },
       provenance: {
         runId,
         repositoryCommit,

@@ -124,6 +124,12 @@ export interface IsolatedWorkerCodexSdkBackendOptions extends CommonBackendOptio
 export interface LocalChallengeCodexSdkBackendOptions extends CommonBackendOptions {
   client: CodexSdkClientLike;
   acknowledgedNonProduction: true;
+  onDiagnostic?: (diagnostic: Readonly<LocalChallengeSdkDiagnostic>) => void;
+}
+
+export interface LocalChallengeSdkDiagnostic {
+  phase: PhaseName;
+  code: "MODEL_METADATA_FALLBACK";
 }
 
 interface FixtureSnapshot {
@@ -157,6 +163,8 @@ const SEEDED_GENERATED_PATHS = new Set(["dist", "dist/refund.d.ts", "dist/refund
 const SEEDED_REGRESSION_TEST_PATH = "tests/refund.test.mjs";
 const SEEDED_REGRESSION_TEST_SHA256 =
   "b2285ae673d0d4ce164bbe896649d611462820c4c34ebce5073fdc77980ef68a";
+const LOCAL_CHALLENGE_MODEL_METADATA_FALLBACK_WARNING =
+  "Model metadata for `gpt-5.6` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.";
 
 interface PhaseRunResult {
   body: Record<string, unknown>;
@@ -168,6 +176,9 @@ interface InternalBackendOptions extends CommonBackendOptions {
   client: CodexSdkClientLike;
   executionMode: WorkerExecutionMode;
   backendId: string;
+  localChallengeDiagnosticObserver?: (
+    diagnostic: Readonly<LocalChallengeSdkDiagnostic>,
+  ) => void;
 }
 
 function compareText(a: string, b: string): number {
@@ -176,6 +187,18 @@ function compareText(a: string, b: string): number {
 
 function safeDiagnostic(value: unknown): string {
   return redactWorkerOutput(value instanceof Error ? value.message : String(value), 4_096).text;
+}
+
+function isLocalChallengeModelMetadataFallbackWarning(
+  options: InternalBackendOptions,
+  message: string,
+): boolean {
+  return (
+    options.backendId === "local-challenge-host-sdk" &&
+    options.executionMode === "LIVE_CODEX_SDK" &&
+    options.model === "gpt-5.6" &&
+    message === LOCAL_CHALLENGE_MODEL_METADATA_FALLBACK_WARNING
+  );
 }
 
 function assertPositiveBoundedInteger(
@@ -525,6 +548,7 @@ async function consumePhaseStream(
     let threadId: string | null = null;
     let turnCompleted = false;
     let finalResponse: string | null = null;
+    let modelMetadataFallbackWarnings = 0;
     const fileChangePaths = new Set<string>();
 
     for await (const event of streamed.events) {
@@ -566,6 +590,16 @@ async function consumePhaseStream(
         throw new Error(`${phase} emitted an unsupported SDK event type.`);
       }
       if (event.item.type === "error") {
+        if (isLocalChallengeModelMetadataFallbackWarning(options, event.item.message)) {
+          if (event.type !== "item.completed" || modelMetadataFallbackWarnings !== 0) {
+            throw new Error(`${phase} emitted an invalid model metadata fallback diagnostic.`);
+          }
+          modelMetadataFallbackWarnings += 1;
+          options.localChallengeDiagnosticObserver?.(
+            Object.freeze({ phase, code: "MODEL_METADATA_FALLBACK" }),
+          );
+          continue;
+        }
         throw new Error(`${phase} item failed: ${safeDiagnostic(event.item.message)}`);
       }
       if (event.item.type === "command_execution") {
@@ -995,10 +1029,12 @@ export function createLocalChallengeCodexSdkBackend(
   if (options.acknowledgedNonProduction !== true) {
     throw new Error("LOCAL_CHALLENGE requires explicit non-production acknowledgement.");
   }
+  const { onDiagnostic, ...backendOptions } = options;
   return createBackend({
-    ...options,
+    ...backendOptions,
     executionMode: "LIVE_CODEX_SDK",
     backendId: "local-challenge-host-sdk",
+    ...(onDiagnostic === undefined ? {} : { localChallengeDiagnosticObserver: onDiagnostic }),
   });
 }
 

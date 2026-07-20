@@ -17,6 +17,7 @@ import test from "node:test";
 import {
   buildCodexSdkEnvironment,
   createIsolatedWorkerCodexSdkBackend,
+  createLocalChallengeCodexSdkBackend,
   createOfflineCodexSdkBackend,
 } from "../../dist/codex/sdk-adapter.js";
 import { orchestrateRepair } from "../../dist/index.js";
@@ -38,6 +39,8 @@ const generatedCases = JSON.parse(
   await readFile(new URL("../../artifacts/evidence/generated-cases.json", import.meta.url), "utf8"),
 );
 const acceptedCases = [...goldenCases, ...generatedCases];
+const modelMetadataFallbackWarning =
+  "Model metadata for `gpt-5.6` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.";
 const driftCases = JSON.parse(
   await readFile(
     new URL("../../fixtures/refund-demo/cases/seeded-drift-cases.json", import.meta.url),
@@ -218,6 +221,18 @@ function createFakeClient(plans) {
                 return;
               }
               if (plan.mutate) await plan.mutate();
+              if (plan.errorItemMessage) {
+                const errorEvent = {
+                  type: plan.errorItemEventType ?? "item.completed",
+                  item: {
+                    id: `${plan.id}-error`,
+                    type: "error",
+                    message: plan.errorItemMessage,
+                  },
+                };
+                yield errorEvent;
+                if (plan.duplicateErrorItem) yield errorEvent;
+              }
               if (plan.rawEvent) yield plan.rawEvent;
               if (plan.commandExecution) {
                 yield {
@@ -594,6 +609,102 @@ test("read-only mutation and repair changes outside cartography fail closed", as
     assert.match(report.failure.message, /metadata-only file changes/u);
   } finally {
     await rm(metadataOnlyFixture.root, { recursive: true, force: true });
+  }
+});
+
+test("local challenge continues only past the exact GPT-5.6 metadata fallback warning", async () => {
+  const fixture = await createFixture();
+  try {
+    const diagnostics = [];
+    const compatibleClient = createFakeClient([
+      {
+        id: "metadata-fallback-cartography",
+        body: cartographyBody(),
+        errorItemMessage: modelMetadataFallbackWarning,
+      },
+    ]);
+    const compatibleBackend = createLocalChallengeCodexSdkBackend({
+      ...backendOptions(fixture.fixtureRoot, compatibleClient, { model: "gpt-5.6" }),
+      acknowledgedNonProduction: true,
+      onDiagnostic(diagnostic) {
+        diagnostics.push(diagnostic);
+      },
+    });
+    const result = await compatibleBackend.cartograph({ input });
+    assert.equal(result.metadata.model, "gpt-5.6");
+    assert.equal(result.metadata.backendId, "local-challenge-host-sdk");
+    assert.deepEqual(diagnostics, [
+      { phase: "CARTOGRAPHY", code: "MODEL_METADATA_FALLBACK" },
+    ]);
+    assert.equal(Object.isFrozen(diagnostics[0]), true);
+
+    const wrongModelClient = createFakeClient([
+      {
+        id: "wrong-model-warning",
+        body: cartographyBody(),
+        errorItemMessage: modelMetadataFallbackWarning,
+      },
+    ]);
+    const wrongModelBackend = createLocalChallengeCodexSdkBackend({
+      ...backendOptions(fixture.fixtureRoot, wrongModelClient, { model: "gpt-5.6-sol" }),
+      acknowledgedNonProduction: true,
+    });
+    await assert.rejects(
+      () => wrongModelBackend.cartograph({ input }),
+      /CARTOGRAPHY item failed/u,
+    );
+
+    const alteredWarningClient = createFakeClient([
+      {
+        id: "altered-warning",
+        body: cartographyBody(),
+        errorItemMessage: `${modelMetadataFallbackWarning} altered`,
+      },
+    ]);
+    const alteredWarningBackend = createLocalChallengeCodexSdkBackend({
+      ...backendOptions(fixture.fixtureRoot, alteredWarningClient, { model: "gpt-5.6" }),
+      acknowledgedNonProduction: true,
+    });
+    await assert.rejects(
+      () => alteredWarningBackend.cartograph({ input }),
+      /CARTOGRAPHY item failed/u,
+    );
+
+    const updatedWarningClient = createFakeClient([
+      {
+        id: "updated-warning",
+        body: cartographyBody(),
+        errorItemMessage: modelMetadataFallbackWarning,
+        errorItemEventType: "item.updated",
+      },
+    ]);
+    const updatedWarningBackend = createLocalChallengeCodexSdkBackend({
+      ...backendOptions(fixture.fixtureRoot, updatedWarningClient, { model: "gpt-5.6" }),
+      acknowledgedNonProduction: true,
+    });
+    await assert.rejects(
+      () => updatedWarningBackend.cartograph({ input }),
+      /invalid model metadata fallback diagnostic/u,
+    );
+
+    const duplicateWarningClient = createFakeClient([
+      {
+        id: "duplicate-warning",
+        body: cartographyBody(),
+        errorItemMessage: modelMetadataFallbackWarning,
+        duplicateErrorItem: true,
+      },
+    ]);
+    const duplicateWarningBackend = createLocalChallengeCodexSdkBackend({
+      ...backendOptions(fixture.fixtureRoot, duplicateWarningClient, { model: "gpt-5.6" }),
+      acknowledgedNonProduction: true,
+    });
+    await assert.rejects(
+      () => duplicateWarningBackend.cartograph({ input }),
+      /invalid model metadata fallback diagnostic/u,
+    );
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
   }
 });
 

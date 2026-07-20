@@ -124,6 +124,14 @@ export function validateLocalChallengeSchemaContract() {
       "EXISTING_CODEX_LOGIN_TEMPORARY_AUTH_COPY" ||
     SCHEMA.properties?.tooling?.properties?.sdkVersion?.const !== "0.144.6" ||
     SCHEMA.properties?.tooling?.properties?.bundledCliVersion?.const !== "0.144.6" ||
+    !sameMembers(SCHEMA.properties?.tooling?.required, [
+      "sdkVersion",
+      "bundledCliVersion",
+      "externalCliVersion",
+      "modelMetadataFallbackPhases",
+    ]) ||
+    SCHEMA.properties?.tooling?.properties?.modelMetadataFallbackPhases?.uniqueItems !== true ||
+    SCHEMA.properties?.tooling?.properties?.modelMetadataFallbackPhases?.maxItems !== 3 ||
     !sameMembers(SCHEMA.properties?.repair?.required, [
       "status",
       "cartographyThreadId",
@@ -191,14 +199,23 @@ export function validateLocalChallengeRun(input) {
 
   const tooling = exactKeys(
     value.tooling,
-    ["bundledCliVersion", "externalCliVersion", "sdkVersion"],
+    [
+      "bundledCliVersion",
+      "externalCliVersion",
+      "modelMetadataFallbackPhases",
+      "sdkVersion",
+    ],
     "local challenge tooling",
   );
+  const fallbackPhases = tooling.modelMetadataFallbackPhases;
   if (
     tooling.sdkVersion !== "0.144.6" ||
     tooling.bundledCliVersion !== "0.144.6" ||
     typeof tooling.externalCliVersion !== "string" ||
-    !/^0\.144\.[0-9]+$/u.test(tooling.externalCliVersion)
+    !/^0\.144\.[0-9]+$/u.test(tooling.externalCliVersion) ||
+    !Array.isArray(fallbackPhases) ||
+    JSON.stringify(fallbackPhases) !==
+      JSON.stringify(PHASES.filter((phase) => fallbackPhases.includes(phase)))
   ) {
     throw new Error("Local challenge tooling versions are invalid.");
   }
@@ -429,7 +446,12 @@ export function validateLocalChallengeRun(input) {
 }
 
 export function renderLocalChallengeSummary(run) {
-  return `# PolicyTwin local challenge capture\n\nStatus: **${run.status}**\n\n- Model and surface: \`${run.model}\` through \`${run.surface}\` using the existing login from a temporary config-free, auth-only Codex home.\n- Disposable fixture repair: \`${run.repair.changedFiles.join("\`, \`")}\`.\n- Server-owned verification: **${run.policyVerification.passed}/${run.policyVerification.total}**, zero drift.\n- Independent review: **${run.review.verdict}**, zero blocking findings.\n\nThis is a local Build Week capture. It is not the production \`verify:live\` gate, not release evidence, and does not claim direct Responses API provenance, cgroup-v2 isolation, deployment security, or live attestation.\n`;
+  const fallbackPhases = run.tooling.modelMetadataFallbackPhases;
+  const fallbackSummary =
+    fallbackPhases.length === 0
+      ? "none"
+      : `MODEL_METADATA_FALLBACK in ${fallbackPhases.join(", ")}`;
+  return `# PolicyTwin local challenge capture\n\nStatus: **${run.status}**\n\n- Model and surface: \`${run.model}\` through \`${run.surface}\` using the existing login from a temporary config-free, auth-only Codex home.\n- Codex SDK diagnostics: **${fallbackSummary}**. Any recorded fallback changes CLI metadata only; the requested model identifier remains \`${run.model}\`.\n- Disposable fixture repair: \`${run.repair.changedFiles.join("\`, \`")}\`.\n- Server-owned verification: **${run.policyVerification.passed}/${run.policyVerification.total}**, zero drift.\n- Independent review: **${run.review.verdict}**, zero blocking findings.\n\nThis is a local Build Week capture. It is not the production \`verify:live\` gate, not release evidence, and does not claim direct Responses API provenance, cgroup-v2 isolation, deployment security, or live attestation.\n`;
 }
 
 export function validateLocalChallengeDirectory(directory) {

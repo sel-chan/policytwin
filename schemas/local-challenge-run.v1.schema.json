@@ -50,11 +50,22 @@
     "tooling": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sdkVersion", "bundledCliVersion", "externalCliVersion"],
+      "required": [
+        "sdkVersion",
+        "bundledCliVersion",
+        "externalCliVersion",
+        "modelMetadataFallbackPhases"
+      ],
       "properties": {
         "sdkVersion": { "const": "0.144.6" },
         "bundledCliVersion": { "const": "0.144.6" },
-        "externalCliVersion": { "type": "string", "pattern": "^0\\.144\\.[0-9]+$" }
+        "externalCliVersion": { "type": "string", "pattern": "^0\\.144\\.[0-9]+$" },
+        "modelMetadataFallbackPhases": {
+          "type": "array",
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["cartography", "repair", "review"] }
+        }
       }
     },
     "provenance": {

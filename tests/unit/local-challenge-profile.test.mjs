@@ -118,6 +118,7 @@ function validRun() {
       sdkVersion: "0.144.6",
       bundledCliVersion: "0.144.6",
       externalCliVersion: "0.144.0",
+      modelMetadataFallbackPhases: ["cartography", "repair", "review"],
     },
     provenance: {
       runId: "lc_0123456789abcdef",
@@ -439,6 +440,7 @@ test("local challenge evidence is exact, hash-bound, and never production-eligib
     "utf8",
   );
   assert.equal(validateLocalChallengeDirectory(root).status, "LOCAL_CHALLENGE_PASS");
+  assert.match(renderLocalChallengeSummary(run), /MODEL_METADATA_FALLBACK in cartography, repair, review/u);
 
   assert.throws(
     () =>
@@ -448,6 +450,20 @@ test("local challenge evidence is exact, hash-bound, and never production-eligib
       }),
     /cannot promote/u,
   );
+  for (const modelMetadataFallbackPhases of [
+    ["cartography", "cartography"],
+    ["review", "cartography"],
+    ["unknown"],
+  ]) {
+    assert.throws(
+      () =>
+        validateLocalChallengeRun({
+          ...run,
+          tooling: { ...run.tooling, modelMetadataFallbackPhases },
+        }),
+      /tooling versions/u,
+    );
+  }
   assert.throws(
     () =>
       validateLocalChallengeRun({
