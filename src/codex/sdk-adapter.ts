@@ -84,6 +84,7 @@ export interface CodexSdkClientLike {
 export interface CodexWorkerPrompts {
   cartographer: string;
   repair: string;
+  repairReport: string;
   reviewer: string;
 }
 
@@ -169,6 +170,18 @@ const LOCAL_CHALLENGE_MODEL_METADATA_FALLBACK_WARNING =
 interface PhaseRunResult {
   body: Record<string, unknown>;
   metadata: WorkerRunMetadata;
+  fileChangePaths: string[];
+}
+
+interface PhaseStreamState {
+  eventCount: number;
+  eventBytes: number;
+  threadId: string | null;
+  modelMetadataFallbackObserved: boolean;
+}
+
+interface TurnStreamResult {
+  finalResponse: string;
   fileChangePaths: string[];
 }
 
@@ -503,69 +516,49 @@ function normalizeSdkFileChangePath(value: string, fixtureRoot: string, phase: P
   );
 }
 
-async function consumePhaseStream(
+async function consumeThreadTurn(
   options: InternalBackendOptions,
-  seenThreadIds: Set<string>,
   phase: PhaseName,
+  thread: CodexSdkThreadLike,
   prompt: string,
-  promptTemplate: string,
-  outputSchema: unknown,
-  expectedKeys: readonly string[],
-  sandboxMode: "read-only" | "workspace-write",
-  timeoutMs: number,
-): Promise<PhaseRunResult> {
-  const maxEvents = assertPositiveBoundedInteger(
-    options.limits?.maxEvents ?? DEFAULT_MAX_EVENTS,
-    "Codex event count limit",
-    1,
-    10_000,
-  );
-  const maxEventBytes = assertPositiveBoundedInteger(
-    options.limits?.maxEventBytes ?? DEFAULT_MAX_EVENT_BYTES,
-    "Codex event byte limit",
-    1,
-    8 * 1024 * 1024,
-  );
-  const maxFinalResponseBytes = assertPositiveBoundedInteger(
-    options.limits?.maxFinalResponseBytes ?? DEFAULT_MAX_FINAL_RESPONSE_BYTES,
-    "Codex final response byte limit",
-    1,
-    1024 * 1024,
-  );
-  const startedAt = (options.now ?? (() => new Date()))().toISOString();
-  const thread = options.client.startThread(phaseThreadOptions(options, sandboxMode));
-  const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  const consume = async (): Promise<PhaseRunResult> => {
-    const streamed = await thread.runStreamed(prompt, {
-      outputSchema,
-      signal: controller.signal,
-    });
-    let eventCount = 0;
-    let eventBytes = 0;
-    let threadId: string | null = null;
+  turnOptions: TurnOptions,
+  state: PhaseStreamState,
+  allowFileChanges: boolean,
+  maxEvents: number,
+  maxEventBytes: number,
+  maxFinalResponseBytes: number,
+): Promise<TurnStreamResult> {
+    const streamed = await thread.runStreamed(prompt, turnOptions);
     let turnCompleted = false;
+    let turnThreadStarted = false;
     let finalResponse: string | null = null;
-    let modelMetadataFallbackWarnings = 0;
+    let turnModelMetadataFallbackWarnings = 0;
     const fileChangePaths = new Set<string>();
 
     for await (const event of streamed.events) {
-      eventCount += 1;
-      if (eventCount > maxEvents) {
+      state.eventCount += 1;
+      if (state.eventCount > maxEvents) {
         throw new Error(`${phase} exceeded the event count limit.`);
       }
       const serialized = JSON.stringify(event);
-      eventBytes += Buffer.byteLength(serialized, "utf8");
-      if (eventBytes > maxEventBytes) {
+      state.eventBytes += Buffer.byteLength(serialized, "utf8");
+      if (state.eventBytes > maxEventBytes) {
         throw new Error(`${phase} exceeded the event byte limit.`);
       }
       if (event.type === "thread.started") {
-        if (threadId !== null || event.thread_id.length === 0) {
+        if (turnThreadStarted || event.thread_id.length === 0) {
           throw new Error(`${phase} emitted invalid duplicate thread identity.`);
         }
-        threadId = assertNoSensitiveWorkerText(event.thread_id, `${phase} thread identity`, 256);
+        turnThreadStarted = true;
+        const reportedThreadId = assertNoSensitiveWorkerText(
+          event.thread_id,
+          `${phase} thread identity`,
+          256,
+        );
+        if (state.threadId === null) state.threadId = reportedThreadId;
+        else if (state.threadId !== reportedThreadId) {
+          throw new Error(`${phase} SDK thread identity changed between turns.`);
+        }
         continue;
       }
       if (event.type === "turn.failed") {
@@ -591,13 +584,16 @@ async function consumePhaseStream(
       }
       if (event.item.type === "error") {
         if (isLocalChallengeModelMetadataFallbackWarning(options, event.item.message)) {
-          if (event.type !== "item.completed" || modelMetadataFallbackWarnings !== 0) {
+          if (event.type !== "item.completed" || turnModelMetadataFallbackWarnings !== 0) {
             throw new Error(`${phase} emitted an invalid model metadata fallback diagnostic.`);
           }
-          modelMetadataFallbackWarnings += 1;
-          options.localChallengeDiagnosticObserver?.(
-            Object.freeze({ phase, code: "MODEL_METADATA_FALLBACK" }),
-          );
+          turnModelMetadataFallbackWarnings += 1;
+          if (!state.modelMetadataFallbackObserved) {
+            state.modelMetadataFallbackObserved = true;
+            options.localChallengeDiagnosticObserver?.(
+              Object.freeze({ phase, code: "MODEL_METADATA_FALLBACK" }),
+            );
+          }
           continue;
         }
         throw new Error(`${phase} item failed: ${safeDiagnostic(event.item.message)}`);
@@ -616,8 +612,8 @@ async function consumePhaseStream(
           const path = normalizeSdkFileChangePath(change.path, options.fixtureRoot, phase);
           fileChangePaths.add(path);
         }
-        if (sandboxMode === "read-only") {
-          throw new Error(`${phase} emitted a file change in read-only mode.`);
+        if (!allowFileChanges) {
+          throw new Error(`${phase} emitted a file change when this turn forbids edits.`);
         }
       }
       if (event.type !== "item.completed") continue;
@@ -629,55 +625,132 @@ async function consumePhaseStream(
       }
     }
 
-    if (threadId === null || !turnCompleted || finalResponse === null) {
+    if (state.threadId === null || !turnCompleted || finalResponse === null) {
       throw new Error(`${phase} SDK stream ended without identity, completion, or final response.`);
     }
-    if (thread.id !== null && thread.id !== threadId) {
+    if (thread.id !== null && thread.id !== state.threadId) {
       throw new Error(`${phase} SDK thread identity changed unexpectedly.`);
     }
-    if (seenThreadIds.has(threadId)) {
-      throw new Error(`${phase} reused a prior SDK thread identity.`);
-    }
-    seenThreadIds.add(threadId);
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(finalResponse);
-    } catch (error) {
-      throw new Error(
-        `${phase} final response is not JSON: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-    const body = exactModelKeys(parsed, expectedKeys, phase);
-    const completedAt = (options.now ?? (() => new Date()))().toISOString();
     return {
-      body,
-      metadata: {
-        executionMode: options.executionMode,
-        backendId: options.backendId,
-        sdkVersion: "0.144.6",
-        model: options.model,
-        modelReasoningEffort: options.modelReasoningEffort ?? "high",
-        promptTemplateSha256: createHash("sha256").update(promptTemplate, "utf8").digest("hex"),
-        requestSha256: createHash("sha256").update(prompt, "utf8").digest("hex"),
-        outputSchemaSha256: createHash("sha256")
-          .update(JSON.stringify(outputSchema), "utf8")
-          .digest("hex"),
-        runId: threadId,
-        startedAt,
-        completedAt,
-      },
+      finalResponse,
       fileChangePaths: [...fileChangePaths].sort(compareText),
     };
+}
+
+function parsePhaseBody(
+  finalResponse: string,
+  expectedKeys: readonly string[],
+  phase: PhaseName,
+): Record<string, unknown> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(finalResponse);
+  } catch (error) {
+    throw new Error(
+      `${phase} final response is not JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  return exactModelKeys(parsed, expectedKeys, phase);
+}
+
+function registerPhaseThread(seenThreadIds: Set<string>, phase: PhaseName, threadId: string): void {
+  if (seenThreadIds.has(threadId)) {
+    throw new Error(`${phase} reused a prior SDK thread identity.`);
+  }
+  seenThreadIds.add(threadId);
+}
+
+function streamLimits(options: InternalBackendOptions) {
+  return {
+    maxEvents: assertPositiveBoundedInteger(
+      options.limits?.maxEvents ?? DEFAULT_MAX_EVENTS,
+      "Codex event count limit",
+      1,
+      10_000,
+    ),
+    maxEventBytes: assertPositiveBoundedInteger(
+      options.limits?.maxEventBytes ?? DEFAULT_MAX_EVENT_BYTES,
+      "Codex event byte limit",
+      1,
+      8 * 1024 * 1024,
+    ),
+    maxFinalResponseBytes: assertPositiveBoundedInteger(
+      options.limits?.maxFinalResponseBytes ?? DEFAULT_MAX_FINAL_RESPONSE_BYTES,
+      "Codex final response byte limit",
+      1,
+      1024 * 1024,
+    ),
   };
+}
+
+function newPhaseStreamState(): PhaseStreamState {
+  return {
+    eventCount: 0,
+    eventBytes: 0,
+    threadId: null,
+    modelMetadataFallbackObserved: false,
+  };
+}
+
+async function consumePhaseStream(
+  options: InternalBackendOptions,
+  seenThreadIds: Set<string>,
+  phase: PhaseName,
+  prompt: string,
+  promptTemplate: string,
+  outputSchema: unknown,
+  expectedKeys: readonly string[],
+  sandboxMode: "read-only" | "workspace-write",
+  timeoutMs: number,
+): Promise<PhaseRunResult> {
+  const limits = streamLimits(options);
+  const state = newPhaseStreamState();
+  const startedAt = (options.now ?? (() => new Date()))().toISOString();
+  const thread = options.client.startThread(phaseThreadOptions(options, sandboxMode));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     try {
-      const result = await consume();
+      const turn = await consumeThreadTurn(
+        options,
+        phase,
+        thread,
+        prompt,
+        { outputSchema, signal: controller.signal },
+        state,
+        sandboxMode === "workspace-write",
+        limits.maxEvents,
+        limits.maxEventBytes,
+        limits.maxFinalResponseBytes,
+      );
       if (controller.signal.aborted) {
         throw new Error(`${phase} timed out after ${timeoutMs}ms.`);
       }
-      return result;
+      const threadId = state.threadId;
+      if (threadId === null) throw new Error(`${phase} did not establish a thread identity.`);
+      registerPhaseThread(seenThreadIds, phase, threadId);
+      return {
+        body: parsePhaseBody(turn.finalResponse, expectedKeys, phase),
+        metadata: {
+          executionMode: options.executionMode,
+          backendId: options.backendId,
+          sdkVersion: "0.144.6",
+          model: options.model,
+          modelReasoningEffort: options.modelReasoningEffort ?? "high",
+          promptTemplateSha256: createHash("sha256")
+            .update(promptTemplate, "utf8")
+            .digest("hex"),
+          requestSha256: createHash("sha256").update(prompt, "utf8").digest("hex"),
+          outputSchemaSha256: createHash("sha256")
+            .update(JSON.stringify(outputSchema), "utf8")
+            .digest("hex"),
+          runId: threadId,
+          startedAt,
+          completedAt: (options.now ?? (() => new Date()))().toISOString(),
+        },
+        fileChangePaths: turn.fileChangePaths,
+      };
     } catch (error) {
       if (controller.signal.aborted) {
         throw new Error(`${phase} timed out after ${timeoutMs}ms.`);
@@ -685,7 +758,119 @@ async function consumePhaseStream(
       throw new Error(safeDiagnostic(error));
     }
   } finally {
-    if (timer !== undefined) clearTimeout(timer);
+    clearTimeout(timer);
+  }
+}
+
+async function consumeRepairPhaseStream(
+  options: InternalBackendOptions,
+  seenThreadIds: Set<string>,
+  executionPrompt: string,
+  executionPromptTemplate: string,
+  reportPrompt: string,
+  reportPromptTemplate: string,
+  before: FixtureSnapshot,
+  timeoutMs: number,
+): Promise<PhaseRunResult> {
+  const phase: PhaseName = "REPAIR";
+  const limits = streamLimits(options);
+  const state = newPhaseStreamState();
+  const startedAt = (options.now ?? (() => new Date()))().toISOString();
+  const thread = options.client.startThread(phaseThreadOptions(options, "workspace-write"));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    try {
+      const executionTurn = await consumeThreadTurn(
+        options,
+        phase,
+        thread,
+        executionPrompt,
+        { signal: controller.signal },
+        state,
+        true,
+        limits.maxEvents,
+        limits.maxEventBytes,
+        limits.maxFinalResponseBytes,
+      );
+      if (controller.signal.aborted) throw new Error(`${phase} timed out after ${timeoutMs}ms.`);
+
+      const afterExecution = await snapshotFixture(options.fixtureRoot);
+      const executionDiff = diffSnapshots(before, afterExecution);
+      const executionMetadataOnlyChanges = executionDiff.modified.filter(
+        (path) => !executionDiff.contentModified.includes(path),
+      );
+      if (executionMetadataOnlyChanges.length > 0) {
+        throw new Error(
+          `Repair made metadata-only file changes, which are forbidden: ${executionMetadataOnlyChanges.join(", ")}`,
+        );
+      }
+      if (executionDiff.contentModified.length === 0) {
+        throw new Error("Repair execution turn completed without an observable file-content change.");
+      }
+
+      const reportTurn = await consumeThreadTurn(
+        options,
+        phase,
+        thread,
+        reportPrompt,
+        { outputSchema: REPAIR_MODEL_OUTPUT_SCHEMA, signal: controller.signal },
+        state,
+        false,
+        limits.maxEvents,
+        limits.maxEventBytes,
+        limits.maxFinalResponseBytes,
+      );
+      if (controller.signal.aborted) throw new Error(`${phase} timed out after ${timeoutMs}ms.`);
+
+      const afterReport = await snapshotFixture(options.fixtureRoot);
+      assertNoSnapshotChange(afterExecution, afterReport, phase);
+      const threadId = state.threadId;
+      if (threadId === null) throw new Error(`${phase} did not establish a thread identity.`);
+      registerPhaseThread(seenThreadIds, phase, threadId);
+
+      return {
+        body: parsePhaseBody(reportTurn.finalResponse, REPAIR_MODEL_OUTPUT_KEYS, phase),
+        metadata: {
+          executionMode: options.executionMode,
+          backendId: options.backendId,
+          sdkVersion: "0.144.6",
+          model: options.model,
+          modelReasoningEffort: options.modelReasoningEffort ?? "high",
+          promptTemplateSha256: createHash("sha256")
+            .update(
+              JSON.stringify({
+                executionSha256: createHash("sha256")
+                  .update(executionPromptTemplate, "utf8")
+                  .digest("hex"),
+                reportSha256: createHash("sha256")
+                  .update(reportPromptTemplate, "utf8")
+                  .digest("hex"),
+              }),
+              "utf8",
+            )
+            .digest("hex"),
+          requestSha256: createHash("sha256")
+            .update(JSON.stringify({ execution: executionPrompt, report: reportPrompt }), "utf8")
+            .digest("hex"),
+          outputSchemaSha256: createHash("sha256")
+            .update(JSON.stringify(REPAIR_MODEL_OUTPUT_SCHEMA), "utf8")
+            .digest("hex"),
+          runId: threadId,
+          startedAt,
+          completedAt: (options.now ?? (() => new Date()))().toISOString(),
+        },
+        fileChangePaths: executionTurn.fileChangePaths,
+      };
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error(`${phase} timed out after ${timeoutMs}ms.`);
+      }
+      throw new Error(safeDiagnostic(error));
+    }
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -811,30 +996,35 @@ function createBackend(options: InternalBackendOptions): CodexWorkerBackend {
       }
       const before = await snapshotFixture(options.fixtureRoot);
       try {
-      const run = await consumePhaseStream(
+      const executionPrompt = serializePrompt(options.prompts.repair, {
+        sourcePolicy: context.input.sourcePolicy,
+        policySummary: context.input.policySummary,
+        acceptedPolicyIr: context.input.acceptedPolicyIr,
+        acceptedCases: context.input.acceptedCases,
+        failingDriftWitnesses: context.input.failingDriftWitnesses,
+        approvedCartography: context.cartography,
+        attempt: context.attempt,
+        previousCommandEvidence: context.previousCommandEvidence,
+        previousPolicyVerification: context.previousPolicyVerification,
+        allowedCommandIds: context.input.allowedCommandIds,
+        fixtureFilesBeforeRepair: [...before.files.keys()],
+        fixtureContentsBeforeRepair: Object.fromEntries(
+          [...before.files].map(([path, file]) => [path, file.content]),
+        ),
+      });
+      const reportPrompt = assertNoSensitiveWorkerText(
+        options.prompts.repairReport.trim(),
+        "Codex repair report prompt",
+        MAX_PROMPT_BYTES,
+      );
+      const run = await consumeRepairPhaseStream(
         options,
         seenThreadIds,
-        "REPAIR",
-        serializePrompt(options.prompts.repair, {
-          sourcePolicy: context.input.sourcePolicy,
-          policySummary: context.input.policySummary,
-          acceptedPolicyIr: context.input.acceptedPolicyIr,
-          acceptedCases: context.input.acceptedCases,
-          failingDriftWitnesses: context.input.failingDriftWitnesses,
-          approvedCartography: context.cartography,
-          attempt: context.attempt,
-          previousCommandEvidence: context.previousCommandEvidence,
-          previousPolicyVerification: context.previousPolicyVerification,
-          allowedCommandIds: context.input.allowedCommandIds,
-          fixtureFilesBeforeRepair: [...before.files.keys()],
-          fixtureContentsBeforeRepair: Object.fromEntries(
-            [...before.files].map(([path, file]) => [path, file.content]),
-          ),
-        }),
+        executionPrompt,
         options.prompts.repair,
-        REPAIR_MODEL_OUTPUT_SCHEMA,
-        REPAIR_MODEL_OUTPUT_KEYS,
-        "workspace-write",
+        reportPrompt,
+        options.prompts.repairReport,
+        before,
         options.timeouts.repairMs,
       );
       const after = await snapshotFixture(options.fixtureRoot);

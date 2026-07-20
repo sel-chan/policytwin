@@ -53,6 +53,10 @@ const prompts = {
     "utf8",
   ),
   repair: await readFile(new URL("../../prompts/repair.v1.md", import.meta.url), "utf8"),
+  repairReport: await readFile(
+    new URL("../../prompts/repair-report.v1.md", import.meta.url),
+    "utf8",
+  ),
   reviewer: await readFile(new URL("../../prompts/reviewer.v1.md", import.meta.url), "utf8"),
 };
 const actualByCase = { D01: "DENY", D02: "DENY", D03: "ALLOW" };
@@ -191,11 +195,13 @@ function createFakeClient(plans) {
       const plan = plans.shift();
       if (plan === undefined) throw new Error("Unexpected SDK thread.");
       let observedId = null;
+      let turnNumber = 0;
       return {
         get id() {
           return observedId;
         },
         async runStreamed(prompt, turnOptions) {
+          turnNumber += 1;
           calls.push({ threadOptions, prompt, turnOptions });
           return {
             events: (async function* () {
@@ -220,8 +226,8 @@ function createFakeClient(plans) {
                 yield { type: "error", message: plan.topLevelError };
                 return;
               }
-              if (plan.mutate) await plan.mutate();
-              if (plan.errorItemMessage) {
+              if (plan.mutate && turnNumber === 1) await plan.mutate();
+              if (plan.errorItemMessage && turnNumber === 1) {
                 const errorEvent = {
                   type: plan.errorItemEventType ?? "item.completed",
                   item: {
@@ -233,8 +239,8 @@ function createFakeClient(plans) {
                 yield errorEvent;
                 if (plan.duplicateErrorItem) yield errorEvent;
               }
-              if (plan.rawEvent) yield plan.rawEvent;
-              if (plan.commandExecution) {
+              if (plan.rawEvent && turnNumber === 1) yield plan.rawEvent;
+              if (plan.commandExecution && turnNumber === 1) {
                 yield {
                   type: plan.commandEventType ?? "item.completed",
                   item: {
@@ -247,7 +253,7 @@ function createFakeClient(plans) {
                   },
                 };
               }
-              if (plan.fileChanges) {
+              if (plan.fileChanges && turnNumber === 1) {
                 yield {
                   type: "item.completed",
                   item: {
@@ -263,7 +269,10 @@ function createFakeClient(plans) {
                 item: {
                   id: `${plan.id}-message`,
                   type: "agent_message",
-                  text: plan.rawResponse ?? JSON.stringify(plan.body),
+                  text:
+                    turnOptions.outputSchema === undefined
+                      ? (plan.executionResponse ?? "Workspace edits completed.")
+                      : (plan.rawResponse ?? JSON.stringify(plan.body)),
                 },
               };
               yield {
@@ -365,6 +374,15 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
       sha256(JSON.stringify(client.calls[0].turnOptions.outputSchema)),
     );
     assert.equal(report.repairAttempts[0].metadata.runId, "thread-repair");
+    assert.equal(
+      report.repairAttempts[0].metadata.promptTemplateSha256,
+      sha256(
+        JSON.stringify({
+          executionSha256: sha256(prompts.repair),
+          reportSha256: sha256(prompts.repairReport),
+        }),
+      ),
+    );
     assert.equal(report.policyVerificationAttempts.length, 1);
     assert.equal(report.policyVerificationAttempts[0].repairRunId, "thread-repair");
     assert.equal(report.policyVerificationAttempts[0].total, 41);
@@ -372,9 +390,9 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
     assert.equal(report.cartography.metadata.backendId, "offline-codex-sdk-double");
     assert.deepEqual(
       client.calls.map((call) => call.threadOptions.sandboxMode),
-      ["read-only", "workspace-write", "read-only"],
+      ["read-only", "workspace-write", "workspace-write", "read-only"],
     );
-    for (const call of client.calls) {
+    for (const [index, call] of client.calls.entries()) {
       assert.equal(call.threadOptions.workingDirectory, fixture.fixtureRoot);
       assert.equal(call.threadOptions.skipGitRepoCheck, true);
       assert.equal(call.threadOptions.networkAccessEnabled, false);
@@ -383,6 +401,10 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
       assert.deepEqual(call.threadOptions.additionalDirectories, []);
       assert.equal(call.prompt.includes(fixture.fixtureRoot), false);
       assert.equal(call.prompt.includes("must-not-leak"), false);
+      if (index === 1) {
+        assert.equal(call.turnOptions.outputSchema, undefined);
+        continue;
+      }
       assert.equal(call.turnOptions.outputSchema.additionalProperties, false);
       assert.equal(call.turnOptions.outputSchema.required.includes("metadata"), false);
       assert.equal(
@@ -396,13 +418,21 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
         "Codex Structured Outputs must not carry the server-only path pattern",
       );
     }
-    assert.match(client.calls[2].prompt, /--- a\/src\/refund\.ts/u);
-    assert.match(client.calls[2].prompt, /\+\+\+ b\/tests\/refund\.test\.mjs/u);
-    assert.match(client.calls[2].prompt, /SERVER_OWNED_CORPUS/u);
+    assert.match(client.calls[3].prompt, /--- a\/src\/refund\.ts/u);
+    assert.match(client.calls[3].prompt, /\+\+\+ b\/tests\/refund\.test\.mjs/u);
+    assert.match(client.calls[3].prompt, /SERVER_OWNED_CORPUS/u);
     assert.match(
       client.calls[1].prompt,
-      /Before returning the schema body, use Codex file-edit operations to modify both required workspace files/u,
+      /Use Codex file-edit operations to modify both required workspace files/u,
     );
+    assert.match(client.calls[1].prompt, /Do not output the structured repair report in this turn/u);
+    assert.match(client.calls[2].prompt, /must not modify any file/u);
+    assert.deepEqual(client.calls[2].turnOptions.outputSchema.required, [
+      "summary",
+      "rationale",
+      "remainingRisks",
+      "verificationCommandIds",
+    ]);
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
   }

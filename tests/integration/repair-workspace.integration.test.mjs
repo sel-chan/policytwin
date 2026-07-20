@@ -58,6 +58,10 @@ const prompts = {
     "utf8",
   ),
   repair: await readFile(new URL("../../prompts/repair.v1.md", import.meta.url), "utf8"),
+  repairReport: await readFile(
+    new URL("../../prompts/repair-report.v1.md", import.meta.url),
+    "utf8",
+  ),
   reviewer: await readFile(new URL("../../prompts/reviewer.v1.md", import.meta.url), "utf8"),
 };
 
@@ -239,19 +243,21 @@ function createRepairingSdkDouble(fixtureRoot) {
       const plan = plans.shift();
       if (plan === undefined) throw new Error("Unexpected SDK thread.");
       let threadId = null;
+      let turnNumber = 0;
       return {
         get id() {
           return threadId;
         },
         async runStreamed(prompt, turnOptions) {
+          turnNumber += 1;
           calls.push({ threadOptions, prompt, turnOptions });
           return {
             events: (async function* () {
               threadId = plan.id;
               yield { type: "thread.started", thread_id: plan.id };
               yield { type: "turn.started" };
-              if (plan.mutate) await plan.mutate();
-              if (plan.fileChanges) {
+              if (plan.mutate && turnNumber === 1) await plan.mutate();
+              if (plan.fileChanges && turnNumber === 1) {
                 yield {
                   type: "item.completed",
                   item: {
@@ -267,7 +273,10 @@ function createRepairingSdkDouble(fixtureRoot) {
                 item: {
                   id: `${plan.id}-message`,
                   type: "agent_message",
-                  text: JSON.stringify(plan.body),
+                  text:
+                    turnOptions.outputSchema === undefined
+                      ? "Workspace edits completed."
+                      : JSON.stringify(plan.body),
                 },
               };
               yield {
@@ -483,7 +492,7 @@ test("offline SDK adapter repairs only a fresh managed copy and real commands ve
     );
     assert.deepEqual(
       client.calls.map((call) => call.threadOptions.sandboxMode),
-      ["read-only", "workspace-write", "read-only"],
+      ["read-only", "workspace-write", "workspace-write", "read-only"],
     );
     assert.equal(
       assertCanonicalFixtureUnchanged(workspace.baselineHashBefore),

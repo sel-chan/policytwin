@@ -11,7 +11,11 @@
     },
     {
       "file": "prompts/repair.v1.md",
-      "sha256": "c2a604776bb76e3ad5ba7a7ae8aa0a02a479574cf6049078adc9830aa9792928"
+      "sha256": "0a46ac01ac409152a19f5f34abd671d4a3ea22879033403b06889c5c52e00a69"
+    },
+    {
+      "file": "prompts/repair-report.v1.md",
+      "sha256": "89f866c9e251a54284af6d359d5c38fd25234939caaa0e9856aa685068c21995"
     },
     {
       "file": "prompts/reviewer.v1.md",

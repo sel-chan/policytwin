@@ -1176,3 +1176,20 @@ Add new entries below this line with the template above.
 - Risks: Prompt clarification cannot guarantee that a stochastic model edits successfully. A repeated no-change result remains terminal and requires a new hypothesis; it must not trigger an unbounded retry or a host-authored repair that is presented as Codex work.
 - Reversal or migration path: Replace prompt reliance with a future typed Codex edit protocol only if it preserves observable filesystem deltas, fixed write scope, server-owned verification, and independent review.
 - Related files/commits: `prompts/repair.v1.md`, `tests/unit/codex-sdk-adapter.test.mjs`, `PROGRESS.md`.
+
+### D-069 — Split Codex repair execution from structured reporting
+
+- Date: 2026-07-20
+- Status: `ACCEPTED`
+- Milestone: M7/M10
+- Context: D-068 removed prompt-order ambiguity, but the next authenticated GPT-5.6 Sol attempt still returned a valid structured repair body without changing the disposable fixture. The filesystem-derived gate correctly rejected it. The installed and current Codex SDK documentation explicitly supports multiple turns on one thread, while structured output is intended for the final machine-readable response.
+- Options considered:
+  1. repeat the same single structured turn with stronger wording;
+  2. accept the structured response or apply the known repair on the host;
+  3. use one workspace-write thread with an unstructured edit-only turn, verify an observable filesystem delta, then request the strict structured report in a second turn on that same thread.
+- Decision: Use option 3. The execution turn receives no output schema and must edit the two fixed files through Codex file-change operations. The adapter snapshots the fixture immediately afterward and refuses to open the report turn without a content delta. The follow-up turn uses the existing strict repair schema, forbids edits and commands, and must preserve the post-execution snapshot byte-for-byte. Both turns share one SDK thread identity and one total timeout/event/output budget. The server continues to derive changed files, enforce the exact test digest and pure-AST source subset, execute only the two fixed commands, replay all 41 cases, and require a separate read-only review.
+- Evidence: the prior authenticated no-delta `REPAIR_INVALID` attempt; current Codex SDK guidance for repeated `run()` calls on one thread; `prompts/repair.v1.md`; `prompts/repair-report.v1.md`; `src/codex/sdk-adapter.ts`; 12/12 focused adapter tests; 7/7 local-challenge contract tests; 7/7 real-command repair-workspace integration tests; lint and strict typecheck.
+- Consequences: Machine-readable reporting can no longer satisfy the repair phase before Codex has produced an observable edit. The structured report remains bound to the same coding thread, and a report-time mutation poisons the workspace.
+- Risks: The repair thread remains workspace-write for the reporting turn because the installed TypeScript SDK fixes sandbox options when the thread starts; the adapter therefore enforces report immutability with both event rejection and before/after snapshots. A stochastic edit can still be wrong and will then fail the existing AST, test, corpus, or review gates.
+- Reversal or migration path: If a future SDK supports a per-turn sandbox override in TypeScript, set the report turn to read-only while retaining the snapshot check. Do not collapse the turns again unless live evidence shows tool execution remains reliable under structured output.
+- Related files/commits: `prompts/repair.v1.md`, `prompts/repair-report.v1.md`, `src/codex/sdk-adapter.ts`, `scripts/local-challenge.mjs`, `tests/unit/codex-sdk-adapter.test.mjs`, `tests/unit/local-challenge-profile.test.mjs`, `tests/integration/repair-workspace.integration.test.mjs`, `README.md`, `PROGRESS.md`.

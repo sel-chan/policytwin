@@ -6,7 +6,7 @@ const schema = JSON.parse(
   await readFile(new URL("../../schemas/codex-results.v1.schema.json", import.meta.url)),
 );
 const prompts = await Promise.all(
-  ["cartographer", "repair", "reviewer"].map((name) =>
+  ["cartographer", "repair", "repair-report", "reviewer"].map((name) =>
     readFile(new URL(`../../prompts/${name}.v1.md`, import.meta.url), "utf8"),
   ),
 );
@@ -32,12 +32,15 @@ test("Codex worker schemas are closed at every executable result boundary", () =
   assert.equal(schema.$defs.workerReport.required.includes("policyVerificationAttempts"), true);
 });
 
-test("cartography, repair, and review prompts preserve the trusted-fixture boundary", () => {
-  const [cartographer, repair, reviewer] = prompts;
+test("cartography, repair execution, repair reporting, and review prompts preserve the trusted-fixture boundary", () => {
+  const [cartographer, repair, repairReport, reviewer] = prompts;
   assert.match(cartographer, /read-only/iu);
   assert.match(cartographer, /expected-fixed/iu);
   assert.match(repair, /smallest coherent change/iu);
   assert.match(repair, /Do not weaken or skip tests/iu);
+  assert.match(repair, /Do not output the structured repair report in this turn/iu);
+  assert.match(repairReport, /must not modify any file/iu);
+  assert.match(repairReport, /strict repair model-output body/iu);
   assert.match(reviewer, /distinct run identity/iu);
   assert.match(reviewer, /HIGH.*CRITICAL.*BLOCK/isu);
   assert.equal(prompts.every((prompt) => /strict/iu.test(prompt)), true);

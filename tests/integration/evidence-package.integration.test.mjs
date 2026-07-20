@@ -409,7 +409,7 @@ test("complete evidence archive is byte-deterministic USTAR with exactly 38 veri
   const second = createEvidenceArchive(reversed, hashText);
   assert.deepEqual(first.bytes, second.bytes);
   assert.equal(first.archiveSha256, second.archiveSha256);
-  assert.equal(first.evidenceHash, "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291");
+  assert.equal(first.evidenceHash, "70c8b1ba26073e2b0272ff365170fa4fa18e407a70e2692a7fc3885b739d5d72");
   assert.equal(first.evidenceMode, "PARTIAL_OFFLINE");
   assert.equal(first.packageStatus, "FAIL");
   assert.equal(first.policyVersion, 4);

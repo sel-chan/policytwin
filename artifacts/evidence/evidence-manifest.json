@@ -3,7 +3,7 @@
   "algorithm": "SHA-256",
   "packageStatus": "FAIL",
   "evidenceMode": "PARTIAL_OFFLINE",
-  "evidenceHash": "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291",
+  "evidenceHash": "70c8b1ba26073e2b0272ff365170fa4fa18e407a70e2692a7fc3885b739d5d72",
   "liveAttestation": null,
   "entries": [
     {
@@ -182,8 +182,8 @@
     },
     {
       "file": "prompt-manifest.json",
-      "bytes": 595,
-      "sha256": "ee41ec32cbd573b96dfe2ca17554edaed5b74b892c4e3ce080f6f163af15b712",
+      "bytes": 736,
+      "sha256": "64c64124d6f92bf41ce22d7729d808b97c64eefc1c1d6232ed63e8a281147b58",
       "includedInEvidenceHash": true
     },
     {
@@ -207,7 +207,7 @@
     {
       "file": "summary.md",
       "bytes": 817,
-      "sha256": "e97d98549c78d3021ff697e4629c371256dcd9fdcd890a2fa1c9b5cf2cdf20f0",
+      "sha256": "38679dac48dad36e5d04c18731f17058d1de44c65e2c704673356ae8b221b48b",
       "includedInEvidenceHash": true
     },
     {
@@ -225,7 +225,7 @@
     {
       "file": "verification-summary.json",
       "bytes": 1155,
-      "sha256": "4da7475a8babbea3e738ec8665e634758586004c2397b1fb121e66fe567ccfdd",
+      "sha256": "ebadcc28d4cb37341542e3627ed7c676ac03cee38398d5d3d94af5c2a6e0d010",
       "includedInEvidenceHash": true
     }
   ]

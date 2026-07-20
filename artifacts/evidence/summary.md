@@ -2,7 +2,7 @@
 
 Status: FAIL
 Evidence mode: PARTIAL_OFFLINE
-Evidence hash: 84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291
+Evidence hash: 70c8b1ba26073e2b0272ff365170fa4fa18e407a70e2692a7fc3885b739d5d72
 
 This package proves deterministic offline contracts and real OPA v1.18.2 execution. It does not prove a GPT-5.6 call, Codex repair, post-repair drift, browser flow, security release review, container, deployment, or submission.
 

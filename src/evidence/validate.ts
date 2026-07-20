@@ -2068,14 +2068,15 @@ export function validateEvidencePackage(
     `prompts/${policy.metadata.promptVersion}.md`,
     "prompts/cartographer.v1.md",
     "prompts/repair.v1.md",
+    "prompts/repair-report.v1.md",
     "prompts/reviewer.v1.md",
   ]) {
     if (!promptFiles.has(file)) {
       throw new Error(`Prompt manifest is missing the required prompt: ${file}`);
     }
   }
-  if (promptFiles.size !== 4) {
-    throw new Error("Prompt manifest must contain exactly the four trusted prompts.");
+  if (promptFiles.size !== 5) {
+    throw new Error("Prompt manifest must contain exactly the five trusted prompts.");
   }
   const goldenCases = parseEvidenceCases(parseJsonArray(files, "golden-cases.json"), "golden cases", "GOLDEN", policy);
   const generatedCases = parseEvidenceCases(parseJsonArray(files, "generated-cases.json"), "generated cases", "GENERATED", policy);
@@ -2355,6 +2356,15 @@ export function validateEvidencePackage(
     ) =>
       metadata.promptTemplateSha256 === promptFiles.get(promptFile) &&
       metadata.outputSchemaSha256 === hashText(JSON.stringify(outputSchema));
+    const metadataMatchesRepairPhase = (metadata: typeof cartography.metadata) =>
+      metadata.promptTemplateSha256 ===
+        hashText(
+          JSON.stringify({
+            executionSha256: promptFiles.get("prompts/repair.v1.md"),
+            reportSha256: promptFiles.get("prompts/repair-report.v1.md"),
+          }),
+        ) &&
+      metadata.outputSchemaSha256 === hashText(JSON.stringify(REPAIR_MODEL_OUTPUT_SCHEMA));
     const workerMetadata = [
       cartography.metadata,
       ...repairs.map((repair) => repair.metadata),
@@ -2378,12 +2388,7 @@ export function validateEvidencePackage(
         CARTOGRAPHY_MODEL_OUTPUT_SCHEMA,
       ) ||
       repairs.some(
-        (repair) =>
-          !metadataMatchesPhase(
-            repair.metadata,
-            "prompts/repair.v1.md",
-            REPAIR_MODEL_OUTPUT_SCHEMA,
-          ),
+        (repair) => !metadataMatchesRepairPhase(repair.metadata),
       ) ||
       !metadataMatchesPhase(
         review.metadata,

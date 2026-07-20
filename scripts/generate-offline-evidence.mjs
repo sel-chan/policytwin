@@ -118,6 +118,7 @@ const promptFiles = [
   "prompts/interpreter.v1.md",
   "prompts/cartographer.v1.md",
   "prompts/repair.v1.md",
+  "prompts/repair-report.v1.md",
   "prompts/reviewer.v1.md",
 ];
 const payload = new Map();

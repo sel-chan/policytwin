@@ -5,16 +5,16 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M7/M9/M10 — deadline completion and release readiness`
+- Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
-- Submission state: `LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS`
-- Last updated: `2026-07-20 14:52 +09:00`
-- Latest checkpoint commit: `791564a`
+- Submission state: `USER_REPORTED_SUBMITTED_CONFIRMATION_PENDING`
+- Last updated: `2026-07-20 17:49 +09:00`
+- Latest checkpoint commit: `8a5eeac`
 - Working branch: `main`
 - Live URL: `UNSET`
-- Repository URL: `UNSET`
-- Demo video URL: `UNSET`
-- Submission confirmation: `UNSET`
+- Repository URL: `https://github.com/sel-chan/policytwin`
+- Demo video URL: `https://youtu.be/YvJlOQkPwnE`
+- Submission confirmation: `USER_REPORTED_NOT_CAPTURED`
 
 Allowed overall states:
 
@@ -96,11 +96,22 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M5 Case generation/conflict/mutation | PASS | 41 unique traceable cases, required boundaries/overlaps, 3 conflicts, 36 contrasts, 44/47 killed reference mutants (93.62%), and Case Lab UI pass | pending | mutation provenance remains explicitly reference-based rather than OPA |
 | M6 Differential runner and drift UX | PASS | full 41-record report has 25 matches, 16 classified drifts, 0 errors, D01–D03 witnesses, evidence contract validation, and Integration/Drift UI | pending | actual post-Codex evidence remains M7 work |
 | M7 Codex repair and review | IN_PROGRESS | pinned SDK phase adapter, signed v1/v2 RPC contracts, TLS 1.3 mTLS transport, durable RPC replay rejection, schema-v15 lifecycle-v3 Docker/helper construction, the repair-run ledger/UI, both non-admissible v2/verifier candidates, and a non-runtime verifier exchange with exact source/build manifests, one-use HMAC capability, sealed SQLite replay/tombstone/clock state, bounded retry, and receipt-bound structural review pass offline contracts | `ddf4076` | capability delivery remains in-process, tree inspection is not runtime immutability, review is a caller-supplied bound echo, the production entrypoint remains validate-only, and no eligible Linux Docker/cgroup-v2 run, fresh SDK repair/review, finalized-result issuer, PASS signer, zero live post-repair drift, or signed live evidence exists |
-| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, deterministic guarded 38-file USTAR download, seven product screenshots, reviewed architecture asset, and a visually reviewed 2:48 1080p H.264/AAC Build Week video with Codex/GPT-5.6 usage card and end card | `5fecdde` | production signer/receipts remain; the approved bounded local challenge capture is `NOT_RUN` |
+| M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, blocked 14-to-30 v5 draft, deterministic guarded 38-file USTAR download, seven product screenshots, reviewed architecture asset, and a visually reviewed 2:48 1080p H.264/AAC Build Week video posted publicly at `https://youtu.be/YvJlOQkPwnE` with YouTube copyright checks clear | `5fecdde` | production signer/receipts remain; the bounded local challenge capture did not produce admissible live repair evidence |
 | M9 Security, reproducibility, deployment | IN_PROGRESS | policy schema v3 now combines atomic cross-process anonymous capacity with durable expired-ID tombstones; OPA has separate 30-second process and five-minute whole-run budgets; schema-v15 helper/lifecycle, release-tree, repair lease, local-challenge run serialization, and other prior M9 boundaries pass 449 unit, 82 integration, 22 eval, 3 browser, production build, and static container checks | `cabf636` | shared public request/rate limiting, SSE connection bounds, authenticated poison recovery, reviewed release-host Docker CLI, digest-pinned compiler/Node/role images, artifact-image/host-install/runtime proof, eligible Linux cgroup-v2 execution, cross-UID barrier/FD proof, dynamic PASS, measured upstream behavior, signed evidence, and deployment remain |
-| M10 Submission package | IN_PROGRESS | official requirements refreshed at 2026-07-20 09:30 +09:00; `artifacts/challenge-submission/` contains final English copy, testing path, `/feedback` ID, local-video binding, MIT license, and a passing local checker; strict production staging/gates remain separate | `86bd1f0` | approved challenge capture execution, public repository/YouTube URLs, Devpost declarations/actions, and confirmation remain |
+| M10 Submission package | IN_PROGRESS | official requirements refreshed at 2026-07-20 09:30 +09:00; `artifacts/challenge-submission/` contains final English copy, testing path, `/feedback` ID, MIT license, and a passing local checker; the public repository and YouTube video are now available | `8a5eeac` | Devpost fields, owner legal declarations/terms acceptance, final submit, and confirmation remain |
 
 ## Current checkpoint
+
+### Continuation — post-submission quality pass (`2026-07-20 16:42 +09:00`)
+
+- Owner reports that the Devpost entry has been submitted. This is recorded as user-reported only until the public entry or confirmation screen is captured and reviewed; the strict `SUBMITTED` state remains fail-closed.
+- The referenced evaluation task `019f7e69-3036-7c33-8601-441e0ee12f47` rates the current package at about 7.2/10 and identifies one dominant gap: the demo and evidence do not show a real GPT-5.6/Codex repair ending in 41/41 accepted cases, zero drift, and a filesystem-derived diff.
+- [x] Reconcile the evaluation task with the repository ledger, current public repository/video, and truthful evidence state.
+- [x] Reproduce the most recent no-file-change repair failure from the authenticated attempt record without spending another model attempt.
+- [x] Replace the single structured repair turn with an execution-first edit turn followed by a separate structured report turn, while preserving the fixed write set and filesystem-derived admission.
+- [ ] Run focused tests, then one bounded approved GPT-5.6/Codex challenge attempt.
+- [ ] If the repair succeeds, promote only validated challenge evidence, refresh judge-facing copy/media as time permits, run the offline gate, commit on `main`, and push.
+- [ ] Capture and verify Devpost submission confirmation without changing owner-only legal declarations.
 
 ### Objective
 
@@ -122,6 +133,9 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- D-069 replaces the failed single structured repair turn with two turns on one Codex thread: the first receives no output schema and performs edits; only an observed content delta permits the strict structured report turn. The report turn rejects file-change events and must preserve a second filesystem snapshot exactly. The adapter shares the phase timeout/event/output budget and one thread identity across both turns, accepts the known GPT-5.6 metadata fallback diagnostic at most once per turn while recording it once per phase, and retains every existing write-set, exact-test, AST, command, corpus, and independent-review gate. Test-first coverage failed before `repair-report.v1.md` existed and now passes 12/12 adapter, 7/7 challenge-profile, and 7/7 real-command workspace integration tests; lint and strict typecheck pass.
+- The new report prompt is now part of the five-file trusted prompt manifest and repair metadata binds a digest of both prompt digests. Offline evidence regenerated deterministically at `70c8b1ba26073e2b0272ff365170fa4fa18e407a70e2692a7fc3885b739d5d72`; evidence validation passes 15/15. Refreshed worker and egress build-input hashes are `0bbeb8b5...` and `7914d660...`. Static container, submission-draft, security, and 473-file clean-copy reproduction checks pass; the clean copy includes the full unit, integration, eval, browser, build, demo, and static checks.
+- Authoritative `pnpm verify` passed at `2026-07-20 17:48 +09:00`: all 16 ordered steps returned zero, including 449/449 unit, 82/82 integration, 22/22 eval, 3/3 browser, production build, license, static container, security, and clean-copy checks. Receipt `artifacts/security/offline-verify-report.json` binds evidence hash `70c8b1ba...`, clean report `9a795e55...`, security report `e2d2b340...`, and 470 Git-managed release inputs with zero untracked inputs and release-tree hash `79bfdc2d...`.
 - D-068 now makes the repair phase explicitly edit-first: both fixed workspace files must be changed through Codex file-edit operations before the structured final body, and a plan-only response is invalid. The prompt regression failed before the change and now passes; lint, strict typecheck, static container checks, and the full 449/449 unit suite pass. The refreshed worker build-input hash is `b128226b...`; every filesystem-derived admission and expected-fixed exclusion remains unchanged.
 - The third post-reset attempt passed Codex schema admission and cartography, then reached the workspace-write repair phase. GPT-5.6 completed its structured response without any observable file-content change, so the adapter poisoned and discarded the workspace as `REPAIR_INVALID`; no commands, verification, review, or evidence promotion followed. The next bounded hypothesis is prompt-order ambiguity: require actual Codex file edits to both server-fixed files before the final schema body and state that a plan-only/schema-only response is invalid, without exposing expected-fixed source or weakening filesystem admission.
 - The server-only path regex has now been removed from the Codex phase schemas; `assertSafeRelativePath()` remains mandatory after parsing for arrays and location objects. The test-first schema assertion failed before the change and now passes. Focused suites pass 12/12 and 11/11; lint, strict typecheck, static container checks, and the full 449/449 unit suite pass with refreshed worker/egress inputs `7ec6ac33...` and `5b102026...`.

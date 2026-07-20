@@ -188,7 +188,7 @@ test("local challenge factory is explicit, non-root-exported, and leaves host li
         client: { startThread() { throw new Error("not called"); } },
         fixtureRoot: process.cwd(),
         model: "gpt-5.6-sol",
-        prompts: { cartographer: "a", repair: "b", reviewer: "c" },
+        prompts: { cartographer: "a", repair: "b", repairReport: "c", reviewer: "d" },
         timeouts: { cartographyMs: 1, repairMs: 1, reviewMs: 1 },
       }),
     /explicit non-production acknowledgement/u,
@@ -198,7 +198,7 @@ test("local challenge factory is explicit, non-root-exported, and leaves host li
     client: { startThread() { throw new Error("not called"); } },
     fixtureRoot: process.cwd(),
     model: "gpt-5.6-sol",
-    prompts: { cartographer: "a", repair: "b", reviewer: "c" },
+    prompts: { cartographer: "a", repair: "b", repairReport: "c", reviewer: "d" },
     timeouts: { cartographyMs: 1, repairMs: 1, reviewMs: 1 },
   });
   assert.equal(backend.executionMode, "LIVE_CODEX_SDK");

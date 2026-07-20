@@ -648,6 +648,10 @@ async function runLocalChallengeLocked({ now }) {
     const prompts = {
       cartographer: readFileSync(resolve(ROOT, "prompts", "cartographer.v1.md"), "utf8"),
       repair: `${readFileSync(resolve(ROOT, "prompts", "repair.v1.md"), "utf8")}\n\nLOCAL_CHALLENGE safety contract: do not run commands. Change only the two planned files. Preserve the exported types, input interface, and decideRefund signature. Keep decideRefund pure: use only input property reads, const declarations, comparisons, boolean logic, conditionals, if blocks, and decision returns; imports, calls, assignments, loops, exceptions, computed properties, and global identifiers are forbidden. In tests/refund.test.mjs, change only the three existing test.skip( tokens to test(. Derive the source repair from the supplied policy, accepted cases, and drift witnesses; no expected-fixed implementation is available to the repair agent.\n`,
+      repairReport: readFileSync(
+        resolve(ROOT, "prompts", "repair-report.v1.md"),
+        "utf8",
+      ),
       reviewer: readFileSync(resolve(ROOT, "prompts", "reviewer.v1.md"), "utf8"),
     };
     const inputs = await buildInputs();
