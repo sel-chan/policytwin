@@ -151,7 +151,7 @@ function metadata(request, runId) {
   return {
     executionMode: "LIVE_CODEX_SDK",
     backendId: BACKEND_ID,
-    sdkVersion: "0.144.3",
+    sdkVersion: "0.144.6",
     model: request.model,
     modelReasoningEffort: "high",
     promptTemplateSha256: "a".repeat(64),

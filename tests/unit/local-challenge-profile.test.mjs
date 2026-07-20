@@ -115,8 +115,8 @@ function validRun() {
       temporaryAuthDirectoryRestricted: true,
     },
     tooling: {
-      sdkVersion: "0.144.3",
-      bundledCliVersion: "0.144.3",
+      sdkVersion: "0.144.6",
+      bundledCliVersion: "0.144.6",
       externalCliVersion: "0.144.0",
     },
     provenance: {

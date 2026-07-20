@@ -2,7 +2,7 @@
 
 PolicyTwin uses the following direct production packages under their respective licenses:
 
-- `@openai/codex-sdk` 0.144.3 — Apache-2.0;
+- `@openai/codex-sdk` 0.144.6 — Apache-2.0;
 - `openai` 6.46.0 — Apache-2.0;
 - `next` 16.2.10 — MIT;
 - `react` 19.2.7 and `react-dom` 19.2.7 — MIT;

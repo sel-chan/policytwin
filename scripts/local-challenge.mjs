@@ -41,7 +41,7 @@ import { ROOT, run } from "./process.mjs";
 
 const FINAL_DIRECTORY = resolve(ROOT, "artifacts", "challenge-evidence");
 const MODEL = "gpt-5.6";
-const SDK_VERSION = "0.144.3";
+const SDK_VERSION = "0.144.6";
 const ENVIRONMENT_ALLOWLIST = new Set([
   "APPDATA",
   "CI",
@@ -469,7 +469,7 @@ function installedVersions() {
     readFileSync(resolve(ROOT, "node_modules", "@openai", "codex", "package.json"), "utf8"),
   );
   if (sdkPackage.version !== SDK_VERSION || bundledPackage.version !== SDK_VERSION) {
-    throw new Error("The local challenge requires the reviewed Codex SDK and bundled CLI 0.144.3.");
+    throw new Error("The local challenge requires the reviewed Codex SDK and bundled CLI 0.144.6.");
   }
   const loginStatus = commandOutput("codex", ["login", "status"]);
   if (!/logged in using ChatGPT/iu.test(loginStatus)) {

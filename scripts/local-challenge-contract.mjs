@@ -122,8 +122,8 @@ export function validateLocalChallengeSchemaContract() {
     SCHEMA.properties?.surface?.const !== "CODEX_CLI_OUTPUT_SCHEMA" ||
     SCHEMA.properties?.authentication?.properties?.mode?.const !==
       "EXISTING_CODEX_LOGIN_TEMPORARY_AUTH_COPY" ||
-    SCHEMA.properties?.tooling?.properties?.sdkVersion?.const !== "0.144.3" ||
-    SCHEMA.properties?.tooling?.properties?.bundledCliVersion?.const !== "0.144.3" ||
+    SCHEMA.properties?.tooling?.properties?.sdkVersion?.const !== "0.144.6" ||
+    SCHEMA.properties?.tooling?.properties?.bundledCliVersion?.const !== "0.144.6" ||
     !sameMembers(SCHEMA.properties?.repair?.required, [
       "status",
       "cartographyThreadId",
@@ -195,8 +195,8 @@ export function validateLocalChallengeRun(input) {
     "local challenge tooling",
   );
   if (
-    tooling.sdkVersion !== "0.144.3" ||
-    tooling.bundledCliVersion !== "0.144.3" ||
+    tooling.sdkVersion !== "0.144.6" ||
+    tooling.bundledCliVersion !== "0.144.6" ||
     typeof tooling.externalCliVersion !== "string" ||
     !/^0\.144\.[0-9]+$/u.test(tooling.externalCliVersion)
   ) {

@@ -108,7 +108,7 @@ export function verifierRequest(overrides = {}) {
     acceptedCorpusSha256: acceptedCorpusSha256(repairInput),
     workerImageDigest: `sha256:${"4".repeat(64)}`,
     sdkPackage: "@openai/codex-sdk",
-    sdkVersion: "0.144.3",
+    sdkVersion: "0.144.6",
     writablePaths: ["src/refund.ts", "tests/refund.test.mjs"],
     commandIds: ["fixture-typecheck", "fixture-test"],
     repairWorkspace: "DISPOSABLE_TWO_FILE_WRITESET",
@@ -363,7 +363,7 @@ function workerMetadata(request, runId, phase, overrides = {}) {
   return {
     executionMode: overrides.executionMode ?? "OFFLINE_TEST_DOUBLE",
     backendId: overrides.backendId ?? "verifier-bridge-test-backend",
-    sdkVersion: overrides.sdkVersion ?? "0.144.3",
+    sdkVersion: overrides.sdkVersion ?? "0.144.6",
     model: overrides.model ?? request.model,
     modelReasoningEffort: overrides.modelReasoningEffort ?? request.modelReasoningEffort,
     promptTemplateSha256: overrides.promptTemplateSha256 ?? "a".repeat(64),

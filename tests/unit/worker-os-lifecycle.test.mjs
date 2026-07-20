@@ -80,7 +80,7 @@ function validRequest() {
     acceptedCorpusSha256: acceptedCorpusSha256(input),
     workerImageDigest: `sha256:${"5".repeat(64)}`,
     sdkPackage: "@openai/codex-sdk",
-    sdkVersion: "0.144.3",
+    sdkVersion: "0.144.6",
     writablePaths: ["src/refund.ts", "tests/refund.test.mjs"],
     commandIds: ["fixture-typecheck", "fixture-test"],
     repairWorkspace: "DISPOSABLE_TWO_FILE_WRITESET",

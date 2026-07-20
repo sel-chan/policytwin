@@ -63,7 +63,7 @@ export interface WorkerRpcPolicy {
   acceptedCorpusSha256: string;
   workerImageDigest: string;
   sdkPackage: "@openai/codex-sdk";
-  sdkVersion: "0.144.3";
+  sdkVersion: "0.144.6";
   writablePaths: ["src/refund.ts", "tests/refund.test.mjs"];
   commandIds: ["fixture-typecheck", "fixture-test"];
   repairWorkspace: "DISPOSABLE_TWO_FILE_WRITESET";
@@ -515,7 +515,7 @@ export function parseWorkerRpcPolicy(value: unknown): WorkerRpcPolicy {
     result.schemaVersion !== "1" ||
     result.fixtureId !== "seeded-refund-demo" ||
     result.sdkPackage !== "@openai/codex-sdk" ||
-    result.sdkVersion !== "0.144.3" ||
+    result.sdkVersion !== "0.144.6" ||
     result.repairWorkspace !== "DISPOSABLE_TWO_FILE_WRITESET" ||
     result.verificationWorkspace !== "IMMUTABLE_RECONSTRUCTED" ||
     result.rootFilesystem !== "READ_ONLY" ||
@@ -557,7 +557,7 @@ export function parseWorkerRpcPolicy(value: unknown): WorkerRpcPolicy {
     ),
     workerImageDigest: imageDigest(result.workerImageDigest),
     sdkPackage: "@openai/codex-sdk",
-    sdkVersion: "0.144.3",
+    sdkVersion: "0.144.6",
     writablePaths: ["src/refund.ts", "tests/refund.test.mjs"],
     commandIds: ["fixture-typecheck", "fixture-test"],
     repairWorkspace: "DISPOSABLE_TWO_FILE_WRITESET",

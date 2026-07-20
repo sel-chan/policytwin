@@ -340,7 +340,7 @@ test("SDK adapter uses isolated phase threads and server-owned filesystem eviden
       "tests/refund.test.mjs",
     ]);
     assert.equal(report.cartography.metadata.runId, "thread-cartography");
-    assert.equal(report.cartography.metadata.sdkVersion, "0.144.3");
+    assert.equal(report.cartography.metadata.sdkVersion, "0.144.6");
     assert.equal(report.cartography.metadata.model, "gpt-codex-test");
     assert.equal(report.cartography.metadata.modelReasoningEffort, "high");
     assert.equal(report.cartography.metadata.promptTemplateSha256, sha256(prompts.cartographer));

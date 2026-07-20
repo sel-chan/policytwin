@@ -2368,8 +2368,8 @@ export function validateEvidencePackage(
       !commandIds.includes("fixture-test") ||
       finalCommands.some((command) => command.exitCode !== 0 || command.timedOut) ||
       review.verdict !== "APPROVE" ||
-      cartography.metadata.backendId !== "@openai/codex-sdk@0.144.3" ||
-      cartography.metadata.sdkVersion !== "0.144.3" ||
+      cartography.metadata.backendId !== "@openai/codex-sdk@0.144.6" ||
+      cartography.metadata.sdkVersion !== "0.144.6" ||
       !metadataMatchesCartography(review.metadata) ||
       repairs.some((repair) => !metadataMatchesCartography(repair.metadata)) ||
       !metadataMatchesPhase(

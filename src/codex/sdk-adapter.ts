@@ -621,7 +621,7 @@ async function consumePhaseStream(
       metadata: {
         executionMode: options.executionMode,
         backendId: options.backendId,
-        sdkVersion: "0.144.3",
+        sdkVersion: "0.144.6",
         model: options.model,
         modelReasoningEffort: options.modelReasoningEffort ?? "high",
         promptTemplateSha256: createHash("sha256").update(promptTemplate, "utf8").digest("hex"),

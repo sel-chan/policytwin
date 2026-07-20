@@ -52,8 +52,8 @@
       "additionalProperties": false,
       "required": ["sdkVersion", "bundledCliVersion", "externalCliVersion"],
       "properties": {
-        "sdkVersion": { "const": "0.144.3" },
-        "bundledCliVersion": { "const": "0.144.3" },
+        "sdkVersion": { "const": "0.144.6" },
+        "bundledCliVersion": { "const": "0.144.6" },
         "externalCliVersion": { "type": "string", "pattern": "^0\\.144\\.[0-9]+$" }
       }
     },

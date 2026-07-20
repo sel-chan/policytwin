@@ -402,7 +402,7 @@ function buildPolicy(
     acceptedCorpusSha256: acceptedCorpusSha256(input),
     workerImageDigest: imageDigest(options.workerImageDigest),
     sdkPackage: "@openai/codex-sdk",
-    sdkVersion: "0.144.3",
+    sdkVersion: "0.144.6",
     writablePaths: ["src/refund.ts", "tests/refund.test.mjs"],
     commandIds: ["fixture-typecheck", "fixture-test"],
     repairWorkspace: "DISPOSABLE_TWO_FILE_WRITESET",
@@ -650,7 +650,7 @@ function verifyPhaseMetadata(
     if (
       metadata.executionMode !== "LIVE_CODEX_SDK" ||
       metadata.backendId !== expectedBackendId ||
-      metadata.sdkVersion !== "0.144.3" ||
+      metadata.sdkVersion !== "0.144.6" ||
       metadata.model !== request.model ||
       metadata.modelReasoningEffort !== "high" ||
       Date.parse(metadata.startedAt) < Date.parse(request.issuedAt) ||
