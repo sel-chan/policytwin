@@ -715,7 +715,9 @@ async function runLocalChallengeLocked({ now }) {
     removeIsolatedCodexHome(isolatedCodexHome);
     isolatedCodexHome = null;
     if (report.status !== "PASS" || report.cartography === null || report.review === null) {
-      throw new Error(`Local challenge repair did not pass: ${report.failure?.code ?? "UNKNOWN"}.`);
+      const failureCode = report.failure?.code ?? "UNKNOWN";
+      const failureMessage = report.failure?.message ?? "No safe diagnostic was retained.";
+      throw new Error(`Local challenge repair did not pass: ${failureCode}. ${failureMessage}`);
     }
     const finalRepair = report.repairAttempts.at(-1);
     const finalVerification = report.policyVerificationAttempts.at(-1);
