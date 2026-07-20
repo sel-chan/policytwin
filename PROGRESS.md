@@ -8,8 +8,8 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-20 20:01 +09:00`
-- Latest checkpoint commit: `81db16e`
+- Last updated: `2026-07-20 20:15 +09:00`
+- Latest checkpoint commit: `75a1854`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -137,6 +137,7 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- Final clean-tree `pnpm verify` after the D-072 isolation fix passed all 16 ordered steps at `2026-07-20 20:14 +09:00`: lint, strict typecheck, 452/452 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, MIT license, static container, 476-file clean-copy reproduction, production build, and 476-file/442-text-file security plus Git-history scanning. Receipt `artifacts/security/offline-verify-report.json` binds evidence hash `c8f7c64f...`, clean report `245ce66e...`, security report `62522ec8...`, and 473 tracked/zero-untracked release inputs with release-tree hash `6ad59da1...`.
 - The first clean-copy run after D-072 found one test-isolation defect: the new regression invoked `HEAD` against `ROOT`, but the deterministic copied tree intentionally excludes `.git`. The inner unit suite therefore reported 451 pass/1 fail and its expected clean-report failure propagated to one eval assertion; browser 3/3, production build, and security/history scanning still passed. The regression now creates and commits an isolated temporary Git repository, then exercises the stripped-config HEAD command there. Focused submission validation passes 10/10, lint and strict typecheck pass, `pnpm clean:check` passes with 476 copied files, and the truthful submission draft was regenerated back from the transient failure state. A fresh clean-tree full gate remains required after checkpointing this test fix.
 - The first post-push release check falsely reported a local/public HEAD mismatch even though anonymous `git ls-remote` and `origin/main` both resolved to local commit `0cfcc21`. Exact reproduction showed that the checker disabled the user's global Git config and thereby lost the removable `F:` drive's `safe.directory` exception. D-072 now gives only the resolved repository root a process-local safe-directory entry, never a wildcard; the 10/10 focused submission-validation suite, lint, and `pnpm challenge:submission:release` pass with `PUBLIC_ENTRY_VERIFIED`.
 - Authoritative clean-tree `pnpm verify` passed all 16 ordered steps at `2026-07-20 19:38 +09:00`: lint, strict typecheck, 451/451 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, MIT license, static container, 476-file clean-copy reproduction, production build, and 476-file/442-text-file security plus Git-history scanning. The new receipt binds evidence hash `c8f7c64f...`, clean report `245ce66e...`, security report `62522ec8...`, and 473 tracked/zero-untracked release inputs with release-tree hash `2f6f225a...`.
