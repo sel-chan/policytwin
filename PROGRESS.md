@@ -8,8 +8,8 @@
 - Current milestone: `M7/M8/M10 — post-submission quality pass`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-20 19:24 +09:00`
-- Latest checkpoint commit: `85dd037`
+- Last updated: `2026-07-20 19:38 +09:00`
+- Latest checkpoint commit: `93874de`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -113,7 +113,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - [x] Refresh the offline evidence and complete the authoritative offline gate from a clean implementation commit.
 - [x] Run one bounded approved GPT-5.6/Codex challenge attempt from the clean receipt checkpoint.
 - [x] Promote only validated challenge evidence and refresh judge-facing copy and public-link receipts.
-- [ ] Commit the validated evidence and copy on `main`, rerun the required gates, and push.
+- [x] Commit the validated evidence and copy on `main` and rerun the required gates.
+- [ ] Push the verified `main` commits and require exact public/local `HEAD` equality.
 - [ ] Capture the strict Devpost confirmation screenshot/object without changing owner-only legal declarations.
 
 ### Objective
@@ -136,6 +137,7 @@ The owner explicitly selected MIT with `Copyright (c) 2026 CHAN` and approved th
 
 ### Checkpoint evidence in progress
 
+- Authoritative clean-tree `pnpm verify` passed all 16 ordered steps at `2026-07-20 19:38 +09:00`: lint, strict typecheck, 451/451 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, MIT license, static container, 476-file clean-copy reproduction, production build, and 476-file/442-text-file security plus Git-history scanning. The new receipt binds evidence hash `c8f7c64f...`, clean report `245ce66e...`, security report `62522ec8...`, and 473 tracked/zero-untracked release inputs with release-tree hash `2f6f225a...`.
 - Checkpoint `85dd037` commits the validated GPT-5.6/Codex run evidence, filesystem-derived diff, public GitHub/YouTube/Devpost state, judge-facing copy, canonical Devpost URL validation, and release checks on current `main`. The subsequent clean-commit `pnpm verify` execution passed every substantive command: lint, strict typecheck, 451/451 unit, 82/82 integration, 22/22 eval, 3/3 production Chrome, MIT license, static container, 476-file clean-copy reproduction, production build, and 476-file/442-text-file security plus Git-history scanning. Final receipt issuance then correctly failed because those two generated security reports had refreshed file counts and no longer matched their Git-index objects. This is a generated-report checkpoint mismatch, not a failed product/test/security command; commit the refreshed reports and rerun from a clean tree before publication.
 - Authenticated run `lc_71163880e27f24d9` at repository commit `5ab9f9a` completed `LOCAL_CHALLENGE_PASS` with GPT-5.6 Sol through Codex SDK/CLI 0.144.6 and no metadata fallback diagnostic. Codex changed exactly `src/refund.ts` and `tests/refund.test.mjs`; server-owned typecheck and regression tests passed 7/7, the hash-bound accepted corpus passed 41/41 with zero drift, and independent thread `019f7ef1-beeb-7522-a96a-ec945a337fd5` returned `APPROVE` with zero blocking findings. `pnpm challenge:check` independently validates the checked-in JSON, filesystem diff, prompt/schema/thread/tree/command/result hashes, and production-claim exclusions.
 - Anonymous publication checks verify GitHub `sel-chan/policytwin` as public, YouTube oEmbed title/author for `YvJlOQkPwnE`, and the canonical Devpost page `https://devpost.com/software/policytwin` with `SUBMITTED TO OpenAI Build Week`; browser playback separately confirms 168.021-second media with non-muted decoded audio/video bytes. The browser skill was used only for public verification; no legal field or submission control was changed.
