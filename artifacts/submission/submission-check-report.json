@@ -29,11 +29,9 @@
     "Draft marker remains in submission artifact: whats-next.md",
     "Evidence package is not live verified PASS.",
     "Final demo data does not match the live verified evidence summary.",
-    "Fresh pnpm verify execution did not pass in this submission-check run.",
     "Missing or non-regular demo file: video-publication-receipt.json",
     "Missing verified HTTPS link: liveUrl",
     "Official rules have not been verified.",
-    "Offline verify receipt inputs cannot be recomputed.",
     "Unexpected demo staging entry: narration.json",
     "Unexpected demo staging entry: video-manifest.json",
     "YouTube publication receipt is missing, stale, unreviewed, or not bound to the local demo."
