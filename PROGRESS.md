@@ -8,8 +8,8 @@
 - Current milestone: `M10 — Devpost confirmation capture`
 - Goal state: `IN_PROGRESS`
 - Submission state: `ACCOUNT_SUBMISSION_CONFIRMED_STRICT_RELEASE_GATES_INCOMPLETE`
-- Last updated: `2026-07-21 10:24 +09:00`
-- Latest checkpoint commit: `e6c1fd3`
+- Last updated: `2026-07-21 10:46 +09:00`
+- Latest checkpoint commit: `968c01d`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -112,6 +112,8 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - First combined lint/test/check retry: `FAIL` at `pnpm lint` because the fallback browser tool left an untracked `.playwright-mcp/*.yml` snapshot without a final newline. This is classified as tool-generated workspace residue, not a source or evidence defect; the single ignored-purpose snapshot was removed with `apply_patch` after its workspace-local path was verified.
 - [x] Confirmation-only package inspection: `PASS` with `checkedConfirmationEvidence:true` and zero confirmation/state/owner-action failures.
 - [x] `pnpm lint`: `PASS`; targeted submission tests: `PASS` (11/11); `pnpm challenge:submission:check`: `PASS` with status `ACCOUNT_SUBMISSION_CONFIRMED` and `remaining:[]`.
+- First full `pnpm submission:check`: expected overall `FAIL`, but canonical `submission-check-report.json` now records `checkedConfirmationEvidence:true` and contains no confirmation/state/owner-action failure. All 16 offline verification steps ran successfully through security; final receipt creation failed because the new confirmation PNG/JSON changed the regenerated clean/security source counts from 477 to 479 after commit, so those tracked reports no longer matched their index objects during this first refresh run.
+- Recovery: commit the truthful 479-file clean/security refresh and current strict report, then rerun the full check on the resulting clean commit. The remaining strict failures are unrelated production/deployment/final-staging gates and will not be hidden.
 - [ ] Run the full strict package check, confirm its canonical report also marks the confirmation evidence valid, and record only the unrelated production-release gaps.
 - [ ] Commit and push the reviewed confirmation evidence; leave unrelated production-live/deployment gaps explicit.
 - Recovery note: the preferred Windows-app and in-app-browser runtimes both failed before navigation with a local missing kernel-assets path; no Devpost action occurred. A bounded alternate browser surface will be tried next.
