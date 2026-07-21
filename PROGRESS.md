@@ -5,10 +5,10 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M8/M10 — judge clarity pass`
+- Current milestone: `M8/M10 — judge clarity regression repair`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-21 08:57 +09:00`
+- Last updated: `2026-07-21 09:26 +09:00`
 - Latest checkpoint commit: `4ca1229`
 - Working branch: `main`
 - Live URL: `UNSET`
@@ -101,6 +101,17 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M10 Submission package | IN_PROGRESS | final English copy, testing path, `/feedback` ID, MIT license, validated local challenge evidence, public GitHub/YouTube, and the canonical Devpost entry submitted to OpenAI Build Week are verified anonymously | pending | the strict production-ledger confirmation screenshot/object remains |
 
 ## Current checkpoint
+
+### Judge clarity regression repair (`2026-07-21 09:18 +09:00`)
+
+- The owner found two expected regressions from the explicitly unverified clarity checkpoint and authorized verification again, superseding the prior stop instruction for the commands below.
+- [x] Update the Policy Studio E2E expectation from the removed disabled button to the new visible `Recorded interpretation` status.
+- [x] Restore the primary Codex `/feedback` session ID `019f5dcf-0233-7a80-9147-af10c7bbfb28` to the concise README.
+- First `pnpm test:e2e` retry: `FAIL` (2/3 passed). The updated Policy Studio assertion passed, then the judge-flow test reached a second stale assertion for the removed `REFERENCE_EXPECTATION_NOT_OPA` Integration copy. This is classified as a test/UI-contract regression; the product server and the other two browser tests passed.
+- Recovery: update the remaining judge-facing copy assertions to the current result-first UI, and preserve repair-run API, CSRF, idempotency, SSE, and lease-expiry coverage through authenticated same-origin browser requests now that the repair control is intentionally absent from the judge path.
+- [x] `pnpm test:e2e`: `PASS` (3/3 in 1.8 minutes). The current result-first judge flow passes while CSRF rejection, authenticated blocked-run creation, SSE cursor replay, retry/idempotency, poisoned lease reconciliation, proof archive, keyboard, mobile, and capacity fail-closed coverage remain exercised.
+- [x] `pnpm challenge:submission:check`: `PASS`; the restored feedback session ID, 168-second public video receipt, and package metadata are accepted. The only reported remainder is the pre-existing strict Devpost confirmation artifact.
+- [ ] Run the authoritative `pnpm verify`, record the new receipt, commit, and push.
 
 ### Judge clarity pass (`2026-07-21 08:51 +09:00`)
 

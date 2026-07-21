@@ -23,6 +23,7 @@ PolicyTwin found three seeded bugs in a TypeScript refund application, asked GPT
 - [Watch the 2:48 demo](https://youtu.be/h7o1vXmWC-M)
 - [View the submitted Devpost entry](https://devpost.com/software/policytwin)
 - [Inspect the captured GPT-5.6/Codex evidence](artifacts/challenge-evidence/summary.md)
+- Primary Codex `/feedback` session: `019f5dcf-0233-7a80-9147-af10c7bbfb28`
 
 ## How it works
 

@@ -55,7 +55,7 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   );
   await expect(page.getByText("SQLite v1", { exact: true })).toBeVisible();
   await expect(page.getByText("Needs decision", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Interpret with GPT-5.6" })).toBeDisabled();
+  await expect(page.getByText("Recorded interpretation", { exact: true })).toBeVisible();
   await page.screenshot({ path: resolve(screenshotDirectory, "01-policy-studio.png"), fullPage: true });
 
   const directWorkspaceCreation = await request.get(
@@ -155,17 +155,28 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
 
   await page.getByRole("link", { name: /Integration \/ Drift/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Integration / Drift" })).toBeVisible();
-  await expect(page.getByText("REFERENCE_EXPECTATION_NOT_OPA", { exact: false })).toBeVisible();
-  await expect(page.getByText(/accepted corpus expectations, not OPA results/u)).toBeVisible();
+  await expect(
+    page.getByText("Before repair · accepted policy cases", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Forty-one accepted cases make the mismatch concrete/u),
+  ).toBeVisible();
   for (const caseId of ["D01", "D02", "D03"]) {
     await expect(page.getByText(caseId, { exact: true })).toBeVisible();
   }
   const challengeReceipt = page.locator(".challenge-receipt");
-  await expect(challengeReceipt.getByText("LOCAL_CHALLENGE_PASS", { exact: true })).toBeVisible();
+  await expect(challengeReceipt.getByText("Verified repair", { exact: true })).toBeVisible();
   await expect(challengeReceipt.getByText("7 / 7", { exact: true })).toBeVisible();
   await expect(challengeReceipt.getByText("41 / 41", { exact: true })).toBeVisible();
   await expect(challengeReceipt.getByText("APPROVE", { exact: true })).toBeVisible();
-  await expect(challengeReceipt).toContainText("not production");
+  await expect(challengeReceipt).toContainText(
+    "hosted one-click repair is the next integration step",
+  );
+  await expect(
+    page.getByRole("heading", {
+      name: "Connect the captured workflow to a hosted repair worker",
+    }),
+  ).toBeVisible();
   await challengeReceipt.screenshot({
     path: resolve(screenshotDirectory, "04-codex-repair.png"),
   });
@@ -174,13 +185,40 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
     { data: { clientRequestId: "44444444-4444-4444-8444-444444444444" } },
   );
   expect(untrustedRepair.status()).toBe(403);
-  const startRepair = page.getByRole("button", { name: "Start guarded Codex repair" });
-  await expect(startRepair).toBeEnabled();
-  await startRepair.click();
-  await expect(page.getByText("BLOCKED", { exact: true })).toBeVisible();
-  await expect(page.getByText("Run created", { exact: true })).toBeVisible();
-  await expect(page.getByText("Run blocked", { exact: true })).toBeVisible();
-  await expect(page.getByText("No model or Codex call occurred for this blocked run.")).toBeVisible();
+  const firstRepair = await page.evaluate(async () => {
+    const workspaceResponse = await fetch(
+      "/api/policies/policy-seeded-refund/workspace",
+      { cache: "no-store" },
+    );
+    const workspace = (await workspaceResponse.json()) as { csrfToken: string };
+    const response = await fetch(
+      "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-PolicyTwin-CSRF": workspace.csrfToken,
+        },
+        body: JSON.stringify({
+          clientRequestId: "44444444-4444-4444-8444-444444444444",
+        }),
+      },
+    );
+    return {
+      status: response.status,
+      body: (await response.json()) as {
+        created: boolean;
+        run: { id: string; status: string; executionMode: string };
+        events: Array<{ type: string }>;
+      },
+    };
+  });
+  expect(firstRepair.status).toBe(201);
+  expect(firstRepair.body.created).toBe(true);
+  expect(firstRepair.body.run.status).toBe("BLOCKED");
+  expect(firstRepair.body.run.executionMode).toBe("NOT_STARTED");
+  expect(firstRepair.body.events.map((event) => event.type)).toContain("RUN_CREATED");
+  expect(firstRepair.body.events.map((event) => event.type)).toContain("RUN_BLOCKED");
   const replayedTimeline = await page.evaluate(async () => {
     const latestResponse = await fetch(
       "/api/policies/policy-seeded-refund/versions/4/repair-runs",
@@ -197,13 +235,37 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   expect(replayedTimeline.body).not.toContain("id: 1\n");
   expect(replayedTimeline.body).toContain("id: 2\n");
   expect(replayedTimeline.body).toContain('"type":"RUN_BLOCKED"');
-  await page.reload();
-  await expect(page.getByText("BLOCKED", { exact: true })).toBeVisible();
-  await expect(page.getByText("Run blocked", { exact: true })).toBeVisible();
-  const firstRunHeading = await page.locator(".repair-run-panel h2").innerText();
-  await page.getByRole("button", { name: "Create new guarded attempt" }).click();
-  await expect(page.getByText("BLOCKED", { exact: true })).toBeVisible();
-  await expect.poll(() => page.locator(".repair-run-panel h2").innerText()).not.toBe(firstRunHeading);
+  const secondRepair = await page.evaluate(async () => {
+    const workspaceResponse = await fetch(
+      "/api/policies/policy-seeded-refund/workspace",
+      { cache: "no-store" },
+    );
+    const workspace = (await workspaceResponse.json()) as { csrfToken: string };
+    const response = await fetch(
+      "/api/policies/policy-seeded-refund/versions/4/repair-runs",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-PolicyTwin-CSRF": workspace.csrfToken,
+        },
+        body: JSON.stringify({
+          clientRequestId: "44444444-4444-4444-8444-444444444445",
+        }),
+      },
+    );
+    return {
+      status: response.status,
+      body: (await response.json()) as {
+        created: boolean;
+        run: { id: string; status: string };
+      },
+    };
+  });
+  expect(secondRepair.status).toBe(201);
+  expect(secondRepair.body.created).toBe(true);
+  expect(secondRepair.body.run.status).toBe("BLOCKED");
+  expect(secondRepair.body.run.id).not.toBe(firstRepair.body.run.id);
   const idempotentRepairReplay = await page.evaluate(async () => {
     const workspaceResponse = await fetch(
       "/api/policies/policy-seeded-refund/workspace",
@@ -314,7 +376,10 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
   await page.getByRole("link", { name: /Proof/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Proof" })).toBeVisible();
   await expect(
-    page.getByText("Reference v4 OPA proof is preserved. Production live repair remains gated.", { exact: true }),
+    page.getByRole("heading", {
+      level: 2,
+      name: "41/41 policy cases. Zero drift. Independent APPROVE.",
+    }),
   ).toBeVisible();
   await expect(
     page.getByText("This session matches recorded reference v4.", { exact: true }),
@@ -338,7 +403,7 @@ test("persisted decisions, evidence views, and blocked change impact remain trut
 
   await page.getByRole("link", { name: /Change Impact/u }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Change Impact" })).toBeVisible();
-  await expect(page.getByText("G02 blocks verification", { exact: true })).toBeVisible();
+  await expect(page.getByText("G02 requires a decision", { exact: true })).toBeVisible();
   await expect(page.getByText("REFERENCE_EVALUATOR_NOT_OPA", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Candidate policy text")).toHaveValue(/including exactly day 30/u);
   await expect(page.getByLabel("Candidate policy text")).not.toHaveValue(/including exactly day 14/u);
