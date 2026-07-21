@@ -5,16 +5,16 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M8/M10 — judge clarity regression repair`
+- Current milestone: `M10 — Devpost confirmation capture`
 - Goal state: `IN_PROGRESS`
-- Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-21 09:43 +09:00`
+- Submission state: `ACCOUNT_SUBMISSION_CONFIRMED_STRICT_RELEASE_GATES_INCOMPLETE`
+- Last updated: `2026-07-21 10:24 +09:00`
 - Latest checkpoint commit: `e6c1fd3`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
 - Demo video URL: `https://youtu.be/h7o1vXmWC-M`
-- Submission confirmation: `PUBLIC_DEVPOST_ENTRY_VERIFIED; STRICT_SCREENSHOT_OBJECT_NOT_CAPTURED`
+- Submission confirmation: `VERIFIED_OWNER_REVIEWED; 1080298-policytwin; artifacts/submission/submission-confirmation.{png,json}`
 
 Allowed overall states:
 
@@ -98,9 +98,23 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 | M7 Codex repair and review | IN_PROGRESS | the bounded GPT-5.6 Sol/Codex capture changed exactly two files, passed fixed commands and regression tests 7/7, replayed 41/41 accepted cases with zero drift, and received a distinct read-only `APPROVE` review; pinned production SDK/RPC/container contracts remain separately fail-closed | `5ab9f9a` | the successful capture is local challenge evidence, not eligible Linux Docker/cgroup-v2 execution, finalized production signing, or `verify:live` |
 | M8 Proof, impact, and polish | IN_PROGRESS | reference-bound Proof UI, deterministic 38-file USTAR, seven product screenshots, reviewed architecture, public 2:48 H.264/AAC video, and checked-in filesystem-derived GPT-5.6/Codex challenge evidence | `5fecdde` | production signer/attestation and a video recut showing the later successful capture remain optional quality work |
 | M9 Security, reproducibility, deployment | IN_PROGRESS | policy schema v3, OPA budgets, schema-v15 helper/lifecycle, release-tree, repair lease, challenge serialization, and related boundaries pass 450 unit, 82 integration, 22 eval, 3 browser, production build, static container, clean-copy, and security checks | `5ab9f9a` | shared public admission, immutable runtime images, eligible Linux cgroup-v2 execution, measured upstream behavior, signed evidence, and deployment remain |
-| M10 Submission package | IN_PROGRESS | final English copy, testing path, `/feedback` ID, MIT license, validated local challenge evidence, public GitHub/YouTube, and the canonical Devpost entry submitted to OpenAI Build Week are verified anonymously | pending | the strict production-ledger confirmation screenshot/object remains |
+| M10 Submission package | IN_PROGRESS | final English copy, testing path, `/feedback` ID, MIT license, validated local challenge evidence, public GitHub/YouTube, canonical Devpost entry, and signed-in `SUBMITTED` / `5/5` confirmation evidence are verified | pending | account confirmation is closed; production deployment, live provider/worker evidence, and final release attestation remain separate engineering gates |
 
 ## Current checkpoint
+
+### Devpost confirmation capture (`2026-07-21 10:11 +09:00`)
+
+- The owner explicitly requested completion of the remaining strict Devpost confirmation evidence and thereby approved account-side read-only inspection and evidence capture for the already submitted PolicyTwin entry.
+- [x] Opened the owner-provided signed-in Devpost management URL and verified `PolicyTwin`, `SUBMITTED`, and `5/5 steps done` without changing fields or re-accepting legal declarations.
+- [x] Captured a 941×720 privacy crop containing only the Devpost project/status area; direct inspection found no personal tabs, bookmarks, account identifier, notification, or secret.
+- [x] Created `submission-confirmation.json` for `1080298-policytwin`, bound it to public URL `https://devpost.com/software/policytwin` and final 24-bit RGB PNG SHA-256 `089d17ed079842f295e8bc1e094942e3d5f0e8d49162641f98da1b6d559f931f`, and updated the account submission state without promoting the separate live engineering gates.
+- First confirmation-only contract check: `FAIL`; the screenshot content and dimensions were valid, but the Windows crop was encoded as 32-bit alpha rather than the required reviewed 8-bit RGB PNG profile. The unrelated demo-video probe was deliberately disabled for this narrow check. Recovery is a byte-profile-only 24-bit RGB re-encode from the same captured pixels, followed by a new hash binding and retry.
+- First combined lint/test/check retry: `FAIL` at `pnpm lint` because the fallback browser tool left an untracked `.playwright-mcp/*.yml` snapshot without a final newline. This is classified as tool-generated workspace residue, not a source or evidence defect; the single ignored-purpose snapshot was removed with `apply_patch` after its workspace-local path was verified.
+- [x] Confirmation-only package inspection: `PASS` with `checkedConfirmationEvidence:true` and zero confirmation/state/owner-action failures.
+- [x] `pnpm lint`: `PASS`; targeted submission tests: `PASS` (11/11); `pnpm challenge:submission:check`: `PASS` with status `ACCOUNT_SUBMISSION_CONFIRMED` and `remaining:[]`.
+- [ ] Run the full strict package check, confirm its canonical report also marks the confirmation evidence valid, and record only the unrelated production-release gaps.
+- [ ] Commit and push the reviewed confirmation evidence; leave unrelated production-live/deployment gaps explicit.
+- Recovery note: the preferred Windows-app and in-app-browser runtimes both failed before navigation with a local missing kernel-assets path; no Devpost action occurred. A bounded alternate browser surface will be tried next.
 
 ### Judge clarity regression repair (`2026-07-21 09:18 +09:00`)
 

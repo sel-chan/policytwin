@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1",
-  "status": "NOT_READY",
+  "status": "SUBMITTED",
   "liveUrl": null,
-  "repositoryUrl": null,
-  "videoUrl": null,
-  "submissionUrl": null,
-  "feedbackSessionId": null
+  "repositoryUrl": "https://github.com/sel-chan/policytwin",
+  "videoUrl": "https://youtu.be/h7o1vXmWC-M",
+  "submissionUrl": "https://devpost.com/software/policytwin",
+  "feedbackSessionId": "019f5dcf-0233-7a80-9147-af10c7bbfb28"
 }

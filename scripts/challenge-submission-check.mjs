@@ -20,6 +20,10 @@ import {
   isAcceptableDevpostSubmissionUrl,
   localGitHeadArguments,
 } from "./submission-validation.mjs";
+import {
+  MAX_PNG_BYTES,
+  inspectPng,
+} from "./submission-media-validation.mjs";
 
 const mode = process.argv[2] ?? "--local";
 if (mode !== "--local" && mode !== "--release") {
@@ -98,6 +102,128 @@ function runMedia(command, args, label) {
 
 function parseJson(path, label) {
   return JSON.parse(readText(path, label));
+}
+
+function isFreshReceiptTime(value) {
+  const timestamp = Date.parse(value ?? "");
+  return (
+    Number.isFinite(timestamp) &&
+    timestamp <= Date.now() + 5 * 60_000 &&
+    Date.now() - timestamp <= 48 * 60 * 60_000
+  );
+}
+
+function validateStrictSubmissionConfirmation(challengeLinks) {
+  const finalSubmissionDirectory = resolve(ROOT, "artifacts", "submission");
+  const screenshot = readRegular(
+    resolve(finalSubmissionDirectory, "submission-confirmation.png"),
+    "strict Devpost confirmation screenshot",
+    MAX_PNG_BYTES,
+  );
+  const screenshotInspection = inspectPng(screenshot);
+  check(
+    screenshotInspection.valid &&
+      screenshotInspection.width >= 640 &&
+      screenshotInspection.height >= 360,
+    `Strict Devpost confirmation screenshot is invalid: ${screenshotInspection.failures.join(" ")}`,
+  );
+  const screenshotSha256 = createHash("sha256").update(screenshot).digest("hex");
+  const reviewedScreenshotDirectory = resolve(ROOT, "artifacts", "screenshots");
+  for (const entry of readdirSync(reviewedScreenshotDirectory, { withFileTypes: true })) {
+    if (!entry.isFile() || entry.isSymbolicLink() || !entry.name.endsWith(".png")) continue;
+    const reviewedScreenshot = readRegular(
+      resolve(reviewedScreenshotDirectory, entry.name),
+      `reviewed screenshot ${entry.name}`,
+      MAX_PNG_BYTES,
+    );
+    check(
+      createHash("sha256").update(reviewedScreenshot).digest("hex") !== screenshotSha256,
+      "Strict Devpost confirmation screenshot must be distinct from product screenshots.",
+    );
+  }
+
+  const confirmation = exactKeys(
+    parseJson(
+      resolve(finalSubmissionDirectory, "submission-confirmation.json"),
+      "strict Devpost confirmation manifest",
+    ),
+    [
+      "capturedAt",
+      "confirmationId",
+      "ownerReviewed",
+      "schemaVersion",
+      "screenshotFile",
+      "screenshotSha256",
+      "status",
+      "submissionUrl",
+    ],
+    "strict Devpost confirmation manifest",
+  );
+  check(
+    confirmation.schemaVersion === "1" &&
+      confirmation.status === "VERIFIED_OWNER_REVIEWED" &&
+      confirmation.submissionUrl === challengeLinks.submissionUrl &&
+      typeof confirmation.confirmationId === "string" &&
+      /^[A-Za-z0-9._-]{6,128}$/u.test(confirmation.confirmationId) &&
+      isFreshReceiptTime(confirmation.capturedAt) &&
+      confirmation.screenshotFile === "submission-confirmation.png" &&
+      confirmation.screenshotSha256 === screenshotSha256 &&
+      confirmation.ownerReviewed === true,
+    "Strict Devpost confirmation manifest is stale, unreviewed, or unbound.",
+  );
+
+  const finalState = exactKeys(
+    parseJson(resolve(finalSubmissionDirectory, "submission-state.json"), "strict submission state"),
+    [
+      "cleanCopyStatus",
+      "confirmation",
+      "evidenceHash",
+      "evidenceStatus",
+      "ownerAction",
+      "rulesStatus",
+      "schemaVersion",
+      "staticSecurityStatus",
+      "status",
+    ],
+    "strict submission state",
+  );
+  const stateConfirmation = exactKeys(
+    finalState.confirmation,
+    ["file", "type"],
+    "strict submission state confirmation",
+  );
+  check(
+    finalState.schemaVersion === "1" &&
+      finalState.status === "SUBMITTED" &&
+      stateConfirmation.type === "DEVPOST_SUBMISSION_CONFIRMATION" &&
+      stateConfirmation.file === "submission-confirmation.json" &&
+      finalState.ownerAction === null,
+    "Strict submission state is not bound to the captured Devpost confirmation.",
+  );
+
+  const finalLinks = exactKeys(
+    parseJson(resolve(finalSubmissionDirectory, "links.json"), "strict submission links"),
+    [
+      "feedbackSessionId",
+      "liveUrl",
+      "repositoryUrl",
+      "schemaVersion",
+      "status",
+      "submissionUrl",
+      "videoUrl",
+    ],
+    "strict submission links",
+  );
+  check(
+    finalLinks.schemaVersion === "1" &&
+      finalLinks.status === "SUBMITTED" &&
+      finalLinks.repositoryUrl === challengeLinks.repositoryUrl &&
+      finalLinks.videoUrl === challengeLinks.videoUrl &&
+      finalLinks.submissionUrl === challengeLinks.submissionUrl &&
+      finalLinks.feedbackSessionId === challengeLinks.feedbackSessionId,
+    "Strict submission links do not match the reviewed challenge handoff.",
+  );
+  return confirmation;
 }
 
 function parseSrtTime(value) {
@@ -403,6 +529,11 @@ const releaseClaims = exactKeys(
 );
 check(Object.values(releaseClaims).every((claim) => claim === false), "Release state cannot promote production claims.");
 check(Array.isArray(releaseState.requiredOwnerActions), "Required owner actions must be an array.");
+const confirmationPending =
+  JSON.stringify(releaseState.requiredOwnerActions) ===
+  JSON.stringify(["CAPTURE_DEVPOST_CONFIRMATION"]);
+const confirmationCaptured = releaseState.requiredOwnerActions.length === 0;
+if (confirmationCaptured) validateStrictSubmissionConfirmation(links);
 
 const publicationReceipt = exactKeys(
   parseJson(resolve(submissionDirectory, "publication-receipt.json"), "publication receipt"),
@@ -467,9 +598,8 @@ if (mode === "--release") {
   );
   if (publicEntryRecorded) {
     check(
-      JSON.stringify(releaseState.requiredOwnerActions) ===
-        JSON.stringify(["CAPTURE_DEVPOST_CONFIRMATION"]),
-      "A public-entry release must leave only the strict confirmation-capture action.",
+      confirmationPending || confirmationCaptured,
+      "A public-entry release must either retain the strict capture action or prove its confirmation artifact.",
     );
     check(
       isAcceptableDevpostSubmissionUrl(links.submissionUrl),
@@ -574,15 +704,20 @@ if (mode === "--release") {
     );
   }
   console.log(
-    `Challenge submission release metadata: ${publicEntryRecorded ? "PUBLIC_ENTRY_VERIFIED" : "READY_FOR_DEVPOST"}.`,
+    `Challenge submission release metadata: ${
+      confirmationCaptured
+        ? "ACCOUNT_SUBMISSION_CONFIRMED"
+        : publicEntryRecorded
+          ? "PUBLIC_ENTRY_VERIFIED"
+          : "READY_FOR_DEVPOST"
+    }.`,
   );
 } else {
   const publicEntryRecorded =
     links.status === "PUBLIC_ENTRY_VERIFIED" &&
     releaseState.status === "PUBLIC_ENTRY_VERIFIED" &&
     isAcceptableDevpostSubmissionUrl(links.submissionUrl) &&
-    JSON.stringify(releaseState.requiredOwnerActions) ===
-      JSON.stringify(["CAPTURE_DEVPOST_CONFIRMATION"]);
+    (confirmationPending || confirmationCaptured);
   check(
     publicEntryRecorded ||
       (links.status === "PENDING_EXTERNAL_LINKS" &&
@@ -593,13 +728,17 @@ if (mode === "--release") {
     JSON.stringify(
       {
         status: publicEntryRecorded
-          ? "PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING"
+          ? confirmationCaptured
+            ? "ACCOUNT_SUBMISSION_CONFIRMED"
+            : "PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING"
           : "LOCAL_PACKAGE_READY_EXTERNAL_ACTIONS",
         feedbackSessionId: links.feedbackSessionId,
         videoSha256: manifest.sha256,
         durationMilliseconds: manifest.durationMilliseconds,
         remaining: publicEntryRecorded
-          ? ["Capture the strict Devpost confirmation artifact for the production submission ledger."]
+          ? confirmationCaptured
+            ? []
+            : ["Capture the strict Devpost confirmation artifact for the production submission ledger."]
           : releaseErrors,
       },
       null,

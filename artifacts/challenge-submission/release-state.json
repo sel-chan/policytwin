@@ -11,9 +11,7 @@
     "width": 1920,
     "height": 1080
   },
-  "requiredOwnerActions": [
-    "CAPTURE_DEVPOST_CONFIRMATION"
-  ],
+  "requiredOwnerActions": [],
   "claims": {
     "productionVerifyLive": false,
     "productionIsolation": false,

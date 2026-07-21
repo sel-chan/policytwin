@@ -1,11 +1,14 @@
 {
   "schemaVersion": "1",
-  "status": "NOT_READY",
-  "evidenceHash": "84ed00c9186255cf128e10755e590db5d82048150af1d9aa59a4f5d917d55291",
+  "status": "SUBMITTED",
+  "evidenceHash": "c8f7c64f653849ba207195054874d347dcb9bb35122615e5602e6cdcb4cb5d64",
   "evidenceStatus": "FAIL",
   "staticSecurityStatus": "PASS",
   "cleanCopyStatus": "PASS",
   "rulesStatus": "VERIFIED_OFFICIAL_SOURCES",
-  "confirmation": null,
+  "confirmation": {
+    "type": "DEVPOST_SUBMISSION_CONFIRMATION",
+    "file": "submission-confirmation.json"
+  },
   "ownerAction": null
 }

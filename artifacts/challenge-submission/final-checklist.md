@@ -13,6 +13,6 @@
 - [x] Obtain the owner's direct public playback/audio review.
 - [x] Replace the Devpost video link, add four refreshed screenshots/captions, and remove the stray story prefix without changing owner-only declarations.
 - [x] Rerun the full anonymous repository, YouTube, and Devpost release probes after binding the owner-reviewed public URL to this exact video hash.
-- [ ] Capture the strict Devpost confirmation screenshot/object required by the separate production submission ledger.
+- [x] Capture and hash-bind the strict Devpost confirmation screenshot/object for submission `1080298-policytwin`.
 
 The production `verify:live` gate is a separate, stricter security target and is not represented as completed by this challenge handoff.
