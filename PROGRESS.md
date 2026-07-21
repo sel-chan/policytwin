@@ -8,8 +8,8 @@
 - Current milestone: `M8/M10 — judge clarity regression repair`
 - Goal state: `IN_PROGRESS`
 - Submission state: `USER_REPORTED_SUBMITTED_PUBLIC_ENTRY_VERIFIED_CONFIRMATION_ARTIFACT_PENDING`
-- Last updated: `2026-07-21 09:26 +09:00`
-- Latest checkpoint commit: `4ca1229`
+- Last updated: `2026-07-21 09:42 +09:00`
+- Latest checkpoint commit: `948e5cf`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -111,7 +111,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - Recovery: update the remaining judge-facing copy assertions to the current result-first UI, and preserve repair-run API, CSRF, idempotency, SSE, and lease-expiry coverage through authenticated same-origin browser requests now that the repair control is intentionally absent from the judge path.
 - [x] `pnpm test:e2e`: `PASS` (3/3 in 1.8 minutes). The current result-first judge flow passes while CSRF rejection, authenticated blocked-run creation, SSE cursor replay, retry/idempotency, poisoned lease reconciliation, proof archive, keyboard, mobile, and capacity fail-closed coverage remain exercised.
 - [x] `pnpm challenge:submission:check`: `PASS`; the restored feedback session ID, 168-second public video receipt, and package metadata are accepted. The only reported remainder is the pre-existing strict Devpost confirmation artifact.
-- [ ] Run the authoritative `pnpm verify`, record the new receipt, commit, and push.
+- [x] `pnpm verify`: `PASS` in 924.6 seconds on clean commit `948e5cf`; all 16 ordered steps passed, including lint, typecheck, unit/integration tests, offline evidence, license, static container, clean-copy, submission draft checks, 22/22 eval, demo reset/run, 3/3 E2E, production build, and security scan.
+- Offline receipt: `artifacts/security/offline-verify-report.json` SHA-256 `3b16ff986110743ed750069ea2e47a2d04350af2353d0f0e7100ae2b2718678c`; evidence hash `c8f7c64f653849ba207195054874d347dcb9bb35122615e5602e6cdcb4cb5d64`; release-tree hash `2c74903cdd98be93bba6fc647731d203e3a97976197d8ecc93e244b72d02aa70` across 474 Git-managed release inputs with zero untracked release inputs.
+- [ ] Commit the refreshed verification receipt and ledger, push `main`, and recheck the public challenge handoff.
 
 ### Judge clarity pass (`2026-07-21 08:51 +09:00`)
 
