@@ -5,11 +5,11 @@
 ## Current status
 
 - Overall state: `IN_PROGRESS`
-- Current milestone: `M10 — Devpost confirmation capture`
+- Current milestone: `M10 — Devpost account confirmation complete`
 - Goal state: `IN_PROGRESS`
 - Submission state: `ACCOUNT_SUBMISSION_CONFIRMED_STRICT_RELEASE_GATES_INCOMPLETE`
-- Last updated: `2026-07-21 11:03 +09:00`
-- Latest checkpoint commit: `90618c3`
+- Last updated: `2026-07-21 11:05 +09:00`
+- Latest checkpoint commit: `e645da5`
 - Working branch: `main`
 - Live URL: `UNSET`
 - Repository URL: `https://github.com/sel-chan/policytwin`
@@ -116,8 +116,9 @@ Use one of: `NOT_STARTED`, `IN_PROGRESS`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED_P
 - Recovery: commit the truthful 479-file clean/security refresh and current strict report, then rerun the full check on the resulting clean commit. The remaining strict failures are unrelated production/deployment/final-staging gates and will not be hidden.
 - [x] Second full `pnpm submission:check`: its embedded 16-step `pnpm verify` passed on clean commit `90618c3`; the refreshed offline receipt is `PASS` with release-tree SHA-256 `188fa5e8d7831f3a24017e19bd4e642a234d392fd932236e19657ec2588ee2fd`, 476 tracked release inputs, and zero untracked release inputs.
 - [x] Canonical strict report confirms `checkedConfirmationEvidence:true`; none of its 27 remaining failures concerns confirmation, submission state, owner action, repository/video/submission URL, feedback ID, license, screenshot distinctness, or offline verification. The remaining failures are the previously explicit production live/deployment, final live evidence/attestation, fresh rule snapshot, and legacy final-staging cleanup gates.
-- [ ] Commit and push the reviewed confirmation evidence; leave unrelated production-live/deployment gaps explicit.
-- Recovery note: the preferred Windows-app and in-app-browser runtimes both failed before navigation with a local missing kernel-assets path; no Devpost action occurred. A bounded alternate browser surface will be tried next.
+- [x] Committed the reviewed account confirmation as `968c01d`, refreshed its 479-file clean/security baseline as `90618c3`, recorded the final receipts as `e645da5`, and pushed `main` to the public repository.
+- [x] Post-push `pnpm challenge:submission:release`: `PASS` with `ACCOUNT_SUBMISSION_CONFIRMED`; public GitHub HEAD, YouTube metadata, canonical Devpost page, and the strict local confirmation binding all passed.
+- Recovery outcome: the preferred Windows-app and in-app-browser runtimes failed before navigation with a local missing kernel-assets path. The owner-opened Comet management page was instead captured through a bounded OS window screenshot, privacy-cropped, directly inspected, converted to the required RGB profile, and hash-bound without changing any Devpost field or legal declaration.
 
 ### Judge clarity regression repair (`2026-07-21 09:18 +09:00`)
 
